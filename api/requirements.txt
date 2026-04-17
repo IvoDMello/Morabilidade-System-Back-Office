@@ -1,0 +1,26 @@
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+pydantic==2.10.3
+pydantic-settings==2.7.0
+pydantic[email]
+python-dotenv==1.0.1
+python-multipart==0.0.20
+
+# Supabase (banco + auth)
+supabase==2.10.0
+
+# JWT (verificação de tokens Supabase)
+python-jose[cryptography]==3.3.0
+
+# Firebase Storage
+firebase-admin==6.6.0
+
+# E-mail transacional
+resend==2.5.0
+
+# HTTP client async
+httpx==0.28.1
+
+# Utilidades
+pillow==11.0.0
+python-slugify==8.0.4
