@@ -27,7 +27,7 @@ O **site público** (vitrine) está em repositório separado e consome a API des
 
 ## Pré-requisitos
 
-- Python 3.12+
+- Python 3.12++
 - Node.js 18+
 - Conta no [Supabase](https://supabase.com)
 - Conta no [Firebase](https://firebase.google.com)
