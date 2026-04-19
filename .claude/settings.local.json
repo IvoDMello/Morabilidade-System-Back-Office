@@ -1,7 +1,20 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python -c ' *)"
+      "Bash(python -c ' *)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d.get\\('project_id',''\\)\\)\")",
+      "Bash(npm --version)",
+      "Bash(python -m venv venv)",
+      "Bash(venv/Scripts/pip install *)",
+      "Bash(venv/Scripts/uvicorn app.main:app --reload)",
+      "Bash(curl -s http://localhost:8000/)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/)",
+      "Bash(curl -s http://localhost:8000/imoveis)",
+      "Bash(curl -s -o - -w \"\\\\nHTTP_STATUS:%{http_code}\" http://localhost:8000/imoveis)",
+      "Bash(curl -s -w \"\\\\nHTTP:%{http_code}\" \"http://localhost:8000/imoveis\" -H \"Authorization: Bearer teste123\")",
+      "Bash(curl -s -w \"\\\\nHTTP:%{http_code}\" \"http://localhost:8000/imoveis/\" -H \"Authorization: Bearer teste123\")"
     ]
   }
 }

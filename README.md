@@ -141,3 +141,81 @@ Morabilidade-System-Back-Office/
                 ├── clientes/             # Lista, novo
                 ├── tags/
                 └── usuarios/
+
+
+Estrutura do Projeto
+O projeto é um sistema de gestão imobiliária (back-office) composto por dois sub-projetos dentro do mesmo repositório:
+
+
+Morabilidade-System-Back-Office/
+├── api/          → Python 3.12 + FastAPI (back-end)
+└── web/          → Next.js 15 + React 19 (front-end)
+Stack completa:
+
+Camada	Tecnologia
+API	Python + FastAPI
+Banco de dados	PostgreSQL via Supabase
+Autenticação	Supabase Auth (JWT)
+Storage de imagens	Firebase Storage
+Front-end	Next.js 15 + shadcn/ui + Tailwind
+E-mail	Resend
+Estado global	Zustand
+Deploy API	Railway / Render
+Deploy Front	Vercel
+Estrutura da API (back-end)
+
+api/app/
+├── main.py          → inicialização do FastAPI, CORS, routers
+├── config.py        → variáveis de ambiente (Pydantic Settings)
+├── database.py      → cliente Supabase
+├── auth/
+│   ├── router.py    → POST /auth/login, /logout, /recuperar-senha
+│   └── dependencies.py → get_current_user(), require_admin()
+├── routers/
+│   ├── imoveis.py   → CRUD completo + upload de fotos + endpoints públicos
+│   ├── clientes.py  → CRUD completo
+│   ├── tags.py      → CRUD (admin only)
+│   └── users.py     → CRUD (admin only) + perfil próprio
+├── schemas/         → modelos Pydantic para validação
+└── services/
+    ├── firebase.py  → upload/delete de imagens (compressão automática)
+    └── email.py     → envio via Resend
+Estrutura do Front-end
+
+web/src/
+├── middleware.ts          → proteção de rotas
+├── lib/
+│   ├── api.ts             → axios com interceptores (auth + 401 redirect)
+│   ├── auth-store.ts      → Zustand (token + user + logout)
+│   └── utils.ts           → cn(), formatarMoeda(), formatarArea()
+├── components/layout/
+│   ├── Sidebar.tsx         → navegação com RBAC (itens admin ocultos)
+│   └── Header.tsx          → título dinâmico + info do usuário
+└── app/
+    ├── (auth)/login/       → formulário login com Zod ✅
+    ├── (auth)/recuperar-senha/ → recuperação ✅
+    └── (dashboard)/
+        ├── page.tsx         → home do dashboard
+        ├── imoveis/         → listagem + novo + [id]
+        ├── clientes/        → listagem + novo
+        ├── tags/            → gestão de tags
+        └── usuarios/        → gestão de usuários
+Banco de Dados (6 tabelas)
+Tabela	Função
+usuarios	Perfis internos (admin / administrativo)
+imoveis	Cadastro central de imóveis (30+ campos)
+imovel_fotos	URLs das fotos no Firebase (ordenadas)
+imovel_tags	Relacionamento N:N imóvel ↔ tag
+tags	Etiquetas configuráveis pelo admin
+clientes	Leads/clientes com dados completos
+RLS (Row Level Security) habilitado; API usa service role key para bypass.
+
+
+para testar: 
+
+# API
+cd api && venv/Scripts/uvicorn app.main:app --reload
+
+# Web (outro terminal)
+cd web && npm run dev
+

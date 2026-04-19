@@ -71,6 +71,23 @@ export interface Imovel {
   updated_at: string;
 }
 
+export interface ImovelListOut {
+  id: string;
+  codigo: string;
+  tipo_negocio: TipoNegocio;
+  disponibilidade: Disponibilidade;
+  cidade: string;
+  bairro: string;
+  tipo_imovel: TipoImovel;
+  dormitorios?: number;
+  area_util?: number;
+  valor_venda?: number;
+  valor_locacao?: number;
+  foto_capa?: string;
+  tags: { id: string; nome: string; cor?: string }[];
+  created_at: string;
+}
+
 // ── Clientes ──────────────────────────────────────────────────────────────────
 
 export type StatusCliente = "ativo" | "em_negociacao" | "inativo" | "concluido";

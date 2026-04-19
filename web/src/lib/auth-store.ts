@@ -22,9 +22,15 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       token: null,
       user: null,
-      setToken: (token) => set({ token }),
+      setToken: (token) => {
+        set({ token });
+        document.cookie = `morabilidade-auth=${token}; path=/; max-age=${60 * 60 * 8}`;
+      },
       setUser: (user) => set({ user }),
-      logout: () => set({ token: null, user: null }),
+      logout: () => {
+        set({ token: null, user: null });
+        document.cookie = "morabilidade-auth=; path=/; max-age=0";
+      },
     }),
     { name: "morabilidade-auth" }
   )

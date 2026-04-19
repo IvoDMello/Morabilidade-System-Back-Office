@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Query
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Query, Response
 from typing import List, Optional
 from app.auth.dependencies import get_current_user
 from app.schemas.imovel import (
-    ImovelCreate, ImovelUpdate, ImovelOut, ImovelListOut, ImovelFiltros,
+    ImovelCreate, ImovelUpdate, ImovelOut, ImovelListOut,
     TipoNegocio, Disponibilidade, TipoImovel, CondicaoImovel, Mobiliado,
 )
 from app.database import supabase_admin
@@ -11,37 +11,25 @@ import uuid
 
 router = APIRouter()
 
+_LIST_FIELDS = (
+    "id, codigo, tipo_negocio, disponibilidade, cidade, bairro, "
+    "tipo_imovel, dormitorios, area_util, valor_venda, valor_locacao, "
+    "created_at, imovel_fotos(url, ordem), imovel_tags(tags(id, nome, cor))"
+)
+
+_DETAIL_FIELDS = (
+    "*, imovel_fotos(id, url, ordem), imovel_tags(tags(id, nome, cor))"
+)
+
 
 def _gerar_codigo() -> str:
-    """Gera código único sequencial para o imóvel."""
     result = supabase_admin.rpc("proxima_sequencia_imovel").execute()
     return f"IMO-{result.data:05d}"
 
 
-@router.get("/", response_model=List[ImovelListOut])
-def listar_imoveis(
-    tipo_negocio: Optional[TipoNegocio] = None,
-    disponibilidade: Optional[Disponibilidade] = None,
-    cidade: Optional[str] = None,
-    bairro: Optional[str] = None,
-    tipo_imovel: Optional[TipoImovel] = None,
-    dormitorios_min: Optional[int] = None,
-    preco_min: Optional[float] = None,
-    preco_max: Optional[float] = None,
-    condicao: Optional[CondicaoImovel] = None,
-    mobiliado: Optional[Mobiliado] = None,
-    codigo: Optional[str] = None,
-    page: int = Query(default=1, ge=1),
-    page_size: int = Query(default=20, ge=1, le=100),
-    current_user: dict = Depends(get_current_user),
-):
-    """Lista imóveis com filtros (sistema interno)."""
-    query = supabase_admin.table("imoveis").select(
-        "id, codigo, tipo_negocio, disponibilidade, cidade, bairro, "
-        "tipo_imovel, dormitorios, area_util, valor_venda, valor_locacao, "
-        "created_at, imovel_fotos(url, ordem), imovel_tags(tags(id, nome, cor))"
-    )
-
+def _aplicar_filtros(query, *, tipo_negocio, disponibilidade, cidade, bairro,
+                     tipo_imovel, dormitorios_min, preco_min, preco_max,
+                     condicao, mobiliado, codigo):
     if codigo:
         query = query.ilike("codigo", f"%{codigo}%")
     if tipo_negocio:
@@ -60,21 +48,83 @@ def listar_imoveis(
         query = query.eq("condicao", condicao)
     if mobiliado:
         query = query.eq("mobiliado", mobiliado)
+    if preco_min is not None:
+        if tipo_negocio == TipoNegocio.locacao:
+            query = query.gte("valor_locacao", preco_min)
+        else:
+            query = query.gte("valor_venda", preco_min)
+    if preco_max is not None:
+        if tipo_negocio == TipoNegocio.locacao:
+            query = query.lte("valor_locacao", preco_max)
+        else:
+            query = query.lte("valor_venda", preco_max)
+    return query
+
+
+def _transformar_lista(raw: dict) -> dict:
+    fotos = sorted(raw.pop("imovel_fotos", None) or [], key=lambda f: f.get("ordem", 0))
+    foto_capa = fotos[0]["url"] if fotos else None
+    tags_raw = raw.pop("imovel_tags", None) or []
+    tags = [t["tags"] for t in tags_raw if t.get("tags")]
+    return {**raw, "foto_capa": foto_capa, "tags": tags}
+
+
+def _transformar_detalhe(raw: dict) -> dict:
+    fotos = sorted(raw.pop("imovel_fotos", None) or [], key=lambda f: f.get("ordem", 0))
+    tags_raw = raw.pop("imovel_tags", None) or []
+    tags = [t["tags"] for t in tags_raw if t.get("tags")]
+    tag_ids = [t["id"] for t in tags]
+    return {**raw, "fotos": fotos, "tags": tags, "tag_ids": tag_ids}
+
+
+@router.get("/", response_model=List[ImovelListOut])
+def listar_imoveis(
+    http_response: Response,
+    tipo_negocio: Optional[TipoNegocio] = None,
+    disponibilidade: Optional[Disponibilidade] = None,
+    cidade: Optional[str] = None,
+    bairro: Optional[str] = None,
+    tipo_imovel: Optional[TipoImovel] = None,
+    dormitorios_min: Optional[int] = None,
+    preco_min: Optional[float] = None,
+    preco_max: Optional[float] = None,
+    condicao: Optional[CondicaoImovel] = None,
+    mobiliado: Optional[Mobiliado] = None,
+    codigo: Optional[str] = None,
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    current_user: dict = Depends(get_current_user),
+):
+    filtros = dict(
+        tipo_negocio=tipo_negocio, disponibilidade=disponibilidade,
+        cidade=cidade, bairro=bairro, tipo_imovel=tipo_imovel,
+        dormitorios_min=dormitorios_min, preco_min=preco_min, preco_max=preco_max,
+        condicao=condicao, mobiliado=mobiliado, codigo=codigo,
+    )
+
+    count_q = _aplicar_filtros(
+        supabase_admin.table("imoveis").select("id", count="exact"), **filtros
+    )
+    total = count_q.execute().count or 0
+    http_response.headers["X-Total-Count"] = str(total)
+    http_response.headers["Access-Control-Expose-Headers"] = "X-Total-Count"
 
     offset = (page - 1) * page_size
-    result = query.order("created_at", desc=True).range(offset, offset + page_size - 1).execute()
-    return result.data
+    data_q = _aplicar_filtros(
+        supabase_admin.table("imoveis").select(_LIST_FIELDS), **filtros
+    )
+    result = data_q.order("created_at", desc=True).range(offset, offset + page_size - 1).execute()
+
+    return [_transformar_lista(item) for item in result.data]
 
 
 @router.post("/", response_model=ImovelOut, status_code=status.HTTP_201_CREATED)
 def criar_imovel(body: ImovelCreate, current_user: dict = Depends(get_current_user)):
-    """Cria um novo imóvel."""
     data = body.model_dump(exclude={"tag_ids"})
 
     if not data.get("codigo"):
         data["codigo"] = _gerar_codigo()
 
-    # Converte Decimal para float para serialização
     for field in ("area_total", "area_util", "valor_venda", "valor_locacao",
                   "iptu_mensal", "condominio_mensal"):
         if data.get(field) is not None:
@@ -83,7 +133,6 @@ def criar_imovel(body: ImovelCreate, current_user: dict = Depends(get_current_us
     result = supabase_admin.table("imoveis").insert(data).execute()
     imovel = result.data[0]
 
-    # Associa tags
     if body.tag_ids:
         tag_links = [{"imovel_id": imovel["id"], "tag_id": tid} for tid in body.tag_ids]
         supabase_admin.table("imovel_tags").insert(tag_links).execute()
@@ -110,7 +159,6 @@ def atualizar_imovel(
 
     supabase_admin.table("imoveis").update(updates).eq("id", imovel_id).execute()
 
-    # Atualiza tags se fornecidas
     if body.tag_ids is not None:
         supabase_admin.table("imovel_tags").delete().eq("imovel_id", imovel_id).execute()
         if body.tag_ids:
@@ -122,6 +170,15 @@ def atualizar_imovel(
 
 @router.delete("/{imovel_id}", status_code=status.HTTP_204_NO_CONTENT)
 def deletar_imovel(imovel_id: str, current_user: dict = Depends(get_current_user)):
+    fotos = (
+        supabase_admin.table("imovel_fotos")
+        .select("url")
+        .eq("imovel_id", imovel_id)
+        .execute()
+    )
+    import asyncio
+    for foto in (fotos.data or []):
+        asyncio.run(deletar_foto(foto["url"]))
     supabase_admin.table("imoveis").delete().eq("id", imovel_id).execute()
 
 
@@ -133,8 +190,6 @@ async def upload_fotos(
     fotos: List[UploadFile] = File(...),
     current_user: dict = Depends(get_current_user),
 ):
-    """Faz upload de uma ou mais fotos para o imóvel."""
-    # Verifica quantas fotos já existem
     existing = (
         supabase_admin.table("imovel_fotos")
         .select("id", count="exact")
@@ -179,7 +234,7 @@ async def remover_foto(
     supabase_admin.table("imovel_fotos").delete().eq("id", foto_id).execute()
 
 
-# ── Endpoint público (consumido pelo site) ────────────────────────────────────
+# ── Endpoints públicos ────────────────────────────────────────────────────────
 
 @router.get("/publico/disponiveis", response_model=List[ImovelListOut], tags=["Site Público"])
 def imoveis_disponiveis_publico(
@@ -193,42 +248,25 @@ def imoveis_disponiveis_publico(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
 ):
-    """
-    Endpoint público — sem autenticação.
-    Retorna apenas imóveis DISPONÍVEIS.
-    Consumido pelo site público em tempo real.
-    """
-    query = supabase_admin.table("imoveis").select(
-        "id, codigo, tipo_negocio, disponibilidade, cidade, bairro, "
-        "tipo_imovel, dormitorios, area_util, valor_venda, valor_locacao, "
-        "created_at, imovel_fotos(url, ordem), imovel_tags(tags(id, nome, cor))"
-    ).eq("disponibilidade", "disponivel")
-
-    if tipo_negocio:
-        query = query.eq("tipo_negocio", tipo_negocio)
-    if cidade:
-        query = query.ilike("cidade", f"%{cidade}%")
-    if bairro:
-        query = query.ilike("bairro", f"%{bairro}%")
-    if tipo_imovel:
-        query = query.eq("tipo_imovel", tipo_imovel)
-    if dormitorios_min is not None:
-        query = query.gte("dormitorios", dormitorios_min)
-
+    filtros = dict(
+        tipo_negocio=tipo_negocio, disponibilidade=Disponibilidade.disponivel,
+        cidade=cidade, bairro=bairro, tipo_imovel=tipo_imovel,
+        dormitorios_min=dormitorios_min, preco_min=preco_min, preco_max=preco_max,
+        condicao=None, mobiliado=None, codigo=None,
+    )
+    query = _aplicar_filtros(
+        supabase_admin.table("imoveis").select(_LIST_FIELDS), **filtros
+    )
     offset = (page - 1) * page_size
     result = query.order("created_at", desc=True).range(offset, offset + page_size - 1).execute()
-    return result.data
+    return [_transformar_lista(item) for item in result.data]
 
 
 @router.get("/publico/{codigo}", response_model=ImovelOut, tags=["Site Público"])
 def detalhe_imovel_publico(codigo: str):
-    """
-    Detalhe completo de um imóvel pelo código — sem autenticação.
-    Consumido pelo site público.
-    """
     result = (
         supabase_admin.table("imoveis")
-        .select("*")
+        .select("id")
         .eq("codigo", codigo)
         .eq("disponibilidade", "disponivel")
         .single()
@@ -244,14 +282,11 @@ def detalhe_imovel_publico(codigo: str):
 def _buscar_imovel(imovel_id: str) -> dict:
     result = (
         supabase_admin.table("imoveis")
-        .select(
-            "*, imovel_fotos(id, url, ordem), "
-            "imovel_tags(tags(id, nome, cor))"
-        )
+        .select(_DETAIL_FIELDS)
         .eq("id", imovel_id)
         .single()
         .execute()
     )
     if not result.data:
         raise HTTPException(status_code=404, detail="Imóvel não encontrado.")
-    return result.data
+    return _transformar_detalhe(result.data)

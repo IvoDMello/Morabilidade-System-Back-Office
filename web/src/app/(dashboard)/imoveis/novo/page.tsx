@@ -1,13 +1,61 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
+import { api } from "@/lib/api";
+import { ImovelForm, type ImovelFormData } from "@/components/imoveis/imovel-form";
+
 export default function NovoImovelPage() {
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+
+  async function handleSubmit(data: ImovelFormData) {
+    setIsLoading(true);
+    try {
+      const payload = {
+        ...data,
+        // Converte strings vazias de campos opcionais para null
+        corretor_id: data.corretor_id || null,
+        mobiliado: data.mobiliado || null,
+        codigo: data.codigo || undefined,
+      };
+
+      const res = await api.post<{ id: string }>("/imoveis", payload);
+      toast.success("Imóvel cadastrado com sucesso!");
+      router.push(`/imoveis/${res.data.id}`);
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
+        "Erro ao cadastrar imóvel. Verifique os dados e tente novamente.";
+      toast.error(msg);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   return (
     <div>
-      <h1 className="text-2xl font-bold text-slate-900 mb-1">Novo imóvel</h1>
-      <p className="text-slate-500 text-sm mb-6">Preencha os dados do imóvel para cadastrá-lo.</p>
-
-      {/* TODO: Formulário completo de cadastro de imóvel */}
-      <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-slate-400">
-        Formulário de cadastro de imóvel será implementado aqui.
+      <div className="flex items-center gap-3 mb-6">
+        <Link
+          href="/imoveis"
+          className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </Link>
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Novo imóvel</h1>
+          <p className="text-slate-500 text-sm">Preencha os dados do imóvel para cadastrá-lo.</p>
+        </div>
       </div>
+
+      <ImovelForm
+        onSubmit={handleSubmit}
+        isLoading={isLoading}
+        submitLabel="Cadastrar imóvel"
+      />
     </div>
   );
 }

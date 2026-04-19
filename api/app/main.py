@@ -11,6 +11,7 @@ app = FastAPI(
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
+    redirect_slashes=False,
 )
 
 # CORS — permite o painel administrativo e o site público consumirem a API

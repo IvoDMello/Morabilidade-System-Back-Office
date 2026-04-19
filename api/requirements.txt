@@ -16,10 +16,10 @@ python-jose[cryptography]==3.3.0
 firebase-admin==6.6.0
 
 # E-mail transacional
-resend==2.5.0
+resend==2.5.1
 
 # HTTP client async
-httpx==0.28.1
+httpx>=0.26,<0.28
 
 # Utilidades
 pillow==11.0.0
