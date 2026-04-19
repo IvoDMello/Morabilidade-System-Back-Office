@@ -45,6 +45,13 @@ next-env.d.ts
 *.pem
 
 # ========================
+# Credenciais / Secrets
+# ========================
+firebase-credentials.json
+**/firebase-credentials.json
+*.service-account.json
+
+# ========================
 # IDEs e editores
 # ========================
 .vscode/
