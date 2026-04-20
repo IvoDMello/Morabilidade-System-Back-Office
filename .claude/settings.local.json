@@ -14,7 +14,18 @@
       "Bash(curl -s http://localhost:8000/imoveis)",
       "Bash(curl -s -o - -w \"\\\\nHTTP_STATUS:%{http_code}\" http://localhost:8000/imoveis)",
       "Bash(curl -s -w \"\\\\nHTTP:%{http_code}\" \"http://localhost:8000/imoveis\" -H \"Authorization: Bearer teste123\")",
-      "Bash(curl -s -w \"\\\\nHTTP:%{http_code}\" \"http://localhost:8000/imoveis/\" -H \"Authorization: Bearer teste123\")"
+      "Bash(curl -s -w \"\\\\nHTTP:%{http_code}\" \"http://localhost:8000/imoveis/\" -H \"Authorization: Bearer teste123\")",
+      "Bash(git restore *)",
+      "Bash(git rm *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch --force --index-filter 'git rm --cached --ignore-unmatch firebase-credentials.json api/firebase-credentials.json' -- 0edcdd6..HEAD)",
+      "Bash(git stash *)",
+      "Bash(npx tsc *)",
+      "Bash(python -m pytest --tb=short -q)",
+      "Bash(.\\\\venv\\\\Scripts\\\\activate)",
+      "Bash(npm test *)"
     ]
   }
 }

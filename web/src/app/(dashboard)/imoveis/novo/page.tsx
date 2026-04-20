@@ -23,13 +23,16 @@ export default function NovoImovelPage() {
         codigo: data.codigo || undefined,
       };
 
-      const res = await api.post<{ id: string }>("/imoveis", payload);
+      const res = await api.post<{ id: string }>("/imoveis/", payload);
       toast.success("Imóvel cadastrado com sucesso!");
       router.push(`/imoveis/${res.data.id}`);
     } catch (err: unknown) {
-      const msg =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
-        "Erro ao cadastrar imóvel. Verifique os dados e tente novamente.";
+      console.error("Erro ao cadastrar imóvel:", err);
+      const axiosErr = err as { response?: { status?: number; data?: { detail?: unknown } } };
+      console.error("Status:", axiosErr?.response?.status);
+      console.error("Detalhe:", JSON.stringify(axiosErr?.response?.data));
+      const detail = axiosErr?.response?.data?.detail;
+      const msg = typeof detail === "string" ? detail : "Erro ao cadastrar imóvel. Verifique os dados e tente novamente.";
       toast.error(msg);
     } finally {
       setIsLoading(false);

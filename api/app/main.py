@@ -1,9 +1,11 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.routers import imoveis, clientes, tags, users
 from app.auth.router import router as auth_router
+from app.auth.dependencies import get_current_user
+from app.database import supabase_admin
 
 app = FastAPI(
     title="Morabilidade — API de Gestão Imobiliária",
@@ -36,3 +38,19 @@ app.include_router(tags.router, prefix="/tags", tags=["Tags"])
 @app.get("/", tags=["Health"])
 def health_check():
     return {"status": "ok", "service": "Morabilidade API"}
+
+
+@app.get("/stats", tags=["Health"])
+def get_stats(current_user: dict = Depends(get_current_user)):
+    total_imoveis = supabase_admin.table("imoveis").select("id", count="exact").execute().count or 0
+    disponiveis = (supabase_admin.table("imoveis").select("id", count="exact")
+                   .eq("disponibilidade", "disponivel").execute().count or 0)
+    total_clientes = supabase_admin.table("clientes").select("id", count="exact").execute().count or 0
+    em_negociacao = (supabase_admin.table("clientes").select("id", count="exact")
+                     .eq("status", "em_negociacao").execute().count or 0)
+    return {
+        "total_imoveis": total_imoveis,
+        "imoveis_disponiveis": disponiveis,
+        "total_clientes": total_clientes,
+        "clientes_em_negociacao": em_negociacao,
+    }

@@ -93,7 +93,7 @@ export default function ImoveisPage() {
       if (f.preco_min) params.preco_min = f.preco_min;
       if (f.preco_max) params.preco_max = f.preco_max;
 
-      const res = await api.get<ImovelListOut[]>("/imoveis", { params });
+      const res = await api.get<ImovelListOut[]>("/imoveis/", { params });
       setImoveis(res.data);
       setTotal(Number(res.headers["x-total-count"] ?? res.data.length));
     } catch {

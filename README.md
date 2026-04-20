@@ -218,4 +218,43 @@ cd api && venv/Scripts/uvicorn app.main:app --reload
 
 # Web (outro terminal)
 cd web && npm run dev
+-
 
+O que fazer para validar o sistema
+1. Rodar os testes (a partir de agora)
+Backend — execute dentro de api/:
+
+
+source venv/Scripts/activate
+python -m pytest -v
+Frontend — execute dentro de web/:
+
+
+npm test
+2. Testar manualmente no browser (validação funcional)
+Com os servidores rodando (uvicorn + next dev), valide cada módulo:
+
+Módulo	O que verificar
+Login	Acesso com credenciais corretas e erradas
+Dashboard	Números reais aparecem nos cards
+Imóveis	Criar, editar, fazer upload de foto, excluir
+Clientes	Criar, editar, filtrar por status, excluir
+Tags	Criar com cor, editar inline, excluir
+Usuários	Criar usuário (como admin), ver lista
+RBAC	Logar como administrativo → botões de admin devem estar ocultos
+3. Configurar o banco (Supabase)
+Verifique se as tabelas estão criadas com as migrations corretas. Os testes não tocam no banco real — valide com dados reais que:
+
+A sequência proxima_sequencia_imovel existe no Supabase
+As políticas RLS estão configuradas corretamente
+O storage do Firebase aceita uploads
+
+para rodar o SISTEMA:
+Terminal 1 — FastAPI:
+
+cd api
+uvicorn app.main:app --reload
+Terminal 2 — Next.js:
+
+cd web
+npm run dev

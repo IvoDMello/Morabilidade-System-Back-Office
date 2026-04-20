@@ -10,6 +10,18 @@ import type { Tag, User } from "@/types";
 
 // ── Schema de validação ────────────────────────────────────────────────────────
 
+// Converte string vazia / null para null; aceita números inteiros >= 0
+const optInt = z.preprocess(
+  (v) => (v === "" || v == null ? null : Number(v)),
+  z.number().int().min(0).nullable().optional()
+);
+
+// Converte string vazia / null para null; aceita números positivos (decimais)
+const optPositive = z.preprocess(
+  (v) => (v === "" || v == null ? null : Number(v)),
+  z.number().positive().nullable().optional()
+);
+
 const schema = z.object({
   codigo: z.string().optional(),
   tipo_negocio: z.enum(["venda", "locacao", "ambos"]),
@@ -22,18 +34,21 @@ const schema = z.object({
   bairro: z.string().min(1, "Bairro obrigatório"),
   cidade: z.string().min(1, "Cidade obrigatória"),
   tipo_imovel: z.enum(["casa", "apartamento", "terreno", "sala", "galpao", "loja", "cobertura", "kitnet", "outro"]),
-  dormitorios: z.coerce.number().int().min(0).optional().nullable(),
-  suites: z.coerce.number().int().min(0).optional().nullable(),
-  banheiros: z.coerce.number().int().min(0).optional().nullable(),
-  vagas_garagem: z.coerce.number().int().min(0).optional().nullable(),
-  mobiliado: z.enum(["sim", "nao", "semi-mobiliado"]).optional().nullable(),
-  andar: z.coerce.number().int().min(0).optional().nullable(),
-  area_total: z.coerce.number().positive().optional().nullable(),
-  area_util: z.coerce.number().positive().optional().nullable(),
-  valor_venda: z.coerce.number().positive().optional().nullable(),
-  valor_locacao: z.coerce.number().positive().optional().nullable(),
-  iptu_mensal: z.coerce.number().positive().optional().nullable(),
-  condominio_mensal: z.coerce.number().positive().optional().nullable(),
+  dormitorios: optInt,
+  suites: optInt,
+  banheiros: optInt,
+  vagas_garagem: optInt,
+  mobiliado: z.preprocess(
+    (v) => (v === "" ? null : v),
+    z.enum(["sim", "nao", "semi-mobiliado"]).nullable().optional()
+  ),
+  andar: optInt,
+  area_total: optPositive,
+  area_util: optPositive,
+  valor_venda: optPositive,
+  valor_locacao: optPositive,
+  iptu_mensal: optPositive,
+  condominio_mensal: optPositive,
   descricao: z.string().optional(),
   video_url: z.string().optional(),
   corretor_id: z.string().optional().nullable(),
@@ -118,8 +133,8 @@ export function ImovelForm({
   const selectedTagIds = watch("tag_ids") ?? [];
 
   useEffect(() => {
-    api.get<Tag[]>("/tags").then((r) => setTags(r.data)).catch(() => {});
-    api.get<User[]>("/usuarios").then((r) => setUsers(r.data)).catch(() => {});
+    api.get<Tag[]>("/tags/").then((r) => setTags(r.data)).catch(() => {});
+    api.get<User[]>("/usuarios/").then((r) => setUsers(r.data)).catch(() => {});
   }, []);
 
   async function buscarCep(cep: string) {

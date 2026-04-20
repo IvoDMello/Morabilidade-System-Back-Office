@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Response
 from typing import List, Optional
 from app.auth.dependencies import get_current_user
 from app.schemas.cliente import ClienteCreate, ClienteUpdate, ClienteOut, ClienteListOut, StatusCliente
@@ -9,6 +9,7 @@ router = APIRouter()
 
 @router.get("/", response_model=List[ClienteListOut])
 def listar_clientes(
+    http_response: Response,
     nome: Optional[str] = None,
     email: Optional[str] = None,
     status: Optional[StatusCliente] = None,
@@ -16,19 +17,27 @@ def listar_clientes(
     page_size: int = Query(default=20, ge=1, le=100),
     current_user: dict = Depends(get_current_user),
 ):
-    query = supabase_admin.table("clientes").select(
-        "id, nome_completo, email, telefone, status, tipo_cliente, origem_lead, created_at"
-    )
+    def _aplicar(q):
+        if nome:
+            q = q.ilike("nome_completo", f"%{nome}%")
+        if email:
+            q = q.ilike("email", f"%{email}%")
+        if status:
+            q = q.eq("status", status)
+        return q
 
-    if nome:
-        query = query.ilike("nome_completo", f"%{nome}%")
-    if email:
-        query = query.ilike("email", f"%{email}%")
-    if status:
-        query = query.eq("status", status)
+    total = (_aplicar(supabase_admin.table("clientes").select("id", count="exact"))
+             .execute().count or 0)
+    http_response.headers["X-Total-Count"] = str(total)
 
     offset = (page - 1) * page_size
-    result = query.order("created_at", desc=True).range(offset, offset + page_size - 1).execute()
+    result = (
+        _aplicar(supabase_admin.table("clientes")
+                 .select("id, nome_completo, email, telefone, status, tipo_cliente, origem_lead, created_at"))
+        .order("created_at", desc=True)
+        .range(offset, offset + page_size - 1)
+        .execute()
+    )
     return result.data
 
 
