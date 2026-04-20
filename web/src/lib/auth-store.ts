@@ -7,6 +7,7 @@ interface User {
   email: string;
   perfil: "admin" | "administrativo";
   foto_url?: string;
+  telefone?: string;
 }
 
 interface AuthState {

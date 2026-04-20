@@ -1,11 +1,9 @@
 from fastapi import APIRouter, HTTPException, Request, status
-from slowapi import Limiter
-from slowapi.util import get_remote_address
+from app.limiter import limiter
 from app.auth.schemas import LoginRequest, LoginResponse, ForgotPasswordRequest
 from app.database import supabase
 
 router = APIRouter()
-limiter = Limiter(key_func=get_remote_address)
 
 
 @router.post("/login", response_model=LoginResponse)
