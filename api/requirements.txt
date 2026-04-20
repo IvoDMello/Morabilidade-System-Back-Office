@@ -24,3 +24,6 @@ httpx>=0.26,<0.28
 # Utilidades
 pillow==11.0.0
 python-slugify==8.0.4
+
+# Rate limiting
+slowapi==0.1.9

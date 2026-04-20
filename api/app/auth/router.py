@@ -1,12 +1,16 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Request, status
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from app.auth.schemas import LoginRequest, LoginResponse, ForgotPasswordRequest
 from app.database import supabase
 
 router = APIRouter()
+limiter = Limiter(key_func=get_remote_address)
 
 
 @router.post("/login", response_model=LoginResponse)
-def login(body: LoginRequest):
+@limiter.limit("10/minute")
+def login(request: Request, body: LoginRequest):
     """Autentica um usuário interno via e-mail e senha."""
     try:
         response = supabase.auth.sign_in_with_password(
@@ -38,7 +42,8 @@ def logout():
 
 
 @router.post("/recuperar-senha", status_code=status.HTTP_204_NO_CONTENT)
-def forgot_password(body: ForgotPasswordRequest):
+@limiter.limit("5/minute")
+def forgot_password(request: Request, body: ForgotPasswordRequest):
     """Envia e-mail de recuperação de senha via Supabase Auth."""
     try:
         supabase.auth.reset_password_email(body.email)
