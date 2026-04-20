@@ -39,14 +39,19 @@ def test_rota_protegida_token_invalido_retorna_401():
     """Token malformado deve retornar 401."""
     from app.main import app
     from fastapi.testclient import TestClient
+    from unittest.mock import MagicMock
 
     app.dependency_overrides.clear()
     tc = TestClient(app, raise_server_exceptions=False)
 
-    res = tc.get(
-        "/imoveis/",
-        headers={"Authorization": "Bearer token_completamente_invalido"},
-    )
+    auth_mock = MagicMock()
+    auth_mock.auth.get_user.side_effect = Exception("invalid token")
+
+    with patch("app.auth.dependencies.supabase_admin", auth_mock):
+        res = tc.get(
+            "/imoveis/",
+            headers={"Authorization": "Bearer token_completamente_invalido"},
+        )
     assert res.status_code == 401
 
 
@@ -54,12 +59,18 @@ def test_rota_protegida_token_expirado_retorna_401():
     """Token expirado deve retornar 401."""
     from app.main import app
     from fastapi.testclient import TestClient
+    from unittest.mock import MagicMock
 
     app.dependency_overrides.clear()
     tc = TestClient(app, raise_server_exceptions=False)
 
     token = _make_token("some-user-id", expired=True)
-    res = tc.get("/imoveis/", headers={"Authorization": f"Bearer {token}"})
+
+    auth_mock = MagicMock()
+    auth_mock.auth.get_user.side_effect = Exception("token expired")
+
+    with patch("app.auth.dependencies.supabase_admin", auth_mock):
+        res = tc.get("/imoveis/", headers={"Authorization": f"Bearer {token}"})
     assert res.status_code == 401
 
 
