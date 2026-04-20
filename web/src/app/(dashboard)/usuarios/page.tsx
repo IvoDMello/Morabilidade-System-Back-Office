@@ -105,7 +105,7 @@ export default function UsuariosPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Usuários</h1>
           <p className="text-slate-500 text-sm">Gestão de usuários internos — somente Admin</p>

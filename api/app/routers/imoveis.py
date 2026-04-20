@@ -238,6 +238,7 @@ async def remover_foto(
 
 @router.get("/publico/disponiveis", response_model=List[ImovelListOut], tags=["Site Público"])
 def imoveis_disponiveis_publico(
+    http_response: Response,
     tipo_negocio: Optional[TipoNegocio] = None,
     cidade: Optional[str] = None,
     bairro: Optional[str] = None,
@@ -245,6 +246,8 @@ def imoveis_disponiveis_publico(
     dormitorios_min: Optional[int] = None,
     preco_min: Optional[float] = None,
     preco_max: Optional[float] = None,
+    condicao: Optional[CondicaoImovel] = None,
+    mobiliado: Optional[Mobiliado] = None,
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
 ):
@@ -252,12 +255,19 @@ def imoveis_disponiveis_publico(
         tipo_negocio=tipo_negocio, disponibilidade=Disponibilidade.disponivel,
         cidade=cidade, bairro=bairro, tipo_imovel=tipo_imovel,
         dormitorios_min=dormitorios_min, preco_min=preco_min, preco_max=preco_max,
-        condicao=None, mobiliado=None, codigo=None,
+        condicao=condicao, mobiliado=mobiliado, codigo=None,
     )
+    count_q = _aplicar_filtros(
+        supabase_admin.table("imoveis").select("id", count="exact"), **filtros
+    )
+    total = count_q.execute().count or 0
+    http_response.headers["X-Total-Count"] = str(total)
+    http_response.headers["Access-Control-Expose-Headers"] = "X-Total-Count"
+
+    offset = (page - 1) * page_size
     query = _aplicar_filtros(
         supabase_admin.table("imoveis").select(_LIST_FIELDS), **filtros
     )
-    offset = (page - 1) * page_size
     result = query.order("created_at", desc=True).range(offset, offset + page_size - 1).execute()
     return [_transformar_lista(item) for item in result.data]
 

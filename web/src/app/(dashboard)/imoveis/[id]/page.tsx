@@ -249,12 +249,12 @@ export default function EditarImovelPage({
         </Link>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-2xl font-bold text-slate-900">Editar imóvel</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Editar imóvel</h1>
             <span className="font-mono text-sm font-medium text-slate-400 bg-slate-100 px-2 py-0.5 rounded">
               {imovel.codigo}
             </span>
           </div>
-          <p className="text-slate-500 text-sm">
+          <p className="text-slate-500 text-sm truncate">
             {imovel.logradouro}{imovel.numero ? `, ${imovel.numero}` : ""} — {imovel.bairro}, {imovel.cidade}
           </p>
         </div>

@@ -167,7 +167,7 @@ export function ImovelForm({
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
       {/* ── 1. Identificação ── */}
-      <div className="bg-white rounded-xl border border-slate-200 p-6">
+      <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
         <SectionTitle>Identificação</SectionTitle>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
@@ -214,7 +214,7 @@ export function ImovelForm({
       </div>
 
       {/* ── 2. Endereço ── */}
-      <div className="bg-white rounded-xl border border-slate-200 p-6">
+      <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
         <SectionTitle>Endereço</SectionTitle>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
@@ -268,7 +268,7 @@ export function ImovelForm({
       </div>
 
       {/* ── 3. Características ── */}
-      <div className="bg-white rounded-xl border border-slate-200 p-6">
+      <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
         <SectionTitle>Características</SectionTitle>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
@@ -335,7 +335,7 @@ export function ImovelForm({
       </div>
 
       {/* ── 4. Valores ── */}
-      <div className="bg-white rounded-xl border border-slate-200 p-6">
+      <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
         <SectionTitle>Valores</SectionTitle>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {(tipoNegocio === "venda" || tipoNegocio === "ambos") && (
@@ -367,7 +367,7 @@ export function ImovelForm({
       </div>
 
       {/* ── 5. Informações adicionais ── */}
-      <div className="bg-white rounded-xl border border-slate-200 p-6">
+      <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
         <SectionTitle>Informações adicionais</SectionTitle>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="lg:col-span-2">

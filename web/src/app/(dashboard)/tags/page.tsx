@@ -108,7 +108,7 @@ export default function TagsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Tags</h1>
           <p className="text-slate-500 text-sm">Etiquetas configuráveis para os imóveis</p>
@@ -133,23 +133,25 @@ export default function TagsPage() {
           <div className="divide-y divide-slate-100">
             {/* Linha de criação */}
             {criando && (
-              <div className="flex items-center gap-3 px-5 py-3 bg-blue-50">
-                <input
-                  type="color"
-                  value={novaCor}
-                  onChange={(e) => setNovaCor(e.target.value)}
-                  className="w-8 h-8 rounded cursor-pointer border border-slate-200"
-                  title="Escolher cor"
-                />
-                <input
-                  value={novaNome}
-                  onChange={(e) => setNovaNome(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") criarTag(); if (e.key === "Escape") setCriando(false); }}
-                  className={inputClass + " flex-1 max-w-xs"}
-                  placeholder="Nome da tag"
-                  autoFocus
-                />
-                <div className="flex gap-1">
+              <div className="flex flex-wrap items-center gap-3 px-5 py-3 bg-blue-50">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <input
+                    type="color"
+                    value={novaCor}
+                    onChange={(e) => setNovaCor(e.target.value)}
+                    className="w-8 h-8 rounded cursor-pointer border border-slate-200 flex-shrink-0"
+                    title="Escolher cor"
+                  />
+                  <input
+                    value={novaNome}
+                    onChange={(e) => setNovaNome(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") criarTag(); if (e.key === "Escape") setCriando(false); }}
+                    className={inputClass + " flex-1 min-w-0"}
+                    placeholder="Nome da tag"
+                    autoFocus
+                  />
+                </div>
+                <div className="flex flex-wrap gap-1">
                   {CORES_PREDEFINIDAS.map((c) => (
                     <button
                       key={c}
@@ -160,7 +162,7 @@ export default function TagsPage() {
                     />
                   ))}
                 </div>
-                <div className="flex items-center gap-1 ml-auto">
+                <div className="flex items-center gap-1">
                   <button
                     onClick={criarTag}
                     disabled={salvandoNova || !novaNome.trim()}
@@ -185,23 +187,25 @@ export default function TagsPage() {
             )}
 
             {rows.map(({ tag, editing, nome, cor }) => (
-              <div key={tag.id} className="flex items-center gap-3 px-5 py-3 hover:bg-slate-50 transition">
+              <div key={tag.id} className="flex flex-wrap items-center gap-3 px-5 py-3 hover:bg-slate-50 transition">
                 {editing ? (
                   <>
-                    <input
-                      type="color"
-                      value={cor}
-                      onChange={(e) => setRows((prev) => prev.map((r) => r.tag.id === tag.id ? { ...r, cor: e.target.value } : r))}
-                      className="w-8 h-8 rounded cursor-pointer border border-slate-200"
-                    />
-                    <input
-                      value={nome}
-                      onChange={(e) => setRows((prev) => prev.map((r) => r.tag.id === tag.id ? { ...r, nome: e.target.value } : r))}
-                      onKeyDown={(e) => { if (e.key === "Enter") salvarEdicao(tag.id); if (e.key === "Escape") cancelarEdicao(tag.id); }}
-                      className={inputClass + " flex-1 max-w-xs"}
-                      autoFocus
-                    />
-                    <div className="flex gap-1">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <input
+                        type="color"
+                        value={cor}
+                        onChange={(e) => setRows((prev) => prev.map((r) => r.tag.id === tag.id ? { ...r, cor: e.target.value } : r))}
+                        className="w-8 h-8 rounded cursor-pointer border border-slate-200 flex-shrink-0"
+                      />
+                      <input
+                        value={nome}
+                        onChange={(e) => setRows((prev) => prev.map((r) => r.tag.id === tag.id ? { ...r, nome: e.target.value } : r))}
+                        onKeyDown={(e) => { if (e.key === "Enter") salvarEdicao(tag.id); if (e.key === "Escape") cancelarEdicao(tag.id); }}
+                        className={inputClass + " flex-1 min-w-0"}
+                        autoFocus
+                      />
+                    </div>
+                    <div className="flex flex-wrap gap-1">
                       {CORES_PREDEFINIDAS.map((c) => (
                         <button
                           key={c}
@@ -212,7 +216,7 @@ export default function TagsPage() {
                         />
                       ))}
                     </div>
-                    <div className="flex items-center gap-1 ml-auto">
+                    <div className="flex items-center gap-1">
                       <button
                         onClick={() => salvarEdicao(tag.id)}
                         disabled={salvandoId === tag.id}

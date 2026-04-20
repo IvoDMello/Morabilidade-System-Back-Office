@@ -7,6 +7,13 @@ from app.database import supabase_admin
 router = APIRouter()
 
 
+@router.get("/publico", response_model=List[TagOut], tags=["Site Público"])
+def listar_tags_publico():
+    """Lista todas as tags sem autenticação — para uso no site público."""
+    result = supabase_admin.table("tags").select("*").order("nome").execute()
+    return result.data
+
+
 @router.get("/", response_model=List[TagOut])
 def listar_tags(current_user: dict = Depends(get_current_user)):
     result = supabase_admin.table("tags").select("*").order("nome").execute()

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from typing import List
 from app.auth.dependencies import get_current_user, require_admin
 from app.schemas.user import UserCreate, UserUpdate, UserOut, UserChangePassword
-from app.database import supabase_admin
+from app.database import supabase, supabase_admin
 from app.services.firebase import upload_foto
 
 router = APIRouter()
@@ -57,6 +57,23 @@ def atualizar_perfil(body: UserUpdate, current_user: dict = Depends(get_current_
         .execute()
     )
     return result.data[0]
+
+
+@router.put("/me/senha", status_code=status.HTTP_204_NO_CONTENT)
+def alterar_senha(body: UserChangePassword, current_user: dict = Depends(get_current_user)):
+    """Troca a senha do usuário logado, verificando a senha atual."""
+    try:
+        supabase.auth.sign_in_with_password(
+            {"email": current_user["email"], "password": body.senha_atual}
+        )
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Senha atual incorreta.")
+    if len(body.nova_senha) < 8:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="A nova senha deve ter no mínimo 8 caracteres.")
+    try:
+        supabase_admin.auth.admin.update_user_by_id(current_user["id"], {"password": body.nova_senha})
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erro ao alterar senha.")
 
 
 @router.post("/me/foto", response_model=UserOut)

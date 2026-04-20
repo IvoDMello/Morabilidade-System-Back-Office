@@ -16,10 +16,13 @@ interface Filtros {
   tipo_negocio: string;
   disponibilidade: string;
   cidade: string;
+  bairro: string;
   tipo_imovel: string;
   dormitorios_min: string;
   preco_min: string;
   preco_max: string;
+  condicao: string;
+  mobiliado: string;
 }
 
 const FILTROS_VAZIOS: Filtros = {
@@ -27,10 +30,13 @@ const FILTROS_VAZIOS: Filtros = {
   tipo_negocio: "",
   disponibilidade: "",
   cidade: "",
+  bairro: "",
   tipo_imovel: "",
   dormitorios_min: "",
   preco_min: "",
   preco_max: "",
+  condicao: "",
+  mobiliado: "",
 };
 
 // ── Labels e badges ────────────────────────────────────────────────────────────
@@ -88,10 +94,13 @@ export default function ImoveisPage() {
       if (f.tipo_negocio) params.tipo_negocio = f.tipo_negocio;
       if (f.disponibilidade) params.disponibilidade = f.disponibilidade;
       if (f.cidade) params.cidade = f.cidade;
+      if (f.bairro) params.bairro = f.bairro;
       if (f.tipo_imovel) params.tipo_imovel = f.tipo_imovel;
       if (f.dormitorios_min) params.dormitorios_min = f.dormitorios_min;
       if (f.preco_min) params.preco_min = f.preco_min;
       if (f.preco_max) params.preco_max = f.preco_max;
+      if (f.condicao) params.condicao = f.condicao;
+      if (f.mobiliado) params.mobiliado = f.mobiliado;
 
       const res = await api.get<ImovelListOut[]>("/imoveis/", { params });
       setImoveis(res.data);
@@ -261,6 +270,45 @@ export default function ImoveisPage() {
             </div>
 
             <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Bairro</label>
+              <input
+                value={filtros.bairro}
+                onChange={(e) => setFiltros((f) => ({ ...f, bairro: e.target.value }))}
+                className={inputClass}
+                placeholder="Nome do bairro"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Condição</label>
+              <select
+                value={filtros.condicao}
+                onChange={(e) => setFiltros((f) => ({ ...f, condicao: e.target.value }))}
+                className={selectClass}
+              >
+                <option value="">Todas</option>
+                <option value="usado">Usado</option>
+                <option value="novo">Novo</option>
+                <option value="em_construcao">Em construção</option>
+                <option value="na_planta">Na planta</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Mobiliado</label>
+              <select
+                value={filtros.mobiliado}
+                onChange={(e) => setFiltros((f) => ({ ...f, mobiliado: e.target.value }))}
+                className={selectClass}
+              >
+                <option value="">Todos</option>
+                <option value="sim">Sim</option>
+                <option value="nao">Não</option>
+                <option value="semi-mobiliado">Semi-mobiliado</option>
+              </select>
+            </div>
+
+            <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">Dormitórios (mín.)</label>
               <select
                 value={filtros.dormitorios_min}
@@ -348,12 +396,11 @@ export default function ImoveisPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50">
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Foto</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Código</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Tipo</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Cidade / Bairro</th>
+                  <th className="hidden md:table-cell text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Foto</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Imóvel</th>
+                  <th className="hidden md:table-cell text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Cidade / Bairro</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Disponibilidade</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Preço</th>
+                  <th className="hidden sm:table-cell text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Preço</th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
@@ -362,8 +409,8 @@ export default function ImoveisPage() {
                   const disp = DISPONIBILIDADE_LABEL[imovel.disponibilidade];
                   return (
                     <tr key={imovel.id} className="hover:bg-slate-50 transition">
-                      {/* Foto */}
-                      <td className="px-4 py-3">
+                      {/* Foto — oculta no mobile */}
+                      <td className="hidden md:table-cell px-4 py-3">
                         {imovel.foto_capa ? (
                           <img
                             src={imovel.foto_capa}
@@ -377,19 +424,15 @@ export default function ImoveisPage() {
                         )}
                       </td>
 
-                      {/* Código */}
+                      {/* Código + Tipo + Preço (mobile) */}
                       <td className="px-4 py-3">
                         <span className="font-mono font-semibold text-slate-800">{imovel.codigo}</span>
+                        <p className="font-medium text-slate-700 text-xs mt-0.5">{TIPO_IMOVEL_LABEL[imovel.tipo_imovel] ?? imovel.tipo_imovel} · {TIPO_NEGOCIO_LABEL[imovel.tipo_negocio]}</p>
+                        <p className="sm:hidden text-xs text-slate-500 mt-0.5">{precoDisplay(imovel)}</p>
                       </td>
 
-                      {/* Tipo */}
-                      <td className="px-4 py-3">
-                        <p className="font-medium text-slate-800">{TIPO_IMOVEL_LABEL[imovel.tipo_imovel] ?? imovel.tipo_imovel}</p>
-                        <p className="text-xs text-slate-400">{TIPO_NEGOCIO_LABEL[imovel.tipo_negocio]}</p>
-                      </td>
-
-                      {/* Endereço */}
-                      <td className="px-4 py-3">
+                      {/* Cidade — oculta no mobile */}
+                      <td className="hidden md:table-cell px-4 py-3">
                         <p className="text-slate-800">{imovel.cidade}</p>
                         <p className="text-xs text-slate-400">{imovel.bairro}</p>
                       </td>
@@ -401,8 +444,8 @@ export default function ImoveisPage() {
                         </span>
                       </td>
 
-                      {/* Preço */}
-                      <td className="px-4 py-3">
+                      {/* Preço — oculto no mobile (já aparece na célula Imóvel) */}
+                      <td className="hidden sm:table-cell px-4 py-3">
                         <span className="font-medium text-slate-800">{precoDisplay(imovel)}</span>
                       </td>
 
@@ -411,7 +454,7 @@ export default function ImoveisPage() {
                         <div className="flex items-center justify-end gap-1">
                           <button
                             onClick={() => router.push(`/imoveis/${imovel.id}`)}
-                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition"
+                            className="p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition"
                             title="Editar"
                           >
                             <Pencil className="w-4 h-4" />
@@ -419,7 +462,7 @@ export default function ImoveisPage() {
                           <button
                             onClick={() => confirmarDelecao(imovel.id, imovel.codigo)}
                             disabled={deletandoId === imovel.id}
-                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition disabled:opacity-40"
+                            className="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition disabled:opacity-40"
                             title="Excluir"
                           >
                             <Trash2 className="w-4 h-4" />

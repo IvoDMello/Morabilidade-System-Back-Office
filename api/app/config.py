@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     # E-mail
     resend_api_key: str
     email_from: str = "noreply@morabilidade.com.br"
+    email_contato: str = "contato@morabilidade.com.br"
 
     # Aplicação
     app_env: str = "development"

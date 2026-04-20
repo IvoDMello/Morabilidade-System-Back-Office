@@ -1,7 +1,5 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from jose import jwt, JWTError
-from app.config import settings
 from app.database import supabase_admin
 
 security = HTTPBearer()
@@ -11,31 +9,28 @@ def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> dict:
     """
-    Valida o JWT emitido pelo Supabase Auth e retorna os dados do usuário.
-    Usado como dependência nas rotas protegidas.
+    Valida o JWT via Supabase Auth (suporta ES256 e HS256)
+    e retorna os dados do usuário da tabela usuarios.
     """
     token = credentials.credentials
+
     try:
-        payload = jwt.decode(
-            token,
-            settings.supabase_jwt_secret,
-            algorithms=["HS256"],
-            audience="authenticated",
-        )
-    except JWTError:
+        user_response = supabase_admin.auth.get_user(token)
+        supabase_user = user_response.user
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token inválido ou expirado.",
         )
 
-    user_id: str = payload.get("sub")
-    if not user_id:
+    if not supabase_user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token sem identificação de usuário.",
+            detail="Token inválido.",
         )
 
-    # Busca o perfil do usuário no banco
+    user_id = supabase_user.id
+
     result = (
         supabase_admin.table("usuarios")
         .select("*")
@@ -43,6 +38,7 @@ def get_current_user(
         .single()
         .execute()
     )
+
     if not result.data:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

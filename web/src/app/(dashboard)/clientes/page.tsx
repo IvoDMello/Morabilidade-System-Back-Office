@@ -225,11 +225,10 @@ export default function ClientesPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50">
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Nome</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Contato</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Tipo</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Cliente</th>
+                  <th className="hidden md:table-cell text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Tipo</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Status</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Cadastro</th>
+                  <th className="hidden sm:table-cell text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Cadastro</th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
@@ -238,18 +237,21 @@ export default function ClientesPage() {
                   const disp = c.status ? STATUS_LABEL[c.status] : null;
                   return (
                     <tr key={c.id} className="hover:bg-slate-50 transition">
+                      {/* Nome + contato empilhados */}
                       <td className="px-4 py-3">
                         <p className="font-medium text-slate-800">{c.nome_completo}</p>
+                        <p className="text-xs text-slate-400 mt-0.5">{c.email}</p>
+                        <p className="sm:hidden text-xs text-slate-400">{c.telefone}</p>
                       </td>
-                      <td className="px-4 py-3">
-                        <p className="text-slate-700">{c.email}</p>
-                        <p className="text-xs text-slate-400">{c.telefone}</p>
-                      </td>
-                      <td className="px-4 py-3">
+
+                      {/* Tipo — oculto no mobile */}
+                      <td className="hidden md:table-cell px-4 py-3">
                         <span className="text-slate-600">
                           {c.tipo_cliente ? TIPO_CLIENTE_LABEL[c.tipo_cliente] ?? c.tipo_cliente : "—"}
                         </span>
                       </td>
+
+                      {/* Status */}
                       <td className="px-4 py-3">
                         {disp ? (
                           <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ring-1 ${disp.class}`}>
@@ -259,12 +261,16 @@ export default function ClientesPage() {
                           <span className="text-slate-400">—</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-slate-500 text-xs">{formatarData(c.created_at)}</td>
+
+                      {/* Cadastro — oculto no mobile */}
+                      <td className="hidden sm:table-cell px-4 py-3 text-slate-500 text-xs">{formatarData(c.created_at)}</td>
+
+                      {/* Ações */}
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-1">
                           <button
                             onClick={() => router.push(`/clientes/${c.id}`)}
-                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition"
+                            className="p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition"
                             title="Editar"
                           >
                             <Pencil className="w-4 h-4" />
@@ -272,7 +278,7 @@ export default function ClientesPage() {
                           <button
                             onClick={() => confirmarDelecao(c.id, c.nome_completo)}
                             disabled={deletandoId === c.id}
-                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition disabled:opacity-40"
+                            className="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition disabled:opacity-40"
                             title="Excluir"
                           >
                             <Trash2 className="w-4 h-4" />

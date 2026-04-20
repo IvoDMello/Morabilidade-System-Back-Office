@@ -12,7 +12,7 @@ def login(body: LoginRequest):
         response = supabase.auth.sign_in_with_password(
             {"email": body.email, "password": body.senha}
         )
-    except Exception as e:
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="E-mail ou senha incorretos.",

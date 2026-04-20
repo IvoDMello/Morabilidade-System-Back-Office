@@ -2,7 +2,7 @@ from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.routers import imoveis, clientes, tags, users
+from app.routers import imoveis, clientes, tags, users, contato
 from app.auth.router import router as auth_router
 from app.auth.dependencies import get_current_user
 from app.database import supabase_admin
@@ -33,6 +33,7 @@ app.include_router(users.router, prefix="/usuarios", tags=["Usuários"])
 app.include_router(imoveis.router, prefix="/imoveis", tags=["Imóveis"])
 app.include_router(clientes.router, prefix="/clientes", tags=["Clientes"])
 app.include_router(tags.router, prefix="/tags", tags=["Tags"])
+app.include_router(contato.router, prefix="/contato", tags=["Site Público"])
 
 
 @app.get("/", tags=["Health"])
