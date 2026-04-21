@@ -5,10 +5,16 @@ from app.config import settings
 import uuid
 from PIL import Image
 import io
+import json
+import os
 
 # Inicializa o Firebase Admin SDK (executado uma única vez)
 if not firebase_admin._apps:
-    cred = credentials.Certificate(settings.firebase_credentials_path)
+    firebase_credentials_json = os.environ.get("FIREBASE_CREDENTIALS_JSON")
+    if firebase_credentials_json:
+        cred = credentials.Certificate(json.loads(firebase_credentials_json))
+    else:
+        cred = credentials.Certificate(settings.firebase_credentials_path)
     firebase_admin.initialize_app(cred, {"storageBucket": settings.firebase_storage_bucket})
 
 
