@@ -8,6 +8,7 @@ import {
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Galeria } from "@/components/imoveis/Galeria";
+import { WhatsAppButtonImovel } from "@/components/imoveis/WhatsAppButtonImovel";
 import { getImovel } from "@/lib/api";
 import {
   formatarMoeda, labelTipoImovel, labelTipoNegocio,
@@ -71,9 +72,12 @@ export default async function DetalheImovelPage({ params }: Props) {
 
   const mapQuery = encodeURIComponent(endereco);
 
+  const tituloImovel = `${labelTipoImovel(imovel.tipo_imovel)} em ${imovel.bairro}, ${imovel.cidade}`;
+
   return (
     <>
       <Navbar />
+      <WhatsAppButtonImovel codigo={imovel.codigo} titulo={tituloImovel} />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
         {/* Breadcrumb */}
