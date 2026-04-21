@@ -19,18 +19,39 @@ interface Props {
   params: Promise<{ codigo: string }>;
 }
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://morabilidade.com.br";
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { codigo } = await params;
   const imovel = await getImovel(codigo).catch(() => null);
   if (!imovel) return { title: "Imóvel não encontrado" };
 
   const titulo = `${labelTipoImovel(imovel.tipo_imovel)} em ${imovel.bairro}, ${imovel.cidade}`;
+  const descricao =
+    imovel.descricao?.slice(0, 160) ??
+    `${titulo} — ${labelTipoNegocio(imovel.tipo_negocio)} pela Morabilidade.`;
+  const imagemUrl = imovel.fotos[0]?.url;
+  const pageUrl = `${SITE_URL}/imoveis/${imovel.codigo}`;
+
   return {
     title: titulo,
-    description: imovel.descricao?.slice(0, 160) ?? `${titulo} — ${labelTipoNegocio(imovel.tipo_negocio)}`,
+    description: descricao,
     openGraph: {
       title: titulo,
-      images: imovel.fotos[0] ? [{ url: imovel.fotos[0].url }] : [],
+      description: descricao,
+      url: pageUrl,
+      siteName: "Morabilidade",
+      type: "website",
+      locale: "pt_BR",
+      images: imagemUrl
+        ? [{ url: imagemUrl, width: 1200, height: 630, alt: titulo }]
+        : [],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: titulo,
+      description: descricao,
+      images: imagemUrl ? [imagemUrl] : [],
     },
   };
 }
@@ -74,8 +95,41 @@ export default async function DetalheImovelPage({ params }: Props) {
 
   const tituloImovel = `${labelTipoImovel(imovel.tipo_imovel)} em ${imovel.bairro}, ${imovel.cidade}`;
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "RealEstateListing",
+    name: tituloImovel,
+    description: imovel.descricao ?? tituloImovel,
+    url: `${SITE_URL}/imoveis/${imovel.codigo}`,
+    image: imovel.fotos.map((f) => f.url),
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: [imovel.logradouro, imovel.numero].filter(Boolean).join(", "),
+      addressLocality: imovel.cidade,
+      addressRegion: "SP",
+      postalCode: imovel.cep ?? "",
+      addressCountry: "BR",
+    },
+    ...(imovel.valor_venda && {
+      offers: {
+        "@type": "Offer",
+        price: imovel.valor_venda,
+        priceCurrency: "BRL",
+        availability: "https://schema.org/InStock",
+      },
+    }),
+    numberOfRooms: imovel.dormitorios,
+    floorSize: imovel.area_util
+      ? { "@type": "QuantitativeValue", value: imovel.area_util, unitCode: "MTK" }
+      : undefined,
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <Navbar />
       <WhatsAppButtonImovel codigo={imovel.codigo} titulo={tituloImovel} />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
