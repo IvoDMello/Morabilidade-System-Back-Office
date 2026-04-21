@@ -26,8 +26,10 @@ export function Footer() {
             {/* Social */}
             <div className="flex items-center gap-3 mt-6">
               <a
-                href="#"
-                aria-label="Instagram"
+                href="https://www.instagram.com/morabilidade"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Instagram @morabilidade"
                 className="w-9 h-9 rounded-xl flex items-center justify-center border border-white/10 text-white/40 hover:text-white hover:border-white/30 transition"
               >
                 <Instagram className="w-4 h-4" />

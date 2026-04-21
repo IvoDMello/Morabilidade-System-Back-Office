@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Instagram } from "lucide-react";
 
 const links = [
   { href: "/", label: "Início" },
@@ -73,7 +73,16 @@ export function Navbar() {
                 )}
               </Link>
             ))}
-            <div className="ml-4 pl-4 border-l border-slate-200">
+            <div className="ml-4 pl-4 border-l border-slate-200 flex items-center gap-3">
+              <a
+                href="https://www.instagram.com/morabilidade"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Instagram @morabilidade"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
+              >
+                <Instagram className="w-5 h-5" />
+              </a>
               <Link
                 href="/imoveis"
                 className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90 hover:shadow-md"
@@ -121,6 +130,15 @@ export function Navbar() {
             >
               Ver todos os imóveis
             </Link>
+            <a
+              href="https://www.instagram.com/morabilidade"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-1 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 flex items-center gap-2"
+            >
+              <Instagram className="w-4 h-4" />
+              @morabilidade
+            </a>
           </nav>
         </div>
       )}
