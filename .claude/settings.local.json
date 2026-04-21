@@ -26,7 +26,17 @@
       "Bash(python -m pytest --tb=short -q)",
       "Bash(.\\\\venv\\\\Scripts\\\\activate)",
       "Bash(npm test *)",
-      "Bash(python -m uvicorn --version)"
+      "Bash(python -m uvicorn --version)",
+      "Bash(.venv/Scripts/python -c \"from app.main import app; print\\('API OK'\\)\")",
+      "Bash(.venv/Scripts/pip install *)",
+      "Bash(.venv/Scripts/python -c ' *)",
+      "Bash(.venv/Scripts/python -c \"from app.main import app; print\\('API OK — todos os módulos carregados'\\)\")",
+      "Bash(.venv/Scripts/uvicorn app.main:app --host 0.0.0.0 --port 8000)",
+      "Bash(curl -s http://localhost:8000/docs)",
+      "Bash(npx next *)",
+      "Bash(python skills/ui-ux-pro-max/scripts/search.py \"real estate imobiliaria luxury professional modern brasil\" --design-system -p \"Morabilidade\" -f markdown)",
+      "Bash(python .claude/skills/ui-ux-pro-max/scripts/search.py \"real estate imobiliaria luxury professional modern brasil\" --design-system -p \"Morabilidade\" -f markdown)",
+      "Bash(node_modules/.bin/tsc --noEmit)"
     ]
   }
 }

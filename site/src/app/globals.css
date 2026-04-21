@@ -5,6 +5,7 @@
 :root {
   --olive: #585a4f;
   --gold: #d8cb6a;
+  --bg: #fafaf8;
 }
 
 html {
@@ -12,5 +13,31 @@ html {
 }
 
 body {
-  @apply bg-white text-slate-900 antialiased;
+  @apply bg-[#fafaf8] text-slate-900 antialiased;
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-playfair), Georgia, serif;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #c0c2bb;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #585a4f;
+}
+
+/* Smooth image loading */
+img {
+  transition: opacity 0.2s ease;
 }
