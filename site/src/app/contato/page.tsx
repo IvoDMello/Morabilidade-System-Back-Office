@@ -16,7 +16,13 @@ const infoItems = [
   { icon: Clock, label: "Horário", value: "Seg–Sex 09h–18h · Sáb 09h–13h" },
 ];
 
-export default function ContatoPage() {
+interface Props {
+  searchParams: Promise<{ imovel?: string }>;
+}
+
+export default async function ContatoPage({ searchParams }: Props) {
+  const { imovel } = await searchParams;
+
   return (
     <>
       <Navbar />
@@ -75,7 +81,7 @@ export default function ContatoPage() {
           {/* Formulário */}
           <div className="lg:col-span-3 bg-white rounded-xl border border-slate-100 shadow-sm p-6 sm:p-8">
             <h2 className="text-xl font-semibold text-slate-900 mb-6">Envie uma mensagem</h2>
-            <ContatoForm />
+            <ContatoForm codigoImovel={imovel} />
           </div>
         </div>
       </main>

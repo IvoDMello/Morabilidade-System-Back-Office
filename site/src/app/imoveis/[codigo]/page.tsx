@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import {
   ArrowLeft, BedDouble, Bath, Car, Ruler, MapPin,
-  Tag, Building, Calendar, Phone,
+  Tag, Building, Calendar, MessageCircle, Mail,
 } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -246,12 +246,24 @@ export default async function DetalheImovelPage({ params }: Props) {
                 <p className="text-slate-400 text-sm mb-4">Consulte o valor</p>
               )}
 
+              {/* Botão primário — WhatsApp */}
+              <a
+                href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP ?? "5500000000000"}?text=${encodeURIComponent(`Olá! Tenho interesse no imóvel *${tituloImovel}* (código *${imovel.codigo}*). Pode me dar mais informações?`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold text-white transition hover:opacity-90"
+                style={{ backgroundColor: "#25D366" }}
+              >
+                <MessageCircle className="w-4 h-4" /> Falar no WhatsApp
+              </a>
+
+              {/* Botão secundário — Email */}
               <Link
                 href={`/contato?imovel=${imovel.codigo}`}
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold text-white transition hover:opacity-90"
-                style={{ backgroundColor: "#585a4f" }}
+                className="mt-3 w-full flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold border transition hover:bg-slate-50"
+                style={{ color: "#585a4f", borderColor: "#585a4f" }}
               >
-                <Phone className="w-4 h-4" /> Tenho interesse
+                <Mail className="w-4 h-4" /> Enviar mensagem
               </Link>
 
               <p className="text-xs text-slate-400 text-center mt-3">

@@ -9,12 +9,20 @@ const inputClass =
   "w-full px-3 py-2.5 text-sm border border-slate-200 rounded-lg bg-white text-slate-900 " +
   "focus:outline-none focus:ring-2 focus:border-transparent placeholder:text-slate-400";
 
-export function ContatoForm() {
+interface Props {
+  codigoImovel?: string;
+}
+
+export function ContatoForm({ codigoImovel }: Props) {
+  const mensagemInicial = codigoImovel
+    ? `Olá! Tenho interesse no imóvel de código ${codigoImovel}. Pode me dar mais informações?`
+    : "";
+
   const [form, setForm] = useState({
     nome: "",
     email: "",
     telefone: "",
-    mensagem: "",
+    mensagem: mensagemInicial,
   });
   const [enviando, setEnviando] = useState(false);
   const [enviado, setEnviado] = useState(false);
