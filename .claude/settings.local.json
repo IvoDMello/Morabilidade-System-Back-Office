@@ -36,7 +36,15 @@
       "Bash(npx next *)",
       "Bash(python skills/ui-ux-pro-max/scripts/search.py \"real estate imobiliaria luxury professional modern brasil\" --design-system -p \"Morabilidade\" -f markdown)",
       "Bash(python .claude/skills/ui-ux-pro-max/scripts/search.py \"real estate imobiliaria luxury professional modern brasil\" --design-system -p \"Morabilidade\" -f markdown)",
-      "Bash(node_modules/.bin/tsc --noEmit)"
+      "Bash(node_modules/.bin/tsc --noEmit)",
+      "Bash(python3)",
+      "Bash(cd /tmp)",
+      "Bash(unzip -q \"/c/Users/ivomp/OneDrive/Área de Trabalho/Morabilidade-System-Back-Office/requisitos_sistema_imobiliario_v1.2.docx\")",
+      "Bash(python -c \"import docx; print\\('ok'\\)\")",
+      "Bash(pip install *)",
+      "Bash(python gerar_pendencias.py)",
+      "Bash(python -m pip install python-docx)",
+      "Bash(python \"c:/Users/ivomp/OneDrive/Área de Trabalho/Morabilidade-System-Back-Office/gerar_pendencias.py\")"
     ]
   }
 }
