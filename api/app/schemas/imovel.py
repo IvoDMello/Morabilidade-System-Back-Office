@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_serializer
 from typing import Optional, List
 from enum import Enum
 from decimal import Decimal
@@ -95,6 +95,13 @@ class ImovelOut(ImovelCreate):
     created_at: str
     updated_at: str
 
+    @field_serializer(
+        "area_total", "area_util", "valor_venda", "valor_locacao",
+        "iptu_mensal", "condominio_mensal"
+    )
+    def serializar_decimal(self, v: Optional[Decimal]) -> Optional[float]:
+        return float(v) if v is not None else None
+
 
 class ImovelListOut(BaseModel):
     id: str
@@ -111,6 +118,10 @@ class ImovelListOut(BaseModel):
     foto_capa: Optional[str] = None
     tags: List[dict] = []
     created_at: str
+
+    @field_serializer("area_util", "valor_venda", "valor_locacao")
+    def serializar_decimal(self, v: Optional[Decimal]) -> Optional[float]:
+        return float(v) if v is not None else None
 
 
 class ImovelFiltros(BaseModel):
