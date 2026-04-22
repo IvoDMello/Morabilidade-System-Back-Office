@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     app_secret_key: str
     cors_origins: str = "http://localhost:3000,http://localhost:3001"
 
+    # Monitoramento
+    sentry_dsn: str = ""
+
     @property
     def cors_origins_list(self) -> List[str]:
         return [o.strip() for o in self.cors_origins.split(",")]

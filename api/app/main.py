@@ -1,9 +1,24 @@
+import sentry_sdk
 from fastapi import FastAPI, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+from sentry_sdk.integrations.fastapi import FastApiIntegration
+from sentry_sdk.integrations.starlette import StarletteIntegration
 
 from app.config import settings
+
+if settings.sentry_dsn:
+    sentry_sdk.init(
+        dsn=settings.sentry_dsn,
+        environment=settings.app_env,
+        traces_sample_rate=0.1,
+        send_default_pii=False,
+        integrations=[
+            StarletteIntegration(transaction_style="url"),
+            FastApiIntegration(),
+        ],
+    )
 from app.limiter import limiter
 from app.routers import imoveis, clientes, tags, users, contato
 from app.auth.router import router as auth_router
