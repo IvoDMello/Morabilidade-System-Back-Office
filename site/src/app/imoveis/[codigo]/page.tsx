@@ -260,7 +260,22 @@ export default async function DetalheImovelPage({ params }: Props) {
                 <MapPin className="w-4 h-4" style={{ color: "#585a4f" }} />
                 Localização
               </h2>
-              <p className="text-sm text-slate-500 mb-3">{endereco}</p>
+              <p className="text-sm text-slate-500 mb-4">{endereco}</p>
+
+              {/* Google Maps embed */}
+              <div className="rounded-xl overflow-hidden border border-slate-100 shadow-sm mb-3">
+                <iframe
+                  title={`Mapa — ${endereco}`}
+                  src={`https://maps.google.com/maps?q=${mapQuery}&output=embed&hl=pt-BR&z=15`}
+                  width="100%"
+                  height="300"
+                  style={{ border: 0, display: "block" }}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+              </div>
+
               <a
                 href={`https://www.google.com/maps/search/?api=1&query=${mapQuery}`}
                 target="_blank"
@@ -268,7 +283,7 @@ export default async function DetalheImovelPage({ params }: Props) {
                 className="inline-flex items-center gap-1.5 text-sm font-medium underline transition hover:opacity-80"
                 style={{ color: "#585a4f" }}
               >
-                Ver no Google Maps →
+                Abrir no Google Maps →
               </a>
             </div>
           </div>
