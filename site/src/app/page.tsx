@@ -161,11 +161,6 @@ export default async function HomePage() {
         )}
       </section>
 
-      {/* ── Divisor decorativo ── */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <hr className="border-slate-200" />
-      </div>
-
       {/* ── Por que a Morabilidade ── */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="text-center mb-14">
@@ -214,6 +209,86 @@ export default async function HomePage() {
           ))}
         </div>
       </section>
+
+      {/* ── Depoimentos ── */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <div className="text-center mb-14">
+          <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: "#d8cb6a" }}>
+            Depoimentos
+          </p>
+          <h2 className="font-serif text-3xl sm:text-4xl font-bold text-olive-900">
+            O que nossos clientes dizem
+          </h2>
+          <p className="text-slate-500 text-sm mt-3 max-w-md mx-auto">
+            Histórias reais de quem encontrou o imóvel certo com a Morabilidade.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {[
+            {
+              nome: "Mariana Costa",
+              cidade: "São Paulo, SP",
+              inicial: "M",
+              texto: "Encontrei meu apartamento em menos de duas semanas. Atendimento incrível, super ágil e personalizado. Superou todas as expectativas!",
+            },
+            {
+              nome: "Rafael Mendonça",
+              cidade: "Campinas, SP",
+              inicial: "R",
+              texto: "Procurava um imóvel para investimento e a equipe trouxe opções certeiras. Todo o processo pelo WhatsApp, extremamente prático.",
+            },
+            {
+              nome: "Juliana e Pedro Alves",
+              cidade: "Jundiaí, SP",
+              inicial: "J",
+              texto: "Compramos nossa primeira casa pela Morabilidade. Foram transparentes em cada etapa e fechamos com total segurança.",
+            },
+            {
+              nome: "Camila Rodrigues",
+              cidade: "Sorocaba, SP",
+              inicial: "C",
+              texto: "Aluguel resolvido em dias! Me apresentaram imóveis dentro do meu perfil e a negociação foi tranquila. Recomendo muito.",
+            },
+          ].map((dep) => (
+            <div
+              key={dep.nome}
+              className="bg-white rounded-2xl border border-slate-100 shadow-card p-6 flex flex-col gap-4 hover:shadow-card-hover transition-shadow"
+            >
+              {/* Estrelas */}
+              <div className="flex gap-0.5">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <svg key={i} className="w-4 h-4" viewBox="0 0 20 20" fill="#d8cb6a" aria-hidden="true">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                ))}
+              </div>
+              {/* Texto */}
+              <p className="text-slate-600 text-sm leading-relaxed flex-1">
+                &ldquo;{dep.texto}&rdquo;
+              </p>
+              {/* Autor */}
+              <div className="flex items-center gap-3 pt-3 border-t border-slate-50">
+                <div
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
+                  style={{ backgroundColor: "#585a4f" }}
+                >
+                  {dep.inicial}
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-slate-800">{dep.nome}</p>
+                  <p className="text-xs text-slate-400">{dep.cidade}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Divisor decorativo ── */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <hr className="border-slate-200" />
+      </div>
 
       {/* ── CTA Contato ── */}
       <section className="mx-4 sm:mx-6 lg:mx-8 mb-20 rounded-3xl overflow-hidden" style={{ background: "linear-gradient(135deg, #2e302a 0%, #585a4f 100%)" }}>
