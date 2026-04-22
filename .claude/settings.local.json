@@ -44,7 +44,8 @@
       "Bash(pip install *)",
       "Bash(python gerar_pendencias.py)",
       "Bash(python -m pip install python-docx)",
-      "Bash(python \"c:/Users/ivomp/OneDrive/Área de Trabalho/Morabilidade-System-Back-Office/gerar_pendencias.py\")"
+      "Bash(python \"c:/Users/ivomp/OneDrive/Área de Trabalho/Morabilidade-System-Back-Office/gerar_pendencias.py\")",
+      "Bash(node_modules/.bin/next build *)"
     ]
   }
 }

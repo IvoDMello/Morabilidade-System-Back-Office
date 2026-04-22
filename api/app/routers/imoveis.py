@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Query, Response
 from typing import List, Optional
+from enum import Enum
 from app.auth.dependencies import get_current_user
 from app.schemas.imovel import (
     ImovelCreate, ImovelUpdate, ImovelOut, ImovelListOut,
@@ -8,6 +9,11 @@ from app.schemas.imovel import (
 from app.database import supabase_admin
 from app.services.firebase import upload_foto, deletar_foto
 import uuid
+
+
+def _ev(v):
+    """Extrai o valor string de um enum, ou retorna o valor original."""
+    return v.value if isinstance(v, Enum) else v
 
 router = APIRouter()
 
@@ -33,28 +39,28 @@ def _aplicar_filtros(query, *, tipo_negocio, disponibilidade, cidade, bairro,
     if codigo:
         query = query.ilike("codigo", f"%{codigo}%")
     if tipo_negocio:
-        query = query.eq("tipo_negocio", tipo_negocio)
+        query = query.eq("tipo_negocio", _ev(tipo_negocio))
     if disponibilidade:
-        query = query.eq("disponibilidade", disponibilidade)
+        query = query.eq("disponibilidade", _ev(disponibilidade))
     if cidade:
         query = query.ilike("cidade", f"%{cidade}%")
     if bairro:
         query = query.ilike("bairro", f"%{bairro}%")
     if tipo_imovel:
-        query = query.eq("tipo_imovel", tipo_imovel)
+        query = query.eq("tipo_imovel", _ev(tipo_imovel))
     if dormitorios_min is not None:
         query = query.gte("dormitorios", dormitorios_min)
     if condicao:
-        query = query.eq("condicao", condicao)
+        query = query.eq("condicao", _ev(condicao))
     if mobiliado:
-        query = query.eq("mobiliado", mobiliado)
+        query = query.eq("mobiliado", _ev(mobiliado))
     if preco_min is not None:
-        if tipo_negocio == TipoNegocio.locacao:
+        if _ev(tipo_negocio) == TipoNegocio.locacao.value:
             query = query.gte("valor_locacao", preco_min)
         else:
             query = query.gte("valor_venda", preco_min)
     if preco_max is not None:
-        if tipo_negocio == TipoNegocio.locacao:
+        if _ev(tipo_negocio) == TipoNegocio.locacao.value:
             query = query.lte("valor_locacao", preco_max)
         else:
             query = query.lte("valor_venda", preco_max)
