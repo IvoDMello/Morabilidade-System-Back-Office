@@ -1,6 +1,6 @@
 "use client";
 
-const NUMERO = process.env.NEXT_PUBLIC_WHATSAPP ?? "5500000000000";
+const NUMERO = process.env.NEXT_PUBLIC_WHATSAPP ?? "";
 
 interface Props {
   codigo: string;
@@ -8,6 +8,8 @@ interface Props {
 }
 
 export function WhatsAppButtonImovel({ codigo, titulo }: Props) {
+  if (!NUMERO) return null;
+
   const mensagem = `Olá! Tenho interesse no imóvel *${titulo}* (código *${codigo}*). Pode me dar mais informações?`;
   const href = `https://wa.me/${NUMERO}?text=${encodeURIComponent(mensagem)}`;
 

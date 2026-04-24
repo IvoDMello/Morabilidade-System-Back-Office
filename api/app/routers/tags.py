@@ -39,4 +39,7 @@ def atualizar_tag(tag_id: str, body: TagUpdate, admin: dict = Depends(require_ad
 @router.delete("/{tag_id}", status_code=status.HTTP_204_NO_CONTENT)
 def deletar_tag(tag_id: str, admin: dict = Depends(require_admin)):
     """Remove uma tag. Apenas admin."""
+    result = supabase_admin.table("tags").select("id").eq("id", tag_id).execute()
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Tag não encontrada.")
     supabase_admin.table("tags").delete().eq("id", tag_id).execute()

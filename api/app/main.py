@@ -29,8 +29,8 @@ app = FastAPI(
     title="Morabilidade — API de Gestão Imobiliária",
     description="API interna do sistema de gestão. O site público consome os endpoints públicos para exibir imóveis em tempo real.",
     version="1.0.0",
-    docs_url="/docs",
-    redoc_url="/redoc",
+    docs_url="/docs" if settings.app_env != "production" else None,
+    redoc_url="/redoc" if settings.app_env != "production" else None,
     redirect_slashes=False,
 )
 

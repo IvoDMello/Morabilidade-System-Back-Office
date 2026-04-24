@@ -45,7 +45,10 @@
       "Bash(python gerar_pendencias.py)",
       "Bash(python -m pip install python-docx)",
       "Bash(python \"c:/Users/ivomp/OneDrive/Área de Trabalho/Morabilidade-System-Back-Office/gerar_pendencias.py\")",
-      "Bash(node_modules/.bin/next build *)"
+      "Bash(node_modules/.bin/next build *)",
+      "Bash(python3 -c ' *)",
+      "Bash(node -e ' *)",
+      "Bash(del \"c:\\\\Users\\\\novopc2024\\\\Documents\\\\GitHub\\\\Morabilidade-System-Back-Office\\\\api\\\\app\\\\services\\\\firebase.py\")"
     ]
   }
 }

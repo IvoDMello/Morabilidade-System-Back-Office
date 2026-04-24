@@ -3,9 +3,10 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Search, X, Pencil, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, X, Pencil, Trash2, ChevronLeft, ChevronRight, Users } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import type { Cliente } from "@/types";
 
 interface ClienteListItem {
@@ -43,7 +44,7 @@ const TIPO_CLIENTE_LABEL: Record<string, string> = {
 
 const selectClass =
   "w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-900 " +
-  "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent";
+  "focus:outline-none focus:ring-2 focus:ring-[#585a4f]/30 focus:border-[#585a4f] focus:border-transparent";
 const inputClass = selectClass;
 
 export default function ClientesPage() {
@@ -54,7 +55,8 @@ export default function ClientesPage() {
   const [page, setPage] = useState(1);
   const [filtros, setFiltros] = useState<Filtros>(FILTROS_VAZIOS);
   const [filtrosAbertos, setFiltrosAbertos] = useState(false);
-  const [deletandoId, setDeletandoId] = useState<string | null>(null);
+  const [deletando, setDeletando] = useState<{ id: string; nome: string } | null>(null);
+  const [deletandoLoading, setDeletandoLoading] = useState(false);
 
   const PAGE_SIZE = 20;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -79,7 +81,7 @@ export default function ClientesPage() {
 
   useEffect(() => {
     buscar(page, filtros);
-  }, [page]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [page, filtros, buscar]);
 
   function aplicarFiltros(e: React.FormEvent) {
     e.preventDefault();
@@ -94,21 +96,23 @@ export default function ClientesPage() {
     buscar(1, FILTROS_VAZIOS);
   }
 
-  async function confirmarDelecao(id: string, nome: string) {
-    if (!confirm(`Excluir o cliente "${nome}"? Esta ação não pode ser desfeita.`)) return;
-    setDeletandoId(id);
+  async function handleDeletar() {
+    if (!deletando) return;
+    setDeletandoLoading(true);
     try {
-      await api.delete(`/clientes/${id}`);
+      await api.delete(`/clientes/${deletando.id}`);
       toast.success("Cliente excluído com sucesso.");
+      setDeletando(null);
       buscar(page, filtros);
     } catch {
       toast.error("Erro ao excluir cliente.");
     } finally {
-      setDeletandoId(null);
+      setDeletandoLoading(false);
     }
   }
 
   const temFiltrosAtivos = Object.values(filtros).some(Boolean);
+  const filtrosAtivosCount = Object.values(filtros).filter(Boolean).length;
 
   function formatarData(iso: string) {
     return new Date(iso).toLocaleDateString("pt-BR");
@@ -128,17 +132,25 @@ export default function ClientesPage() {
             onClick={() => setFiltrosAbertos((v) => !v)}
             className={`flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg border transition ${
               filtrosAbertos || temFiltrosAtivos
-                ? "bg-blue-50 border-blue-200 text-blue-700"
+                ? "border-[#585a4f]/40 text-[#585a4f] bg-[#585a4f]/5"
                 : "bg-white border-slate-200 text-slate-600 hover:border-slate-300"
             }`}
           >
             <Search className="w-4 h-4" />
             Filtros
-            {temFiltrosAtivos && <span className="ml-0.5 w-2 h-2 bg-blue-500 rounded-full" />}
+            {temFiltrosAtivos && (
+              <span
+                className="ml-0.5 min-w-[18px] h-[18px] text-[10px] font-bold rounded-full flex items-center justify-center text-white px-1"
+                style={{ backgroundColor: "#585a4f" }}
+              >
+                {filtrosAtivosCount}
+              </span>
+            )}
           </button>
           <Link
             href="/clientes/novo"
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition"
+            className="px-4 py-2 text-white text-sm font-medium rounded-lg transition hover:opacity-90"
+            style={{ backgroundColor: "#585a4f" }}
           >
             + Novo cliente
           </Link>
@@ -193,7 +205,8 @@ export default function ClientesPage() {
             )}
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition"
+              className="px-4 py-2 text-white text-sm font-medium rounded-lg transition hover:opacity-90"
+              style={{ backgroundColor: "#585a4f" }}
             >
               Aplicar filtros
             </button>
@@ -205,18 +218,23 @@ export default function ClientesPage() {
         {loading ? (
           <div className="p-12 text-center">
             <div className="inline-flex items-center gap-2 text-slate-400 text-sm">
-              <div className="w-4 h-4 border-2 border-slate-300 border-t-blue-500 rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-slate-200 border-t-[#585a4f] rounded-full animate-spin" />
               Carregando clientes...
             </div>
           </div>
         ) : clientes.length === 0 ? (
-          <div className="p-12 text-center">
-            <p className="text-slate-400 text-sm">
+          <div className="p-16 text-center">
+            <Users className="w-10 h-10 text-slate-200 mx-auto mb-3" />
+            <p className="text-slate-500 text-sm font-medium">
               {temFiltrosAtivos ? "Nenhum cliente encontrado com os filtros aplicados." : "Nenhum cliente cadastrado ainda."}
             </p>
             {!temFiltrosAtivos && (
-              <Link href="/clientes/novo" className="inline-block mt-3 text-sm text-blue-600 hover:underline">
-                Cadastrar primeiro cliente
+              <Link
+                href="/clientes/novo"
+                className="inline-block mt-3 text-sm font-medium hover:underline"
+                style={{ color: "#585a4f" }}
+              >
+                Cadastrar primeiro cliente →
               </Link>
             )}
           </div>
@@ -236,22 +254,19 @@ export default function ClientesPage() {
                 {clientes.map((c) => {
                   const disp = c.status ? STATUS_LABEL[c.status] : null;
                   return (
-                    <tr key={c.id} className="hover:bg-slate-50 transition">
-                      {/* Nome + contato empilhados */}
+                    <tr key={c.id} className="hover:bg-slate-50/60 transition">
                       <td className="px-4 py-3">
                         <p className="font-medium text-slate-800">{c.nome_completo}</p>
                         <p className="text-xs text-slate-400 mt-0.5">{c.email}</p>
                         <p className="sm:hidden text-xs text-slate-400">{c.telefone}</p>
                       </td>
 
-                      {/* Tipo — oculto no mobile */}
                       <td className="hidden md:table-cell px-4 py-3">
                         <span className="text-slate-600">
                           {c.tipo_cliente ? TIPO_CLIENTE_LABEL[c.tipo_cliente] ?? c.tipo_cliente : "—"}
                         </span>
                       </td>
 
-                      {/* Status */}
                       <td className="px-4 py-3">
                         {disp ? (
                           <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ring-1 ${disp.class}`}>
@@ -262,23 +277,20 @@ export default function ClientesPage() {
                         )}
                       </td>
 
-                      {/* Cadastro — oculto no mobile */}
                       <td className="hidden sm:table-cell px-4 py-3 text-slate-500 text-xs">{formatarData(c.created_at)}</td>
 
-                      {/* Ações */}
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-1">
                           <button
                             onClick={() => router.push(`/clientes/${c.id}`)}
-                            className="p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition"
+                            className="p-2.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-md transition"
                             title="Editar"
                           >
                             <Pencil className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => confirmarDelecao(c.id, c.nome_completo)}
-                            disabled={deletandoId === c.id}
-                            className="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition disabled:opacity-40"
+                            onClick={() => setDeletando({ id: c.id, nome: c.nome_completo })}
+                            className="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition"
                             title="Excluir"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -312,9 +324,8 @@ export default function ClientesPage() {
                   <button
                     key={pg}
                     onClick={() => setPage(pg)}
-                    className={`w-7 h-7 text-xs rounded-md transition ${
-                      pg === page ? "bg-blue-600 text-white font-semibold" : "text-slate-600 hover:bg-slate-200"
-                    }`}
+                    className="w-7 h-7 text-xs rounded-md transition font-medium text-slate-600 hover:bg-slate-200"
+                    style={pg === page ? { backgroundColor: "#585a4f", color: "#fff" } : undefined}
                   >
                     {pg}
                   </button>
@@ -331,6 +342,15 @@ export default function ClientesPage() {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={!!deletando}
+        onOpenChange={(open) => { if (!open) setDeletando(null); }}
+        title="Excluir cliente"
+        description={`Tem certeza que deseja excluir "${deletando?.nome ?? ""}"? Esta ação não pode ser desfeita.`}
+        loading={deletandoLoading}
+        onConfirm={handleDeletar}
+      />
     </div>
   );
 }

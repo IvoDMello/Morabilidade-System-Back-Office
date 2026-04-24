@@ -1,7 +1,8 @@
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from app.limiter import limiter
 from app.auth.schemas import LoginRequest, LoginResponse, ForgotPasswordRequest
-from app.database import supabase
+from app.auth.dependencies import get_current_user
+from app.database import supabase, supabase_admin
 
 router = APIRouter()
 
@@ -34,9 +35,12 @@ def login(request: Request, body: LoginRequest):
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
-def logout():
-    """Invalida a sessão do usuário."""
-    supabase.auth.sign_out()
+def logout(current_user: dict = Depends(get_current_user)):
+    """Invalida todas as sessões do usuário no Supabase Auth."""
+    try:
+        supabase_admin.auth.admin.sign_out(current_user["id"])
+    except Exception:
+        pass
 
 
 @router.post("/recuperar-senha", status_code=status.HTTP_204_NO_CONTENT)

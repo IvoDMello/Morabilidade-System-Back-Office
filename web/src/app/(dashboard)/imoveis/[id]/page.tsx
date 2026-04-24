@@ -8,6 +8,7 @@ import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { ImovelForm, type ImovelFormData } from "@/components/imoveis/imovel-form";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import type { Imovel, Foto } from "@/types";
 
 // ── Galeria de fotos ──────────────────────────────────────────────────────────
@@ -18,7 +19,8 @@ function GaleriaFotos({ imovelId, fotos, onAtualizar }: {
   onAtualizar: () => void;
 }) {
   const [uploading, setUploading] = useState(false);
-  const [deletandoId, setDeletandoId] = useState<string | null>(null);
+  const [confirmFoto, setConfirmFoto] = useState<Foto | null>(null);
+  const [deletandoLoading, setDeletandoLoading] = useState(false);
 
   const onDrop = useCallback(
     async (files: File[]) => {
@@ -35,8 +37,17 @@ function GaleriaFotos({ imovelId, fotos, onAtualizar }: {
         });
         toast.success(`${files.length} foto${files.length > 1 ? "s" : ""} enviada${files.length > 1 ? "s" : ""} com sucesso.`);
         onAtualizar();
-      } catch {
-        toast.error("Erro ao enviar fotos. Verifique o tamanho (máx. 1,5 MB cada).");
+      } catch (err: unknown) {
+        console.error("[upload fotos] erro completo:", err);
+        const axiosErr = err as { response?: { status?: number; data?: { detail?: string } }; message?: string };
+        const detail = axiosErr?.response?.data?.detail;
+        const status = axiosErr?.response?.status;
+        const msg = detail
+          ? detail
+          : status
+          ? `Erro ${status} ao enviar fotos.`
+          : (axiosErr?.message ?? "Erro ao enviar fotos. Tente novamente.");
+        toast.error(msg);
       } finally {
         setUploading(false);
       }
@@ -50,17 +61,18 @@ function GaleriaFotos({ imovelId, fotos, onAtualizar }: {
     disabled: uploading || fotos.length >= 30,
   });
 
-  async function deletarFoto(fotoId: string) {
-    if (!confirm("Excluir esta foto?")) return;
-    setDeletandoId(fotoId);
+  async function handleDeletarFoto() {
+    if (!confirmFoto) return;
+    setDeletandoLoading(true);
     try {
-      await api.delete(`/imoveis/${imovelId}/fotos/${fotoId}`);
+      await api.delete(`/imoveis/${imovelId}/fotos/${confirmFoto.id}`);
       toast.success("Foto excluída.");
+      setConfirmFoto(null);
       onAtualizar();
     } catch {
       toast.error("Erro ao excluir foto.");
     } finally {
-      setDeletandoId(null);
+      setDeletandoLoading(false);
     }
   }
 
@@ -79,13 +91,13 @@ function GaleriaFotos({ imovelId, fotos, onAtualizar }: {
           {...getRootProps()}
           className={`mb-4 border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition ${
             isDragActive
-              ? "border-blue-400 bg-blue-50"
-              : "border-slate-200 hover:border-blue-300 hover:bg-slate-50"
+              ? "border-[#585a4f] bg-[#585a4f]/5"
+              : "border-slate-200 hover:border-[#585a4f]/40 hover:bg-slate-50"
           } ${uploading ? "opacity-50 cursor-not-allowed" : ""}`}
         >
           <input {...getInputProps()} />
           {uploading ? (
-            <div className="flex flex-col items-center gap-2 text-blue-600">
+            <div className="flex flex-col items-center gap-2" style={{ color: "#585a4f" }}>
               <Loader2 className="w-6 h-6 animate-spin" />
               <p className="text-sm font-medium">Enviando fotos...</p>
             </div>
@@ -95,7 +107,7 @@ function GaleriaFotos({ imovelId, fotos, onAtualizar }: {
               <p className="text-sm font-medium text-slate-600">
                 {isDragActive ? "Solte as fotos aqui" : "Clique ou arraste fotos aqui"}
               </p>
-              <p className="text-xs">JPEG, PNG, WebP · Máx. 1,5 MB cada · Até {30 - fotos.length} foto{30 - fotos.length !== 1 ? "s" : ""}</p>
+              <p className="text-xs">JPEG, PNG, WebP · Até {30 - fotos.length} foto{30 - fotos.length !== 1 ? "s" : ""}</p>
             </div>
           )}
         </div>
@@ -116,30 +128,32 @@ function GaleriaFotos({ imovelId, fotos, onAtualizar }: {
                 alt={`Foto ${index + 1}`}
                 className="w-full h-full object-cover rounded-lg border border-slate-100"
               />
-              {/* Badge de capa */}
               {index === 0 && (
                 <div className="absolute top-1 left-1 flex items-center gap-0.5 bg-amber-400 text-white text-xs px-1.5 py-0.5 rounded-md font-medium shadow">
                   <Star className="w-3 h-3 fill-current" />
                   Capa
                 </div>
               )}
-              {/* Botão excluir */}
               <button
-                onClick={() => deletarFoto(foto.id)}
-                disabled={deletandoId === foto.id}
-                className="absolute top-1 right-1 p-1 bg-red-500 hover:bg-red-600 text-white rounded-md opacity-0 group-hover:opacity-100 transition disabled:opacity-50"
+                onClick={() => setConfirmFoto(foto)}
+                className="absolute top-1 right-1 p-1 bg-red-500 hover:bg-red-600 text-white rounded-md opacity-0 group-hover:opacity-100 transition"
                 title="Excluir foto"
               >
-                {deletandoId === foto.id ? (
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                ) : (
-                  <Trash2 className="w-3 h-3" />
-                )}
+                <Trash2 className="w-3 h-3" />
               </button>
             </div>
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!confirmFoto}
+        onOpenChange={(open) => { if (!open) setConfirmFoto(null); }}
+        title="Excluir foto"
+        description="Tem certeza que deseja excluir esta foto? A ação não pode ser desfeita."
+        loading={deletandoLoading}
+        onConfirm={handleDeletarFoto}
+      />
     </div>
   );
 }
@@ -198,7 +212,7 @@ export default function EditarImovelPage({
   if (loadingDados) {
     return (
       <div className="flex items-center justify-center h-64 gap-2 text-slate-400 text-sm">
-        <div className="w-4 h-4 border-2 border-slate-300 border-t-blue-500 rounded-full animate-spin" />
+        <div className="w-4 h-4 border-2 border-slate-200 border-t-[#585a4f] rounded-full animate-spin" />
         Carregando imóvel...
       </div>
     );

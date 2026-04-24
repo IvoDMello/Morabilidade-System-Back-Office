@@ -78,11 +78,18 @@ export interface ImovelListOut {
   disponibilidade: Disponibilidade;
   cidade: string;
   bairro: string;
+  logradouro: string;
+  numero?: string;
   tipo_imovel: TipoImovel;
   dormitorios?: number;
+  suites?: number;
+  banheiros?: number;
+  vagas_garagem?: number;
   area_util?: number;
   valor_venda?: number;
   valor_locacao?: number;
+  condominio_mensal?: number;
+  iptu_mensal?: number;
   foto_capa?: string;
   tags: { id: string; nome: string; cor?: string }[];
   created_at: string;

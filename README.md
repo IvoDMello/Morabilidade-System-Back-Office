@@ -57,67 +57,92 @@ Morabilidade-System-Back-Office/
 
 ## 3. Como rodar o projeto
 
-Você precisa de três terminais rodando em paralelo.
+São **3 terminais** rodando em paralelo. A API deve ser iniciada primeiro — o painel e o site dependem dela.
 
-### Pré-requisitos
+> **Pré-requisitos:** Python 3.12+, Node.js 18+, contas no [Supabase](https://supabase.com), [Firebase](https://firebase.google.com) e [Resend](https://resend.com), e banco inicializado (ver [seção 7](#7-banco-de-dados)).
 
-- Python 3.12+
-- Node.js 18+
-- Contas criadas: [Supabase](https://supabase.com), [Firebase](https://firebase.google.com), [Resend](https://resend.com)
-- Banco inicializado (ver [seção 7](#7-banco-de-dados))
+---
+
+### Resumo rápido (uso diário)
+
+| Terminal | Pasta | Comando | URL |
+|---|---|---|---|
+| 1 — API | `cd api` | `uvicorn app.main:app --reload` | `localhost:8000` |
+| 2 — Painel | `cd web` | `npm run dev` | `localhost:3000` |
+| 3 — Site | `cd site` | `npm run dev` | `localhost:3001` |
+
+---
 
 ### Terminal 1 — API (FastAPI)
 
 ```bash
 cd api
+```
 
-# Primeira vez:
+**Primeira vez:**
+```bash
 python -m venv venv
 pip install -r requirements.txt
 cp .env.example .env
-# Edite o .env com suas credenciais
+# Preencha o .env com suas credenciais (ver seção 10)
+```
 
-# Para rodar:
-venv\Scripts\activate          # Windows
-source venv/bin/activate       # Mac/Linux
+**Rodar:**
+```bash
+# Windows
+venv\Scripts\activate
+# Mac/Linux
+source venv/bin/activate
+
 uvicorn app.main:app --reload
 ```
 
-API disponível em: `http://localhost:8000`
-Documentação interativa: `http://localhost:8000/docs`
+- API: `http://localhost:8000`
+- Documentação interativa: `http://localhost:8000/docs`
+
+---
 
 ### Terminal 2 — Painel administrativo (Next.js)
 
 ```bash
 cd web
+```
 
-# Primeira vez:
+**Primeira vez:**
+```bash
 npm install
 cp .env.local.example .env.local
-# Edite o .env.local com suas credenciais
+# Preencha o .env.local com suas credenciais (ver seção 10)
+```
 
-# Para rodar:
+**Rodar:**
+```bash
 npm run dev
 ```
 
-Painel disponível em: `http://localhost:3000`
+- Painel: `http://localhost:3000`
+
+---
 
 ### Terminal 3 — Site público (Next.js)
 
 ```bash
 cd site
+```
 
-# Primeira vez:
+**Primeira vez:**
+```bash
 npm install
 cp .env.local.example .env.local
-# Copie o logo para o site:
-cp ../web/public/logo.jpeg public/logo.jpeg
+# Preencha o .env.local com suas credenciais (ver seção 10)
+```
 
-# Para rodar:
+**Rodar:**
+```bash
 npm run dev
 ```
 
-Site disponível em: `http://localhost:3001`
+- Site: `http://localhost:3001`
 
 ---
 

@@ -174,11 +174,12 @@ export default function SobrePage() {
           style={{ backgroundColor: "#585a4f" }}
         >
           <h2 className="text-2xl font-bold text-white mb-10">Morabilidade em números</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {[
               { num: "500+", label: "Imóveis negociados" },
               { num: "90k+", label: "Seguidores no Instagram" },
               { num: "98%", label: "Clientes satisfeitos" },
+              { num: "70411", label: "CRECI-RJ" },
             ].map((item) => (
               <div key={item.label}>
                 <p className="text-4xl font-bold" style={{ color: "#d8cb6a" }}>

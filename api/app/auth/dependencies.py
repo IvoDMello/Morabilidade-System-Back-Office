@@ -1,7 +1,9 @@
+import logging
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from app.database import supabase_admin
 
+logger = logging.getLogger(__name__)
 security = HTTPBearer()
 
 
@@ -18,6 +20,7 @@ def get_current_user(
         user_response = supabase_admin.auth.get_user(token)
         supabase_user = user_response.user
     except Exception:
+        logger.exception("Falha ao validar token JWT via Supabase Auth")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token inválido ou expirado.",
@@ -43,6 +46,12 @@ def get_current_user(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Usuário não encontrado.",
+        )
+
+    if not result.data.get("ativo", True):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Conta desativada.",
         )
 
     return result.data

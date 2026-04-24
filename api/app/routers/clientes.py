@@ -75,4 +75,7 @@ def atualizar_cliente(
 
 @router.delete("/{cliente_id}", status_code=status.HTTP_204_NO_CONTENT)
 def deletar_cliente(cliente_id: str, current_user: dict = Depends(get_current_user)):
+    result = supabase_admin.table("clientes").select("id").eq("id", cliente_id).execute()
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado.")
     supabase_admin.table("clientes").delete().eq("id", cliente_id).execute()

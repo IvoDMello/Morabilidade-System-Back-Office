@@ -3,7 +3,7 @@ from typing import List
 from app.auth.dependencies import get_current_user, require_admin
 from app.schemas.user import UserCreate, UserUpdate, UserOut, UserChangePassword
 from app.database import supabase, supabase_admin
-from app.services.firebase import upload_foto
+from app.services.storage import upload_foto
 
 router = APIRouter()
 
@@ -18,7 +18,6 @@ def listar_usuarios(admin: dict = Depends(require_admin)):
 @router.post("/", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 def criar_usuario(body: UserCreate, admin: dict = Depends(require_admin)):
     """Cria um novo usuário interno. Apenas admin."""
-    # Cria o usuário no Supabase Auth
     try:
         auth_response = supabase_admin.auth.admin.create_user(
             {"email": body.email, "password": body.senha, "email_confirm": True}
@@ -28,7 +27,6 @@ def criar_usuario(body: UserCreate, admin: dict = Depends(require_admin)):
 
     user_id = auth_response.user.id
 
-    # Insere o perfil na tabela usuarios
     data = {
         "id": user_id,
         "nome_completo": body.nome_completo,
@@ -36,7 +34,16 @@ def criar_usuario(body: UserCreate, admin: dict = Depends(require_admin)):
         "perfil": body.perfil,
         "telefone": body.telefone,
     }
-    result = supabase_admin.table("usuarios").insert(data).execute()
+    try:
+        result = supabase_admin.table("usuarios").insert(data).execute()
+    except Exception:
+        # Rollback: remove o usuário do Auth se a inserção do perfil falhar
+        try:
+            supabase_admin.auth.admin.delete_user(user_id)
+        except Exception:
+            pass
+        raise HTTPException(status_code=500, detail="Erro ao criar perfil do usuário.")
+
     return result.data[0]
 
 
@@ -62,14 +69,14 @@ def atualizar_perfil(body: UserUpdate, current_user: dict = Depends(get_current_
 @router.put("/me/senha", status_code=status.HTTP_204_NO_CONTENT)
 def alterar_senha(body: UserChangePassword, current_user: dict = Depends(get_current_user)):
     """Troca a senha do usuário logado, verificando a senha atual."""
+    if len(body.nova_senha) < 8:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="A nova senha deve ter no mínimo 8 caracteres.")
     try:
         supabase.auth.sign_in_with_password(
             {"email": current_user["email"], "password": body.senha_atual}
         )
     except Exception:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Senha atual incorreta.")
-    if len(body.nova_senha) < 8:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="A nova senha deve ter no mínimo 8 caracteres.")
     try:
         supabase_admin.auth.admin.update_user_by_id(current_user["id"], {"password": body.nova_senha})
     except Exception:
@@ -119,4 +126,12 @@ def atualizar_usuario(
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 def desativar_usuario(user_id: str, admin: dict = Depends(require_admin)):
     """Desativa (soft delete) um usuário. Apenas admin."""
+    result = supabase_admin.table("usuarios").select("id").eq("id", user_id).execute()
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado.")
+    # Bloqueia o login no Supabase Auth (ban de 100 anos = desativação permanente)
+    try:
+        supabase_admin.auth.admin.update_user_by_id(user_id, {"ban_duration": "876600h"})
+    except Exception:
+        pass
     supabase_admin.table("usuarios").update({"ativo": False}).eq("id", user_id).execute()

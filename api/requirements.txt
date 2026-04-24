@@ -9,12 +9,6 @@ python-multipart==0.0.20
 # Supabase (banco + auth)
 supabase==2.10.0
 
-# JWT (verificação de tokens Supabase)
-python-jose[cryptography]==3.3.0
-
-# Firebase Storage
-firebase-admin==6.6.0
-
 # E-mail transacional
 resend==2.5.1
 

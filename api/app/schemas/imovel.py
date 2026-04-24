@@ -90,6 +90,7 @@ class FotoOut(BaseModel):
 class ImovelOut(ImovelCreate):
     id: str
     codigo: str
+    tag_ids: List[str] = []
     fotos: List[FotoOut] = []
     tags: List[dict] = []
     created_at: str
@@ -110,16 +111,26 @@ class ImovelListOut(BaseModel):
     disponibilidade: Disponibilidade
     cidade: str
     bairro: str
+    logradouro: str
+    numero: Optional[str] = None
     tipo_imovel: TipoImovel
     dormitorios: Optional[int] = None
+    suites: Optional[int] = None
+    banheiros: Optional[int] = None
+    vagas_garagem: Optional[int] = None
     area_util: Optional[Decimal] = None
     valor_venda: Optional[Decimal] = None
     valor_locacao: Optional[Decimal] = None
+    condominio_mensal: Optional[Decimal] = None
+    iptu_mensal: Optional[Decimal] = None
     foto_capa: Optional[str] = None
     tags: List[dict] = []
     created_at: str
 
-    @field_serializer("area_util", "valor_venda", "valor_locacao")
+    @field_serializer(
+        "area_util", "valor_venda", "valor_locacao",
+        "condominio_mensal", "iptu_mensal"
+    )
     def serializar_decimal(self, v: Optional[Decimal]) -> Optional[float]:
         return float(v) if v is not None else None
 

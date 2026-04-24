@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowRight,
   Building2,
@@ -15,6 +16,7 @@ import { ImovelCard } from "@/components/imoveis/ImovelCard";
 import { getImoveisDisponiveis } from "@/lib/api";
 
 export default async function HomePage() {
+  const anosDeMarket = new Date().getFullYear() - 2010;
   const { data: destaques, total } = await getImoveisDisponiveis({
     page_size: "6",
   }).catch(() => ({ data: [], total: 0 }));
@@ -24,7 +26,20 @@ export default async function HomePage() {
       <Navbar />
 
       {/* ── Hero ── */}
-      <section className="relative overflow-hidden" style={{ background: "linear-gradient(135deg, #2e302a 0%, #585a4f 55%, #4a4d43 100%)" }}>
+      <section className="relative overflow-hidden">
+        {/* Background photo */}
+        <Image
+          src="/fundo1-3.jpeg"
+          alt="Zona Sul do Rio de Janeiro"
+          fill
+          className="object-cover object-center"
+          priority
+        />
+        {/* Olive gradient overlay */}
+        <div
+          className="absolute inset-0"
+          style={{ background: "linear-gradient(135deg, rgba(46,48,42,0.90) 0%, rgba(88,90,79,0.85) 55%, rgba(74,77,67,0.92) 100%)" }}
+        />
         {/* Decorative pattern */}
         <div
           className="absolute inset-0 opacity-[0.04]"
@@ -161,6 +176,29 @@ export default async function HomePage() {
         )}
       </section>
 
+      {/* ── Foto da região ── */}
+      <div className="relative h-44 sm:h-56 overflow-hidden">
+        <Image
+          src="/fundo2-3.jpeg"
+          alt="Zona Sul do Rio de Janeiro"
+          fill
+          className="object-cover object-center"
+        />
+        <div
+          className="absolute inset-0 flex items-center justify-center"
+          style={{ background: "rgba(46,48,42,0.52)" }}
+        >
+          <div className="text-center px-4">
+            <p className="text-white/60 text-xs font-semibold tracking-widest uppercase mb-2">
+              Nossa região
+            </p>
+            <p className="font-serif text-2xl sm:text-3xl font-bold text-white">
+              Zona Sul · Rio de Janeiro, RJ
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* ── Por que a Morabilidade ── */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="text-center mb-14">
@@ -285,13 +323,128 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* ── A história por trás da Morabilidade ── */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+
+          {/* Coluna esquerda — stats + tagline */}
+          <div className="lg:col-span-4 flex flex-col gap-6">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: "#d8cb6a" }}>
+                Quem somos
+              </p>
+              <h2 className="font-serif text-3xl sm:text-4xl font-bold text-olive-900 leading-tight">
+                A história por trás da Morabilidade
+              </h2>
+            </div>
+
+            {/* Anos de mercado */}
+            <div
+              className="rounded-2xl p-6 flex items-center gap-5"
+              style={{ backgroundColor: "#585a4f" }}
+            >
+              <div className="flex-shrink-0">
+                <p className="text-5xl font-bold leading-none" style={{ color: "#d8cb6a" }}>
+                  {anosDeMarket}
+                </p>
+              </div>
+              <div>
+                <p className="text-white font-semibold text-sm leading-tight">Anos de<br />Mercado</p>
+                <p className="text-white/50 text-xs mt-1">Zona Sul · Rio de Janeiro</p>
+              </div>
+            </div>
+
+            {/* Estatísticas secundárias */}
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { num: "9", label: "Mudanças em 9 anos" },
+                { num: "4", label: "Cidades" },
+                { num: "3", label: "Países" },
+              ].map((stat) => (
+                <div
+                  key={stat.label}
+                  className="rounded-xl p-4 text-center border border-slate-100 bg-white shadow-sm"
+                >
+                  <p className="text-2xl font-bold" style={{ color: "#585a4f" }}>{stat.num}</p>
+                  <p className="text-xs text-slate-500 mt-1 leading-tight">{stat.label}</p>
+                </div>
+              ))}
+            </div>
+
+            <Link
+              href="/sobre"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold transition-colors hover:opacity-80"
+              style={{ color: "#585a4f" }}
+            >
+              Conheça mais sobre nós
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+          {/* Coluna direita — história */}
+          <div className="lg:col-span-8 space-y-6">
+            <p className="text-slate-600 text-sm leading-relaxed">
+              Rodrigo é carioca, quase da gema. Nasceu em Teresópolis mas viveu até os 21 anos no Rio,
+              quando se mudou para o outro lado do mundo. Passou cinco anos em Pequim, China,
+              até 2008, ano dos Jogos Olímpicos — e foi lá que o amor pela arquitetura nasceu.
+              Pequim é repleta de obras de grandes arquitetos de peso mundial que despertaram um olhar
+              para a arquitetura em quem, até então, só tinha formação na área da saúde.
+            </p>
+
+            <p className="text-slate-600 text-sm leading-relaxed">
+              Depois foram dois anos em Washington, DC. E mais dois anos em São Paulo.
+              Até voltar ao Rio. Ao todo, nove mudanças em nove anos, em quatro cidades, três países.
+              E foram essas mudanças, e o trabalho envolvido em todas elas, que fizeram com que
+              Rodrigo escolhesse ser corretor de imóveis.
+            </p>
+
+            {/* Citação de destaque */}
+            <blockquote
+              className="rounded-2xl p-6 border-l-4 my-2"
+              style={{ backgroundColor: "#f5f5f3", borderLeftColor: "#d8cb6a" }}
+            >
+              <p className="text-slate-700 text-sm leading-relaxed italic">
+                &ldquo;Esse apartamento tem <strong>morabilidade</strong> — uma palavra que não existe,
+                mas a gente sabe o que significa.&rdquo;
+              </p>
+              <p className="text-slate-400 text-xs mt-3">— Cliente, durante uma visita no fim do dia</p>
+            </blockquote>
+
+            <p className="text-slate-600 text-sm leading-relaxed">
+              Em 2012, de volta ao Rio, nasceu então a Morabilidade. E depois de mais de uma década
+              em operação, a empresa se atualiza, se moderniza, cresce. O que nasceu como a
+              &ldquo;empresa de um homem só&rdquo; hoje tem uma equipe, setor jurídico próprio,
+              administração de imóveis e explora as mídias sociais que mais trazem resultados
+              nas vendas e locações.
+            </p>
+
+            <p className="text-slate-600 text-sm leading-relaxed">
+              Mas não deixa de lado o compromisso de conhecer bem todos os imóveis que comercializa
+              ou administra. E mais do que isso, conhecer suas histórias. É a paixão do trabalho:
+              a história que todo imóvel conta e a ciência da importância que é a busca por um novo lar.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* ── Divisor decorativo ── */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <hr className="border-slate-200" />
       </div>
 
       {/* ── CTA Contato ── */}
-      <section className="mx-4 sm:mx-6 lg:mx-8 mb-20 rounded-3xl overflow-hidden" style={{ background: "linear-gradient(135deg, #2e302a 0%, #585a4f 100%)" }}>
+      <section className="mx-4 sm:mx-6 lg:mx-8 mb-20 rounded-3xl overflow-hidden relative">
+        {/* Background photo */}
+        <Image
+          src="/fundo3-3.jpeg"
+          alt=""
+          fill
+          className="object-cover object-center"
+        />
+        <div
+          className="absolute inset-0"
+          style={{ background: "linear-gradient(135deg, rgba(46,48,42,0.92) 0%, rgba(88,90,79,0.88) 100%)" }}
+        />
         <div className="relative px-8 py-16 sm:px-16 text-center overflow-hidden">
           {/* Decorative dots */}
           <div

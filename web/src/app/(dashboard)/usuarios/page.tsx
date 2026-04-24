@@ -5,11 +5,12 @@ import { Plus, X, Loader2, UserCheck, UserX, Shield, User } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import type { User as UserType } from "@/types";
 
 const inputClass =
   "w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-900 " +
-  "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent";
+  "focus:outline-none focus:ring-2 focus:ring-[#585a4f]/30 focus:border-[#585a4f] focus:border-transparent";
 const selectClass = inputClass;
 const labelClass = "block text-xs font-medium text-slate-600 mb-1";
 
@@ -27,7 +28,8 @@ export default function UsuariosPage() {
   const [loading, setLoading] = useState(true);
   const [criando, setCriando] = useState(false);
   const [salvando, setSalvando] = useState(false);
-  const [desativandoId, setDesativandoId] = useState<string | null>(null);
+  const [desativando, setDesativando] = useState<{ id: string; nome: string } | null>(null);
+  const [desativandoLoading, setDesativandoLoading] = useState(false);
 
   const [form, setForm] = useState<NovoUsuarioForm>({
     nome_completo: "",
@@ -52,8 +54,9 @@ export default function UsuariosPage() {
   }
 
   useEffect(() => {
-    carregar();
-  }, []);
+    if (isAdmin) carregar();
+    else setLoading(false);
+  }, [isAdmin]);
 
   function resetForm() {
     setForm({ nome_completo: "", email: "", senha: "", perfil: "administrativo", telefone: "" });
@@ -89,18 +92,27 @@ export default function UsuariosPage() {
     }
   }
 
-  async function desativarUsuario(id: string, nome: string) {
-    if (!confirm(`Desativar o usuário "${nome}"? Ele não poderá mais fazer login.`)) return;
-    setDesativandoId(id);
+  async function handleDesativar() {
+    if (!desativando) return;
+    setDesativandoLoading(true);
     try {
-      await api.delete(`/usuarios/${id}`);
+      await api.delete(`/usuarios/${desativando.id}`);
       toast.success("Usuário desativado.");
+      setDesativando(null);
       await carregar();
     } catch {
       toast.error("Erro ao desativar usuário.");
     } finally {
-      setDesativandoId(null);
+      setDesativandoLoading(false);
     }
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-center">
+        <p className="text-slate-500 text-sm">Acesso restrito a administradores.</p>
+      </div>
+    );
   }
 
   return (
@@ -113,7 +125,8 @@ export default function UsuariosPage() {
         {isAdmin && (
           <button
             onClick={() => setCriando(true)}
-            className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition"
+            className="flex items-center gap-1.5 px-4 py-2 text-white text-sm font-medium rounded-lg transition hover:opacity-90"
+            style={{ backgroundColor: "#585a4f" }}
           >
             <Plus className="w-4 h-4" /> Novo usuário
           </button>
@@ -124,14 +137,14 @@ export default function UsuariosPage() {
       {criando && isAdmin && (
         <form
           onSubmit={criarUsuario}
-          className="bg-white rounded-xl border border-blue-200 p-6 mb-4 shadow-sm"
+          className="bg-white rounded-xl border border-slate-200 p-6 mb-4 shadow-sm"
         >
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-slate-800">Novo usuário interno</h3>
             <button
               type="button"
               onClick={() => { setCriando(false); resetForm(); }}
-              className="p-1 text-slate-400 hover:text-slate-600"
+              className="p-1 text-slate-400 hover:text-slate-600 transition"
             >
               <X className="w-4 h-4" />
             </button>
@@ -195,7 +208,8 @@ export default function UsuariosPage() {
             <button
               type="submit"
               disabled={salvando}
-              className="flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-medium rounded-lg transition"
+              className="flex items-center gap-2 px-5 py-2 text-white text-sm font-medium rounded-lg transition hover:opacity-90 disabled:opacity-60"
+              style={{ backgroundColor: "#585a4f" }}
             >
               {salvando && <Loader2 className="w-4 h-4 animate-spin" />}
               Criar usuário
@@ -208,7 +222,7 @@ export default function UsuariosPage() {
         {loading ? (
           <div className="p-12 text-center">
             <div className="inline-flex items-center gap-2 text-slate-400 text-sm">
-              <div className="w-4 h-4 border-2 border-slate-300 border-t-blue-500 rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-slate-200 border-t-[#585a4f] rounded-full animate-spin" />
               Carregando usuários...
             </div>
           </div>
@@ -230,20 +244,23 @@ export default function UsuariosPage() {
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {usuarios.map((u) => (
-                  <tr key={u.id} className={`hover:bg-slate-50 transition ${!u.ativo ? "opacity-50" : ""}`}>
+                  <tr key={u.id} className={`hover:bg-slate-50/60 transition ${!u.ativo ? "opacity-50" : ""}`}>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         {u.foto_url ? (
                           <img src={u.foto_url} alt="" className="w-7 h-7 rounded-full object-cover border border-slate-200" />
                         ) : (
-                          <div className="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center">
-                            <User className="w-3.5 h-3.5 text-slate-500" />
+                          <div
+                            className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
+                            style={{ backgroundColor: "#d8cb6a", color: "#585a4f" }}
+                          >
+                            {u.nome_completo?.[0]?.toUpperCase() ?? <User className="w-3.5 h-3.5" />}
                           </div>
                         )}
                         <div>
                           <p className="font-medium text-slate-800">{u.nome_completo}</p>
                           {u.id === me?.id && (
-                            <span className="text-xs text-blue-500 font-medium">Você</span>
+                            <span className="text-xs font-medium" style={{ color: "#585a4f" }}>Você</span>
                           )}
                         </div>
                       </div>
@@ -279,15 +296,10 @@ export default function UsuariosPage() {
                       <td className="px-4 py-3">
                         {u.ativo && u.id !== me?.id && (
                           <button
-                            onClick={() => desativarUsuario(u.id, u.nome_completo)}
-                            disabled={desativandoId === u.id}
-                            className="text-xs text-slate-400 hover:text-red-600 hover:bg-red-50 px-2 py-1 rounded-md transition disabled:opacity-40"
+                            onClick={() => setDesativando({ id: u.id, nome: u.nome_completo })}
+                            className="text-xs text-slate-400 hover:text-red-600 hover:bg-red-50 px-2 py-1 rounded-md transition"
                           >
-                            {desativandoId === u.id ? (
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            ) : (
-                              "Desativar"
-                            )}
+                            Desativar
                           </button>
                         )}
                       </td>
@@ -299,6 +311,16 @@ export default function UsuariosPage() {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={!!desativando}
+        onOpenChange={(open) => { if (!open) setDesativando(null); }}
+        title="Desativar usuário"
+        description={`Desativar "${desativando?.nome ?? ""}"? Ele não poderá mais fazer login no sistema.`}
+        confirmLabel="Desativar"
+        loading={desativandoLoading}
+        onConfirm={handleDesativar}
+      />
     </div>
   );
 }

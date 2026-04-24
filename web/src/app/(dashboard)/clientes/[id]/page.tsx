@@ -68,7 +68,7 @@ export default function EditarClientePage({ params }: { params: Promise<{ id: st
   if (loadingDados) {
     return (
       <div className="flex items-center justify-center h-64 gap-2 text-slate-400 text-sm">
-        <div className="w-4 h-4 border-2 border-slate-300 border-t-blue-500 rounded-full animate-spin" />
+        <div className="w-4 h-4 border-2 border-slate-200 border-t-[#585a4f] rounded-full animate-spin" />
         Carregando cliente...
       </div>
     );

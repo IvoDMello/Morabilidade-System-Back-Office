@@ -20,8 +20,7 @@ def enviar_boas_vindas(nome: str, email: str) -> None:
     html = f"""
     <h2>Bem-vindo(a), {nome}!</h2>
     <p>Seu acesso ao sistema de gestão Morabilidade foi criado com sucesso.</p>
-    <p>Acesse o painel em <a href="http://localhost:3000">localhost:3000</a>
-    usando seu e-mail e a senha definida pelo administrador.</p>
+    <p>Acesse o painel usando seu e-mail e a senha definida pelo administrador.</p>
     <p>Recomendamos que você altere sua senha no primeiro acesso.</p>
     """
     enviar_email(email, "Bem-vindo ao sistema Morabilidade", html)

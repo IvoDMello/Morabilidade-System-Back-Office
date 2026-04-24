@@ -7,7 +7,7 @@ from app.schemas.imovel import (
     TipoNegocio, Disponibilidade, TipoImovel, CondicaoImovel, Mobiliado,
 )
 from app.database import supabase_admin
-from app.services.firebase import upload_foto, deletar_foto
+from app.services.storage import upload_foto, deletar_foto
 import uuid
 
 
@@ -19,8 +19,10 @@ router = APIRouter()
 
 _LIST_FIELDS = (
     "id, codigo, tipo_negocio, disponibilidade, cidade, bairro, "
-    "tipo_imovel, dormitorios, area_util, valor_venda, valor_locacao, "
-    "created_at, imovel_fotos(url, ordem), imovel_tags(tags(id, nome, cor))"
+    "logradouro, numero, tipo_imovel, dormitorios, suites, banheiros, "
+    "vagas_garagem, area_util, valor_venda, valor_locacao, "
+    "condominio_mensal, iptu_mensal, created_at, "
+    "imovel_fotos(url, ordem), imovel_tags(tags(id, nome, cor))"
 )
 
 _DETAIL_FIELDS = (
@@ -82,6 +84,74 @@ def _transformar_detalhe(raw: dict) -> dict:
     tag_ids = [t["id"] for t in tags]
     return {**raw, "fotos": fotos, "tags": tags, "tag_ids": tag_ids}
 
+
+def _buscar_imovel(imovel_id: str) -> dict:
+    result = (
+        supabase_admin.table("imoveis")
+        .select(_DETAIL_FIELDS)
+        .eq("id", imovel_id)
+        .single()
+        .execute()
+    )
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Imóvel não encontrado.")
+    return _transformar_detalhe(result.data)
+
+
+# ── Endpoints públicos (devem vir ANTES de /{imovel_id}) ─────────────────────
+
+@router.get("/publico/disponiveis", response_model=List[ImovelListOut], tags=["Site Público"])
+def imoveis_disponiveis_publico(
+    http_response: Response,
+    tipo_negocio: Optional[TipoNegocio] = None,
+    cidade: Optional[str] = None,
+    bairro: Optional[str] = None,
+    tipo_imovel: Optional[TipoImovel] = None,
+    dormitorios_min: Optional[int] = None,
+    preco_min: Optional[float] = None,
+    preco_max: Optional[float] = None,
+    condicao: Optional[CondicaoImovel] = None,
+    mobiliado: Optional[Mobiliado] = None,
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+):
+    filtros = dict(
+        tipo_negocio=tipo_negocio, disponibilidade=Disponibilidade.disponivel,
+        cidade=cidade, bairro=bairro, tipo_imovel=tipo_imovel,
+        dormitorios_min=dormitorios_min, preco_min=preco_min, preco_max=preco_max,
+        condicao=condicao, mobiliado=mobiliado, codigo=None,
+    )
+    count_q = _aplicar_filtros(
+        supabase_admin.table("imoveis").select("id", count="exact"), **filtros
+    )
+    total = count_q.execute().count or 0
+    http_response.headers["X-Total-Count"] = str(total)
+    http_response.headers["Access-Control-Expose-Headers"] = "X-Total-Count"
+
+    offset = (page - 1) * page_size
+    query = _aplicar_filtros(
+        supabase_admin.table("imoveis").select(_LIST_FIELDS), **filtros
+    )
+    result = query.order("created_at", desc=True).range(offset, offset + page_size - 1).execute()
+    return [_transformar_lista(item) for item in result.data]
+
+
+@router.get("/publico/{codigo}", response_model=ImovelOut, tags=["Site Público"])
+def detalhe_imovel_publico(codigo: str):
+    result = (
+        supabase_admin.table("imoveis")
+        .select("id")
+        .eq("codigo", codigo)
+        .eq("disponibilidade", "disponivel")
+        .single()
+        .execute()
+    )
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Imóvel não encontrado.")
+    return _buscar_imovel(result.data["id"])
+
+
+# ── Endpoints autenticados ────────────────────────────────────────────────────
 
 @router.get("/", response_model=List[ImovelListOut])
 def listar_imoveis(
@@ -175,16 +245,15 @@ def atualizar_imovel(
 
 
 @router.delete("/{imovel_id}", status_code=status.HTTP_204_NO_CONTENT)
-def deletar_imovel(imovel_id: str, current_user: dict = Depends(get_current_user)):
+async def deletar_imovel(imovel_id: str, current_user: dict = Depends(get_current_user)):
     fotos = (
         supabase_admin.table("imovel_fotos")
         .select("url")
         .eq("imovel_id", imovel_id)
         .execute()
     )
-    import asyncio
     for foto in (fotos.data or []):
-        asyncio.run(deletar_foto(foto["url"]))
+        await deletar_foto(foto["url"])
     supabase_admin.table("imoveis").delete().eq("id", imovel_id).execute()
 
 
@@ -209,7 +278,7 @@ async def upload_fotos(
 
     uploaded = []
     for i, foto in enumerate(fotos):
-        filename = f"foto_{uuid.uuid4().hex[:8]}.jpg"
+        filename = f"foto_{uuid.uuid4().hex}.jpg"
         path = f"imoveis/{imovel_id}/{filename}"
         url = await upload_foto(foto, path=path)
         record = {"imovel_id": imovel_id, "url": url, "ordem": qtd_atual + i + 1}
@@ -238,71 +307,3 @@ async def remover_foto(
 
     await deletar_foto(foto.data["url"])
     supabase_admin.table("imovel_fotos").delete().eq("id", foto_id).execute()
-
-
-# ── Endpoints públicos ────────────────────────────────────────────────────────
-
-@router.get("/publico/disponiveis", response_model=List[ImovelListOut], tags=["Site Público"])
-def imoveis_disponiveis_publico(
-    http_response: Response,
-    tipo_negocio: Optional[TipoNegocio] = None,
-    cidade: Optional[str] = None,
-    bairro: Optional[str] = None,
-    tipo_imovel: Optional[TipoImovel] = None,
-    dormitorios_min: Optional[int] = None,
-    preco_min: Optional[float] = None,
-    preco_max: Optional[float] = None,
-    condicao: Optional[CondicaoImovel] = None,
-    mobiliado: Optional[Mobiliado] = None,
-    page: int = Query(default=1, ge=1),
-    page_size: int = Query(default=20, ge=1, le=100),
-):
-    filtros = dict(
-        tipo_negocio=tipo_negocio, disponibilidade=Disponibilidade.disponivel,
-        cidade=cidade, bairro=bairro, tipo_imovel=tipo_imovel,
-        dormitorios_min=dormitorios_min, preco_min=preco_min, preco_max=preco_max,
-        condicao=condicao, mobiliado=mobiliado, codigo=None,
-    )
-    count_q = _aplicar_filtros(
-        supabase_admin.table("imoveis").select("id", count="exact"), **filtros
-    )
-    total = count_q.execute().count or 0
-    http_response.headers["X-Total-Count"] = str(total)
-    http_response.headers["Access-Control-Expose-Headers"] = "X-Total-Count"
-
-    offset = (page - 1) * page_size
-    query = _aplicar_filtros(
-        supabase_admin.table("imoveis").select(_LIST_FIELDS), **filtros
-    )
-    result = query.order("created_at", desc=True).range(offset, offset + page_size - 1).execute()
-    return [_transformar_lista(item) for item in result.data]
-
-
-@router.get("/publico/{codigo}", response_model=ImovelOut, tags=["Site Público"])
-def detalhe_imovel_publico(codigo: str):
-    result = (
-        supabase_admin.table("imoveis")
-        .select("id")
-        .eq("codigo", codigo)
-        .eq("disponibilidade", "disponivel")
-        .single()
-        .execute()
-    )
-    if not result.data:
-        raise HTTPException(status_code=404, detail="Imóvel não encontrado.")
-    return _buscar_imovel(result.data["id"])
-
-
-# ── Helper ─────────────────────────────────────────────────────────────────────
-
-def _buscar_imovel(imovel_id: str) -> dict:
-    result = (
-        supabase_admin.table("imoveis")
-        .select(_DETAIL_FIELDS)
-        .eq("id", imovel_id)
-        .single()
-        .execute()
-    )
-    if not result.data:
-        raise HTTPException(status_code=404, detail="Imóvel não encontrado.")
-    return _transformar_detalhe(result.data)

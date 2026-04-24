@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Pencil, Trash2, Check, X, Plus, Loader2 } from "lucide-react";
+import { Pencil, Trash2, Check, X, Plus, Loader2, Tag } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
-import type { Tag } from "@/types";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
+import type { Tag as TagType } from "@/types";
 
 const CORES_PREDEFINIDAS = [
   "#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6",
@@ -13,10 +14,10 @@ const CORES_PREDEFINIDAS = [
 
 const inputClass =
   "px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white text-slate-900 " +
-  "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent";
+  "focus:outline-none focus:ring-2 focus:ring-[#585a4f]/30 focus:border-transparent";
 
 interface TagRow {
-  tag: Tag;
+  tag: TagType;
   editing: boolean;
   nome: string;
   cor: string;
@@ -26,9 +27,9 @@ export default function TagsPage() {
   const [rows, setRows] = useState<TagRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [salvandoId, setSalvandoId] = useState<string | null>(null);
-  const [deletandoId, setDeletandoId] = useState<string | null>(null);
+  const [deletando, setDeletando] = useState<{ id: string; nome: string } | null>(null);
+  const [deletandoLoading, setDeletandoLoading] = useState(false);
 
-  // Nova tag
   const [criando, setCriando] = useState(false);
   const [novaNome, setNovaNome] = useState("");
   const [novaCor, setNovaCor] = useState(CORES_PREDEFINIDAS[0]);
@@ -37,7 +38,7 @@ export default function TagsPage() {
   async function carregar() {
     setLoading(true);
     try {
-      const res = await api.get<Tag[]>("/tags/");
+      const res = await api.get<TagType[]>("/tags/");
       setRows(res.data.map((t) => ({ tag: t, editing: false, nome: t.nome, cor: t.cor ?? "#6B7280" })));
     } catch {
       toast.error("Erro ao carregar tags.");
@@ -75,17 +76,18 @@ export default function TagsPage() {
     }
   }
 
-  async function deletarTag(id: string, nome: string) {
-    if (!confirm(`Excluir a tag "${nome}"?`)) return;
-    setDeletandoId(id);
+  async function handleDeletarTag() {
+    if (!deletando) return;
+    setDeletandoLoading(true);
     try {
-      await api.delete(`/tags/${id}`);
+      await api.delete(`/tags/${deletando.id}`);
       toast.success("Tag excluída.");
-      setRows((prev) => prev.filter((r) => r.tag.id !== id));
+      setDeletando(null);
+      setRows((prev) => prev.filter((r) => r.tag.id !== deletando.id));
     } catch {
       toast.error("Erro ao excluir tag.");
     } finally {
-      setDeletandoId(null);
+      setDeletandoLoading(false);
     }
   }
 
@@ -115,7 +117,8 @@ export default function TagsPage() {
         </div>
         <button
           onClick={() => setCriando(true)}
-          className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition"
+          className="flex items-center gap-1.5 px-4 py-2 text-white text-sm font-medium rounded-lg transition hover:opacity-90"
+          style={{ backgroundColor: "#585a4f" }}
         >
           <Plus className="w-4 h-4" /> Nova tag
         </button>
@@ -125,7 +128,7 @@ export default function TagsPage() {
         {loading ? (
           <div className="p-12 text-center">
             <div className="inline-flex items-center gap-2 text-slate-400 text-sm">
-              <div className="w-4 h-4 border-2 border-slate-300 border-t-blue-500 rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-slate-200 border-t-[#585a4f] rounded-full animate-spin" />
               Carregando tags...
             </div>
           </div>
@@ -133,7 +136,7 @@ export default function TagsPage() {
           <div className="divide-y divide-slate-100">
             {/* Linha de criação */}
             {criando && (
-              <div className="flex flex-wrap items-center gap-3 px-5 py-3 bg-blue-50">
+              <div className="flex flex-wrap items-center gap-3 px-5 py-3 bg-[#585a4f]/5 border-b border-[#585a4f]/10">
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                   <input
                     type="color"
@@ -166,7 +169,8 @@ export default function TagsPage() {
                   <button
                     onClick={criarTag}
                     disabled={salvandoNova || !novaNome.trim()}
-                    className="p-1.5 text-white bg-blue-600 hover:bg-blue-700 rounded-md disabled:opacity-50 transition"
+                    className="p-1.5 text-white rounded-md disabled:opacity-50 transition hover:opacity-90"
+                    style={{ backgroundColor: "#585a4f" }}
                   >
                     {salvandoNova ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                   </button>
@@ -181,13 +185,15 @@ export default function TagsPage() {
             )}
 
             {rows.length === 0 && !criando && (
-              <div className="p-12 text-center text-slate-400 text-sm">
-                Nenhuma tag cadastrada. Crie a primeira tag acima.
+              <div className="p-16 text-center">
+                <Tag className="w-10 h-10 text-slate-200 mx-auto mb-3" />
+                <p className="text-slate-500 text-sm font-medium">Nenhuma tag cadastrada.</p>
+                <p className="text-slate-400 text-xs mt-1">Crie a primeira tag usando o botão acima.</p>
               </div>
             )}
 
             {rows.map(({ tag, editing, nome, cor }) => (
-              <div key={tag.id} className="flex flex-wrap items-center gap-3 px-5 py-3 hover:bg-slate-50 transition">
+              <div key={tag.id} className="flex flex-wrap items-center gap-3 px-5 py-3 hover:bg-slate-50/60 transition">
                 {editing ? (
                   <>
                     <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -220,7 +226,8 @@ export default function TagsPage() {
                       <button
                         onClick={() => salvarEdicao(tag.id)}
                         disabled={salvandoId === tag.id}
-                        className="p-1.5 text-white bg-blue-600 hover:bg-blue-700 rounded-md disabled:opacity-50 transition"
+                        className="p-1.5 text-white rounded-md disabled:opacity-50 transition hover:opacity-90"
+                        style={{ backgroundColor: "#585a4f" }}
                       >
                         {salvandoId === tag.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                       </button>
@@ -245,18 +252,17 @@ export default function TagsPage() {
                     <div className="flex items-center gap-1 ml-4">
                       <button
                         onClick={() => iniciarEdicao(tag.id)}
-                        className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition"
+                        className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-md transition"
                         title="Editar"
                       >
                         <Pencil className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => deletarTag(tag.id, tag.nome)}
-                        disabled={deletandoId === tag.id}
-                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition disabled:opacity-40"
+                        onClick={() => setDeletando({ id: tag.id, nome: tag.nome })}
+                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition"
                         title="Excluir"
                       >
-                        {deletandoId === tag.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </>
@@ -266,6 +272,15 @@ export default function TagsPage() {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={!!deletando}
+        onOpenChange={(open) => { if (!open) setDeletando(null); }}
+        title="Excluir tag"
+        description={`Tem certeza que deseja excluir a tag "${deletando?.nome ?? ""}"? Os imóveis com esta tag não serão afetados.`}
+        loading={deletandoLoading}
+        onConfirm={handleDeletarTag}
+      />
     </div>
   );
 }

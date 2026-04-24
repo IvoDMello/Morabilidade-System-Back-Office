@@ -128,7 +128,8 @@ export default function PerfilPage() {
             <button
               type="submit"
               disabled={salvandoPerfil}
-              className="flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-medium rounded-lg transition"
+              className="flex items-center gap-2 px-5 py-2 text-white text-sm font-medium rounded-lg transition hover:opacity-90 disabled:opacity-60"
+              style={{ backgroundColor: "#585a4f" }}
             >
               {salvandoPerfil && <Loader2 className="w-4 h-4 animate-spin" />}
               Salvar perfil
@@ -180,7 +181,8 @@ export default function PerfilPage() {
             <button
               type="submit"
               disabled={salvandoSenha}
-              className="flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-medium rounded-lg transition"
+              className="flex items-center gap-2 px-5 py-2 text-white text-sm font-medium rounded-lg transition hover:opacity-90 disabled:opacity-60"
+              style={{ backgroundColor: "#585a4f" }}
             >
               {salvandoSenha && <Loader2 className="w-4 h-4 animate-spin" />}
               Alterar senha

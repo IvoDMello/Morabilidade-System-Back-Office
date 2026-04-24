@@ -106,7 +106,7 @@ export default async function DetalheImovelPage({ params }: Props) {
       "@type": "PostalAddress",
       streetAddress: [imovel.logradouro, imovel.numero].filter(Boolean).join(", "),
       addressLocality: imovel.cidade,
-      addressRegion: "SP",
+      addressRegion: "RJ",
       postalCode: imovel.cep ?? "",
       addressCountry: "BR",
     },
@@ -128,7 +128,12 @@ export default async function DetalheImovelPage({ params }: Props) {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(jsonLd)
+            .replace(/</g, "\\u003c")
+            .replace(/>/g, "\\u003e")
+            .replace(/&/g, "\\u0026"),
+        }}
       />
       <Navbar />
       <WhatsAppButtonImovel codigo={imovel.codigo} titulo={tituloImovel} />
