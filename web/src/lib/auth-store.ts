@@ -8,31 +8,29 @@ interface User {
   perfil: "admin" | "administrativo";
   foto_url?: string;
   telefone?: string;
+  ativo?: boolean;
 }
 
 interface AuthState {
-  token: string | null;
   user: User | null;
-  setToken: (token: string) => void;
   setUser: (user: User) => void;
+  clearAuth: () => void;
   logout: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
-      token: null,
       user: null,
-      setToken: (token) => {
-        set({ token });
-        document.cookie = `morabilidade-auth=${token}; path=/; max-age=${60 * 60 * 8}`;
-      },
       setUser: (user) => set({ user }),
+      clearAuth: () => set({ user: null }),
       logout: () => {
-        set({ token: null, user: null });
-        document.cookie = "morabilidade-auth=; path=/; max-age=0";
+        set({ user: null });
+        if (typeof window !== "undefined") {
+          fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
+        }
       },
     }),
-    { name: "morabilidade-auth" }
+    { name: "morabilidade-user" }
   )
 );

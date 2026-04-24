@@ -9,7 +9,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Eye, EyeOff, MapPin } from "lucide-react";
-import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 
 const loginSchema = z.object({
@@ -21,7 +20,6 @@ type LoginForm = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
-  const setToken = useAuthStore((s) => s.setToken);
   const setUser = useAuthStore((s) => s.setUser);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -35,12 +33,14 @@ export default function LoginPage() {
   async function onSubmit(data: LoginForm) {
     setLoading(true);
     try {
-      const res = await api.post("/auth/login", data);
-      setToken(res.data.access_token);
-      const meRes = await api.get("/usuarios/me", {
-        headers: { Authorization: `Bearer ${res.data.access_token}` },
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: data.email, senha: data.senha }),
       });
-      setUser(meRes.data);
+      if (!res.ok) throw new Error();
+      const { user } = await res.json();
+      setUser(user);
       router.push("/");
     } catch {
       toast.error("E-mail ou senha incorretos.");
