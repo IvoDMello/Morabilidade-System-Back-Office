@@ -80,7 +80,9 @@ def test_atualizar_tag_nao_encontrada(admin_client):
 # ── DELETE /tags/{id} ─────────────────────────────────────────────────────────
 
 def test_deletar_tag_como_admin(admin_client):
-    db = make_db_mock(MagicMock(data=[]))
+    select_mock = MagicMock(data=[{"id": "tag-uuid-1"}])
+    delete_mock = MagicMock(data=[])
+    db = make_db_mock(select_mock, delete_mock)
 
     with patch("app.routers.tags.supabase_admin", db):
         res = admin_client.delete("/tags/tag-uuid-1")

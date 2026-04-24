@@ -48,7 +48,8 @@
       "Bash(node_modules/.bin/next build *)",
       "Bash(python3 -c ' *)",
       "Bash(node -e ' *)",
-      "Bash(del \"c:\\\\Users\\\\novopc2024\\\\Documents\\\\GitHub\\\\Morabilidade-System-Back-Office\\\\api\\\\app\\\\services\\\\firebase.py\")"
+      "Bash(del \"c:\\\\Users\\\\novopc2024\\\\Documents\\\\GitHub\\\\Morabilidade-System-Back-Office\\\\api\\\\app\\\\services\\\\firebase.py\")",
+      "Bash(venv/Scripts/python -m pytest tests/ -v --tb=short)"
     ]
   }
 }

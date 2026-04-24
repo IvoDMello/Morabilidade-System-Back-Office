@@ -1,6 +1,6 @@
 """Testes da camada de autenticação e RBAC."""
 from datetime import datetime, timedelta, timezone
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 from jose import jwt
 
 from tests.conftest import ADMIN_USER, REGULAR_USER, make_db_mock
@@ -121,3 +121,127 @@ def test_admin_pode_listar_usuarios(admin_client):
 
     assert res.status_code == 200
     assert res.json()[0]["perfil"] == "admin"
+
+
+# ── POST /auth/login ──────────────────────────────────────────────────────────
+
+def test_login_credenciais_validas_retorna_token(anon_client):
+    from unittest.mock import MagicMock
+
+    session_mock = MagicMock()
+    session_mock.session.access_token = "token-valido-abc"
+    session_mock.user.id = REGULAR_USER["id"]
+    session_mock.user.email = REGULAR_USER["email"]
+
+    supabase_mock = MagicMock()
+    supabase_mock.auth.sign_in_with_password.return_value = session_mock
+
+    with patch("app.auth.router.supabase", supabase_mock):
+        res = anon_client.post(
+            "/auth/login",
+            json={"email": "usuario@teste.com", "senha": "senha1234"},
+        )
+
+    assert res.status_code == 200
+    assert res.json()["access_token"] == "token-valido-abc"
+    assert res.json()["token_type"] == "bearer"
+
+
+def test_login_credenciais_invalidas_retorna_401(anon_client):
+    supabase_mock = MagicMock()
+    supabase_mock.auth.sign_in_with_password.side_effect = Exception("Invalid credentials")
+
+    with patch("app.auth.router.supabase", supabase_mock):
+        res = anon_client.post(
+            "/auth/login",
+            json={"email": "usuario@teste.com", "senha": "senha-errada"},
+        )
+
+    assert res.status_code == 401
+
+
+def test_login_sem_sessao_retorna_401(anon_client):
+    from unittest.mock import MagicMock
+
+    session_mock = MagicMock()
+    session_mock.session = None
+
+    supabase_mock = MagicMock()
+    supabase_mock.auth.sign_in_with_password.return_value = session_mock
+
+    with patch("app.auth.router.supabase", supabase_mock):
+        res = anon_client.post(
+            "/auth/login",
+            json={"email": "usuario@teste.com", "senha": "senha1234"},
+        )
+
+    assert res.status_code == 401
+
+
+def test_login_email_invalido_retorna_422(anon_client):
+    res = anon_client.post(
+        "/auth/login",
+        json={"email": "nao-e-email", "senha": "senha1234"},
+    )
+    assert res.status_code == 422
+
+
+def test_login_payload_incompleto_retorna_422(anon_client):
+    res = anon_client.post("/auth/login", json={"email": "usuario@teste.com"})
+    assert res.status_code == 422
+
+
+# ── POST /auth/logout ─────────────────────────────────────────────────────────
+
+def test_logout_usuario_autenticado_retorna_204(client):
+    supabase_admin_mock = MagicMock()
+    with patch("app.auth.router.supabase_admin", supabase_admin_mock):
+        res = client.post("/auth/logout")
+    assert res.status_code == 204
+
+
+def test_logout_sem_autenticacao_retorna_403(anon_client):
+    res = anon_client.post("/auth/logout")
+    assert res.status_code == 403
+
+
+def test_logout_falha_no_supabase_ainda_retorna_204(client):
+    """Erro ao deslogar no Supabase não deve expor 500 ao cliente."""
+    supabase_admin_mock = MagicMock()
+    supabase_admin_mock.auth.admin.sign_out.side_effect = Exception("network error")
+
+    with patch("app.auth.router.supabase_admin", supabase_admin_mock):
+        res = client.post("/auth/logout")
+
+    assert res.status_code == 204
+
+
+# ── POST /auth/recuperar-senha ────────────────────────────────────────────────
+
+def test_recuperar_senha_email_valido_retorna_204(anon_client):
+    supabase_mock = MagicMock()
+    with patch("app.auth.router.supabase", supabase_mock):
+        res = anon_client.post(
+            "/auth/recuperar-senha",
+            json={"email": "usuario@teste.com"},
+        )
+    assert res.status_code == 204
+
+
+def test_recuperar_senha_email_inexistente_ainda_retorna_204(anon_client):
+    """Não deve revelar se o e-mail existe ou não."""
+    supabase_mock = MagicMock()
+    supabase_mock.auth.reset_password_email.side_effect = Exception("user not found")
+
+    with patch("app.auth.router.supabase", supabase_mock):
+        res = anon_client.post(
+            "/auth/recuperar-senha",
+            json={"email": "naoexiste@teste.com"},
+        )
+
+    assert res.status_code == 204
+
+
+def test_recuperar_senha_email_invalido_retorna_422(anon_client):
+    res = anon_client.post("/auth/recuperar-senha", json={"email": "nao-e-email"})
+    assert res.status_code == 422
