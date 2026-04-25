@@ -1,22 +1,16 @@
 """Testes da camada de autenticação e RBAC."""
-from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
-from jose import jwt
 
 from tests.conftest import ADMIN_USER, REGULAR_USER, make_db_mock
 
-JWT_SECRET = "test_jwt_secret_must_be_at_least_32_characters_long"
-
 
 def _make_token(user_id: str, expired: bool = False) -> str:
-    exp = datetime.now(timezone.utc) + (
-        timedelta(seconds=-1) if expired else timedelta(hours=1)
-    )
-    return jwt.encode(
-        {"sub": user_id, "aud": "authenticated", "exp": exp},
-        JWT_SECRET,
-        algorithm="HS256",
-    )
+    """
+    Token opaco usado pelos testes — o Supabase Auth está mockado, então o conteúdo
+    do token nunca é validado de fato. Basta ser uma string não vazia.
+    """
+    suffix = "expired" if expired else "valid"
+    return f"fake.jwt.{user_id}.{suffix}"
 
 
 # ── Health check ──────────────────────────────────────────────────────────────

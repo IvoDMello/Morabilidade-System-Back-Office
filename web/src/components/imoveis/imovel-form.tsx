@@ -90,12 +90,12 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 
 const inputClass =
   "w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-900 " +
-  "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent " +
+  "focus:outline-none focus:ring-2 focus:ring-[#585a4f]/30 focus:border-[#585a4f] " +
   "placeholder:text-slate-400 disabled:bg-slate-50 disabled:text-slate-400";
 
 const selectClass =
   "w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-900 " +
-  "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent " +
+  "focus:outline-none focus:ring-2 focus:ring-[#585a4f]/30 focus:border-[#585a4f] " +
   "disabled:bg-slate-50 disabled:text-slate-400";
 
 // ── Componente principal ──────────────────────────────────────────────────────

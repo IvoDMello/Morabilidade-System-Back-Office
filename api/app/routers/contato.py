@@ -15,7 +15,7 @@ class ContatoForm(BaseModel):
     mensagem: str = Field(..., max_length=5000)
 
 
-@router.post("/", status_code=status.HTTP_204_NO_CONTENT, tags=["Site Público"])
+@router.post("", status_code=status.HTTP_204_NO_CONTENT, tags=["Site Público"])
 @limiter.limit("5/minute")
 def enviar_contato(request: Request, body: ContatoForm, background_tasks: BackgroundTasks):
     """Recebe mensagem do formulário de contato do site público e envia por e-mail."""

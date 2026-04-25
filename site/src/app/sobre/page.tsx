@@ -74,23 +74,23 @@ const etapas = [
 const depoimentos = [
   {
     nome: "Mariana Costa",
-    cidade: "São Paulo, SP",
+    cidade: "Ipanema, RJ",
     texto:
       "A Morabilidade me ajudou a encontrar o apartamento ideal em menos de duas semanas. O atendimento foi extremamente ágil e personalizado — parecia que eles realmente entendiam o que eu precisava.",
     inicial: "M",
   },
   {
     nome: "Rafael Mendonça",
-    cidade: "Campinas, SP",
+    cidade: "Botafogo, RJ",
     texto:
       "Procurei um imóvel para investimento e a equipe foi incrível: trouxeram opções certeiras, sem enrolação. Todo o processo pelo WhatsApp, super prático. Recomendo sem hesitar.",
     inicial: "R",
   },
   {
     nome: "Juliana e Pedro Alves",
-    cidade: "Jundiaí, SP",
+    cidade: "Leblon, RJ",
     texto:
-      "Encontramos nossa primeira casa pela Morabilidade. Foram pacientes, transparentes e estiveram presentes em cada etapa. Fechamos o negócio com total segurança.",
+      "Encontramos nosso primeiro apartamento pela Morabilidade. Foram pacientes, transparentes e estiveram presentes em cada etapa. Fechamos o negócio com total segurança.",
     inicial: "J",
   },
 ];
@@ -173,12 +173,14 @@ export default function SobrePage() {
           className="rounded-2xl py-12 px-8 text-center"
           style={{ backgroundColor: "#585a4f" }}
         >
-          <h2 className="text-2xl font-bold text-white mb-10">Morabilidade em números</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+          <h2 className="text-2xl font-bold text-white mb-2">Morabilidade em números</h2>
+          <p className="text-white/60 text-sm mb-10 max-w-md mx-auto">
+            Mais de uma década atendendo a Zona Sul do Rio com transparência e dedicação.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
-              { num: "500+", label: "Imóveis negociados" },
               { num: "90k+", label: "Seguidores no Instagram" },
-              { num: "98%", label: "Clientes satisfeitos" },
+              { num: "Zona Sul", label: "Rio de Janeiro · RJ" },
               { num: "70411", label: "CRECI-RJ" },
             ].map((item) => (
               <div key={item.label}>

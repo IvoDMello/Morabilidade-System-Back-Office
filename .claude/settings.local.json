@@ -48,7 +48,14 @@
       "Bash(node_modules/.bin/next build *)",
       "Bash(python3 -c ' *)",
       "Bash(node -e ' *)",
-      "Bash(del \"c:\\\\Users\\\\novopc2024\\\\Documents\\\\GitHub\\\\Morabilidade-System-Back-Office\\\\api\\\\app\\\\services\\\\firebase.py\")"
+      "Bash(del \"c:\\\\Users\\\\novopc2024\\\\Documents\\\\GitHub\\\\Morabilidade-System-Back-Office\\\\api\\\\app\\\\services\\\\firebase.py\")",
+      "Bash(git -C \"c:/Users/novopc2024/Documents/GitHub/Morabilidade-System-Back-Office\" ls-files)",
+      "Bash(git check-ignore *)",
+      "Bash(npx --no-install tsc --noEmit)",
+      "Bash(venv/Scripts/python.exe -m pip install -q pytest pytest-mock httpx)",
+      "Bash(venv/Scripts/python.exe -m pytest tests/ -q)",
+      "Bash(venv/Scripts/python.exe -m pip install -q -r requirements.txt -r requirements-dev.txt)",
+      "WebFetch(domain:www.instagram.com)"
     ]
   }
 }

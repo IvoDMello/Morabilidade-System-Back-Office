@@ -24,7 +24,7 @@ jobs:
           cache: pip
 
       - name: Install dependencies
-        run: pip install -r requirements.txt pytest
+        run: pip install -r requirements.txt -r requirements-dev.txt
 
       - name: Run tests
         env:
@@ -32,10 +32,9 @@ jobs:
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SUPABASE_JWT_SECRET: ${{ secrets.SUPABASE_JWT_SECRET }}
-          FIREBASE_CREDENTIALS_PATH: ""
-          FIREBASE_STORAGE_BUCKET: ""
           RESEND_API_KEY: "test"
           EMAIL_FROM: "test@morabilidade.com.br"
+          APP_SECRET_KEY: "ci_app_secret_key"
           CORS_ORIGINS: "http://localhost:3000"
         run: pytest tests/ -v
 

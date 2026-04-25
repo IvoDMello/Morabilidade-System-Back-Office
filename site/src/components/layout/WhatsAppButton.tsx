@@ -1,10 +1,18 @@
 "use client";
 
+import { usePathname } from "next/navigation";
+
 const NUMERO = process.env.NEXT_PUBLIC_WHATSAPP ?? "5500000000000";
 const MENSAGEM_GENERICA =
   "Olá! Gostaria de mais informações sobre os imóveis disponíveis na Morabilidade.";
 
 export function WhatsAppButton() {
+  const pathname = usePathname();
+
+  // A página de detalhe do imóvel tem seu próprio botão (com mensagem específica),
+  // então omitimos o genérico aqui para evitar sobreposição.
+  if (pathname?.startsWith("/imoveis/") && pathname !== "/imoveis") return null;
+
   const href = `https://wa.me/${NUMERO}?text=${encodeURIComponent(MENSAGEM_GENERICA)}`;
 
   return (

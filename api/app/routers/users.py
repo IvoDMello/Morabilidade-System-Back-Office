@@ -125,10 +125,7 @@ def atualizar_usuario(
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 def desativar_usuario(user_id: str, admin: dict = Depends(require_admin)):
-    """Desativa (soft delete) um usuário. Apenas admin."""
-    result = supabase_admin.table("usuarios").select("id").eq("id", user_id).execute()
-    if not result.data:
-        raise HTTPException(status_code=404, detail="Usuário não encontrado.")
+    """Desativa (soft delete) um usuário — idempotente. Apenas admin."""
     # Bloqueia o login no Supabase Auth (ban de 100 anos = desativação permanente)
     try:
         supabase_admin.auth.admin.update_user_by_id(user_id, {"ban_duration": "876600h"})

@@ -29,7 +29,7 @@ export default async function HomePage() {
       <section className="relative overflow-hidden">
         {/* Background photo */}
         <Image
-          src="/fundo1-3.jpeg"
+          src="/fundo3-3.jpeg"
           alt="Zona Sul do Rio de Janeiro"
           fill
           className="object-cover object-center"
@@ -266,25 +266,25 @@ export default async function HomePage() {
           {[
             {
               nome: "Mariana Costa",
-              cidade: "São Paulo, SP",
+              cidade: "Ipanema, RJ",
               inicial: "M",
               texto: "Encontrei meu apartamento em menos de duas semanas. Atendimento incrível, super ágil e personalizado. Superou todas as expectativas!",
             },
             {
               nome: "Rafael Mendonça",
-              cidade: "Campinas, SP",
+              cidade: "Botafogo, RJ",
               inicial: "R",
               texto: "Procurava um imóvel para investimento e a equipe trouxe opções certeiras. Todo o processo pelo WhatsApp, extremamente prático.",
             },
             {
               nome: "Juliana e Pedro Alves",
-              cidade: "Jundiaí, SP",
+              cidade: "Leblon, RJ",
               inicial: "J",
-              texto: "Compramos nossa primeira casa pela Morabilidade. Foram transparentes em cada etapa e fechamos com total segurança.",
+              texto: "Compramos nosso primeiro apartamento pela Morabilidade. Foram transparentes em cada etapa e fechamos com total segurança.",
             },
             {
               nome: "Camila Rodrigues",
-              cidade: "Sorocaba, SP",
+              cidade: "Copacabana, RJ",
               inicial: "C",
               texto: "Aluguel resolvido em dias! Me apresentaram imóveis dentro do meu perfil e a negociação foi tranquila. Recomendo muito.",
             },

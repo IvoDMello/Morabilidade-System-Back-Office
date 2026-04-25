@@ -15,24 +15,16 @@ os.environ.update({
     "SUPABASE_ANON_KEY": "fake_anon_key",
     "SUPABASE_SERVICE_ROLE_KEY": "fake_service_role_key",
     "SUPABASE_JWT_SECRET": "test_jwt_secret_must_be_at_least_32_characters_long",
-    "FIREBASE_CREDENTIALS_PATH": "tests/firebase-test.json",
-    "FIREBASE_STORAGE_BUCKET": "test-bucket.appspot.com",
     "RESEND_API_KEY": "test_resend_key",
     "APP_SECRET_KEY": "test_app_secret_key_for_tests_only",
     "APP_ENV": "test",
 })
 
-# ── 2. Mock do Supabase e Firebase antes de qualquer import da app ───────────
+# ── 2. Mock do Supabase antes de qualquer import da app ──────────────────────
 # Supabase valida o JWT no construtor — substituímos o módulo inteiro.
 _supabase_mock = MagicMock()
 _supabase_mock.create_client.return_value = MagicMock()
 sys.modules["supabase"] = _supabase_mock
-
-_firebase_mock = MagicMock()
-_firebase_mock._apps = {}
-sys.modules["firebase_admin"] = _firebase_mock
-sys.modules["firebase_admin.credentials"] = MagicMock()
-sys.modules["firebase_admin.storage"] = MagicMock()
 
 # ── 3. Imports (após mocks) ───────────────────────────────────────────────────
 import pytest
