@@ -62,7 +62,26 @@
       "Bash(curl.exe -s -o /dev/null -w \"API health \\(8000\\): HTTP %{http_code}\\\\n\" --max-time 3 http://127.0.0.1:8000/)",
       "Bash(curl.exe -s -o /dev/null -w \"Painel \\(3000\\): HTTP %{http_code}\\\\n\" --max-time 3 http://127.0.0.1:3000/)",
       "Bash(curl.exe -s -o /dev/null -w \"Site \\(3001\\): HTTP %{http_code}\\\\n\" --max-time 3 http://127.0.0.1:3001/)",
-      "Bash(curl.exe -i -s --max-time 10 -X POST http://127.0.0.1:3000/api/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"ivompb2000@gmail.com\",\"senha\":\"Mora2026Test!\"}')"
+      "Bash(curl.exe -i -s --max-time 10 -X POST http://127.0.0.1:3000/api/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"ivompb2000@gmail.com\",\"senha\":\"Mora2026Test!\"}')",
+      "Bash(python -m pytest tests/test_clientes.py -q)",
+      "Bash(curl -s -o /dev/null -w \"POST /clientes  \\(sem barra\\) → %{http_code}\\\\n\" -X POST http://127.0.0.1:8000/clientes -H \"Content-Type: application/json\" -d '{}')",
+      "Bash(curl -s -o /dev/null -w \"POST /clientes/ \\(com barra\\) → %{http_code}\\\\n\" -X POST http://127.0.0.1:8000/clientes/ -H \"Content-Type: application/json\" -d '{}')",
+      "Bash(curl -s -o /dev/null -w \"POST /clientes  → %{http_code}\\\\n\" -X POST http://127.0.0.1:8000/clientes -H \"Content-Type: application/json\" -d '{}')",
+      "Bash(python -m pytest tests/test_clientes.py -v)",
+      "Bash(venv/Scripts/python.exe -m pytest tests/test_clientes.py -v)",
+      "Bash(venv/Scripts/python.exe -m pytest)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/clientes)",
+      "Bash(npx eslint *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:8000/docs)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:8000/clientes)",
+      "WebSearch",
+      "Bash(curl -s -o /dev/null -w \"API:%{http_code}\\\\n\" http://localhost:8000/docs)",
+      "Bash(curl -s -o /dev/null -w \"WEB:%{http_code}\\\\n\" http://localhost:3000/clientes)",
+      "Bash(curl -s http://localhost:8000/openapi.json)",
+      "Bash(python -c \"import json,sys; spec=json.load\\(sys.stdin\\); [print\\(p\\) for p in spec['paths'] if '/clientes' in p]\")",
+      "Bash(curl -s -o /dev/null -w \"exportar \\(sem auth\\): %{http_code}\\\\n\" http://localhost:8000/clientes/exportar)",
+      "Bash(curl -s -o /dev/null -w \"importar \\(sem auth\\): %{http_code}\\\\n\" -X POST http://localhost:8000/clientes/importar)",
+      "Bash(api/venv/Scripts/python.exe -m pytest api/tests/test_clientes.py -v)"
     ]
   }
 }

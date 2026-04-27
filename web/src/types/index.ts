@@ -106,14 +106,16 @@ export type OrigemLead =
 export interface Cliente {
   id: string;
   nome_completo: string;
-  email: string;
+  email?: string;
   telefone: string;
   cpf_cnpj?: string;
   data_nascimento?: string;
   telefone_secundario?: string;
+  instagram?: string;
   endereco?: string;
   cidade?: string;
   estado?: string;
+  pais?: string;
   profissao_empresa?: string;
   origem_lead?: OrigemLead;
   corretor_id?: string;
@@ -122,6 +124,7 @@ export interface Cliente {
   renda_aproximada?: number;
   como_conheceu?: string;
   observacoes?: string;
+  imovel_codigo?: string;
   created_at: string;
   updated_at: string;
 }

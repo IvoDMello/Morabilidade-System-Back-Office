@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Search, X, Pencil, Trash2, ChevronLeft, ChevronRight, Users } from "lucide-react";
+import { Search, X, Pencil, Trash2, ChevronLeft, ChevronRight, Users, Download, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -12,11 +12,13 @@ import type { Cliente } from "@/types";
 interface ClienteListItem {
   id: string;
   nome_completo: string;
-  email: string;
+  email?: string;
   telefone: string;
   status?: string;
   tipo_cliente?: string;
   origem_lead?: string;
+  imovel_codigo?: string;
+  observacoes?: string;
   created_at: string;
 }
 
@@ -57,6 +59,7 @@ export default function ClientesPage() {
   const [filtrosAbertos, setFiltrosAbertos] = useState(false);
   const [deletando, setDeletando] = useState<{ id: string; nome: string } | null>(null);
   const [deletandoLoading, setDeletandoLoading] = useState(false);
+  const [exportando, setExportando] = useState(false);
 
   const PAGE_SIZE = 20;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -96,6 +99,27 @@ export default function ClientesPage() {
     buscar(1, FILTROS_VAZIOS);
   }
 
+  async function handleExportar() {
+    setExportando(true);
+    try {
+      const res = await api.get("/clientes/exportar", { responseType: "blob" });
+      const blob = new Blob([res.data], { type: "text/csv;charset=utf-8" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `clientes-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success("CSV exportado com sucesso.");
+    } catch {
+      toast.error("Erro ao exportar CSV.");
+    } finally {
+      setExportando(false);
+    }
+  }
+
   async function handleDeletar() {
     if (!deletando) return;
     setDeletandoLoading(true);
@@ -127,7 +151,7 @@ export default function ClientesPage() {
             {loading ? "Carregando..." : `${total} cliente${total !== 1 ? "s" : ""} cadastrado${total !== 1 ? "s" : ""}`}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={() => setFiltrosAbertos((v) => !v)}
             className={`flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg border transition ${
@@ -147,6 +171,23 @@ export default function ClientesPage() {
               </span>
             )}
           </button>
+          <button
+            onClick={handleExportar}
+            disabled={exportando || total === 0}
+            className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg border bg-white border-slate-200 text-slate-600 hover:border-slate-300 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Baixa todos os clientes em CSV"
+          >
+            <Download className="w-4 h-4" />
+            {exportando ? "Exportando..." : "Exportar CSV"}
+          </button>
+          <Link
+            href="/clientes/importar"
+            className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg border bg-white border-slate-200 text-slate-600 hover:border-slate-300 transition"
+            title="Importa clientes de um arquivo CSV"
+          >
+            <Upload className="w-4 h-4" />
+            Importar CSV
+          </Link>
           <Link
             href="/clientes/novo"
             className="px-4 py-2 text-white text-sm font-medium rounded-lg transition hover:opacity-90"
@@ -246,6 +287,7 @@ export default function ClientesPage() {
                   <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Cliente</th>
                   <th className="hidden md:table-cell text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Tipo</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Status</th>
+                  <th className="hidden lg:table-cell text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Observação</th>
                   <th className="hidden sm:table-cell text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Cadastro</th>
                   <th className="px-4 py-3" />
                 </tr>
@@ -257,14 +299,19 @@ export default function ClientesPage() {
                     <tr key={c.id} className="hover:bg-slate-50/60 transition">
                       <td className="px-4 py-3">
                         <p className="font-medium text-slate-800">{c.nome_completo}</p>
-                        <p className="text-xs text-slate-400 mt-0.5">{c.email}</p>
-                        <p className="sm:hidden text-xs text-slate-400">{c.telefone}</p>
+                        <p className="text-xs text-slate-400 mt-0.5">{c.email || c.telefone}</p>
+                        {c.email && <p className="sm:hidden text-xs text-slate-400">{c.telefone}</p>}
                       </td>
 
                       <td className="hidden md:table-cell px-4 py-3">
                         <span className="text-slate-600">
                           {c.tipo_cliente ? TIPO_CLIENTE_LABEL[c.tipo_cliente] ?? c.tipo_cliente : "—"}
                         </span>
+                        {c.tipo_cliente === "proprietario" && (
+                          <p className="text-xs text-slate-400 mt-0.5 font-mono">
+                            {c.imovel_codigo || "sem imóvel"}
+                          </p>
+                        )}
                       </td>
 
                       <td className="px-4 py-3">
@@ -274,6 +321,19 @@ export default function ClientesPage() {
                           </span>
                         ) : (
                           <span className="text-slate-400">—</span>
+                        )}
+                      </td>
+
+                      <td className="hidden lg:table-cell px-4 py-3 max-w-xs">
+                        {c.observacoes ? (
+                          <p
+                            className="text-xs text-slate-500 truncate"
+                            title={c.observacoes}
+                          >
+                            {c.observacoes}
+                          </p>
+                        ) : (
+                          <span className="text-slate-300 text-xs">—</span>
                         )}
                       </td>
 

@@ -17,19 +17,22 @@ export default function NovoClientePage() {
     try {
       const payload = {
         ...data,
+        email: data.email || null,
         cpf_cnpj: data.cpf_cnpj || null,
-        data_nascimento: data.data_nascimento || null,
         telefone_secundario: data.telefone_secundario || null,
+        instagram: data.instagram || null,
         endereco: data.endereco || null,
         cidade: data.cidade || null,
         estado: data.estado || null,
-        profissao_empresa: data.profissao_empresa || null,
+        pais: data.estado === "EX" ? data.pais || null : null,
         origem_lead: data.origem_lead || null,
         corretor_id: data.corretor_id || null,
         status: data.status || null,
         tipo_cliente: data.tipo_cliente || null,
         como_conheceu: data.como_conheceu || null,
         observacoes: data.observacoes || null,
+        imovel_codigo:
+          data.tipo_cliente === "proprietario" ? data.imovel_codigo?.trim() || null : null,
       };
       const res = await api.post<{ id: string }>("/clientes/", payload);
       toast.success("Cliente cadastrado com sucesso!");

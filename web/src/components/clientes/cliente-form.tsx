@@ -5,25 +5,30 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2 } from "lucide-react";
 
-const schema = z.object({
-  nome_completo: z.string().min(2, "Nome obrigatório"),
-  email: z.string().email("E-mail inválido"),
-  telefone: z.string().min(8, "Telefone obrigatório"),
-  cpf_cnpj: z.string().optional().or(z.literal("")),
-  data_nascimento: z.string().optional().or(z.literal("")),
-  telefone_secundario: z.string().optional().or(z.literal("")),
-  endereco: z.string().optional().or(z.literal("")),
-  cidade: z.string().optional().or(z.literal("")),
-  estado: z.string().optional().or(z.literal("")),
-  profissao_empresa: z.string().optional().or(z.literal("")),
-  origem_lead: z.string().optional().or(z.literal("")),
-  corretor_id: z.string().optional().or(z.literal("")),
-  status: z.string().optional().or(z.literal("")),
-  tipo_cliente: z.string().optional().or(z.literal("")),
-  renda_aproximada: z.coerce.number().nullable().optional(),
-  como_conheceu: z.string().optional().or(z.literal("")),
-  observacoes: z.string().optional().or(z.literal("")),
-});
+const schema = z
+  .object({
+    nome_completo: z.string().min(2, "Nome obrigatório"),
+    email: z.string().email("E-mail inválido").or(z.literal("")).optional(),
+    telefone: z.string().min(8, "Telefone obrigatório"),
+    cpf_cnpj: z.string().optional().or(z.literal("")),
+    telefone_secundario: z.string().optional().or(z.literal("")),
+    instagram: z.string().optional().or(z.literal("")),
+    endereco: z.string().optional().or(z.literal("")),
+    cidade: z.string().optional().or(z.literal("")),
+    estado: z.string().optional().or(z.literal("")),
+    pais: z.string().optional().or(z.literal("")),
+    origem_lead: z.string().optional().or(z.literal("")),
+    corretor_id: z.string().optional().or(z.literal("")),
+    status: z.string().optional().or(z.literal("")),
+    tipo_cliente: z.string().optional().or(z.literal("")),
+    como_conheceu: z.string().optional().or(z.literal("")),
+    observacoes: z.string().optional().or(z.literal("")),
+    imovel_codigo: z.string().optional().or(z.literal("")),
+  })
+  .refine((data) => data.estado !== "EX" || (data.pais && data.pais.trim().length > 0), {
+    message: "Informe o país",
+    path: ["pais"],
+  });
 
 export type ClienteFormData = z.infer<typeof schema>;
 
@@ -62,11 +67,15 @@ export function ClienteForm({ defaultValues, onSubmit, isLoading, submitLabel = 
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<ClienteFormData>({
     resolver: zodResolver(schema),
     defaultValues: defaultValues ?? {},
   });
+
+  const estadoSelecionado = watch("estado");
+  const tipoSelecionado = watch("tipo_cliente");
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -81,7 +90,7 @@ export function ClienteForm({ defaultValues, onSubmit, isLoading, submitLabel = 
             </Field>
           </div>
 
-          <Field label="E-mail *" error={errors.email?.message}>
+          <Field label="E-mail" error={errors.email?.message}>
             <input {...register("email")} type="email" className={inputClass} placeholder="email@exemplo.com" />
           </Field>
 
@@ -93,12 +102,12 @@ export function ClienteForm({ defaultValues, onSubmit, isLoading, submitLabel = 
             <input {...register("telefone_secundario")} className={inputClass} placeholder="(00) 00000-0000" />
           </Field>
 
-          <Field label="CPF / CNPJ">
-            <input {...register("cpf_cnpj")} className={inputClass} placeholder="000.000.000-00" />
+          <Field label="Instagram">
+            <input {...register("instagram")} className={inputClass} placeholder="@perfil ou link" />
           </Field>
 
-          <Field label="Data de nascimento">
-            <input {...register("data_nascimento")} type="date" className={inputClass} />
+          <Field label="CPF / CNPJ">
+            <input {...register("cpf_cnpj")} className={inputClass} placeholder="000.000.000-00" />
           </Field>
 
           <SectionTitle>Perfil</SectionTitle>
@@ -136,24 +145,19 @@ export function ClienteForm({ defaultValues, onSubmit, isLoading, submitLabel = 
             </select>
           </Field>
 
-          <Field label="Renda aproximada (R$)">
-            <input
-              {...register("renda_aproximada")}
-              type="number"
-              min={0}
-              step={100}
-              className={inputClass}
-              placeholder="0,00"
-            />
-          </Field>
-
-          <Field label="Profissão / Empresa">
-            <input {...register("profissao_empresa")} className={inputClass} placeholder="Ex: Engenheiro, XYZ Ltda" />
-          </Field>
-
           <Field label="Como conheceu a imobiliária">
             <input {...register("como_conheceu")} className={inputClass} placeholder="Ex: Indicação de amigo" />
           </Field>
+
+          {tipoSelecionado === "proprietario" && (
+            <Field label="Código do imóvel" error={errors.imovel_codigo?.message}>
+              <input
+                {...register("imovel_codigo")}
+                className={inputClass}
+                placeholder="Ex: IMO-00001 (opcional)"
+              />
+            </Field>
+          )}
 
           <SectionTitle>Endereço</SectionTitle>
 
@@ -173,8 +177,15 @@ export function ClienteForm({ defaultValues, onSubmit, isLoading, submitLabel = 
               {["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"].map((uf) => (
                 <option key={uf} value={uf}>{uf}</option>
               ))}
+              <option value="EX">EX — Exterior</option>
             </select>
           </Field>
+
+          {estadoSelecionado === "EX" && (
+            <Field label="País *" error={errors.pais?.message}>
+              <input {...register("pais")} className={inputClass} placeholder="Ex: Portugal, EUA, Argentina" />
+            </Field>
+          )}
 
           <SectionTitle>Observações</SectionTitle>
 

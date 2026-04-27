@@ -38,19 +38,22 @@ export default function EditarClientePage({ params }: { params: Promise<{ id: st
     try {
       const payload = {
         ...data,
+        email: data.email || null,
         cpf_cnpj: data.cpf_cnpj || null,
-        data_nascimento: data.data_nascimento || null,
         telefone_secundario: data.telefone_secundario || null,
+        instagram: data.instagram || null,
         endereco: data.endereco || null,
         cidade: data.cidade || null,
         estado: data.estado || null,
-        profissao_empresa: data.profissao_empresa || null,
+        pais: data.estado === "EX" ? data.pais || null : null,
         origem_lead: data.origem_lead || null,
         corretor_id: data.corretor_id || null,
         status: data.status || null,
         tipo_cliente: data.tipo_cliente || null,
         como_conheceu: data.como_conheceu || null,
         observacoes: data.observacoes || null,
+        imovel_codigo:
+          data.tipo_cliente === "proprietario" ? data.imovel_codigo?.trim() || null : null,
       };
       await api.put(`/clientes/${id}`, payload);
       toast.success("Cliente atualizado com sucesso!");
@@ -78,22 +81,22 @@ export default function EditarClientePage({ params }: { params: Promise<{ id: st
 
   const defaultValues: Partial<ClienteFormData> = {
     nome_completo: cliente.nome_completo,
-    email: cliente.email,
+    email: cliente.email ?? "",
     telefone: cliente.telefone,
     cpf_cnpj: cliente.cpf_cnpj ?? "",
-    data_nascimento: cliente.data_nascimento ?? "",
     telefone_secundario: cliente.telefone_secundario ?? "",
+    instagram: cliente.instagram ?? "",
     endereco: cliente.endereco ?? "",
     cidade: cliente.cidade ?? "",
     estado: cliente.estado ?? "",
-    profissao_empresa: cliente.profissao_empresa ?? "",
+    pais: cliente.pais ?? "",
     origem_lead: cliente.origem_lead ?? "",
     corretor_id: cliente.corretor_id ?? "",
     status: cliente.status ?? "",
     tipo_cliente: cliente.tipo_cliente ?? "",
-    renda_aproximada: cliente.renda_aproximada ?? null,
     como_conheceu: cliente.como_conheceu ?? "",
     observacoes: cliente.observacoes ?? "",
+    imovel_codigo: cliente.imovel_codigo ?? "",
   };
 
   return (
@@ -107,7 +110,7 @@ export default function EditarClientePage({ params }: { params: Promise<{ id: st
         </Link>
         <div className="flex-1 min-w-0">
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900 truncate">Editar cliente</h1>
-          <p className="text-slate-500 text-sm truncate">{cliente.email}</p>
+          <p className="text-slate-500 text-sm truncate">{cliente.email || cliente.telefone}</p>
         </div>
       </div>
 

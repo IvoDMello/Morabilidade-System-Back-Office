@@ -29,14 +29,16 @@ class OrigemLead(str, Enum):
 
 class ClienteCreate(BaseModel):
     nome_completo: str
-    email: EmailStr
+    email: Optional[EmailStr] = None
     telefone: str
     cpf_cnpj: Optional[str] = None
     data_nascimento: Optional[str] = None
     telefone_secundario: Optional[str] = None
+    instagram: Optional[str] = None
     endereco: Optional[str] = None
     cidade: Optional[str] = None
     estado: Optional[str] = None
+    pais: Optional[str] = None
     profissao_empresa: Optional[str] = None
     origem_lead: Optional[OrigemLead] = None
     corretor_id: Optional[str] = None
@@ -45,6 +47,7 @@ class ClienteCreate(BaseModel):
     renda_aproximada: Optional[float] = None
     como_conheceu: Optional[str] = None
     observacoes: Optional[str] = None
+    imovel_codigo: Optional[str] = None
 
 
 class ClienteUpdate(ClienteCreate):
@@ -62,9 +65,11 @@ class ClienteOut(ClienteCreate):
 class ClienteListOut(BaseModel):
     id: str
     nome_completo: str
-    email: str
+    email: Optional[str] = None
     telefone: str
     status: Optional[StatusCliente] = None
     tipo_cliente: Optional[TipoCliente] = None
     origem_lead: Optional[OrigemLead] = None
+    imovel_codigo: Optional[str] = None
+    observacoes: Optional[str] = None
     created_at: str

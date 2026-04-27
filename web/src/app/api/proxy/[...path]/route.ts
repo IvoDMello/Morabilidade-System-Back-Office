@@ -10,7 +10,9 @@ async function handler(
   const { path } = await params;
   const token = request.cookies.get("morabilidade-auth")?.value;
 
-  const targetUrl = new URL(`${API_URL}/${path.join("/")}`);
+  // A API tem redirect_slashes=False, então a barra final precisa ser preservada
+  const trailingSlash = request.nextUrl.pathname.endsWith("/") ? "/" : "";
+  const targetUrl = new URL(`${API_URL}/${path.join("/")}${trailingSlash}`);
   request.nextUrl.searchParams.forEach((v, k) => targetUrl.searchParams.set(k, v));
 
   const headers: Record<string, string> = {};
