@@ -129,7 +129,9 @@ def test_atualizar_cliente(client):
 # ── DELETE /clientes/{id} ─────────────────────────────────────────────────────
 
 def test_deletar_cliente(client):
-    db = make_db_mock(MagicMock(data=[]))
+    select_mock = MagicMock(data=[{"id": "cliente-uuid-1"}])
+    delete_mock = MagicMock(data=[])
+    db = make_db_mock(select_mock, delete_mock)
 
     with patch("app.routers.clientes.supabase_admin", db):
         res = client.delete("/clientes/cliente-uuid-1")
