@@ -1,4 +1,5 @@
 from pydantic import BaseModel, EmailStr
+from typing import Optional
 
 
 class LoginRequest(BaseModel):
@@ -14,8 +15,6 @@ class LoginResponse(BaseModel):
 
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
-
-
-class ResetPasswordRequest(BaseModel):
-    token: str
-    nova_senha: str
+    # URL completa (https://.../redefinir-senha) para onde o link do e-mail deve apontar.
+    # Precisa estar listada em "Redirect URLs" no Supabase Dashboard.
+    redirect_to: Optional[str] = None

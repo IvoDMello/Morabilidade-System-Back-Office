@@ -23,7 +23,11 @@ export default function RecuperarSenhaPage() {
   async function onSubmit(data: Form) {
     setLoading(true);
     try {
-      await api.post("/auth/recuperar-senha", data);
+      const redirectTo =
+        typeof window !== "undefined"
+          ? `${window.location.origin}/redefinir-senha`
+          : undefined;
+      await api.post("/auth/recuperar-senha", { ...data, redirect_to: redirectTo });
       setEnviado(true);
     } catch {
       toast.error("Erro ao enviar e-mail. Tente novamente.");

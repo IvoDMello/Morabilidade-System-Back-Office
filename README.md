@@ -291,6 +291,31 @@ O banco é PostgreSQL hospedado no Supabase. Há 6 tabelas:
 **Sobre o RLS (Row Level Security):**
 O RLS está habilitado nas tabelas. A API usa a `service_role key` do Supabase, que bypassa o RLS por design. Isso é intencional — a segurança é feita via JWT + dependências do FastAPI (`get_current_user`, `require_admin`).
 
+### Configuração obrigatória no Supabase Dashboard
+
+Acesse **Authentication → URL Configuration** e cadastre:
+
+| Campo | Valor |
+|---|---|
+| Site URL | `http://localhost:3000` (e o domínio de produção depois) |
+| Redirect URLs | adicione `http://localhost:3000/redefinir-senha` (e `https://seu-dominio/redefinir-senha` para produção) |
+
+Sem isso o link enviado no e-mail de "Esqueci a senha" não consegue voltar para a página de redefinição.
+
+> **Limite SMTP do plano gratuito:** o Supabase envia no máximo **3 e-mails/hora** com o SMTP padrão. Para volume real, configure um SMTP próprio (Resend, SendGrid) em **Authentication → Emails → SMTP Settings**.
+
+### Criando o primeiro usuário admin
+
+A migration não cria seed de admin. No primeiro setup:
+
+1. **Authentication → Users → Add user**: defina e-mail e senha, marque **Auto Confirm User** e crie. Copie o `User UID`.
+2. **SQL Editor**, rode:
+   ```sql
+   INSERT INTO usuarios (id, nome_completo, email, perfil, ativo)
+   VALUES ('<UUID-COPIADO>', '<Nome Completo>', '<email>', 'admin', true);
+   ```
+3. Pronto — agora dá para fazer login no painel e criar os outros usuários pela tela `/usuarios`.
+
 ---
 
 ## 8. Autenticação e permissões

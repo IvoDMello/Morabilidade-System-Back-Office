@@ -38,12 +38,24 @@ export default function LoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: data.email, senha: data.senha }),
       });
-      if (!res.ok) throw new Error();
-      const { user } = await res.json();
-      setUser(user);
+      const json = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        // Usa a mensagem do servidor quando disponível — distingue
+        // "credenciais incorretas" de "API fora do ar", "perfil ausente", etc.
+        const detail =
+          typeof json === "object" && json && "detail" in json && json.detail
+            ? String(json.detail)
+            : "E-mail ou senha incorretos.";
+        toast.error(detail);
+        return;
+      }
+
+      setUser(json.user);
       router.push("/");
-    } catch {
-      toast.error("E-mail ou senha incorretos.");
+    } catch (err) {
+      console.error("[login] erro inesperado:", err);
+      toast.error("Erro de rede. Tente novamente.");
     } finally {
       setLoading(false);
     }

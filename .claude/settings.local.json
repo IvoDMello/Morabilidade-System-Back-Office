@@ -56,7 +56,13 @@
       "Bash(venv/Scripts/python.exe -m pytest tests/ -q)",
       "Bash(venv/Scripts/python.exe -m pip install -q -r requirements.txt -r requirements-dev.txt)",
       "Bash(venv/Scripts/python -m pytest tests/ -v --tb=short)",
-      "WebFetch(domain:www.instagram.com)"
+      "WebFetch(domain:www.instagram.com)",
+      "Bash(venv/Scripts/python.exe -c ' *)",
+      "Bash(venv/Scripts/python.exe -m pytest tests/test_auth.py -q)",
+      "Bash(curl.exe -s -o /dev/null -w \"API health \\(8000\\): HTTP %{http_code}\\\\n\" --max-time 3 http://127.0.0.1:8000/)",
+      "Bash(curl.exe -s -o /dev/null -w \"Painel \\(3000\\): HTTP %{http_code}\\\\n\" --max-time 3 http://127.0.0.1:3000/)",
+      "Bash(curl.exe -s -o /dev/null -w \"Site \\(3001\\): HTTP %{http_code}\\\\n\" --max-time 3 http://127.0.0.1:3001/)",
+      "Bash(curl.exe -i -s --max-time 10 -X POST http://127.0.0.1:3000/api/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"ivompb2000@gmail.com\",\"senha\":\"Mora2026Test!\"}')"
     ]
   }
 }

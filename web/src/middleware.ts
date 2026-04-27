@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/recuperar-senha"];
+const PUBLIC_PATHS = ["/login", "/recuperar-senha", "/redefinir-senha"];
 
 function jwtNaoExpirado(token: string): boolean {
   try {
@@ -26,7 +26,9 @@ export function middleware(request: NextRequest) {
     return response;
   }
 
-  if (isPublic && tokenValido) {
+  // /redefinir-senha precisa funcionar mesmo se houver sessão ativa, pois o
+  // usuário pode chegar aqui pelo link do e-mail enquanto está logado em outra aba.
+  if (isPublic && tokenValido && !pathname.startsWith("/redefinir-senha")) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
@@ -34,5 +36,8 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // Exclui /api/* do middleware — essas rotas precisam funcionar sem cookie
+  // (ex.: /api/auth/login cria o cookie após o login bem-sucedido) e elas
+  // já tratam autenticação internamente quando necessário.
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };
