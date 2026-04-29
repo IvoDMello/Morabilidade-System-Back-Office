@@ -67,7 +67,7 @@ export default async function ImoveisPage({ searchParams }: Props) {
               fallback={
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   {Array.from({ length: 6 }).map((_, i) => (
-                    <div key={i} className="rounded-2xl bg-slate-100 animate-pulse aspect-[16/11]" />
+                    <div key={i} className="rounded-2xl bg-slate-100 animate-pulse aspect-[3/4]" />
                   ))}
                 </div>
               }

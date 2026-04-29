@@ -68,6 +68,7 @@ class ImovelCreate(BaseModel):
     descricao: Optional[str] = None
     video_url: Optional[str] = None
     corretor_id: Optional[str] = None
+    destaque_ordem: Optional[int] = None  # 1-5 ou None
     tag_ids: Optional[List[str]] = []
 
 
@@ -125,6 +126,8 @@ class ImovelListOut(BaseModel):
     iptu_mensal: Optional[Decimal] = None
     foto_capa: Optional[str] = None
     tags: List[dict] = []
+    destaque_ordem: Optional[int] = None
+    proprietario: Optional[dict] = None  # {nome_completo, telefone} se houver
     created_at: str
 
     @field_serializer(

@@ -94,7 +94,14 @@
       "Bash(venv/Scripts/python.exe -c \"from app.main import app; print\\('OK', len\\(app.routes\\), 'rotas'\\)\")",
       "Bash(venv/Scripts/python.exe -m pytest tests/test_contato.py -q)",
       "Bash(../api/venv/Scripts/python.exe -m pytest ../api/tests/ -q)",
-      "Bash(api/venv/Scripts/python.exe -m pytest api/tests/ -q)"
+      "Bash(api/venv/Scripts/python.exe -m pytest api/tests/ -q)",
+      "Bash(curl -s -o /dev/null -w \"site \\(3001\\): %{http_code}\\\\nweb \\(3000\\): %{http_code}\\\\napi \\(8000\\): %{http_code}\\\\n\" http://localhost:3001 -w \"\" -o /dev/null)",
+      "Bash(curl -s -o /dev/null -w \"web \\(3000\\): %{http_code}\\\\n\" http://localhost:3000)",
+      "Bash(curl -s -o /dev/null -w \"api \\(8000\\): %{http_code}\\\\n\" http://localhost:8000/docs)",
+      "Bash(curl -s -o /dev/null -w \"site:%{http_code}\\\\n\" http://localhost:3001 --max-time 5)",
+      "Bash(curl -s -o /dev/null -w \"API:%{http_code}\\\\n\" http://localhost:8000/imoveis/publico/destaques --max-time 5)",
+      "Bash(curl -s http://localhost:8000/imoveis/publico/destaques --max-time 5)",
+      "Bash(venv/Scripts/python.exe -c \"from app.main import app; print\\('OK', len\\(app.routes\\)\\)\")"
     ]
   }
 }

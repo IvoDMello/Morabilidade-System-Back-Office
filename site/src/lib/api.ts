@@ -15,7 +15,7 @@ export async function getImoveisDisponiveis(
     if (v) url.searchParams.set(k, v);
   });
 
-  const res = await fetch(url.toString(), { next: { revalidate: 60 } });
+  const res = await fetch(url.toString(), { cache: "no-store" });
   if (!res.ok) throw new Error("Erro ao buscar imóveis");
 
   const data: ImovelCard[] = await res.json();
@@ -23,9 +23,17 @@ export async function getImoveisDisponiveis(
   return { data, total };
 }
 
+export async function getImoveisDestaques(): Promise<ImovelCard[]> {
+  const res = await fetch(`${API_URL}/imoveis/publico/destaques`, {
+    cache: "no-store",
+  });
+  if (!res.ok) return [];
+  return res.json();
+}
+
 export async function getImovel(codigo: string): Promise<Imovel | null> {
   const res = await fetch(`${API_URL}/imoveis/publico/${codigo}`, {
-    next: { revalidate: 60 },
+    cache: "no-store",
   });
   if (res.status === 404) return null;
   if (!res.ok) throw new Error("Erro ao buscar imóvel");

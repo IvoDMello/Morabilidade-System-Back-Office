@@ -12,14 +12,21 @@ import {
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { ImovelCard } from "@/components/imoveis/ImovelCard";
+import { CarouselDestaques } from "@/components/imoveis/CarouselDestaques";
 import { HeroSearch } from "@/components/home/HeroSearch";
-import { getImoveisDisponiveis } from "@/lib/api";
+import { getImoveisDestaques, getImoveisDisponiveis } from "@/lib/api";
 
 export default async function HomePage() {
   const anosDeMarket = new Date().getFullYear() - 2010;
-  const { data: destaques, total } = await getImoveisDisponiveis({
+
+  // Destaques selecionados pelo admin no painel (até 5).
+  // Fallback: se não houver nenhum destaque, usa os mais recentes disponíveis.
+  const destaquesAdmin = await getImoveisDestaques().catch(() => []);
+  const { data: maisRecentes, total } = await getImoveisDisponiveis({
     page_size: "6",
   }).catch(() => ({ data: [], total: 0 }));
+  const destaques = destaquesAdmin.length > 0 ? destaquesAdmin : maisRecentes;
+  const usandoDestaquesAdmin = destaquesAdmin.length > 0;
 
   return (
     <>
@@ -94,14 +101,14 @@ export default async function HomePage() {
         <div className="flex flex-wrap items-end justify-between gap-4 mb-10">
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: "#d8cb6a" }}>
-              Portfólio
+              {usandoDestaquesAdmin ? "Selecionados a dedo" : "Portfólio"}
             </p>
             <h2 className="font-serif text-3xl sm:text-4xl font-bold text-olive-900">
-              Imóveis disponíveis
+              {usandoDestaquesAdmin ? "Nossos destaques" : "Imóveis disponíveis"}
             </h2>
             {total > 0 && (
               <p className="text-slate-400 mt-1 text-sm">
-                {total} imóve{total !== 1 ? "is" : "l"} cadastrado{total !== 1 ? "s" : ""}
+                {total} imóve{total !== 1 ? "is" : "l"} disponíve{total !== 1 ? "is" : "l"} no portfólio
               </p>
             )}
           </div>
@@ -116,11 +123,17 @@ export default async function HomePage() {
         </div>
 
         {destaques.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {destaques.map((imovel) => (
-              <ImovelCard key={imovel.id} imovel={imovel} />
-            ))}
-          </div>
+          // Carrossel quando admin selecionou destaques (visual mais marcante);
+          // grid simples quando é só fallback de mais recentes.
+          usandoDestaquesAdmin ? (
+            <CarouselDestaques imoveis={destaques} />
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {destaques.map((imovel) => (
+                <ImovelCard key={imovel.id} imovel={imovel} />
+              ))}
+            </div>
+          )
         ) : (
           <div className="py-20 text-center text-slate-300 border border-dashed border-slate-200 rounded-2xl">
             <Building2 className="w-10 h-10 mx-auto mb-3 opacity-40" />
@@ -228,31 +241,27 @@ export default async function HomePage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {[
             {
-              nome: "Mariana Costa",
-              cidade: "Ipanema, RJ",
+              nome: "Marcelo Guidini",
               inicial: "M",
-              texto: "Encontrei meu apartamento em menos de duas semanas. Atendimento incrível, super ágil e personalizado. Superou todas as expectativas!",
+              texto: "Rodrigo foi atencioso em todas as etapas da compra do imóvel, desde a primeira visita até a assinatura da escritura. Esclareceu minhas dúvidas sempre com agilidade e transparência, o que me deixou muito seguro de estar fazendo um bom negócio.",
             },
             {
-              nome: "Rafael Mendonça",
-              cidade: "Botafogo, RJ",
-              inicial: "R",
-              texto: "Procurava um imóvel para investimento e a equipe trouxe opções certeiras. Todo o processo pelo WhatsApp, extremamente prático.",
-            },
-            {
-              nome: "Juliana e Pedro Alves",
-              cidade: "Leblon, RJ",
+              nome: "Juliana Paiva",
               inicial: "J",
-              texto: "Compramos nosso primeiro apartamento pela Morabilidade. Foram transparentes em cada etapa e fechamos com total segurança.",
+              texto: "Comprar, vender ou investir em um imóvel é sempre delicado e envolve diferentes aspectos. Ter um corretor como o Rodrigo é um porto seguro. Além de ser extremamente comprometido e ter bons imóveis, ele demonstra uma preocupação genuína em ver as pessoas felizes, atingindo seus objetivos.\nQuer fugir de corretores inescrupulosos, que escondem defeitos ou colocam sua comissão à frente dos interesses dos clientes? Pode ter certeza de que o Rodrigo nunca fará nada perto disso — pelo contrário. Tê-lo como corretor é a certeza de ser bem assessorado.",
             },
             {
-              nome: "Camila Rodrigues",
-              cidade: "Copacabana, RJ",
-              inicial: "C",
-              texto: "Aluguel resolvido em dias! Me apresentaram imóveis dentro do meu perfil e a negociação foi tranquila. Recomendo muito.",
+              nome: "Fabiano Sanches",
+              inicial: "F",
+              texto: "Eu não sabia que uma imobiliária poderia fazer mais do que simplesmente multiplicar o preço médio do m² pela área do imóvel e anunciar na OLX. Encontrei na Morabilidade uma abordagem diferente para avaliar meu apartamento e me conectar com os compradores certos.\nO resultado? O apartamento foi anunciado, visitado e vendido em 1 dia! Tudo com muita transparência e com uma assessoria jurídica impecável.",
+            },
+            {
+              nome: "Fernanda Cozac",
+              inicial: "F",
+              texto: "Rodrigo, desde o início, entendeu qual era o estilo de imóvel que estávamos procurando e fez um filtro muito assertivo. Me apaixonei por uma casa que estava em uma situação complicada, mas, com muita paciência, perseverança, transparência e parceria na condução da negociação, conseguimos adquiri-la.\nRodrigo foi muito parceiro em todo esse processo. Recomendo ele para todos que estão buscando um imóvel!",
             },
           ].map((dep) => (
             <div
@@ -268,7 +277,7 @@ export default async function HomePage() {
                 ))}
               </div>
               {/* Texto */}
-              <p className="text-slate-600 text-sm leading-relaxed flex-1">
+              <p className="text-slate-600 text-sm leading-relaxed flex-1 whitespace-pre-line">
                 &ldquo;{dep.texto}&rdquo;
               </p>
               {/* Autor */}
@@ -281,7 +290,6 @@ export default async function HomePage() {
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-slate-800">{dep.nome}</p>
-                  <p className="text-xs text-slate-400">{dep.cidade}</p>
                 </div>
               </div>
             </div>

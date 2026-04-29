@@ -212,3 +212,62 @@ def test_corretor_nao_pode_criar_imovel(corretor_client):
 def test_corretor_nao_pode_deletar_imovel(corretor_client):
     res = corretor_client.delete("/imoveis/imovel-uuid-1")
     assert res.status_code == 403
+
+
+# ── Destaques (carrossel da home) ─────────────────────────────────────────────
+
+def test_destaques_publico_retorna_ordenados(anon_client):
+    """Endpoint público de destaques é acessível sem auth e retorna em ordem."""
+    destaque1 = {**IMOVEL_DB, "id": "i1", "codigo": "IMO-001", "destaque_ordem": 1}
+    destaque3 = {**IMOVEL_DB, "id": "i3", "codigo": "IMO-003", "destaque_ordem": 3}
+    db = make_db_mock(MagicMock(data=[destaque1, destaque3]))
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = anon_client.get("/imoveis/publico/destaques")
+
+    assert res.status_code == 200
+    body = res.json()
+    assert len(body) == 2
+    assert body[0]["codigo"] == "IMO-001"
+    assert body[1]["codigo"] == "IMO-003"
+
+
+def test_destaques_publico_vazio(anon_client):
+    db = make_db_mock(MagicMock(data=[]))
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = anon_client.get("/imoveis/publico/destaques")
+    assert res.status_code == 200
+    assert res.json() == []
+
+
+def test_atualizar_imovel_libera_posicao_de_destaque_anterior(client):
+    """Ao definir destaque_ordem=2 no imóvel A, o B que estava em 2 deve perder."""
+    atualizado = {**IMOVEL_DB, "destaque_ordem": 2}
+    update_libera = MagicMock(data=[])  # libera posição
+    update_imovel = MagicMock(data=[atualizado])
+    tag_del = MagicMock(data=[])
+    detail = MagicMock(data=atualizado)
+    db = make_db_mock(update_libera, update_imovel, tag_del, detail)
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.put(
+            "/imoveis/imovel-uuid-1",
+            json={**IMOVEL_PAYLOAD, "destaque_ordem": 2},
+        )
+
+    assert res.status_code == 200
+    # A 1ª chamada de .update() é o liberar (sets destaque_ordem=None)
+    primeiro_update = db.update.call_args_list[0].args[0]
+    assert primeiro_update == {"destaque_ordem": None}
+
+
+def test_destaque_ordem_invalido_retorna_400(client):
+    """Posição fora do range 1-5 é rejeitada."""
+    db = make_db_mock(MagicMock(data=[IMOVEL_DB]))
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.put(
+            "/imoveis/imovel-uuid-1",
+            json={**IMOVEL_PAYLOAD, "destaque_ordem": 99},
+        )
+    assert res.status_code == 400
+    assert "1 e 5" in res.json()["detail"]

@@ -250,6 +250,7 @@ export default function EditarImovelPage({
     descricao: imovel.descricao ?? "",
     video_url: imovel.video_url ?? "",
     corretor_id: imovel.corretor_id ?? null,
+    destaque_ordem: imovel.destaque_ordem ?? null,
     tag_ids: imovel.tags?.map((t) => t.id) ?? [],
   };
 

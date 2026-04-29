@@ -28,14 +28,14 @@ export function ImovelCard({ imovel }: { imovel: ImovelCardType }) {
       href={`/imoveis/${imovel.codigo}`}
       className="group flex flex-col rounded-2xl overflow-hidden bg-white shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-0.5"
     >
-      {/* Foto */}
-      <div className="relative aspect-[16/11] bg-slate-100 overflow-hidden">
+      {/* Foto — formato vertical (padrão Instagram) */}
+      <div className="relative aspect-[3/4] bg-slate-100 overflow-hidden">
         {imovel.foto_capa ? (
           <Image
             src={imovel.foto_capa}
             alt={`${labelTipoImovel(imovel.tipo_imovel)} em ${imovel.bairro}, ${imovel.cidade}`}
             fill
-            className="object-cover group-hover:scale-105 transition-transform duration-500"
+            className="object-cover object-center group-hover:scale-105 transition-transform duration-500"
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           />
         ) : (

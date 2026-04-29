@@ -10,7 +10,7 @@ export function Galeria({ fotos }: { fotos: Foto[] }) {
 
   if (fotos.length === 0) {
     return (
-      <div className="aspect-video rounded-xl bg-slate-100 flex flex-col items-center justify-center gap-2 text-slate-300">
+      <div className="aspect-[3/4] max-h-[600px] mx-auto rounded-xl bg-slate-100 flex flex-col items-center justify-center gap-2 text-slate-300">
         <ImageOff className="w-10 h-10" />
         <p className="text-sm">Sem fotos cadastradas</p>
       </div>
@@ -27,15 +27,18 @@ export function Galeria({ fotos }: { fotos: Foto[] }) {
 
   return (
     <div className="space-y-3">
-      {/* Foto principal */}
-      <div className="relative aspect-video rounded-xl overflow-hidden bg-slate-100 group">
+      {/* Foto principal — vertical, com altura limitada pra não estourar a tela */}
+      <div
+        className="relative w-full max-w-md mx-auto aspect-[3/4] rounded-xl overflow-hidden bg-slate-100 group"
+        style={{ maxHeight: "min(75vh, 700px)" }}
+      >
         <Image
           key={fotos[ativa].url}
           src={fotos[ativa].url}
           alt={`Foto ${ativa + 1}`}
           fill
-          className="object-cover"
-          sizes="(max-width: 1024px) 100vw, 66vw"
+          className="object-cover object-center"
+          sizes="(max-width: 1024px) 100vw, 50vw"
           priority={ativa === 0}
         />
 
@@ -62,15 +65,15 @@ export function Galeria({ fotos }: { fotos: Foto[] }) {
         )}
       </div>
 
-      {/* Miniaturas */}
+      {/* Miniaturas — proporção vertical pra refletir a foto principal */}
       {fotos.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto pb-1">
+        <div className="flex justify-center gap-2 overflow-x-auto pb-1">
           {fotos.map((foto, i) => (
             <button
               key={foto.id}
               onClick={() => setAtiva(i)}
-              className={`relative flex-shrink-0 w-16 h-12 rounded-lg overflow-hidden border-2 transition ${
-                i === ativa ? "border-gold-400 opacity-100" : "border-transparent opacity-60 hover:opacity-90"
+              className={`relative flex-shrink-0 w-12 h-16 rounded-lg overflow-hidden border-2 transition ${
+                i === ativa ? "opacity-100" : "border-transparent opacity-60 hover:opacity-90"
               }`}
               style={i === ativa ? { borderColor: "#d8cb6a" } : undefined}
               aria-label={`Ver foto ${i + 1}`}
@@ -79,8 +82,8 @@ export function Galeria({ fotos }: { fotos: Foto[] }) {
                 src={foto.url}
                 alt={`Miniatura ${i + 1}`}
                 fill
-                className="object-cover"
-                sizes="64px"
+                className="object-cover object-center"
+                sizes="48px"
               />
             </button>
           ))}

@@ -36,7 +36,7 @@ _LIST_FIELDS = (
     "id, codigo, tipo_negocio, disponibilidade, cidade, bairro, "
     "logradouro, numero, tipo_imovel, dormitorios, suites, banheiros, "
     "vagas_garagem, area_util, valor_venda, valor_locacao, "
-    "condominio_mensal, iptu_mensal, created_at, "
+    "condominio_mensal, iptu_mensal, destaque_ordem, created_at, "
     "imovel_fotos(url, ordem), imovel_tags(tags(id, nome, cor))"
 )
 
@@ -100,6 +100,25 @@ def _transformar_detalhe(raw: dict) -> dict:
     return {**raw, "fotos": fotos, "tags": tags, "tag_ids": tag_ids}
 
 
+def _liberar_posicao_destaque(posicao: int, exceto_imovel_id: Optional[str] = None) -> None:
+    """
+    Garante que `posicao` (1-5) fica vaga: se outro imóvel já a ocupa,
+    seu destaque_ordem vira NULL. Idempotente.
+    """
+    if posicao is None:
+        return
+    if posicao < 1 or posicao > 5:
+        raise HTTPException(status_code=400, detail="Posição de destaque deve ser entre 1 e 5.")
+    q = (
+        supabase_admin.table("imoveis")
+        .update({"destaque_ordem": None})
+        .eq("destaque_ordem", posicao)
+    )
+    if exceto_imovel_id:
+        q = q.neq("id", exceto_imovel_id)
+    q.execute()
+
+
 def _buscar_imovel(imovel_id: str) -> dict:
     result = (
         supabase_admin.table("imoveis")
@@ -151,6 +170,24 @@ def imoveis_disponiveis_publico(
     )
     result = query.order("created_at", desc=True).range(offset, offset + page_size - 1).execute()
     return [_transformar_lista(item) for item in result.data]
+
+
+@router.get("/publico/destaques", response_model=List[ImovelListOut], tags=["Site Público"])
+@limiter.limit("60/minute")
+def imoveis_destaques_publico(request: Request):
+    """
+    Imóveis selecionados pelo admin para o carrossel da home.
+    Ordenados por destaque_ordem (1-5). Inclui apenas disponíveis.
+    """
+    result = (
+        supabase_admin.table("imoveis")
+        .select(_LIST_FIELDS)
+        .not_.is_("destaque_ordem", "null")
+        .eq("disponibilidade", "disponivel")
+        .order("destaque_ordem", desc=False)
+        .execute()
+    )
+    return [_transformar_lista(item) for item in (result.data or [])]
 
 
 @router.get("/publico/{codigo}", response_model=ImovelOut, tags=["Site Público"])
@@ -252,7 +289,28 @@ def listar_imoveis(
     )
     result = data_q.order("created_at", desc=True).range(offset, offset + page_size - 1).execute()
 
-    return [_transformar_lista(item) for item in result.data]
+    imoveis = [_transformar_lista(item) for item in result.data]
+
+    # Buscar proprietários (cliente.imovel_codigo == imovel.codigo, tipo_cliente=proprietario)
+    # em uma única query batch para evitar N+1.
+    codigos = [im["codigo"] for im in imoveis if im.get("codigo")]
+    if codigos:
+        props_resp = (
+            supabase_admin.table("clientes")
+            .select("nome_completo, telefone, imovel_codigo")
+            .in_("imovel_codigo", codigos)
+            .eq("tipo_cliente", "proprietario")
+            .execute()
+        )
+        mapa_props = {p["imovel_codigo"]: p for p in (props_resp.data or [])}
+        for im in imoveis:
+            p = mapa_props.get(im["codigo"])
+            im["proprietario"] = (
+                {"nome_completo": p["nome_completo"], "telefone": p["telefone"]}
+                if p else None
+            )
+
+    return imoveis
 
 
 @router.post("/", response_model=ImovelOut, status_code=status.HTTP_201_CREATED)
@@ -266,6 +324,9 @@ def criar_imovel(body: ImovelCreate, current_user: dict = Depends(require_admin)
                   "iptu_mensal", "condominio_mensal"):
         if data.get(field) is not None:
             data[field] = float(data[field])
+
+    if data.get("destaque_ordem") is not None:
+        _liberar_posicao_destaque(data["destaque_ordem"])
 
     result = supabase_admin.table("imoveis").insert(data).execute()
     imovel = result.data[0]
@@ -293,6 +354,9 @@ def atualizar_imovel(
                   "iptu_mensal", "condominio_mensal"):
         if updates.get(field) is not None:
             updates[field] = float(updates[field])
+
+    if "destaque_ordem" in updates and updates["destaque_ordem"] is not None:
+        _liberar_posicao_destaque(updates["destaque_ordem"], exceto_imovel_id=imovel_id)
 
     supabase_admin.table("imoveis").update(updates).eq("id", imovel_id).execute()
 

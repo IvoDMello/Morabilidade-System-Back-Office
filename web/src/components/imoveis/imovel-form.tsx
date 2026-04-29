@@ -52,6 +52,10 @@ const schema = z.object({
   descricao: z.string().optional(),
   video_url: z.string().optional(),
   corretor_id: z.string().optional().nullable(),
+  destaque_ordem: z.preprocess(
+    (v) => (v === "" || v == null ? null : Number(v)),
+    z.number().int().min(1).max(5).nullable().optional()
+  ),
   tag_ids: z.array(z.string()).default([]),
 });
 
@@ -224,6 +228,21 @@ export function ImovelForm({
               <option value="na_planta">Na planta</option>
             </select>
             <FieldError message={errors.condicao?.message} />
+          </div>
+
+          <div className="lg:col-span-2">
+            <Label>Destaque na home</Label>
+            <select {...register("destaque_ordem")} className={selectClass}>
+              <option value="">Não destacado</option>
+              <option value="1">Posição 1</option>
+              <option value="2">Posição 2</option>
+              <option value="3">Posição 3</option>
+              <option value="4">Posição 4</option>
+              <option value="5">Posição 5</option>
+            </select>
+            <p className="mt-1 text-xs text-slate-400">
+              Ao escolher uma posição já em uso, o imóvel anterior perde o destaque.
+            </p>
           </div>
         </div>
       </div>

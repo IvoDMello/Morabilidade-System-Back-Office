@@ -66,6 +66,7 @@ export interface Imovel {
   descricao?: string;
   video_url?: string;
   corretor_id?: string;
+  destaque_ordem?: number | null;
   fotos: Foto[];
   tags: Tag[];
   created_at: string;
@@ -93,6 +94,8 @@ export interface ImovelListOut {
   iptu_mensal?: number;
   foto_capa?: string;
   tags: { id: string; nome: string; cor?: string }[];
+  destaque_ordem?: number | null;
+  proprietario?: { nome_completo: string; telefone: string } | null;
   created_at: string;
 }
 

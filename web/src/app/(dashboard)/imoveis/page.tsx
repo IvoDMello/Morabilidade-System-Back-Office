@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Search, ChevronLeft, ChevronRight, BedDouble, Bath,
-  Car, Maximize2, Camera, RefreshCw, Info as InfoIcon,
+  Car, Maximize2, Pencil, Info as InfoIcon,
   LayoutList, Map, Building2, Trash2, Download,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -47,6 +47,12 @@ const DISP_BAR: Record<string, string> = {
   disponivel: "bg-emerald-500",
   reservado: "bg-amber-500",
   vendido_locado: "bg-slate-300",
+};
+
+const DISP_BADGE: Record<string, { label: string; class: string }> = {
+  disponivel: { label: "Disponível", class: "bg-emerald-50 text-emerald-700 ring-emerald-200" },
+  reservado: { label: "Reservado", class: "bg-amber-50 text-amber-700 ring-amber-200" },
+  vendido_locado: { label: "Vendido/Locado", class: "bg-slate-100 text-slate-500 ring-slate-200" },
 };
 
 const TIPO_NEGOCIO_LABEL: Record<string, string> = {
@@ -417,37 +423,31 @@ export default function ImoveisPage() {
                   className="bg-white rounded-lg border border-slate-200 hover:border-slate-300 hover:shadow-sm transition overflow-hidden"
                 >
                   {/* Linha de ações */}
-                  <div className="flex items-center justify-between px-4 pt-3 pb-2 border-b border-slate-50">
-                    <input type="checkbox" className="w-4 h-4 rounded border-slate-300 accent-[#585a4f]" />
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => router.push(`/imoveis/${imovel.id}`)}
-                        className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-slate-500 hover:text-[#585a4f] hover:bg-slate-50 rounded-md transition"
-                      >
-                        <Camera className="w-3.5 h-3.5" /> Mídias
-                      </button>
-                      <button
-                        onClick={() => router.push(`/imoveis/${imovel.id}`)}
-                        className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-slate-500 hover:text-[#585a4f] hover:bg-slate-50 rounded-md transition"
-                      >
-                        <RefreshCw className="w-3.5 h-3.5" /> Atualizar
-                      </button>
-                      <button
-                        onClick={() => router.push(`/imoveis/${imovel.id}`)}
-                        className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-slate-500 hover:text-[#585a4f] hover:bg-slate-50 rounded-md transition"
-                      >
-                        <InfoIcon className="w-3.5 h-3.5" /> Info
-                      </button>
-                      {isAdmin && (
-                        <button
-                          onClick={() => setDeletando({ id: imovel.id, codigo: imovel.codigo })}
-                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition"
-                          title="Excluir"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                  <div className="flex items-center justify-end gap-1 px-4 pt-3 pb-2 border-b border-slate-50">
+                    <button
+                      onClick={() => router.push(`/imoveis/${imovel.id}`)}
+                      className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-slate-500 hover:text-[#585a4f] hover:bg-slate-50 rounded-md transition"
+                      title={isAdmin ? "Editar" : "Visualizar"}
+                    >
+                      {isAdmin ? (
+                        <>
+                          <Pencil className="w-3.5 h-3.5" /> Editar
+                        </>
+                      ) : (
+                        <>
+                          <InfoIcon className="w-3.5 h-3.5" /> Detalhes
+                        </>
                       )}
-                    </div>
+                    </button>
+                    {isAdmin && (
+                      <button
+                        onClick={() => setDeletando({ id: imovel.id, codigo: imovel.codigo })}
+                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition"
+                        title="Excluir"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
 
                   {/* Conteúdo do card */}
@@ -470,14 +470,32 @@ export default function ImoveisPage() {
                         <span className="absolute bottom-1.5 left-1.5 bg-black/60 text-white text-xs px-2 py-0.5 rounded font-mono font-semibold">
                           {imovel.codigo}
                         </span>
+                        {imovel.destaque_ordem != null && (
+                          <span
+                            className="absolute top-1.5 left-1.5 text-[10px] px-1.5 py-0.5 rounded font-bold flex items-center gap-0.5 shadow"
+                            style={{ backgroundColor: "#d8cb6a", color: "#2e302a" }}
+                            title={`Destaque na home — posição ${imovel.destaque_ordem}`}
+                          >
+                            ★ #{imovel.destaque_ordem}
+                          </span>
+                        )}
                       </div>
                     </div>
 
                     {/* Info do imóvel */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-slate-800 leading-tight">
-                        {imovel.logradouro}{imovel.numero ? `, ${imovel.numero}` : ""}
-                      </p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-semibold text-slate-800 leading-tight">
+                          {imovel.logradouro}{imovel.numero ? `, ${imovel.numero}` : ""}
+                        </p>
+                        {DISP_BADGE[imovel.disponibilidade] && (
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ring-1 ${DISP_BADGE[imovel.disponibilidade].class}`}
+                          >
+                            {DISP_BADGE[imovel.disponibilidade].label}
+                          </span>
+                        )}
+                      </div>
                       <p className="text-sm font-bold text-slate-900 mt-0.5">
                         {TIPO_IMOVEL_LABEL[imovel.tipo_imovel] ?? imovel.tipo_imovel}
                       </p>
@@ -485,6 +503,15 @@ export default function ImoveisPage() {
                       <p className="text-xs font-medium mt-0.5" style={{ color: "#585a4f" }}>
                         {imovel.cidade}
                       </p>
+
+                      {/* Proprietário (se cadastrado) */}
+                      {imovel.proprietario && (
+                        <p className="text-xs text-slate-500 mt-1.5">
+                          <span className="text-slate-400">Proprietário:</span>{" "}
+                          <span className="font-medium text-slate-700">{imovel.proprietario.nome_completo}</span>
+                          <span className="text-slate-400"> · {imovel.proprietario.telefone}</span>
+                        </p>
+                      )}
 
                       {/* Especificações */}
                       <div className="flex items-center gap-4 mt-3 text-slate-500">

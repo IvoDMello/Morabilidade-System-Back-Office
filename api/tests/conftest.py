@@ -124,10 +124,12 @@ def make_db_mock(*results):
     mock = MagicMock()
     for method in (
         "table", "select", "insert", "update", "delete",
-        "eq", "neq", "ilike", "gte", "lte",
-        "order", "range", "single", "limit", "rpc",
+        "eq", "neq", "ilike", "gte", "lte", "in_",
+        "order", "range", "single", "maybe_single", "limit", "rpc",
     ):
         getattr(mock, method).return_value = mock
+    # Filtros encadeados via sub-objeto (ex: .not_.is_("col", "null"))
+    mock.not_.is_.return_value = mock
     # Padeia com fallback para evitar StopIteration em chamadas extras
     padded = list(results) + [_FALLBACK] * 10
     mock.execute.side_effect = padded
