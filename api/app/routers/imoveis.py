@@ -1,14 +1,29 @@
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Query, Response
-from typing import List, Optional
-from enum import Enum
-from app.auth.dependencies import get_current_user
-from app.schemas.imovel import (
-    ImovelCreate, ImovelUpdate, ImovelOut, ImovelListOut,
-    TipoNegocio, Disponibilidade, TipoImovel, CondicaoImovel, Mobiliado,
-)
-from app.database import supabase_admin
-from app.services.storage import upload_foto, deletar_foto
+import csv
+import io
 import uuid
+from datetime import date
+from enum import Enum
+from typing import List, Optional
+
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, Response, UploadFile, status
+
+from app.auth.dependencies import get_current_user, require_admin
+from app.database import supabase_admin
+from app.limiter import limiter
+from app.schemas.imovel import (
+    CondicaoImovel, Disponibilidade, ImovelCreate, ImovelListOut, ImovelOut,
+    ImovelUpdate, Mobiliado, TipoImovel, TipoNegocio,
+)
+from app.services.storage import deletar_foto, upload_foto
+
+
+_CAMPOS_EXPORT = [
+    "codigo", "tipo_negocio", "disponibilidade", "tipo_imovel", "condicao",
+    "cidade", "bairro", "logradouro", "numero", "complemento", "cep",
+    "dormitorios", "suites", "banheiros", "vagas_garagem", "andar", "mobiliado",
+    "area_total", "area_util", "valor_venda", "valor_locacao",
+    "iptu_mensal", "condominio_mensal", "video_url", "descricao", "created_at",
+]
 
 
 def _ev(v):
@@ -101,7 +116,9 @@ def _buscar_imovel(imovel_id: str) -> dict:
 # ── Endpoints públicos (devem vir ANTES de /{imovel_id}) ─────────────────────
 
 @router.get("/publico/disponiveis", response_model=List[ImovelListOut], tags=["Site Público"])
+@limiter.limit("60/minute")
 def imoveis_disponiveis_publico(
+    request: Request,
     http_response: Response,
     tipo_negocio: Optional[TipoNegocio] = None,
     cidade: Optional[str] = None,
@@ -137,7 +154,8 @@ def imoveis_disponiveis_publico(
 
 
 @router.get("/publico/{codigo}", response_model=ImovelOut, tags=["Site Público"])
-def detalhe_imovel_publico(codigo: str):
+@limiter.limit("60/minute")
+def detalhe_imovel_publico(request: Request, codigo: str):
     result = (
         supabase_admin.table("imoveis")
         .select("id")
@@ -152,6 +170,49 @@ def detalhe_imovel_publico(codigo: str):
 
 
 # ── Endpoints autenticados ────────────────────────────────────────────────────
+
+# IMPORTANTE: /exportar precisa vir ANTES de /{imovel_id},
+# senão "exportar" é capturado como UUID.
+
+@router.get("/exportar")
+def exportar_imoveis_csv(current_user: dict = Depends(get_current_user)):
+    """Baixa todos os imóveis como CSV (UTF-8 com BOM, delimitador ';' para Excel PT-BR)."""
+    todos = []
+    offset = 0
+    page_size = 1000
+    while True:
+        result = (
+            supabase_admin.table("imoveis")
+            .select("*")
+            .order("created_at", desc=True)
+            .range(offset, offset + page_size - 1)
+            .execute()
+        )
+        rows = result.data or []
+        todos.extend(rows)
+        if len(rows) < page_size:
+            break
+        offset += page_size
+
+    buffer = io.StringIO()
+    buffer.write("﻿")  # BOM UTF-8
+    writer = csv.DictWriter(
+        buffer, fieldnames=_CAMPOS_EXPORT, extrasaction="ignore", delimiter=";"
+    )
+    writer.writeheader()
+    for row in todos:
+        writer.writerow({c: ("" if row.get(c) is None else row.get(c)) for c in _CAMPOS_EXPORT})
+
+    nome_arquivo = f"imoveis-{date.today().isoformat()}.csv"
+    return Response(
+        content=buffer.getvalue(),
+        media_type="text/csv; charset=utf-8",
+        headers={
+            "Content-Disposition": f'attachment; filename="{nome_arquivo}"',
+            "Access-Control-Expose-Headers": "Content-Disposition",
+        },
+    )
+
 
 @router.get("/", response_model=List[ImovelListOut])
 def listar_imoveis(
@@ -195,7 +256,7 @@ def listar_imoveis(
 
 
 @router.post("/", response_model=ImovelOut, status_code=status.HTTP_201_CREATED)
-def criar_imovel(body: ImovelCreate, current_user: dict = Depends(get_current_user)):
+def criar_imovel(body: ImovelCreate, current_user: dict = Depends(require_admin)):
     data = body.model_dump(exclude={"tag_ids"})
 
     if not data.get("codigo"):
@@ -225,7 +286,7 @@ def obter_imovel(imovel_id: str, current_user: dict = Depends(get_current_user))
 def atualizar_imovel(
     imovel_id: str,
     body: ImovelUpdate,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_admin),
 ):
     updates = body.model_dump(exclude_unset=True, exclude={"tag_ids"})
     for field in ("area_total", "area_util", "valor_venda", "valor_locacao",
@@ -245,7 +306,7 @@ def atualizar_imovel(
 
 
 @router.delete("/{imovel_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def deletar_imovel(imovel_id: str, current_user: dict = Depends(get_current_user)):
+async def deletar_imovel(imovel_id: str, current_user: dict = Depends(require_admin)):
     fotos = (
         supabase_admin.table("imovel_fotos")
         .select("url")
@@ -263,7 +324,7 @@ async def deletar_imovel(imovel_id: str, current_user: dict = Depends(get_curren
 async def upload_fotos(
     imovel_id: str,
     fotos: List[UploadFile] = File(...),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_admin),
 ):
     existing = (
         supabase_admin.table("imovel_fotos")
@@ -292,7 +353,7 @@ async def upload_fotos(
 async def remover_foto(
     imovel_id: str,
     foto_id: str,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_admin),
 ):
     foto = (
         supabase_admin.table("imovel_fotos")

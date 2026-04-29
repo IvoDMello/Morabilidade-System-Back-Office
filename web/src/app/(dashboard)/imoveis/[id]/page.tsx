@@ -7,7 +7,9 @@ import { ArrowLeft, Upload, Trash2, Star, Loader2, ImageOff } from "lucide-react
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
+import { Sparkles } from "lucide-react";
 import { ImovelForm, type ImovelFormData } from "@/components/imoveis/imovel-form";
+import { InteressadosImovel } from "@/components/imoveis/interessados-imovel";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import type { Imovel, Foto } from "@/types";
 
@@ -289,6 +291,22 @@ export default function EditarImovelPage({
           imovelId={id}
           fotos={imovel.fotos ?? []}
           onAtualizar={carregarImovel}
+        />
+      </div>
+
+      {/* Clientes interessados (matches) */}
+      <div className="mt-4 bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
+        <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100">
+          <Sparkles className="w-4 h-4 text-amber-500" />
+          <h2 className="text-sm font-semibold text-slate-700">Clientes interessados</h2>
+          <span className="text-xs text-slate-400">
+            · clientes cuja preferência ativa casa com este imóvel
+          </span>
+        </div>
+        <InteressadosImovel
+          imovelId={imovel.id}
+          imovelCodigo={imovel.codigo}
+          imovelBairro={imovel.bairro}
         />
       </div>
     </div>

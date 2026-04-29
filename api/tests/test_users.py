@@ -7,7 +7,7 @@ USER_DB = {
     "id": "user-uuid-3",
     "nome_completo": "Novo Colaborador",
     "email": "colaborador@morabilidade.com",
-    "perfil": "administrativo",
+    "perfil": "corretor",
     "telefone": None,
     "foto_url": None,
     "ativo": True,
@@ -19,7 +19,7 @@ USER_PAYLOAD = {
     "nome_completo": "Novo Colaborador",
     "email": "colaborador@morabilidade.com",
     "senha": "senha1234",
-    "perfil": "administrativo",
+    "perfil": "corretor",
 }
 
 
@@ -38,15 +38,15 @@ def test_listar_usuarios_sem_autenticacao_retorna_403(anon_client):
     assert res.status_code == 403
 
 
-def test_listar_usuarios_como_usuario_comum_retorna_403(client):
-    res = client.get("/usuarios/")
+def test_listar_usuarios_como_usuario_comum_retorna_403(corretor_client):
+    res = corretor_client.get("/usuarios/")
     assert res.status_code == 403
 
 
 # ── GET /usuarios/me ──────────────────────────────────────────────────────────
 
-def test_perfil_atual_retorna_usuario_logado(client):
-    res = client.get("/usuarios/me")
+def test_perfil_atual_retorna_usuario_logado(corretor_client):
+    res = corretor_client.get("/usuarios/me")
     assert res.status_code == 200
     assert res.json()["email"] == REGULAR_USER["email"]
 
@@ -93,8 +93,8 @@ def test_criar_usuario_como_admin(admin_client):
     assert res.json()["email"] == USER_DB["email"]
 
 
-def test_criar_usuario_como_comum_retorna_403(client):
-    res = client.post("/usuarios/", json=USER_PAYLOAD)
+def test_criar_usuario_como_comum_retorna_403(corretor_client):
+    res = corretor_client.post("/usuarios/", json=USER_PAYLOAD)
     assert res.status_code == 403
 
 
@@ -120,24 +120,24 @@ def test_criar_usuario_falha_no_auth_retorna_400(admin_client):
 
 # ── PUT /usuarios/me ──────────────────────────────────────────────────────────
 
-def test_atualizar_proprio_perfil(client):
+def test_atualizar_proprio_perfil(corretor_client):
     atualizado = {**REGULAR_USER, "nome_completo": "Novo Nome"}
     db = make_db_mock(MagicMock(data=[atualizado]))
 
     with patch("app.routers.users.supabase_admin", db):
-        res = client.put("/usuarios/me", json={"nome_completo": "Novo Nome"})
+        res = corretor_client.put("/usuarios/me", json={"nome_completo": "Novo Nome"})
 
     assert res.status_code == 200
     assert res.json()["nome_completo"] == "Novo Nome"
 
 
-def test_atualizar_proprio_perfil_ignora_campo_perfil(client):
+def test_atualizar_proprio_perfil_ignora_campo_perfil(corretor_client):
     """O endpoint /me não deve permitir mudança de perfil."""
     atualizado = {**REGULAR_USER, "nome_completo": "Outro Nome"}
     db = make_db_mock(MagicMock(data=[atualizado]))
 
     with patch("app.routers.users.supabase_admin", db):
-        res = client.put("/usuarios/me", json={"nome_completo": "Outro Nome", "perfil": "admin"})
+        res = corretor_client.put("/usuarios/me", json={"nome_completo": "Outro Nome", "perfil": "admin"})
 
     assert res.status_code == 200
     # perfil não deve ter mudado — validado pelo exclude no router
@@ -193,6 +193,6 @@ def test_desativar_usuario_inexistente_retorna_204(admin_client):
     assert res.status_code == 204
 
 
-def test_desativar_usuario_como_comum_retorna_403(client):
-    res = client.delete(f"/usuarios/{USER_DB['id']}")
+def test_desativar_usuario_como_comum_retorna_403(corretor_client):
+    res = corretor_client.delete(f"/usuarios/{USER_DB['id']}")
     assert res.status_code == 403

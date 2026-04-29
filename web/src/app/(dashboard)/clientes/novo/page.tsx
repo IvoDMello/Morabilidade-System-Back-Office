@@ -33,6 +33,7 @@ export default function NovoClientePage() {
         observacoes: data.observacoes || null,
         imovel_codigo:
           data.tipo_cliente === "proprietario" ? data.imovel_codigo?.trim() || null : null,
+        tag_ids: data.tag_ids ?? [],
       };
       const res = await api.post<{ id: string }>("/clientes/", payload);
       toast.success("Cliente cadastrado com sucesso!");

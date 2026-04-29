@@ -4,8 +4,8 @@ from enum import Enum
 
 
 class PerfilAcesso(str, Enum):
-    admin = "admin"
-    administrativo = "administrativo"
+    admin = "admin"      # acesso total (escrita + leitura)
+    corretor = "corretor"  # somente leitura
 
 
 class UserCreate(BaseModel):

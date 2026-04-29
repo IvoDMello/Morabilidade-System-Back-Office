@@ -3,7 +3,6 @@ import Image from "next/image";
 import {
   ArrowRight,
   Building2,
-  Search,
   Phone,
   Briefcase,
   Users,
@@ -13,6 +12,7 @@ import {
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { ImovelCard } from "@/components/imoveis/ImovelCard";
+import { HeroSearch } from "@/components/home/HeroSearch";
 import { getImoveisDisponiveis } from "@/lib/api";
 
 export default async function HomePage() {
@@ -77,42 +77,8 @@ export default async function HomePage() {
             nas melhores regiões.
           </p>
 
-          {/* Quick search card */}
-          <div className="bg-white/10 backdrop-blur-sm border border-white/10 rounded-2xl p-3 max-w-2xl mx-auto">
-            <form
-              action="/imoveis"
-              method="get"
-              className="flex flex-col sm:flex-row gap-2"
-            >
-              <select
-                name="tipo_negocio"
-                className="flex-1 px-4 py-3 rounded-xl text-sm bg-white text-slate-800 border-0 focus:outline-none focus:ring-2 focus:ring-gold-400 cursor-pointer"
-              >
-                <option value="">Comprar ou alugar?</option>
-                <option value="venda">Comprar</option>
-                <option value="locacao">Alugar</option>
-              </select>
-              <select
-                name="tipo_imovel"
-                className="flex-1 px-4 py-3 rounded-xl text-sm bg-white text-slate-800 border-0 focus:outline-none focus:ring-2 focus:ring-gold-400 cursor-pointer"
-              >
-                <option value="">Tipo de imóvel</option>
-                <option value="casa">Casa</option>
-                <option value="apartamento">Apartamento</option>
-                <option value="terreno">Terreno</option>
-                <option value="sala">Sala comercial</option>
-                <option value="kitnet">Kitnet / Studio</option>
-              </select>
-              <button
-                type="submit"
-                className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all hover:opacity-90 hover:shadow-lg whitespace-nowrap"
-                style={{ backgroundColor: "#d8cb6a", color: "#2e302a" }}
-              >
-                <Search className="w-4 h-4" />
-                Buscar imóvel
-              </button>
-            </form>
-          </div>
+          {/* Quick search */}
+          <HeroSearch />
 
           {/* Stats row */}
           {total > 0 && (

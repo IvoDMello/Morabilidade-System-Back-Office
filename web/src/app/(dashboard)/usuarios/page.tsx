@@ -18,7 +18,7 @@ interface NovoUsuarioForm {
   nome_completo: string;
   email: string;
   senha: string;
-  perfil: "admin" | "administrativo";
+  perfil: "admin" | "corretor";
   telefone: string;
 }
 
@@ -35,7 +35,7 @@ export default function UsuariosPage() {
     nome_completo: "",
     email: "",
     senha: "",
-    perfil: "administrativo",
+    perfil: "corretor",
     telefone: "",
   });
 
@@ -59,7 +59,7 @@ export default function UsuariosPage() {
   }, [isAdmin]);
 
   function resetForm() {
-    setForm({ nome_completo: "", email: "", senha: "", perfil: "administrativo", telefone: "" });
+    setForm({ nome_completo: "", email: "", senha: "", perfil: "corretor", telefone: "" });
   }
 
   async function criarUsuario(e: React.FormEvent) {
@@ -164,11 +164,11 @@ export default function UsuariosPage() {
               <label className={labelClass}>Perfil de acesso *</label>
               <select
                 value={form.perfil}
-                onChange={(e) => setForm((f) => ({ ...f, perfil: e.target.value as "admin" | "administrativo" }))}
+                onChange={(e) => setForm((f) => ({ ...f, perfil: e.target.value as "admin" | "corretor" }))}
                 className={selectClass}
               >
-                <option value="administrativo">Administrativo</option>
-                <option value="admin">Admin</option>
+                <option value="corretor">Corretor (somente leitura)</option>
+                <option value="admin">Admin (acesso total)</option>
               </select>
             </div>
             <div>
@@ -277,7 +277,7 @@ export default function UsuariosPage() {
                           <User className="w-3.5 h-3.5 text-slate-400" />
                         )}
                         <span className={u.perfil === "admin" ? "text-violet-700 font-medium" : "text-slate-600"}>
-                          {u.perfil === "admin" ? "Admin" : "Administrativo"}
+                          {u.perfil === "admin" ? "Admin" : "Corretor"}
                         </span>
                       </div>
                     </td>

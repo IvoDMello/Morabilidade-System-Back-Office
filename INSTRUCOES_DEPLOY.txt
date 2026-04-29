@@ -1,0 +1,289 @@
+================================================================================
+MORABILIDADE — GUIA DE DEPLOY EM PRODUÇÃO
+Para rodar com calma na manhã seguinte. Tempo total: ~2h.
+================================================================================
+
+CENÁRIO ALVO
+============
+- Site público:    https://morabilidade.com.br  (e https://www.morabilidade.com.br)
+- Painel interno:  https://painel.morabilidade.com.br
+- API:             https://api.morabilidade.com.br
+- WhatsApp:        +55 21 99772-9990
+
+LOGINS NECESSÁRIOS (deixe em abas abertas antes de começar)
+===========================================================
+- Vercel (https://vercel.com) — usado pra hospedar site e painel
+- Railway (https://railway.app) — usado pra hospedar a API
+- Supabase (https://supabase.com) — banco e autenticação
+- Provedor do domínio morabilidade.com.br (Registro.br, GoDaddy, ou outro)
+- Resend (https://resend.com) — envio de e-mail
+
+================================================================================
+FASE 1 — PREPARAR O DOMÍNIO morabilidade.com.br
+================================================================================
+
+Tudo que vou pedir aqui se faz no painel do provedor do domínio
+(seção "DNS" ou "Zone Editor").
+
+Não mexa em nada ainda — só identifique onde fica essa tela. Os registros
+exatos a adicionar vão sair no FASE 2 e 3, quando Vercel/Railway te
+mostrarem os valores.
+
+Você precisará criar 4 entradas DNS no total:
+  - A ou CNAME → morabilidade.com.br        (raiz, aponta para Vercel)
+  - CNAME      → www.morabilidade.com.br    (aponta para Vercel)
+  - CNAME      → painel.morabilidade.com.br (aponta para Vercel)
+  - CNAME      → api.morabilidade.com.br    (aponta para Railway)
+
+================================================================================
+FASE 2 — DEPLOY DA API NO RAILWAY
+================================================================================
+
+A API já está com Dockerfile e railway.toml configurados.
+
+PASSO 2.1 — Criar projeto no Railway
+------------------------------------
+1. Acesse https://railway.app/new
+2. Clique em "Deploy from GitHub repo"
+3. Selecione o repositório Morabilidade-System-Back-Office
+4. Em "Add variables", clique para configurar mais tarde
+5. Em "Root directory", escolha: api
+6. Confirme o deploy. Railway vai detectar o Dockerfile automaticamente.
+
+PASSO 2.2 — Configurar variáveis de ambiente da API
+---------------------------------------------------
+No painel do projeto Railway → Variables → Raw editor → cole isto
+(substitua os <...> pelos valores reais que estão no seu .env local de DEV
+ou pegue do Supabase Dashboard → Settings → API):
+
+# Supabase
+SUPABASE_URL=https://<seu-projeto>.supabase.co
+SUPABASE_ANON_KEY=<sua-anon-key>
+SUPABASE_SERVICE_ROLE_KEY=<sua-service-role-key>
+SUPABASE_JWT_SECRET=<seu-jwt-secret>
+
+# Firebase Storage
+FIREBASE_STORAGE_BUCKET=<seu-projeto>.appspot.com
+# Cole o CONTEÚDO do firebase-credentials.json (não o caminho) abaixo:
+FIREBASE_CREDENTIALS_JSON=<copie-e-cole-o-json-inteiro-do-arquivo>
+
+# E-mail (Resend)
+RESEND_API_KEY=re_<sua-api-key>
+EMAIL_FROM=noreply@morabilidade.com.br
+EMAIL_CONTATO=contato@morabilidade.com.br
+
+# Aplicação
+APP_ENV=production
+APP_SECRET_KEY=<gere-uma-string-aleatoria-de-32-caracteres>
+CORS_ORIGINS=https://morabilidade.com.br,https://www.morabilidade.com.br,https://painel.morabilidade.com.br
+SITE_URL=https://morabilidade.com.br
+
+# Sentry (opcional — pegar DSN em sentry.io após criar o projeto)
+SENTRY_DSN=
+
+DICA: pra gerar o APP_SECRET_KEY, abra https://1password.com/password-generator
+e gere uma senha de 32 chars. Anote em algum lugar seguro.
+
+PASSO 2.3 — Vincular domínio api.morabilidade.com.br
+----------------------------------------------------
+1. No projeto Railway → Settings → Networking → "Generate Domain"
+   (gera algo como morabilidade-api.up.railway.app — guarda esse URL)
+2. Clique em "+ Custom Domain" → digite api.morabilidade.com.br
+3. Railway vai te mostrar um CNAME do tipo:
+      Type:   CNAME
+      Host:   api
+      Value:  <algumacoisa>.up.railway.app
+4. Vá no provedor do domínio e ADICIONE esse CNAME exato.
+5. Volte ao Railway e clique "Verify" (pode levar até 30 minutos pro DNS propagar).
+6. Quando der verde, teste no navegador: https://api.morabilidade.com.br/docs
+   Deve abrir a documentação do FastAPI.
+
+================================================================================
+FASE 3 — DEPLOY DO SITE PÚBLICO NA VERCEL
+================================================================================
+
+PASSO 3.1 — Criar projeto na Vercel
+-----------------------------------
+1. Acesse https://vercel.com/new
+2. Importe o repositório Morabilidade-System-Back-Office
+3. Em "Configure Project":
+   - Project Name: morabilidade-site
+   - Framework Preset: Next.js (detectado automaticamente)
+   - Root Directory: site
+4. NÃO clique deploy ainda — primeiro configure as variáveis (próximo passo).
+
+PASSO 3.2 — Variáveis de ambiente do site
+-----------------------------------------
+Na tela de configuração, clique em "Environment Variables" e adicione:
+
+NEXT_PUBLIC_API_URL = https://api.morabilidade.com.br
+NEXT_PUBLIC_WHATSAPP = 5521997729990
+NEXT_PUBLIC_SITE_URL = https://morabilidade.com.br
+
+Pode marcar todas para "Production, Preview, Development".
+
+Agora clique em DEPLOY. Vai demorar ~2 min.
+
+PASSO 3.3 — Vincular domínios morabilidade.com.br e www
+-------------------------------------------------------
+1. Após deploy, vá em Project → Settings → Domains
+2. Adicione: morabilidade.com.br
+   - Vercel vai pedir pra criar:
+        Type: A      → 76.76.21.21      (ou similar — copie o que ele mostrar)
+3. Adicione: www.morabilidade.com.br
+   - Vercel vai pedir pra criar:
+        Type: CNAME  → cname.vercel-dns.com
+4. Adicione esses dois registros DNS no provedor do domínio.
+5. Espere a propagação (até 30 min). Vercel valida automaticamente.
+
+================================================================================
+FASE 4 — DEPLOY DO PAINEL NA VERCEL
+================================================================================
+
+PASSO 4.1 — Criar segundo projeto na Vercel
+-------------------------------------------
+1. Vercel → New Project → mesmo repositório
+2. Configure:
+   - Project Name: morabilidade-painel
+   - Framework Preset: Next.js
+   - Root Directory: web
+
+PASSO 4.2 — Variáveis de ambiente do painel
+-------------------------------------------
+NEXT_PUBLIC_API_URL = https://api.morabilidade.com.br
+NEXT_PUBLIC_SUPABASE_URL = https://<seu-projeto>.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY = <sua-anon-key>
+
+(os valores de Supabase são os mesmos que estão no seu .env.local atual)
+
+Faça deploy.
+
+PASSO 4.3 — Vincular domínio painel.morabilidade.com.br
+-------------------------------------------------------
+1. Settings → Domains → adicione painel.morabilidade.com.br
+2. Vercel vai pedir CNAME → cname.vercel-dns.com
+3. Adicione no provedor do domínio.
+4. Espere validar.
+
+================================================================================
+FASE 5 — CONFIGURAR SUPABASE PARA PRODUÇÃO
+================================================================================
+
+PASSO 5.1 — URLs de redirect
+----------------------------
+1. Acesse https://supabase.com/dashboard → seu projeto
+2. Authentication → URL Configuration
+3. Site URL: https://painel.morabilidade.com.br
+4. Redirect URLs (adicione):
+      https://painel.morabilidade.com.br/redefinir-senha
+      http://localhost:3000/redefinir-senha     (manter pra continuar testando local)
+5. Salvar.
+
+PASSO 5.2 — Trocar SMTP do Supabase para Resend
+-----------------------------------------------
+O SMTP padrão do Supabase é limitado a 3 e-mails/hora — vai estourar
+fácil em "esqueci minha senha".
+
+1. Authentication → Emails → SMTP Settings
+2. Habilite "Enable Custom SMTP"
+3. Preencha:
+      Host:        smtp.resend.com
+      Port:        465
+      Username:    resend
+      Password:    <sua-RESEND_API_KEY>  (a mesma que está no Railway)
+      Sender email: noreply@morabilidade.com.br
+      Sender name: Morabilidade
+4. Salve.
+
+PASSO 5.3 — Configurar domínio no Resend (DKIM/SPF)
+---------------------------------------------------
+Pra que o e-mail saia direto da inbox (e não no spam), você precisa
+provar pro Resend que o domínio é seu.
+
+1. Acesse https://resend.com → Domains → Add Domain
+2. Digite: morabilidade.com.br
+3. Resend vai te dar uma lista de registros DNS (TXT, MX, CNAME).
+4. Adicione TODOS no provedor do domínio.
+5. Espere validar (pode levar até 24h, mas geralmente é em ~30min).
+6. Quando ficar "Verified" no Resend, e-mails vão sair limpos.
+
+================================================================================
+FASE 6 — VALIDAÇÃO MANUAL APÓS TUDO NO AR
+================================================================================
+
+Em ordem, abra cada URL e teste:
+
+[ ] https://morabilidade.com.br
+    - Hero carrega com filtros novos (pills Comprar/Alugar)
+    - "Imóveis disponíveis" mostra a lista (ou mensagem de vazio)
+
+[ ] https://morabilidade.com.br/imoveis
+    - Filtros funcionam, abre detalhe
+
+[ ] https://morabilidade.com.br/imoveis/IMO-XXXXX
+    - Galeria de fotos, mapa, botões "Tenho Interesse"
+    - Clicar no WhatsApp deve abrir o app com mensagem pré-preenchida
+      pro número 21 99772-9990
+
+[ ] https://morabilidade.com.br/contato
+    - Botão verde grande do WhatsApp deve abrir o app
+
+[ ] https://painel.morabilidade.com.br
+    - Login com seu usuário
+    - Dashboard mostra cards e gráficos
+    - Cadastrar imóvel novo, subir foto
+    - Cadastrar cliente novo, definir preferência
+    - Confirmar que aparece "match" na ficha desse cliente
+
+[ ] https://painel.morabilidade.com.br — logar como Rebeca (corretor)
+    - Não deve aparecer botão "Novo cliente" nem "Excluir"
+    - Mas deve conseguir VER tudo
+
+[ ] https://api.morabilidade.com.br/docs
+    - Documentação interativa do FastAPI deve abrir
+
+================================================================================
+CHECKLIST RÁPIDO — O QUE VOCÊ PRECISA TER EM MÃOS ANTES DE COMEÇAR
+================================================================================
+
+[ ] Login da Vercel
+[ ] Login do Railway
+[ ] Login do Supabase
+[ ] Login do provedor do domínio morabilidade.com.br
+[ ] Login do Resend
+[ ] Conteúdo do firebase-credentials.json (do diretório api/)
+[ ] Os valores de SUPABASE_* (estão no api/.env atual)
+[ ] APP_SECRET_KEY novo de 32 caracteres aleatórios
+[ ] Logo PNG transparente da Morabilidade (pra eu colocar quando você
+    me passar — não precisa pra deploy, é cosmético)
+
+================================================================================
+PROBLEMAS COMUNS
+================================================================================
+
+"DNS não propaga" → use https://dnschecker.org pra ver. Pode levar até 24h.
+
+"CORS error no painel" → confira se a env CORS_ORIGINS no Railway tem
+TODOS os 3 domínios separados por vírgula, sem espaços extras.
+
+"Login não funciona em produção" → confira se a Site URL no Supabase
+foi atualizada (passo 5.1).
+
+"E-mail não chega" → primeiro teste no Resend Dashboard → Emails se
+foi enviado. Se sim e não chegou, verifique DKIM/SPF (passo 5.3).
+
+"Imagem dos imóveis não carrega" → confira se o domínio do Firebase
+Storage está em web/next.config.ts e site/next.config.ts em
+"images.remotePatterns". (Já deve estar.)
+
+================================================================================
+DEPOIS QUE TUDO ESTIVER NO AR — ME AVISA
+================================================================================
+
+Eu cuido de:
+- Trocar o logo quando você me mandar o PNG transparente
+- Implementar a melhoria nos textos da seção "Sobre"
+- Adicionar a foto na seção "Nossa história"
+- Qualquer ajuste fino visual que aparecer no smoke test
+
+================================================================================

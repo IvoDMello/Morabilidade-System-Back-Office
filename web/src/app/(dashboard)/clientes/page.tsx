@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Search, X, Pencil, Trash2, ChevronLeft, ChevronRight, Users, Download, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
+import { useAuthStore } from "@/lib/auth-store";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import type { Cliente } from "@/types";
 
@@ -19,6 +20,7 @@ interface ClienteListItem {
   origem_lead?: string;
   imovel_codigo?: string;
   observacoes?: string;
+  tags?: { id: string; nome: string; cor?: string }[];
   created_at: string;
 }
 
@@ -51,6 +53,7 @@ const inputClass = selectClass;
 
 export default function ClientesPage() {
   const router = useRouter();
+  const isAdmin = useAuthStore((s) => s.user?.perfil === "admin");
   const [clientes, setClientes] = useState<ClienteListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
@@ -180,21 +183,25 @@ export default function ClientesPage() {
             <Download className="w-4 h-4" />
             {exportando ? "Exportando..." : "Exportar CSV"}
           </button>
-          <Link
-            href="/clientes/importar"
-            className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg border bg-white border-slate-200 text-slate-600 hover:border-slate-300 transition"
-            title="Importa clientes de um arquivo CSV"
-          >
-            <Upload className="w-4 h-4" />
-            Importar CSV
-          </Link>
-          <Link
-            href="/clientes/novo"
-            className="px-4 py-2 text-white text-sm font-medium rounded-lg transition hover:opacity-90"
-            style={{ backgroundColor: "#585a4f" }}
-          >
-            + Novo cliente
-          </Link>
+          {isAdmin && (
+            <>
+              <Link
+                href="/clientes/importar"
+                className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg border bg-white border-slate-200 text-slate-600 hover:border-slate-300 transition"
+                title="Importa clientes de um arquivo CSV"
+              >
+                <Upload className="w-4 h-4" />
+                Importar CSV
+              </Link>
+              <Link
+                href="/clientes/novo"
+                className="px-4 py-2 text-white text-sm font-medium rounded-lg transition hover:opacity-90"
+                style={{ backgroundColor: "#585a4f" }}
+              >
+                + Novo cliente
+              </Link>
+            </>
+          )}
         </div>
       </div>
 
@@ -301,6 +308,19 @@ export default function ClientesPage() {
                         <p className="font-medium text-slate-800">{c.nome_completo}</p>
                         <p className="text-xs text-slate-400 mt-0.5">{c.email || c.telefone}</p>
                         {c.email && <p className="sm:hidden text-xs text-slate-400">{c.telefone}</p>}
+                        {c.tags && c.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1.5">
+                            {c.tags.map((t) => (
+                              <span
+                                key={t.id}
+                                className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium text-white"
+                                style={{ backgroundColor: t.cor ?? "#94a3b8" }}
+                              >
+                                {t.nome}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </td>
 
                       <td className="hidden md:table-cell px-4 py-3">
@@ -344,17 +364,19 @@ export default function ClientesPage() {
                           <button
                             onClick={() => router.push(`/clientes/${c.id}`)}
                             className="p-2.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-md transition"
-                            title="Editar"
+                            title={isAdmin ? "Editar" : "Visualizar"}
                           >
                             <Pencil className="w-4 h-4" />
                           </button>
-                          <button
-                            onClick={() => setDeletando({ id: c.id, nome: c.nome_completo })}
-                            className="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition"
-                            title="Excluir"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          {isAdmin && (
+                            <button
+                              onClick={() => setDeletando({ id: c.id, nome: c.nome_completo })}
+                              className="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition"
+                              title="Excluir"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

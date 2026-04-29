@@ -96,13 +96,13 @@ def test_token_valido_busca_usuario_no_banco():
 
 # ── RBAC ──────────────────────────────────────────────────────────────────────
 
-def test_usuario_comum_nao_pode_criar_tag(client):
-    res = client.post("/tags/", json={"nome": "Teste"})
+def test_usuario_comum_nao_pode_criar_tag(corretor_client):
+    res = corretor_client.post("/tags/", json={"nome": "Teste"})
     assert res.status_code == 403
 
 
-def test_usuario_comum_nao_pode_listar_usuarios(client):
-    res = client.get("/usuarios/")
+def test_usuario_comum_nao_pode_listar_usuarios(corretor_client):
+    res = corretor_client.get("/usuarios/")
     assert res.status_code == 403
 
 

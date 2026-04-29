@@ -1,6 +1,7 @@
 // ── Usuários ──────────────────────────────────────────────────────────────────
 
-export type PerfilAcesso = "admin" | "administrativo";
+// admin: acesso total (escrita + leitura). corretor: somente leitura.
+export type PerfilAcesso = "admin" | "corretor";
 
 export interface User {
   id: string;
@@ -125,6 +126,7 @@ export interface Cliente {
   como_conheceu?: string;
   observacoes?: string;
   imovel_codigo?: string;
+  tags?: { id: string; nome: string; cor?: string }[];
   created_at: string;
   updated_at: string;
 }

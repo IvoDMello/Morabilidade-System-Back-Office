@@ -25,6 +25,7 @@ CLIENTE_DB = {
     "como_conheceu": None,
     "observacoes": None,
     "imovel_codigo": None,
+    "cliente_tags": [],  # JOIN vazio (sem tags)
     "created_at": "2025-01-01T00:00:00+00:00",
     "updated_at": "2025-01-01T00:00:00+00:00",
 }
@@ -94,7 +95,8 @@ def test_obter_cliente_nao_encontrado(client):
 # ── POST /clientes/ ───────────────────────────────────────────────────────────
 
 def test_criar_cliente(client):
-    db = make_db_mock(MagicMock(data=[CLIENTE_DB]))
+    # 2 executes: insert + _buscar_cliente
+    db = make_db_mock(MagicMock(data=[CLIENTE_DB]), MagicMock(data=CLIENTE_DB))
 
     with patch("app.routers.clientes.supabase_admin", db):
         res = client.post("/clientes/", json=CLIENTE_PAYLOAD)
@@ -110,7 +112,7 @@ def test_criar_cliente_email_invalido(client):
 
 def test_criar_cliente_sem_email(client):
     sem_email = {**CLIENTE_DB, "email": None}
-    db = make_db_mock(MagicMock(data=[sem_email]))
+    db = make_db_mock(MagicMock(data=[sem_email]), MagicMock(data=sem_email))
 
     with patch("app.routers.clientes.supabase_admin", db):
         res = client.post(
@@ -133,7 +135,7 @@ def test_criar_proprietario_com_imovel_codigo(client):
         "tipo_cliente": "proprietario",
         "imovel_codigo": "IMO-00042",
     }
-    db = make_db_mock(MagicMock(data=[proprietario]))
+    db = make_db_mock(MagicMock(data=[proprietario]), MagicMock(data=proprietario))
 
     with patch("app.routers.clientes.supabase_admin", db):
         res = client.post(
@@ -155,7 +157,7 @@ def test_criar_proprietario_com_imovel_codigo(client):
 
 def test_criar_nao_proprietario_descarta_imovel_codigo(client):
     """Ao criar com tipo != proprietario, o imovel_codigo é zerado."""
-    db = make_db_mock(MagicMock(data=[CLIENTE_DB]))
+    db = make_db_mock(MagicMock(data=[CLIENTE_DB]), MagicMock(data=CLIENTE_DB))
 
     with patch("app.routers.clientes.supabase_admin", db):
         res = client.post(
@@ -177,7 +179,7 @@ def test_criar_nao_proprietario_descarta_imovel_codigo(client):
 def test_atualizar_para_nao_proprietario_limpa_imovel_codigo(client):
     """Trocar tipo_cliente de proprietario para outro deve limpar imovel_codigo."""
     atualizado = {**CLIENTE_DB, "tipo_cliente": "comprador", "imovel_codigo": None}
-    db = make_db_mock(MagicMock(data=[atualizado]))
+    db = make_db_mock(MagicMock(data=[atualizado]), MagicMock(data=atualizado))
 
     with patch("app.routers.clientes.supabase_admin", db):
         res = client.put(
@@ -190,11 +192,9 @@ def test_atualizar_para_nao_proprietario_limpa_imovel_codigo(client):
     assert updated["imovel_codigo"] is None
 
 
-# ── PUT /clientes/{id} ────────────────────────────────────────────────────────
-
 def test_atualizar_cliente(client):
     atualizado = {**CLIENTE_DB, "status": "em_negociacao"}
-    db = make_db_mock(MagicMock(data=[atualizado]))
+    db = make_db_mock(MagicMock(data=[atualizado]), MagicMock(data=atualizado))
 
     with patch("app.routers.clientes.supabase_admin", db):
         res = client.put(
@@ -352,4 +352,30 @@ def test_importar_exige_autenticacao(anon_client):
         "/clientes/importar",
         files={"file": ("c.csv", b"Nome,Telefone\nA,1\n", "text/csv")},
     )
+    assert res.status_code == 403
+
+
+# ── RBAC: corretor é read-only ───────────────────────────────────────────────
+
+def test_corretor_pode_listar_clientes(corretor_client):
+    count_res = MagicMock(count=0, data=[])
+    data_res = MagicMock(count=0, data=[])
+    db = make_db_mock(count_res, data_res)
+    with patch("app.routers.clientes.supabase_admin", db):
+        res = corretor_client.get("/clientes/")
+    assert res.status_code == 200
+
+
+def test_corretor_nao_pode_criar_cliente(corretor_client):
+    res = corretor_client.post("/clientes/", json=CLIENTE_PAYLOAD)
+    assert res.status_code == 403
+
+
+def test_corretor_nao_pode_atualizar_cliente(corretor_client):
+    res = corretor_client.put("/clientes/cliente-uuid-1", json=CLIENTE_PAYLOAD)
+    assert res.status_code == 403
+
+
+def test_corretor_nao_pode_deletar_cliente(corretor_client):
+    res = corretor_client.delete("/clientes/cliente-uuid-1")
     assert res.status_code == 403

@@ -81,7 +81,20 @@
       "Bash(python -c \"import json,sys; spec=json.load\\(sys.stdin\\); [print\\(p\\) for p in spec['paths'] if '/clientes' in p]\")",
       "Bash(curl -s -o /dev/null -w \"exportar \\(sem auth\\): %{http_code}\\\\n\" http://localhost:8000/clientes/exportar)",
       "Bash(curl -s -o /dev/null -w \"importar \\(sem auth\\): %{http_code}\\\\n\" -X POST http://localhost:8000/clientes/importar)",
-      "Bash(api/venv/Scripts/python.exe -m pytest api/tests/test_clientes.py -v)"
+      "Bash(api/venv/Scripts/python.exe -m pytest api/tests/test_clientes.py -v)",
+      "Bash(api/venv/Scripts/python.exe -m pytest api/tests/)",
+      "Bash(api/venv/Scripts/python.exe -m pytest api/tests/test_imoveis.py -v)",
+      "Bash(api/venv/Scripts/python.exe -m pytest api/tests/test_contato.py -v)",
+      "Bash(curl -s -o /dev/null -w \"imoveis exportar: %{http_code}\\\\n\" http://localhost:8000/imoveis/exportar)",
+      "Bash(curl -s -o /dev/null -w \"imoveis publico: %{http_code}\\\\n\" http://localhost:8000/imoveis/publico/disponiveis)",
+      "Bash(api/venv/Scripts/python.exe -m pytest api/tests/test_users.py -v)",
+      "Bash(venv/Scripts/python.exe -m pytest tests/test_clientes.py)",
+      "Bash(../api/venv/Scripts/python.exe -m pytest ../api/tests/)",
+      "Bash(api/venv/Scripts/python.exe -c \"from app.main import app; print\\('OK', len\\(app.routes\\), 'rotas'\\)\")",
+      "Bash(venv/Scripts/python.exe -c \"from app.main import app; print\\('OK', len\\(app.routes\\), 'rotas'\\)\")",
+      "Bash(venv/Scripts/python.exe -m pytest tests/test_contato.py -q)",
+      "Bash(../api/venv/Scripts/python.exe -m pytest ../api/tests/ -q)",
+      "Bash(api/venv/Scripts/python.exe -m pytest api/tests/ -q)"
     ]
   }
 }

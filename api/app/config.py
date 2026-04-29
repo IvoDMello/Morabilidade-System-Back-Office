@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     email_from: str = "noreply@morabilidade.com.br"
     email_contato: str = "contato@morabilidade.com.br"
 
+    # URLs públicas usadas em e-mails e templates
+    site_url: str = "https://morabilidade.com.br"
+
     # Aplicação
     app_env: str = "development"
     app_secret_key: str

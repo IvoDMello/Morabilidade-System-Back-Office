@@ -5,7 +5,7 @@ interface User {
   id: string;
   nome_completo: string;
   email: string;
-  perfil: "admin" | "administrativo";
+  perfil: "admin" | "corretor";
   foto_url?: string;
   telefone?: string;
   ativo?: boolean;

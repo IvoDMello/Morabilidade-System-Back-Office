@@ -8,7 +8,7 @@ from fastapi import (
     APIRouter, Depends, File, HTTPException, Query, Response, UploadFile, status,
 )
 
-from app.auth.dependencies import get_current_user
+from app.auth.dependencies import get_current_user, require_admin
 from app.database import supabase_admin
 from app.schemas.cliente import (
     ClienteCreate, ClienteListOut, ClienteOut, ClienteUpdate, StatusCliente,
@@ -84,6 +84,23 @@ def _normalizar_imovel_codigo(data: dict) -> dict:
     elif data.get("imovel_codigo"):
         data["imovel_codigo"] = data["imovel_codigo"].strip() or None
     return data
+
+
+def _achatar_tags(raw: dict) -> dict:
+    """Transforma o JOIN cliente_tags(tags(...)) em uma lista plana de tags."""
+    raw_tags = raw.pop("cliente_tags", None) or []
+    raw["tags"] = [t["tags"] for t in raw_tags if t.get("tags")]
+    return raw
+
+
+def _sincronizar_tags(cliente_id: str, tag_ids: Optional[List[str]]) -> None:
+    """Apaga e reinsere os vínculos de tags do cliente. None = não mexe."""
+    if tag_ids is None:
+        return
+    supabase_admin.table("cliente_tags").delete().eq("cliente_id", cliente_id).execute()
+    if tag_ids:
+        links = [{"cliente_id": cliente_id, "tag_id": t} for t in tag_ids]
+        supabase_admin.table("cliente_tags").insert(links).execute()
 
 
 def _normalizar_header(s: str) -> str:
@@ -193,12 +210,13 @@ def listar_clientes(
     result = (
         _aplicar(supabase_admin.table("clientes")
                  .select("id, nome_completo, email, telefone, status, tipo_cliente, "
-                         "origem_lead, imovel_codigo, observacoes, created_at"))
+                         "origem_lead, imovel_codigo, observacoes, created_at, "
+                         "cliente_tags(tags(id, nome, cor))"))
         .order("created_at", desc=True)
         .range(offset, offset + page_size - 1)
         .execute()
     )
-    return result.data
+    return [_achatar_tags(c) for c in result.data]
 
 
 # IMPORTANTE: /exportar e /importar precisam vir ANTES de /{cliente_id},
@@ -249,7 +267,7 @@ def exportar_clientes_csv(current_user: dict = Depends(get_current_user)):
 @router.post("/importar")
 async def importar_clientes_csv(
     file: UploadFile = File(...),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_admin),
 ):
     """
     Importa clientes a partir de um CSV.
@@ -324,39 +342,55 @@ async def importar_clientes_csv(
     }
 
 
+def _buscar_cliente(cliente_id: str) -> dict:
+    result = (
+        supabase_admin.table("clientes")
+        .select("*, cliente_tags(tags(id, nome, cor))")
+        .eq("id", cliente_id)
+        .single()
+        .execute()
+    )
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado.")
+    return _achatar_tags(result.data)
+
+
 @router.post("/", response_model=ClienteOut, status_code=status.HTTP_201_CREATED)
-def criar_cliente(body: ClienteCreate, current_user: dict = Depends(get_current_user)):
-    data = _normalizar_imovel_codigo(body.model_dump())
+def criar_cliente(body: ClienteCreate, current_user: dict = Depends(require_admin)):
+    data = _normalizar_imovel_codigo(body.model_dump(exclude={"tag_ids"}))
     result = supabase_admin.table("clientes").insert(data).execute()
-    return result.data[0]
+    novo = result.data[0]
+    _sincronizar_tags(novo["id"], body.tag_ids)
+    return _buscar_cliente(novo["id"])
 
 
 @router.get("/{cliente_id}", response_model=ClienteOut)
 def obter_cliente(cliente_id: str, current_user: dict = Depends(get_current_user)):
-    result = (
-        supabase_admin.table("clientes").select("*").eq("id", cliente_id).single().execute()
-    )
-    if not result.data:
-        raise HTTPException(status_code=404, detail="Cliente não encontrado.")
-    return result.data
+    return _buscar_cliente(cliente_id)
 
 
 @router.put("/{cliente_id}", response_model=ClienteOut)
 def atualizar_cliente(
     cliente_id: str,
     body: ClienteUpdate,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_admin),
 ):
-    updates = _normalizar_imovel_codigo(body.model_dump(exclude_unset=True))
-    result = (
-        supabase_admin.table("clientes").update(updates).eq("id", cliente_id).execute()
+    updates = _normalizar_imovel_codigo(
+        body.model_dump(exclude_unset=True, exclude={"tag_ids"})
     )
-    if not result.data:
-        raise HTTPException(status_code=404, detail="Cliente não encontrado.")
-    return result.data[0]
+    if updates:
+        result = (
+            supabase_admin.table("clientes").update(updates).eq("id", cliente_id).execute()
+        )
+        if not result.data:
+            raise HTTPException(status_code=404, detail="Cliente não encontrado.")
+    # tag_ids é tratado separadamente; só sincroniza se foi enviado.
+    if "tag_ids" in body.model_fields_set:
+        _sincronizar_tags(cliente_id, body.tag_ids)
+    return _buscar_cliente(cliente_id)
 
 
 @router.delete("/{cliente_id}", status_code=status.HTTP_204_NO_CONTENT)
-def deletar_cliente(cliente_id: str, current_user: dict = Depends(get_current_user)):
+def deletar_cliente(cliente_id: str, current_user: dict = Depends(require_admin)):
     """Remove um cliente (idempotente: retorna 204 mesmo se já não existir)."""
     supabase_admin.table("clientes").delete().eq("id", cliente_id).execute()

@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+from typing import List, Optional
 from enum import Enum
 
 
@@ -48,6 +48,7 @@ class ClienteCreate(BaseModel):
     como_conheceu: Optional[str] = None
     observacoes: Optional[str] = None
     imovel_codigo: Optional[str] = None
+    tag_ids: Optional[List[str]] = None
 
 
 class ClienteUpdate(ClienteCreate):
@@ -56,10 +57,17 @@ class ClienteUpdate(ClienteCreate):
     telefone: Optional[str] = None
 
 
+class TagSimples(BaseModel):
+    id: str
+    nome: str
+    cor: Optional[str] = None
+
+
 class ClienteOut(ClienteCreate):
     id: str
     created_at: str
     updated_at: str
+    tags: List[TagSimples] = []
 
 
 class ClienteListOut(BaseModel):
@@ -72,4 +80,5 @@ class ClienteListOut(BaseModel):
     origem_lead: Optional[OrigemLead] = None
     imovel_codigo: Optional[str] = None
     observacoes: Optional[str] = None
+    tags: List[TagSimples] = []
     created_at: str

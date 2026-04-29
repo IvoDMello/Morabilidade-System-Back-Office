@@ -52,7 +52,7 @@ REGULAR_USER = {
     "id": "00000000-0000-0000-0000-000000000002",
     "nome_completo": "Usuário Teste",
     "email": "usuario@teste.com",
-    "perfil": "administrativo",
+    "perfil": "corretor",
     "ativo": True,
     "telefone": None,
     "foto_url": None,
@@ -64,17 +64,32 @@ REGULAR_USER = {
 
 @pytest.fixture
 def client():
-    """Cliente autenticado como usuário comum."""
-    app.dependency_overrides[get_current_user] = lambda: REGULAR_USER
+    """
+    Cliente autenticado como administrador (perfil padrão para a maioria dos testes).
+
+    Como o modelo de permissões é admin (escrita+leitura) ou corretor (só leitura),
+    o `client` representa o caso comum em que a operação requer escrita. Para
+    testar restrições de leitura/escrita, use `corretor_client`.
+    """
+    app.dependency_overrides[get_current_user] = lambda: ADMIN_USER
+    app.dependency_overrides[require_admin] = lambda: ADMIN_USER
     yield TestClient(app)
     app.dependency_overrides.clear()
 
 
 @pytest.fixture
 def admin_client():
-    """Cliente autenticado como administrador."""
+    """Alias semântico para `client` — uso explícito quando o teste foca em ações admin-only."""
     app.dependency_overrides[get_current_user] = lambda: ADMIN_USER
     app.dependency_overrides[require_admin] = lambda: ADMIN_USER
+    yield TestClient(app)
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def corretor_client():
+    """Cliente autenticado como corretor (perfil somente leitura)."""
+    app.dependency_overrides[get_current_user] = lambda: REGULAR_USER
     yield TestClient(app)
     app.dependency_overrides.clear()
 

@@ -164,8 +164,23 @@ export function ImovelForm({
     setValue("tag_ids", updated);
   }
 
+  const submitButton = (
+    <button
+      type="submit"
+      disabled={isLoading}
+      className="flex items-center gap-2 px-6 py-2.5 text-white text-sm font-medium rounded-lg transition hover:opacity-90 disabled:opacity-60"
+      style={{ backgroundColor: "#585a4f" }}
+    >
+      {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+      {submitLabel}
+    </button>
+  );
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+      {/* Botão de salvar no topo (atalho — evita rolar até o final) */}
+      <div className="flex justify-end">{submitButton}</div>
+
       {/* ── 1. Identificação ── */}
       <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
         <SectionTitle>Identificação</SectionTitle>
@@ -433,18 +448,8 @@ export function ImovelForm({
         )}
       </div>
 
-      {/* ── Botão de submit ── */}
-      <div className="flex justify-end">
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="flex items-center gap-2 px-6 py-2.5 text-white text-sm font-medium rounded-lg transition hover:opacity-90 disabled:opacity-60"
-          style={{ backgroundColor: "#585a4f" }}
-        >
-          {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-          {submitLabel}
-        </button>
-      </div>
+      {/* ── Botão de submit (final) ── */}
+      <div className="flex justify-end">{submitButton}</div>
     </form>
   );
 }

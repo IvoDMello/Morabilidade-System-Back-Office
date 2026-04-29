@@ -6,10 +6,11 @@ import { useRouter } from "next/navigation";
 import {
   Search, ChevronLeft, ChevronRight, BedDouble, Bath,
   Car, Maximize2, Camera, RefreshCw, Info as InfoIcon,
-  LayoutList, Map, Building2, Trash2,
+  LayoutList, Map, Building2, Trash2, Download,
 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
+import { useAuthStore } from "@/lib/auth-store";
 import { formatarMoeda } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import type { ImovelListOut } from "@/types";
@@ -74,6 +75,7 @@ const inputCls =
 
 export default function ImoveisPage() {
   const router = useRouter();
+  const isAdmin = useAuthStore((s) => s.user?.perfil === "admin");
   const [imoveis, setImoveis] = useState<ImovelListOut[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
@@ -81,6 +83,28 @@ export default function ImoveisPage() {
   const [filtros, setFiltros] = useState<Filtros>(FILTROS_VAZIOS);
   const [deletando, setDeletando] = useState<{ id: string; codigo: string } | null>(null);
   const [deletandoLoading, setDeletandoLoading] = useState(false);
+  const [exportando, setExportando] = useState(false);
+
+  async function handleExportar() {
+    setExportando(true);
+    try {
+      const res = await api.get("/imoveis/exportar", { responseType: "blob" });
+      const blob = new Blob([res.data], { type: "text/csv;charset=utf-8" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `imoveis-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success("CSV exportado com sucesso.");
+    } catch {
+      toast.error("Erro ao exportar CSV.");
+    } finally {
+      setExportando(false);
+    }
+  }
 
   const PAGE_SIZE = 20;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -336,13 +360,24 @@ export default function ImoveisPage() {
                 <Map className="w-4 h-4" />
               </button>
             </div>
-            <Link
-              href="/imoveis/novo"
-              className="px-4 py-2 text-white text-sm font-medium rounded-lg transition hover:opacity-90"
-              style={{ backgroundColor: "#585a4f" }}
+            <button
+              onClick={handleExportar}
+              disabled={exportando || total === 0}
+              className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg border bg-white border-slate-200 text-slate-600 hover:border-slate-300 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Baixa todos os imóveis em CSV"
             >
-              + Novo imóvel
-            </Link>
+              <Download className="w-4 h-4" />
+              {exportando ? "Exportando..." : "Exportar CSV"}
+            </button>
+            {isAdmin && (
+              <Link
+                href="/imoveis/novo"
+                className="px-4 py-2 text-white text-sm font-medium rounded-lg transition hover:opacity-90"
+                style={{ backgroundColor: "#585a4f" }}
+              >
+                + Novo imóvel
+              </Link>
+            )}
           </div>
         </div>
 
@@ -403,13 +438,15 @@ export default function ImoveisPage() {
                       >
                         <InfoIcon className="w-3.5 h-3.5" /> Info
                       </button>
-                      <button
-                        onClick={() => setDeletando({ id: imovel.id, codigo: imovel.codigo })}
-                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition"
-                        title="Excluir"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      {isAdmin && (
+                        <button
+                          onClick={() => setDeletando({ id: imovel.id, codigo: imovel.codigo })}
+                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition"
+                          title="Excluir"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
                   </div>
 

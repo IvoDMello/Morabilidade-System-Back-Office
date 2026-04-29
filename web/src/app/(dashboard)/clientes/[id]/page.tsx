@@ -3,10 +3,12 @@
 import { use, useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Sparkles, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { ClienteForm, type ClienteFormData } from "@/components/clientes/cliente-form";
+import { PreferenciaForm } from "@/components/clientes/preferencia-form";
+import { MatchesCliente } from "@/components/clientes/matches-cliente";
 import type { Cliente } from "@/types";
 
 export default function EditarClientePage({ params }: { params: Promise<{ id: string }> }) {
@@ -54,6 +56,7 @@ export default function EditarClientePage({ params }: { params: Promise<{ id: st
         observacoes: data.observacoes || null,
         imovel_codigo:
           data.tipo_cliente === "proprietario" ? data.imovel_codigo?.trim() || null : null,
+        tag_ids: data.tag_ids ?? [],
       };
       await api.put(`/clientes/${id}`, payload);
       toast.success("Cliente atualizado com sucesso!");
@@ -97,6 +100,7 @@ export default function EditarClientePage({ params }: { params: Promise<{ id: st
     como_conheceu: cliente.como_conheceu ?? "",
     observacoes: cliente.observacoes ?? "",
     imovel_codigo: cliente.imovel_codigo ?? "",
+    tag_ids: cliente.tags?.map((t) => t.id) ?? [],
   };
 
   return (
@@ -121,6 +125,36 @@ export default function EditarClientePage({ params }: { params: Promise<{ id: st
         isLoading={salvando}
         submitLabel="Salvar alterações"
       />
+
+      {/* Preferências de imóvel */}
+      <div className="mt-6 bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
+        <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100">
+          <SlidersHorizontal className="w-4 h-4 text-slate-400" />
+          <h2 className="text-sm font-semibold text-slate-700">
+            Preferências de imóvel
+          </h2>
+          <span className="text-xs text-slate-400">
+            · o que este cliente está procurando
+          </span>
+        </div>
+        <PreferenciaForm clienteId={cliente.id} />
+      </div>
+
+      {/* Oportunidades (matches) */}
+      <div className="mt-4 bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
+        <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100">
+          <Sparkles className="w-4 h-4 text-amber-500" />
+          <h2 className="text-sm font-semibold text-slate-700">Oportunidades</h2>
+          <span className="text-xs text-slate-400">
+            · imóveis disponíveis que casam com a preferência
+          </span>
+        </div>
+        <MatchesCliente
+          clienteId={cliente.id}
+          clienteNome={cliente.nome_completo}
+          clienteTelefone={cliente.telefone}
+        />
+      </div>
     </div>
   );
 }

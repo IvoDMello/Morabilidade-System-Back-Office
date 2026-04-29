@@ -1,9 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2 } from "lucide-react";
+import { api } from "@/lib/api";
+import type { Tag } from "@/types";
 
 const schema = z
   .object({
@@ -24,6 +27,7 @@ const schema = z
     como_conheceu: z.string().optional().or(z.literal("")),
     observacoes: z.string().optional().or(z.literal("")),
     imovel_codigo: z.string().optional().or(z.literal("")),
+    tag_ids: z.array(z.string()).default([]),
   })
   .refine((data) => data.estado !== "EX" || (data.pais && data.pais.trim().length > 0), {
     message: "Informe o país",
@@ -68,6 +72,7 @@ export function ClienteForm({ defaultValues, onSubmit, isLoading, submitLabel = 
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<ClienteFormData>({
     resolver: zodResolver(schema),
@@ -76,9 +81,36 @@ export function ClienteForm({ defaultValues, onSubmit, isLoading, submitLabel = 
 
   const estadoSelecionado = watch("estado");
   const tipoSelecionado = watch("tipo_cliente");
+  const selectedTagIds = watch("tag_ids") ?? [];
+
+  const [tags, setTags] = useState<Tag[]>([]);
+  useEffect(() => {
+    api.get<Tag[]>("/tags/").then((r) => setTags(r.data)).catch(() => {});
+  }, []);
+
+  function toggleTag(id: string) {
+    const current = selectedTagIds;
+    const next = current.includes(id) ? current.filter((t) => t !== id) : [...current, id];
+    setValue("tag_ids", next, { shouldDirty: true });
+  }
+
+  const submitButton = (
+    <button
+      type="submit"
+      disabled={isLoading}
+      className="flex items-center gap-2 px-6 py-2.5 text-white text-sm font-medium rounded-lg transition hover:opacity-90 disabled:opacity-60"
+      style={{ backgroundColor: "#585a4f" }}
+    >
+      {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+      {submitLabel}
+    </button>
+  );
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      {/* Botão de salvar no topo (atalho — evita rolar até o final) */}
+      <div className="flex justify-end">{submitButton}</div>
+
       {/* Dados principais */}
       <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -187,6 +219,34 @@ export function ClienteForm({ defaultValues, onSubmit, isLoading, submitLabel = 
             </Field>
           )}
 
+          {tags.length > 0 && (
+            <>
+              <SectionTitle>Etiquetas</SectionTitle>
+              <div className="col-span-full">
+                <div className="flex flex-wrap gap-2">
+                  {tags.map((tag) => {
+                    const active = selectedTagIds.includes(tag.id);
+                    return (
+                      <button
+                        key={tag.id}
+                        type="button"
+                        onClick={() => toggleTag(tag.id)}
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition ${
+                          active
+                            ? "text-white border-transparent shadow-sm"
+                            : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
+                        }`}
+                        style={active ? { backgroundColor: tag.cor ?? "#3B82F6" } : undefined}
+                      >
+                        {tag.nome}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
+          )}
+
           <SectionTitle>Observações</SectionTitle>
 
           <div className="col-span-full">
@@ -202,17 +262,7 @@ export function ClienteForm({ defaultValues, onSubmit, isLoading, submitLabel = 
         </div>
       </div>
 
-      <div className="flex justify-end">
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="flex items-center gap-2 px-6 py-2.5 text-white text-sm font-medium rounded-lg transition hover:opacity-90 disabled:opacity-60"
-          style={{ backgroundColor: "#585a4f" }}
-        >
-          {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-          {submitLabel}
-        </button>
-      </div>
+      <div className="flex justify-end">{submitButton}</div>
     </form>
   );
 }

@@ -166,3 +166,49 @@ def test_deletar_imovel(client):
         res = client.delete("/imoveis/imovel-uuid-1")
 
     assert res.status_code == 204
+
+
+# ── GET /imoveis/exportar ─────────────────────────────────────────────────────
+
+def test_exportar_imoveis_csv(client):
+    primeira_pagina = MagicMock(data=[IMOVEL_DB])
+    pagina_vazia = MagicMock(data=[])
+    db = make_db_mock(primeira_pagina, pagina_vazia)
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/exportar")
+
+    assert res.status_code == 200
+    assert res.headers["content-type"].startswith("text/csv")
+    assert "attachment" in res.headers["content-disposition"]
+    body = res.content.decode("utf-8-sig")
+    linhas = body.strip().split("\r\n")
+    assert len(linhas) == 2
+    assert linhas[0].startswith("codigo;tipo_negocio;disponibilidade")
+    assert "IMO-00001" in linhas[1]
+
+
+def test_exportar_imoveis_exige_autenticacao(anon_client):
+    res = anon_client.get("/imoveis/exportar")
+    assert res.status_code == 403
+
+
+# ── RBAC: corretor é read-only ───────────────────────────────────────────────
+
+def test_corretor_pode_listar_imoveis(corretor_client):
+    count_res = MagicMock(count=0, data=[])
+    data_res = MagicMock(count=0, data=[])
+    db = make_db_mock(count_res, data_res)
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = corretor_client.get("/imoveis/")
+    assert res.status_code == 200
+
+
+def test_corretor_nao_pode_criar_imovel(corretor_client):
+    res = corretor_client.post("/imoveis/", json=IMOVEL_PAYLOAD)
+    assert res.status_code == 403
+
+
+def test_corretor_nao_pode_deletar_imovel(corretor_client):
+    res = corretor_client.delete("/imoveis/imovel-uuid-1")
+    assert res.status_code == 403
