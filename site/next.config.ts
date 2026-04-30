@@ -21,7 +21,9 @@ export default withSentryConfig(nextConfig, {
   silent: !process.env.CI,
 
   // Upload de source maps apenas em produção
-  hideSourceMaps: true,
+  sourcemaps: {
+    disable: true,
+  },
 
   // Remove o logger do Sentry do bundle de produção
   disableLogger: true,
