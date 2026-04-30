@@ -1,8 +1,7 @@
 import { Suspense } from "react";
-import { SlidersHorizontal } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { FiltrosBusca } from "@/components/imoveis/FiltrosBusca";
+import { FiltrosBar } from "@/components/imoveis/FiltrosBar";
 import { ListagemContent } from "@/components/imoveis/ListagemContent";
 import { getImoveisDisponiveis } from "@/lib/api";
 
@@ -28,60 +27,94 @@ export default async function ImoveisPage({ searchParams }: Props) {
     <>
       <Navbar />
 
+      {/* Header */}
       <div
-        className="border-b border-white/10"
-        style={{ background: "linear-gradient(135deg, #2e302a 0%, #585a4f 100%)" }}
+        style={{
+          backgroundColor: "#585a4f",
+          padding: "clamp(36px,5vw,56px) clamp(20px,5vw,48px) clamp(40px,5vw,52px)",
+        }}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: "#d8cb6a" }}>
-            Portfólio
+        <div style={{ maxWidth: 1080, margin: "0 auto" }}>
+          <p
+            style={{
+              fontSize: 11,
+              letterSpacing: "0.18em",
+              fontWeight: 600,
+              color: "#d8cb6a",
+              textTransform: "uppercase",
+              marginBottom: 12,
+            }}
+          >
+            Portfólio · Curadoria
           </p>
-          <h1 className="font-serif text-3xl sm:text-4xl font-bold text-white">
-            Imóveis disponíveis
+          <h1
+            className="font-serif text-white"
+            style={{
+              fontSize: "clamp(32px,5vw,50px)",
+              fontWeight: 500,
+              lineHeight: 1.1,
+              marginBottom: 14,
+            }}
+          >
+            Cada imóvel tem
+            <br />
+            <em>uma história</em>
           </h1>
-          <p className="text-white/50 mt-2 text-sm">
-            Encontre o imóvel ideal com os nossos filtros de busca.
+          <p
+            style={{
+              fontSize: 15,
+              color: "rgba(252,252,252,0.6)",
+              maxWidth: 440,
+              lineHeight: 1.75,
+            }}
+          >
+            Selecionamos apenas os imóveis que nos encantam: pela arquitetura, pelo bairro, pelo
+            potencial. Zona Sul, Rio de Janeiro.
           </p>
         </div>
       </div>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="flex gap-8">
-          {/* Sidebar — desktop */}
-          <aside className="hidden lg:block w-72 flex-shrink-0">
-            <Suspense>
-              <FiltrosBusca layout="sidebar" />
-            </Suspense>
-          </aside>
+      {/* Filtros horizontais */}
+      <Suspense>
+        <FiltrosBar total={total} />
+      </Suspense>
 
-          {/* Conteúdo principal */}
-          <div className="flex-1 min-w-0">
-            {/* Filtros top — mobile/tablet */}
-            <div className="lg:hidden mb-6">
-              <Suspense>
-                <FiltrosBusca layout="top" />
-              </Suspense>
-            </div>
-
-            <Suspense
-              fallback={
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  {Array.from({ length: 6 }).map((_, i) => (
-                    <div key={i} className="rounded-2xl bg-slate-100 animate-pulse aspect-[3/4]" />
-                  ))}
-                </div>
-              }
+      {/* Grid */}
+      <main
+        style={{
+          maxWidth: 1176,
+          margin: "0 auto",
+          padding: "clamp(28px,4vw,44px) clamp(20px,5vw,48px) 100px",
+        }}
+      >
+        <Suspense
+          fallback={
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 300px), 1fr))",
+                gap: "clamp(16px,3vw,28px)",
+              }}
             >
-              <ListagemContent
-                imoveis={imoveis}
-                total={total}
-                page={page}
-                totalPages={totalPages}
-              />
-            </Suspense>
-          </div>
-        </div>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="rounded-[14px] bg-[#e4e1d6] animate-pulse"
+                  style={{ aspectRatio: "3/4" }}
+                />
+              ))}
+            </div>
+          }
+        >
+          <ListagemContent
+            imoveis={imoveis}
+            total={total}
+            page={page}
+            totalPages={totalPages}
+          />
+        </Suspense>
       </main>
+
       <Footer />
     </>
   );

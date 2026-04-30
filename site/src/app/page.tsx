@@ -1,453 +1,512 @@
 import Link from "next/link";
 import Image from "next/image";
-import {
-  ArrowRight,
-  Building2,
-  Phone,
-  Briefcase,
-  Users,
-  Zap,
-  ChevronRight,
-} from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { ImovelCard } from "@/components/imoveis/ImovelCard";
-import { CarouselDestaques } from "@/components/imoveis/CarouselDestaques";
+import { DestaquesScroll } from "@/components/home/DestaquesScroll";
+import { TestimonialCarousel } from "@/components/home/TestimonialCarousel";
 import { HeroSearch } from "@/components/home/HeroSearch";
 import { getImoveisDestaques, getImoveisDisponiveis } from "@/lib/api";
 
-export default async function HomePage() {
-  const anosDeMarket = new Date().getFullYear() - 2010;
+const diferenciais = [
+  {
+    icon: "◈",
+    titulo: "Amplo portfólio",
+    texto: "Imóveis selecionados para venda e locação nas melhores regiões da Zona Sul.",
+  },
+  {
+    icon: "◎",
+    titulo: "Atendimento personalizado",
+    texto: "Nossa equipe está pronta para entender suas necessidades e encontrar o imóvel certo.",
+  },
+  {
+    icon: "◇",
+    titulo: "Processo ágil",
+    texto: "Da visita à assinatura, cuidamos de toda a burocracia para você.",
+  },
+];
 
-  // Destaques selecionados pelo admin no painel (até 5).
-  // Fallback: se não houver nenhum destaque, usa os mais recentes disponíveis.
+const depoimentos = [
+  {
+    nome: "Juliana Paiva",
+    texto: "Além de ser extremamente comprometido e ter bons imóveis, ele demonstra uma preocupação genuína em ver as pessoas felizes. Pode ter certeza de que será bem assessorado.",
+  },
+  {
+    nome: "Fabiano Sanches",
+    texto: "O apartamento foi anunciado, visitado e vendido em 1 dia! Tudo com muita transparência e com uma assessoria jurídica impecável.",
+  },
+  {
+    nome: "Fernanda Cozac",
+    texto: "Com muita paciência, perseverança, transparência e parceria na condução da negociação conseguimos adquirir a casa dos sonhos. Recomendo para todos.",
+  },
+];
+
+export default async function HomePage() {
   const destaquesAdmin = await getImoveisDestaques().catch(() => []);
   const { data: maisRecentes, total } = await getImoveisDisponiveis({
     page_size: "6",
   }).catch(() => ({ data: [], total: 0 }));
   const destaques = destaquesAdmin.length > 0 ? destaquesAdmin : maisRecentes;
   const usandoDestaquesAdmin = destaquesAdmin.length > 0;
+  const anosDeMarket = new Date().getFullYear() - 2010;
 
   return (
     <>
       <Navbar />
 
       {/* ── Hero ── */}
-      <section className="relative overflow-hidden">
-        {/* Background photo */}
+      <section
+        className="relative overflow-hidden flex items-center justify-center"
+        style={{ minHeight: "clamp(480px, 70vh, 700px)" }}
+      >
         <Image
-          src="/fundo3-3.jpeg"
+          src="/hero-rio-inicio.jpg"
           alt="Zona Sul do Rio de Janeiro"
           fill
           className="object-cover object-center"
           priority
         />
-        {/* Olive gradient overlay */}
         <div
           className="absolute inset-0"
-          style={{ background: "linear-gradient(135deg, rgba(46,48,42,0.90) 0%, rgba(88,90,79,0.85) 55%, rgba(74,77,67,0.92) 100%)" }}
-        />
-        {/* Decorative pattern */}
-        <div
-          className="absolute inset-0 opacity-[0.04]"
           style={{
-            backgroundImage: `radial-gradient(circle at 1px 1px, white 1px, transparent 0)`,
-            backgroundSize: "32px 32px",
+            background:
+              "linear-gradient(to bottom, rgba(45,47,40,0.62) 0%, rgba(30,32,25,0.78) 100%)",
           }}
         />
-        {/* Decorative glow */}
-        <div
-          className="absolute -top-32 -right-32 w-96 h-96 rounded-full opacity-10 blur-3xl"
-          style={{ backgroundColor: "#d8cb6a" }}
-        />
-        <div
-          className="absolute -bottom-16 -left-16 w-64 h-64 rounded-full opacity-10 blur-3xl"
-          style={{ backgroundColor: "#d8cb6a" }}
-        />
 
-        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-24 sm:py-32 text-center">
-          {/* Eyebrow */}
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-6 border"
-            style={{ borderColor: "rgba(216,203,106,0.4)", color: "#d8cb6a", backgroundColor: "rgba(216,203,106,0.08)" }}>
-            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: "#d8cb6a" }} />
-            Imobiliária de confiança
+        <div
+          className="relative z-10 text-center w-full"
+          style={{ padding: "0 clamp(20px,5vw,48px)", maxWidth: 780, margin: "0 auto" }}
+        >
+          {/* Badge */}
+          <div
+            className="inline-flex items-center gap-2 rounded-full mb-6"
+            style={{
+              background: "rgba(216,203,106,0.15)",
+              border: "1px solid rgba(216,203,106,0.35)",
+              padding: "5px 14px",
+            }}
+          >
+            <div
+              className="rounded-full"
+              style={{ width: 5, height: 5, backgroundColor: "#d8cb6a" }}
+            />
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                letterSpacing: "0.16em",
+                textTransform: "uppercase",
+                color: "#d8cb6a",
+              }}
+            >
+              Imobiliária de confiança
+            </span>
           </div>
 
-          <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6">
-            Encontre o imóvel{" "}
-            <em className="not-italic" style={{ color: "#d8cb6a" }}>
-              ideal para você
-            </em>
+          <h1
+            className="font-serif text-white mb-5"
+            style={{ fontSize: "clamp(32px,5.5vw,62px)", fontWeight: 500, lineHeight: 1.1 }}
+          >
+            Encontre o imóvel
+            <br />
+            <em style={{ color: "#e8dea0" }}>ideal para você</em>
           </h1>
-          <p className="text-white/60 text-base sm:text-lg mb-10 max-w-xl mx-auto leading-relaxed">
-            Casas, apartamentos e muito mais disponíveis para venda e locação
-            nas melhores regiões.
+
+          <p
+            className="mb-8 mx-auto"
+            style={{
+              fontSize: "clamp(14px,1.8vw,17px)",
+              color: "rgba(252,252,252,0.65)",
+              lineHeight: 1.7,
+              maxWidth: 500,
+            }}
+          >
+            Casas, apartamentos e muito mais para venda e locação nas melhores regiões.
           </p>
 
-          {/* Quick search */}
           <HeroSearch />
 
-          {/* Stats row */}
           {total > 0 && (
-            <p className="mt-8 text-white/40 text-xs">
+            <p
+              className="mt-4"
+              style={{ fontSize: 12, color: "rgba(252,252,252,0.38)", letterSpacing: "0.03em" }}
+            >
               {total} imóve{total !== 1 ? "is" : "l"} disponíve{total !== 1 ? "is" : "l"} agora
             </p>
           )}
         </div>
       </section>
 
-      {/* ── Imóveis em destaque ── */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <div className="flex flex-wrap items-end justify-between gap-4 mb-10">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: "#d8cb6a" }}>
-              {usandoDestaquesAdmin ? "Selecionados a dedo" : "Portfólio"}
-            </p>
-            <h2 className="font-serif text-3xl sm:text-4xl font-bold text-olive-900">
-              {usandoDestaquesAdmin ? "Nossos destaques" : "Imóveis disponíveis"}
-            </h2>
-            {total > 0 && (
-              <p className="text-slate-400 mt-1 text-sm">
-                {total} imóve{total !== 1 ? "is" : "l"} disponíve{total !== 1 ? "is" : "l"} no portfólio
-              </p>
-            )}
-          </div>
-          <Link
-            href="/imoveis"
-            className="group flex items-center gap-1.5 text-sm font-semibold transition-colors hover:opacity-80"
-            style={{ color: "#585a4f" }}
+      {/* ── Destaques ── */}
+      <section style={{ backgroundColor: "#fcfcfc", padding: "clamp(48px,6vw,72px) 0" }}>
+        <div style={{ maxWidth: 1176, margin: "0 auto", padding: "0 clamp(20px,5vw,48px)" }}>
+          <div
+            className="flex items-end justify-between flex-wrap gap-4 mb-8"
           >
-            Ver todos
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-          </Link>
-        </div>
-
-        {destaques.length > 0 ? (
-          // Carrossel quando admin selecionou destaques (visual mais marcante);
-          // grid simples quando é só fallback de mais recentes.
-          usandoDestaquesAdmin ? (
-            <CarouselDestaques imoveis={destaques} />
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {destaques.map((imovel) => (
-                <ImovelCard key={imovel.id} imovel={imovel} />
-              ))}
+            <div>
+              <p
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: "0.18em",
+                  textTransform: "uppercase",
+                  color: "#d8cb6a",
+                  marginBottom: 10,
+                }}
+              >
+                {usandoDestaquesAdmin ? "Selecionados a dedo" : "Portfólio"}
+              </p>
+              <h2
+                className="font-serif"
+                style={{
+                  fontSize: "clamp(26px,3.5vw,38px)",
+                  fontWeight: 500,
+                  color: "#2d2f28",
+                }}
+              >
+                {usandoDestaquesAdmin ? "Nossos destaques" : "Imóveis disponíveis"}
+              </h2>
+              {total > 0 && (
+                <p style={{ fontSize: 14, color: "#7a7c72", marginTop: 6 }}>
+                  {total} imóve{total !== 1 ? "is" : "l"} disponíve{total !== 1 ? "is" : "l"} no portfólio
+                </p>
+              )}
             </div>
-          )
-        ) : (
-          <div className="py-20 text-center text-slate-300 border border-dashed border-slate-200 rounded-2xl">
-            <Building2 className="w-10 h-10 mx-auto mb-3 opacity-40" />
-            <p className="text-slate-400 text-sm">Nenhum imóvel disponível no momento.</p>
-          </div>
-        )}
-
-        {destaques.length > 0 && (
-          <div className="text-center mt-12">
             <Link
               href="/imoveis"
-              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl font-semibold text-sm transition-all hover:opacity-90 hover:shadow-lg"
-              style={{ backgroundColor: "#585a4f", color: "#fff" }}
+              className="flex items-center gap-1.5 text-sm font-semibold hover:opacity-80 transition-opacity flex-shrink-0"
+              style={{ color: "#585a4f", textDecoration: "none" }}
             >
-              Ver todos os imóveis
-              <ArrowRight className="w-4 h-4" />
+              Ver todos <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+          {destaques.length > 0 ? (
+            <DestaquesScroll imoveis={destaques} />
+          ) : (
+            <div
+              className="text-center py-16 rounded-xl border border-dashed"
+              style={{ borderColor: "#e4e1d6", color: "#7a7c72" }}
+            >
+              <p className="font-serif text-xl mb-2">Nenhum imóvel disponível</p>
+              <p className="text-sm">Em breve novidades no portfólio.</p>
+            </div>
+          )}
+        </div>
+
+        {destaques.length > 0 && (
+          <div className="text-center" style={{ marginTop: 40 }}>
+            <Link
+              href="/imoveis"
+              className="inline-flex items-center gap-2 font-semibold hover:opacity-90 transition-opacity"
+              style={{
+                backgroundColor: "#585a4f",
+                color: "#fcfcfc",
+                padding: "13px 28px",
+                borderRadius: 8,
+                fontSize: 14,
+                textDecoration: "none",
+              }}
+            >
+              Ver todos os imóveis <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         )}
       </section>
 
-      {/* ── Foto da região ── */}
-      <div className="relative h-44 sm:h-56 overflow-hidden">
+      {/* ── Faixa região ── */}
+      <div className="relative overflow-hidden flex items-center justify-center" style={{ height: 160 }}>
         <Image
-          src="/fundo2-3.jpeg"
+          src="/faixa-zona-sul.jpg"
           alt="Zona Sul do Rio de Janeiro"
           fill
           className="object-cover object-center"
         />
         <div
-          className="absolute inset-0 flex items-center justify-center"
-          style={{ background: "rgba(46,48,42,0.52)" }}
-        >
-          <div className="text-center px-4">
-            <p className="text-white/60 text-xs font-semibold tracking-widest uppercase mb-2">
-              Nossa região
-            </p>
-            <p className="font-serif text-2xl sm:text-3xl font-bold text-white">
-              Zona Sul · Rio de Janeiro, RJ
-            </p>
-          </div>
+          className="absolute inset-0"
+          style={{ background: "rgba(30,32,25,0.72)" }}
+        />
+        <div className="relative z-10 text-center">
+          <p
+            style={{
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: "0.2em",
+              textTransform: "uppercase",
+              color: "#d8cb6a",
+              marginBottom: 10,
+            }}
+          >
+            Nossa região
+          </p>
+          <p
+            className="font-serif text-white"
+            style={{ fontSize: "clamp(20px,3vw,32px)", fontWeight: 500 }}
+          >
+            Zona Sul · Rio de Janeiro, RJ
+          </p>
         </div>
       </div>
 
-      {/* ── Por que a Morabilidade ── */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <div className="text-center mb-14">
-          <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: "#d8cb6a" }}>
-            Diferenciais
-          </p>
-          <h2 className="font-serif text-3xl sm:text-4xl font-bold text-olive-900">
-            Por que escolher a Morabilidade?
-          </h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[
-            {
-              Icon: Briefcase,
-              title: "Amplo portfólio",
-              desc: "Dezenas de imóveis disponíveis para venda e locação nas melhores regiões.",
-            },
-            {
-              Icon: Users,
-              title: "Atendimento personalizado",
-              desc: "Nossa equipe está pronta para entender suas necessidades e encontrar o imóvel certo.",
-            },
-            {
-              Icon: Zap,
-              title: "Processo ágil",
-              desc: "Da visita à assinatura, cuidamos de toda a burocracia para você.",
-            },
-          ].map((item) => (
-            <div
-              key={item.title}
-              className="group relative bg-white rounded-2xl p-8 border border-slate-100 shadow-card hover:shadow-card-hover transition-shadow"
+      {/* ── Por que escolher ── */}
+      <section style={{ backgroundColor: "#f7f6f2", padding: "clamp(56px,7vw,88px) clamp(20px,5vw,48px)" }}>
+        <div style={{ maxWidth: 1080, margin: "0 auto" }}>
+          <div className="text-center mb-12">
+            <p
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                color: "#d8cb6a",
+                marginBottom: 12,
+              }}
             >
+              Diferenciais
+            </p>
+            <h2
+              className="font-serif"
+              style={{ fontSize: "clamp(24px,3.5vw,38px)", fontWeight: 500, color: "#2d2f28" }}
+            >
+              Por que escolher a Morabilidade?
+            </h2>
+          </div>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+              gap: 20,
+            }}
+          >
+            {diferenciais.map(({ icon, titulo, texto }) => (
               <div
-                className="inline-flex items-center justify-center w-12 h-12 rounded-xl mb-5"
-                style={{ backgroundColor: "#f5f5f3" }}
+                key={titulo}
+                style={{
+                  backgroundColor: "#fcfcfc",
+                  border: "1px solid #e4e1d6",
+                  borderRadius: 14,
+                  padding: "28px 24px",
+                }}
               >
-                <item.Icon className="w-6 h-6" style={{ color: "#585a4f" }} />
+                <div style={{ fontSize: 22, color: "#d8cb6a", marginBottom: 16, lineHeight: 1 }}>
+                  {icon}
+                </div>
+                <div style={{ fontSize: 15, fontWeight: 600, color: "#2d2f28", marginBottom: 8 }}>
+                  {titulo}
+                </div>
+                <div style={{ fontSize: 14, color: "#7a7c72", lineHeight: 1.7 }}>{texto}</div>
               </div>
-              <h3 className="font-semibold text-slate-800 text-lg mb-2">{item.title}</h3>
-              <p className="text-slate-500 text-sm leading-relaxed">{item.desc}</p>
-              <div
-                className="absolute bottom-0 left-8 right-8 h-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                style={{ backgroundColor: "#d8cb6a" }}
-              />
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 
       {/* ── Depoimentos ── */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <div className="text-center mb-14">
-          <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: "#d8cb6a" }}>
+      <section style={{ backgroundColor: "#fcfcfc", padding: "clamp(56px,7vw,88px) clamp(20px,5vw,48px)" }}>
+        <div style={{ maxWidth: 800, margin: "0 auto", textAlign: "center" }}>
+          <p
+            style={{
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              color: "#d8cb6a",
+              marginBottom: 12,
+            }}
+          >
             Depoimentos
           </p>
-          <h2 className="font-serif text-3xl sm:text-4xl font-bold text-olive-900">
+          <h2
+            className="font-serif"
+            style={{
+              fontSize: "clamp(24px,3.5vw,36px)",
+              fontWeight: 500,
+              color: "#2d2f28",
+              marginBottom: 8,
+            }}
+          >
             O que nossos clientes dizem
           </h2>
-          <p className="text-slate-500 text-sm mt-3 max-w-md mx-auto">
+          <p style={{ fontSize: 14, color: "#7a7c72", marginBottom: 48 }}>
             Histórias reais de quem encontrou o imóvel certo com a Morabilidade.
           </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {[
-            {
-              nome: "Marcelo Guidini",
-              inicial: "M",
-              texto: "Rodrigo foi atencioso em todas as etapas da compra do imóvel, desde a primeira visita até a assinatura da escritura. Esclareceu minhas dúvidas sempre com agilidade e transparência, o que me deixou muito seguro de estar fazendo um bom negócio.",
-            },
-            {
-              nome: "Juliana Paiva",
-              inicial: "J",
-              texto: "Comprar, vender ou investir em um imóvel é sempre delicado e envolve diferentes aspectos. Ter um corretor como o Rodrigo é um porto seguro. Além de ser extremamente comprometido e ter bons imóveis, ele demonstra uma preocupação genuína em ver as pessoas felizes, atingindo seus objetivos.\nQuer fugir de corretores inescrupulosos, que escondem defeitos ou colocam sua comissão à frente dos interesses dos clientes? Pode ter certeza de que o Rodrigo nunca fará nada perto disso — pelo contrário. Tê-lo como corretor é a certeza de ser bem assessorado.",
-            },
-            {
-              nome: "Fabiano Sanches",
-              inicial: "F",
-              texto: "Eu não sabia que uma imobiliária poderia fazer mais do que simplesmente multiplicar o preço médio do m² pela área do imóvel e anunciar na OLX. Encontrei na Morabilidade uma abordagem diferente para avaliar meu apartamento e me conectar com os compradores certos.\nO resultado? O apartamento foi anunciado, visitado e vendido em 1 dia! Tudo com muita transparência e com uma assessoria jurídica impecável.",
-            },
-            {
-              nome: "Fernanda Cozac",
-              inicial: "F",
-              texto: "Rodrigo, desde o início, entendeu qual era o estilo de imóvel que estávamos procurando e fez um filtro muito assertivo. Me apaixonei por uma casa que estava em uma situação complicada, mas, com muita paciência, perseverança, transparência e parceria na condução da negociação, conseguimos adquiri-la.\nRodrigo foi muito parceiro em todo esse processo. Recomendo ele para todos que estão buscando um imóvel!",
-            },
-          ].map((dep) => (
-            <div
-              key={dep.nome}
-              className="bg-white rounded-2xl border border-slate-100 shadow-card p-6 flex flex-col gap-4 hover:shadow-card-hover transition-shadow"
-            >
-              {/* Estrelas */}
-              <div className="flex gap-0.5">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <svg key={i} className="w-4 h-4" viewBox="0 0 20 20" fill="#d8cb6a" aria-hidden="true">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                ))}
-              </div>
-              {/* Texto */}
-              <p className="text-slate-600 text-sm leading-relaxed flex-1 whitespace-pre-line">
-                &ldquo;{dep.texto}&rdquo;
-              </p>
-              {/* Autor */}
-              <div className="flex items-center gap-3 pt-3 border-t border-slate-50">
-                <div
-                  className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
-                  style={{ backgroundColor: "#585a4f" }}
-                >
-                  {dep.inicial}
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-slate-800">{dep.nome}</p>
-                </div>
-              </div>
-            </div>
-          ))}
+          <TestimonialCarousel depoimentos={depoimentos} />
         </div>
       </section>
 
-      {/* ── A história por trás da Morabilidade ── */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
-
-          {/* Coluna esquerda — stats + tagline */}
-          <div className="lg:col-span-4 flex flex-col gap-6">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: "#d8cb6a" }}>
-                Quem somos
-              </p>
-              <h2 className="font-serif text-3xl sm:text-4xl font-bold text-olive-900 leading-tight">
-                A história por trás da Morabilidade
-              </h2>
-            </div>
-
-            {/* Anos de mercado */}
-            <div
-              className="rounded-2xl p-6 flex items-center gap-5"
-              style={{ backgroundColor: "#585a4f" }}
+      {/* ── História ── */}
+      <section style={{ backgroundColor: "#f7f6f2", padding: "clamp(56px,7vw,88px) clamp(20px,5vw,48px)" }}>
+        <div
+          style={{
+            maxWidth: 1080,
+            margin: "0 auto",
+            display: "grid",
+            gridTemplateColumns: "clamp(220px,38%,380px) 1fr",
+            gap: "clamp(32px,6vw,80px)",
+            alignItems: "start",
+          }}
+        >
+          {/* Esquerda */}
+          <div>
+            <p
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                color: "#d8cb6a",
+                marginBottom: 14,
+              }}
             >
-              <div className="flex-shrink-0">
-                <p className="text-5xl font-bold leading-none" style={{ color: "#d8cb6a" }}>
-                  {anosDeMarket}
-                </p>
+              Quem somos
+            </p>
+            <h2
+              className="font-serif"
+              style={{
+                fontSize: "clamp(24px,3vw,34px)",
+                fontWeight: 500,
+                color: "#2d2f28",
+                lineHeight: 1.2,
+                marginBottom: 28,
+              }}
+            >
+              A história por trás da Morabilidade
+            </h2>
+            <div
+              style={{
+                backgroundColor: "#585a4f",
+                borderRadius: 12,
+                padding: "24px 26px",
+                marginBottom: 28,
+              }}
+            >
+              <div
+                className="font-serif"
+                style={{ fontSize: 36, fontWeight: 600, color: "#d8cb6a" }}
+              >
+                +{anosDeMarket}
               </div>
-              <div>
-                <p className="text-white font-semibold text-sm leading-tight">Anos de<br />Mercado</p>
-                <p className="text-white/50 text-xs mt-1">Zona Sul · Rio de Janeiro</p>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(252,252,252,0.75)", marginTop: 6 }}>
+                Anos de Mercado
+              </div>
+              <div style={{ fontSize: 12, color: "rgba(252,252,252,0.4)", marginTop: 3 }}>
+                Zona Sul · Rio de Janeiro
               </div>
             </div>
-
-            {/* Estatísticas secundárias */}
-            <div className="grid grid-cols-3 gap-3">
-              {[
-                { num: "9", label: "Mudanças em 9 anos" },
-                { num: "4", label: "Cidades" },
-                { num: "3", label: "Países" },
-              ].map((stat) => (
-                <div
-                  key={stat.label}
-                  className="rounded-xl p-4 text-center border border-slate-100 bg-white shadow-sm"
-                >
-                  <p className="text-2xl font-bold" style={{ color: "#585a4f" }}>{stat.num}</p>
-                  <p className="text-xs text-slate-500 mt-1 leading-tight">{stat.label}</p>
-                </div>
-              ))}
-            </div>
-
             <Link
               href="/sobre"
-              className="inline-flex items-center gap-1.5 text-sm font-semibold transition-colors hover:opacity-80"
-              style={{ color: "#585a4f" }}
+              className="inline-flex items-center gap-1.5 text-sm font-semibold hover:opacity-80 transition-opacity"
+              style={{
+                color: "#585a4f",
+                textDecoration: "none",
+                borderBottom: "1px solid #d8cb6a",
+                paddingBottom: 2,
+              }}
             >
-              Conheça mais sobre nós
-              <ArrowRight className="w-4 h-4" />
+              Conhecer mais sobre nós <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
 
-          {/* Coluna direita — história */}
-          <div className="lg:col-span-8 space-y-6">
-            <p className="text-slate-600 text-sm leading-relaxed">
-              Rodrigo é carioca, quase da gema. Nasceu em Teresópolis mas viveu até os 21 anos no Rio,
-              quando se mudou para o outro lado do mundo. Passou cinco anos em Pequim, China,
-              até 2008, ano dos Jogos Olímpicos — e foi lá que o amor pela arquitetura nasceu.
-              Pequim é repleta de obras de grandes arquitetos de peso mundial que despertaram um olhar
-              para a arquitetura em quem, até então, só tinha formação na área da saúde.
+          {/* Direita */}
+          <div style={{ paddingTop: 4 }}>
+            <p style={{ fontSize: 15, color: "#7a7c72", lineHeight: 1.9, marginBottom: 20 }}>
+              Rodrigo é carioca, quase da gema. Nasceu em Teresópolis mas viveu até os 21 anos
+              no Rio, quando se mudou para o outro lado do mundo. Foram cinco anos em Pequim,
+              até 2010, onde o amor pela arquitetura nasceu.
             </p>
-
-            <p className="text-slate-600 text-sm leading-relaxed">
-              Depois foram dois anos em Washington, DC. E mais dois anos em São Paulo.
-              Até voltar ao Rio. Ao todo, nove mudanças em nove anos, em quatro cidades, três países.
-              E foram essas mudanças, e o trabalho envolvido em todas elas, que fizeram com que
-              Rodrigo escolhesse ser corretor de imóveis.
+            <p style={{ fontSize: 15, color: "#7a7c72", lineHeight: 1.9, marginBottom: 28 }}>
+              Ao todo, nove mudanças em nove anos, em quatro cidades e três países. E foram
+              essas experiências que fizeram com que escolhesse ser corretor de imóveis.
             </p>
-
-            {/* Citação de destaque */}
             <blockquote
-              className="rounded-2xl p-6 border-l-4 my-2"
-              style={{ backgroundColor: "#f5f5f3", borderLeftColor: "#d8cb6a" }}
+              style={{
+                backgroundColor: "#585a4f",
+                borderRadius: 12,
+                padding: "22px 24px",
+                borderLeft: "4px solid #d8cb6a",
+              }}
             >
-              <p className="text-slate-700 text-sm leading-relaxed italic">
-                &ldquo;Esse apartamento tem <strong>morabilidade</strong> — uma palavra que não existe,
-                mas a gente sabe o que significa.&rdquo;
+              <p
+                className="font-serif"
+                style={{
+                  fontSize: 16,
+                  fontStyle: "italic",
+                  color: "rgba(252,252,252,0.88)",
+                  lineHeight: 1.7,
+                  marginBottom: 10,
+                }}
+              >
+                &ldquo;Esse apartamento tem morabilidade, uma palavra que não existe, mas a
+                gente sabe o que significa.&rdquo;
               </p>
-              <p className="text-slate-400 text-xs mt-3">— Cliente, durante uma visita no fim do dia</p>
+              <div style={{ fontSize: 12, color: "rgba(252,252,252,0.42)" }}>
+                Cliente, durante uma visita no fim do dia
+              </div>
             </blockquote>
-
-            <p className="text-slate-600 text-sm leading-relaxed">
-              Em 2012, de volta ao Rio, nasceu então a Morabilidade. E depois de mais de uma década
-              em operação, a empresa se atualiza, se moderniza, cresce. O que nasceu como a
-              &ldquo;empresa de um homem só&rdquo; hoje tem uma equipe, setor jurídico próprio,
-              administração de imóveis e explora as mídias sociais que mais trazem resultados
-              nas vendas e locações.
-            </p>
-
-            <p className="text-slate-600 text-sm leading-relaxed">
-              Mas não deixa de lado o compromisso de conhecer bem todos os imóveis que comercializa
-              ou administra. E mais do que isso, conhecer suas histórias. É a paixão do trabalho:
-              a história que todo imóvel conta e a ciência da importância que é a busca por um novo lar.
-            </p>
           </div>
         </div>
       </section>
 
-      {/* ── Divisor decorativo ── */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <hr className="border-slate-200" />
-      </div>
-
-      {/* ── CTA Contato ── */}
-      <section className="mx-4 sm:mx-6 lg:mx-8 mb-20 rounded-3xl overflow-hidden relative">
-        {/* Background photo */}
-        <Image
-          src="/fundo3-3.jpeg"
-          alt=""
-          fill
-          className="object-cover object-center"
-        />
-        <div
-          className="absolute inset-0"
-          style={{ background: "linear-gradient(135deg, rgba(46,48,42,0.92) 0%, rgba(88,90,79,0.88) 100%)" }}
-        />
-        <div className="relative px-8 py-16 sm:px-16 text-center overflow-hidden">
-          {/* Decorative dots */}
-          <div
-            className="absolute inset-0 opacity-[0.04]"
+      {/* ── CTA Final ── */}
+      <section
+        style={{
+          backgroundColor: "#3e4037",
+          padding: "clamp(56px,8vw,96px) clamp(20px,5vw,48px)",
+        }}
+      >
+        <div className="text-center" style={{ maxWidth: 600, margin: "0 auto" }}>
+          <p
             style={{
-              backgroundImage: `radial-gradient(circle at 1px 1px, white 1px, transparent 0)`,
-              backgroundSize: "24px 24px",
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              color: "#d8cb6a",
+              marginBottom: 16,
             }}
-          />
-          <div className="relative">
-            <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: "#d8cb6a" }}>
-              Fale conosco
-            </p>
-            <h2 className="font-serif text-3xl sm:text-4xl font-bold text-white mb-4">
-              Não encontrou o que procura?
-            </h2>
-            <p className="text-white/60 text-sm sm:text-base mb-8 max-w-lg mx-auto leading-relaxed">
-              Fale com nossa equipe e deixe que encontramos o imóvel ideal para você.
-            </p>
-            <Link
-              href="/contato"
-              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl font-semibold text-sm transition-all hover:opacity-90 hover:shadow-xl"
-              style={{ backgroundColor: "#d8cb6a", color: "#2e302a" }}
-            >
-              <Phone className="w-4 h-4" />
-              Falar com um corretor
-              <ChevronRight className="w-4 h-4" />
-            </Link>
-          </div>
+          >
+            Fale conosco
+          </p>
+          <h2
+            className="font-serif text-white"
+            style={{
+              fontSize: "clamp(26px,4vw,46px)",
+              fontWeight: 500,
+              marginBottom: 14,
+              lineHeight: 1.15,
+            }}
+          >
+            Não encontrou o que procura?
+          </h2>
+          <p
+            style={{
+              fontSize: 15,
+              color: "rgba(252,252,252,0.5)",
+              maxWidth: 440,
+              margin: "0 auto 36px",
+              lineHeight: 1.75,
+            }}
+          >
+            Fale com nossa equipe e deixe que encontremos o imóvel ideal para você.
+          </p>
+          <Link
+            href="/contato"
+            className="inline-flex items-center gap-2 font-bold hover:opacity-90 transition-opacity"
+            style={{
+              backgroundColor: "#d8cb6a",
+              color: "#3e4037",
+              padding: "14px 30px",
+              borderRadius: 8,
+              fontSize: 14,
+              textDecoration: "none",
+            }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+            </svg>
+            Falar com um corretor
+          </Link>
         </div>
       </section>
 

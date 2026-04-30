@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Morabilidade · Imóveis & Contato</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 16px; scroll-behavior: smooth; }
+  body { font-family: 'Inter', sans-serif; background: #fcfcfc; color: #2d2f28; min-height: 100vh; }
+
+  /* ── SWITCHER ── */
+  .switcher {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    z-index: 2000; background: #2d2f28; border-radius: 100px; padding: 5px;
+    display: flex; gap: 3px; box-shadow: 0 8px 28px rgba(0,0,0,0.35);
+  }
+  .switcher button {
+    background: transparent; border: none;
+    color: rgba(252,252,252,0.45); font-family: 'Inter', sans-serif;
+    font-size: 12px; font-weight: 600; padding: 7px 18px; border-radius: 100px;
+    cursor: pointer; transition: all 0.18s; letter-spacing: 0.03em; white-space: nowrap;
+  }
+  .switcher button.on { background: #d8cb6a; color: #2d2f28; }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #d0cab0; border-radius: 10px; }
+
+  /* ── RESPONSIVE HELPERS ── */
+  @media (max-width: 768px) {
+    .hide-mobile { display: none !important; }
+    .show-mobile { display: flex !important; }
+  }
+  @media (min-width: 769px) {
+    .show-mobile { display: none !important; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+
+const C = {
+  olive: '#585a4f',
+  gold: '#d8cb6a',
+  offwhite: '#fcfcfc',
+  oliveDark: '#3e4037',
+  oliveLight: '#6e7063',
+  goldLight: '#e8dea0',
+  goldDark: '#b8ab4a',
+  bg: '#f7f6f2',
+  border: '#e4e1d6',
+  text: '#2d2f28',
+  textMuted: '#7a7c72',
+};
+
+/* ─── ICONS ─── */
+const Ic = {
+  WA: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>,
+  IG: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>,
+  Pin: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>,
+  Bed: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 9V5a2 2 0 012-2h16a2 2 0 012 2v4"/><path d="M2 11v6h20v-6"/><path d="M2 17v2"/><path d="M22 17v2"/><rect x="6" y="9" width="5" height="4" rx="1"/><rect x="13" y="9" width="5" height="4" rx="1"/></svg>,
+  Area: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M3 9h6"/></svg>,
+  Chevron: () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6"/></svg>,
+  Filter: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>,
+  Email: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg>,
+  Menu: () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>,
+  X: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+  Arrow: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>,
+  Search: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>,
+};
+
+/* ─── NAV ─── */
+function Nav({ page, setPage }) {
+  const [mobileOpen, setMobileOpen] = React.useState(false);
+  const links = ['Início','Imóveis','Sobre','Contato'];
+
+  return (
+    <>
+      <nav style={{background: C.olive, height: 60, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 clamp(20px, 5vw, 48px)', position:'sticky', top:0, zIndex:500}}>
+        {/* Logo */}
+        <img src="uploads/Logo_fundoTransparente-7574853e.png" alt="Morabilidade" style={{height:46, width:'auto', objectFit:'contain'}}/>
+
+        {/* Desktop nav */}
+        <div className="hide-mobile" style={{display:'flex', alignItems:'center', gap:24}}>
+          {links.map(l => {
+            const isActive = (l==='Início'&&page==='inicio')||(l==='Imóveis'&&page==='imoveis')||(l==='Sobre'&&page==='sobre')||(l==='Contato'&&page==='contato');
+            return (
+              <a key={l} href="#" onClick={e=>{e.preventDefault(); if(l==='Início') setPage('inicio'); else if(l==='Imóveis') setPage('imoveis'); else if(l==='Sobre') setPage('sobre'); else if(l==='Contato') setPage('contato');}}
+                style={{fontSize:14, color: isActive ? '#fcfcfc':'rgba(252,252,252,0.6)', textDecoration:'none',
+                  borderBottom: isActive ? `1.5px solid ${C.gold}` : 'none',
+                  paddingBottom: isActive ? 2 : 0, transition:'color 0.15s'}}>
+                {l}
+              </a>
+            );
+          })}
+          <div style={{width:1, height:18, background:'rgba(252,252,252,0.18)'}}/>
+          <a href="#" style={{color:'rgba(252,252,252,0.6)', display:'flex', alignItems:'center'}}><Ic.IG/></a>
+          <a href="#" onClick={e=>{e.preventDefault(); setPage('imoveis');}}
+            style={{background: C.gold, color: C.oliveDark, fontWeight:700, padding:'7px 16px', borderRadius:6, fontSize:13, textDecoration:'none', letterSpacing:'0.01em'}}>
+            Ver imóveis
+          </a>
+        </div>
+
+        {/* Mobile hamburger */}
+        <button className="show-mobile" onClick={()=>setMobileOpen(v=>!v)}
+          style={{background:'transparent', border:'none', color:'#fcfcfc', cursor:'pointer', padding:4, display:'flex', alignItems:'center'}}>
+          {mobileOpen ? <Ic.X/> : <Ic.Menu/>}
+        </button>
+      </nav>
+
+      {/* Mobile menu */}
+      {mobileOpen && (
+        <div className="show-mobile" style={{
+          position:'fixed', top:60, left:0, right:0, bottom:0,
+          background: C.oliveDark, zIndex:499, flexDirection:'column',
+          padding:'32px 28px', gap:0,
+        }}>
+          {links.map(l => (
+            <a key={l} href="#" onClick={e=>{e.preventDefault(); if(l==='Início') setPage('inicio'); else if(l==='Imóveis') setPage('imoveis'); else if(l==='Sobre') setPage('sobre'); else if(l==='Contato') setPage('contato'); setMobileOpen(false);}}
+              style={{display:'block', padding:'18px 0', fontSize:22, fontFamily:'Playfair Display', color:'#fcfcfc',
+                textDecoration:'none', borderBottom:'1px solid rgba(252,252,252,0.08)'}}>
+              {l}
+            </a>
+          ))}
+          <a href="#" onClick={e=>{e.preventDefault(); setPage('imoveis'); setMobileOpen(false);}}
+            style={{display:'inline-flex', marginTop:32, background: C.gold, color: C.oliveDark,
+              fontWeight:700, padding:'12px 24px', borderRadius:8, fontSize:15, textDecoration:'none', alignItems:'center', gap:8, width:'fit-content'}}>
+            Ver imóveis <Ic.Arrow/>
+          </a>
+        </div>
+      )}
+    </>
+  );
+}
+
+/* ─── IMOVEIS DATA ─── */
+const imoveis = [
+  { id:1, bairro:'Leblon', tipo:'Apartamento', neg:'Venda', quartos:3, area:120, preco:'R$ 2.800.000',
+    nota:'Reformado com materiais nobres. Vista parcial para a Lagoa.',
+    img:'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80&auto=format' },
+  { id:2, bairro:'Ipanema', tipo:'Apartamento', neg:'Venda', quartos:2, area:85, preco:'R$ 1.950.000',
+    nota:'Planta inteligente, alta luminosidade. A dois quarteirões da praia.',
+    img:'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&q=80&auto=format' },
+  { id:3, bairro:'Jardim Botânico', tipo:'Casa', neg:'Locação', quartos:4, area:210, preco:'R$ 12.000/mês',
+    nota:'Jardim exuberante, garagem para três carros. Uma casa com alma.',
+    img:'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800&q=80&auto=format' },
+  { id:4, bairro:'Lagoa', tipo:'Apartamento', neg:'Locação', quartos:2, area:78, preco:'R$ 6.500/mês',
+    nota:'Vista direta para a Lagoa Rodrigo de Freitas. Mobiliado.',
+    img:'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&q=80&auto=format' },
+  { id:5, bairro:'Gávea', tipo:'Cobertura', neg:'Venda', quartos:3, area:180, preco:'R$ 3.400.000',
+    nota:'Terraço privativo com churrasqueira. Vista 360° da Zona Sul.',
+    img:'https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?w=800&q=80&auto=format' },
+  { id:6, bairro:'Laranjeiras', tipo:'Apartamento', neg:'Venda', quartos:2, area:95, preco:'R$ 980.000',
+    nota:'Prédio histórico com portaria 24h. Bairro tranquilo e charmoso.',
+    img:'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80&auto=format' },
+];
+const bairros = ['Todos','Leblon','Ipanema','Jardim Botânico','Lagoa','Gávea','Laranjeiras'];
+
+/* ─── FILTER PILL ─── */
+function Pill({ label, active, onClick }) {
+  const [h, setH] = React.useState(false);
+  return (
+    <button onMouseEnter={()=>setH(true)} onMouseLeave={()=>setH(false)} onClick={onClick} style={{
+      display:'flex', alignItems:'center',
+      background: active ? C.olive : h ? '#f0ede3' : '#fcfcfc',
+      color: active ? '#fcfcfc' : C.olive,
+      border: `1.5px solid ${active ? C.olive : C.border}`,
+      borderRadius:100, padding:'7px 16px', fontSize:13,
+      fontFamily:'Inter', fontWeight: active ? 600 : 400,
+      cursor:'pointer', transition:'all 0.15s', whiteSpace:'nowrap',
+    }}>{label}</button>
+  );
+}
+
+function SelectPill({ value, onChange, options }) {
+  return (
+    <div style={{position:'relative', display:'flex', alignItems:'center', flexShrink:0}}>
+      <select value={value} onChange={e=>onChange(e.target.value)} style={{
+        appearance:'none', background:'#fcfcfc', border:`1.5px solid ${C.border}`,
+        borderRadius:100, padding:'7px 34px 7px 16px', fontSize:13,
+        fontFamily:'Inter', color: C.olive, cursor:'pointer', outline:'none', whiteSpace:'nowrap',
+      }}>
+        {options.map(o=><option key={o.v} value={o.v}>{o.l}</option>)}
+      </select>
+      <span style={{position:'absolute', right:12, pointerEvents:'none', color: C.oliveLight, display:'flex', alignItems:'center'}}>
+        <Ic.Chevron/>
+      </span>
+    </div>
+  );
+}
+
+/* ─── CARD ─── */
+function Card({ im }) {
+  const [h, setH] = React.useState(false);
+  return (
+    <div onMouseEnter={()=>setH(true)} onMouseLeave={()=>setH(false)} style={{
+      background:'#fcfcfc', borderRadius:14, overflow:'hidden', cursor:'pointer',
+      boxShadow: h ? '0 16px 40px rgba(88,90,79,0.2)' : '0 2px 10px rgba(88,90,79,0.08)',
+      transform: h ? 'translateY(-4px)' : 'translateY(0)',
+      transition:'all 0.25s cubic-bezier(0.4,0,0.2,1)',
+      border:`1px solid ${h ? 'transparent' : C.border}`,
+    }}>
+      <div style={{position:'relative', paddingTop:'64%', overflow:'hidden', background:'#e8e5db'}}>
+        <img src={im.img} alt={im.bairro} style={{
+          position:'absolute', top:0, left:0, width:'100%', height:'100%', objectFit:'cover',
+          transform: h ? 'scale(1.05)' : 'scale(1)', transition:'transform 0.4s ease',
+        }}/>
+        {/* Neg badge */}
+        <div style={{
+          position:'absolute', top:14, left:14,
+          background: im.neg==='Venda' ? C.gold : C.olive,
+          color: im.neg==='Venda' ? C.oliveDark : '#fcfcfc',
+          fontSize:10, fontWeight:700, letterSpacing:'0.12em', textTransform:'uppercase',
+          padding:'4px 10px', borderRadius:100,
+        }}>{im.neg}</div>
+        {/* Bairro badge */}
+        <div style={{
+          position:'absolute', bottom:14, left:14,
+          background:'rgba(252,252,252,0.92)',
+          color: C.olive, fontSize:12, fontWeight:600,
+          padding:'4px 10px', borderRadius:100,
+          display:'flex', alignItems:'center', gap:5,
+        }}><Ic.Pin/>{im.bairro}</div>
+      </div>
+
+      <div style={{padding:'18px 20px 20px'}}>
+        <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:10}}>
+          <div>
+            <div style={{fontSize:11, color: C.textMuted, fontWeight:500, marginBottom:4, textTransform:'uppercase', letterSpacing:'0.07em'}}>{im.tipo}</div>
+            <div style={{fontSize:19, fontFamily:'Playfair Display', fontWeight:500, color: C.text, lineHeight:1.2}}>{im.preco}</div>
+          </div>
+          <div style={{display:'flex', flexDirection:'column', alignItems:'flex-end', gap:5, marginTop:2}}>
+            <span style={{fontSize:12, color: C.textMuted, display:'flex', alignItems:'center', gap:4}}><Ic.Bed/>{im.quartos} quartos</span>
+            <span style={{fontSize:12, color: C.textMuted, display:'flex', alignItems:'center', gap:4}}><Ic.Area/>{im.area} m²</span>
+          </div>
+        </div>
+        <p style={{fontSize:13, color:'#9a9c8f', lineHeight:1.65, fontStyle:'italic', borderTop:`1px solid ${C.border}`, paddingTop:12}}>
+          "{im.nota}"
+        </p>
+        <div style={{marginTop:14, display:'flex', alignItems:'center', gap:6, fontSize:13, fontWeight:600, color: C.olive}}>
+          Ver detalhes <Ic.Arrow/>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── PAGE IMOVEIS ─── */
+function PageImoveis() {
+  const [neg, setNeg] = React.useState('todos');
+  const [bairro, setBairro] = React.useState('Todos');
+  const [tipo, setTipo] = React.useState('todos');
+
+  const filtrados = imoveis.filter(im => {
+    if (neg !== 'todos' && im.neg.toLowerCase() !== neg) return false;
+    if (bairro !== 'Todos' && im.bairro !== bairro) return false;
+    if (tipo !== 'todos' && im.tipo.toLowerCase() !== tipo) return false;
+    return true;
+  });
+
+  return (
+    <div>
+      {/* Header */}
+      <div style={{background: C.olive, padding:'clamp(36px,5vw,56px) clamp(20px,5vw,48px) clamp(40px,5vw,52px)'}}>
+        <div style={{maxWidth:1080, margin:'0 auto'}}>
+          <div style={{fontSize:11, letterSpacing:'0.18em', fontWeight:600, color: C.gold, textTransform:'uppercase', marginBottom:12}}>Portfólio · Curadoria</div>
+          <h1 style={{fontFamily:'Playfair Display', fontSize:'clamp(32px,5vw,50px)', fontWeight:500, color:'#fcfcfc', lineHeight:1.1, marginBottom:14}}>
+            Cada imóvel tem<br/><em>uma história</em>
+          </h1>
+          <p style={{fontSize:15, color:'rgba(252,252,252,0.6)', maxWidth:440, lineHeight:1.75}}>
+            Selecionamos apenas os imóveis que nos encantam: pela arquitetura, pelo bairro, pelo potencial. Zona Sul, Rio de Janeiro.
+          </p>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div style={{background:'#fcfcfc', borderBottom:`1px solid ${C.border}`, position:'sticky', top:60, zIndex:90}}>
+        <div style={{maxWidth:1080+96, margin:'0 auto', padding:'0 clamp(20px,5vw,48px)', height:60, display:'flex', alignItems:'center', gap:8, overflowX:'auto'}}>
+          <span style={{display:'flex', alignItems:'center', gap:6, fontSize:13, color: C.textMuted, flexShrink:0}}>
+            <Ic.Filter/> <span className="hide-mobile">Filtros</span>
+          </span>
+          <div style={{width:1, height:20, background: C.border, flexShrink:0}}/>
+          {[{v:'todos',l:'Tudo'},{v:'venda',l:'Venda'},{v:'locação',l:'Locação'}].map(({v,l})=>(
+            <Pill key={v} label={l} active={neg===v} onClick={()=>setNeg(v)}/>
+          ))}
+          <div style={{width:1, height:20, background: C.border, flexShrink:0}}/>
+          <SelectPill value={bairro} onChange={setBairro}
+            options={bairros.map(b=>({v:b, l: b==='Todos'?'Todos os bairros':b}))}/>
+          <SelectPill value={tipo} onChange={setTipo}
+            options={[{v:'todos',l:'Todos os tipos'},{v:'apartamento',l:'Apartamento'},{v:'casa',l:'Casa'},{v:'cobertura',l:'Cobertura'}]}/>
+          <div style={{marginLeft:'auto', fontSize:12, color: C.textMuted, flexShrink:0, fontStyle:'italic', whiteSpace:'nowrap'}}>
+            {filtrados.length} {filtrados.length===1?'imóvel':'imóveis'}
+          </div>
+        </div>
+      </div>
+
+      {/* Grid */}
+      <div style={{maxWidth:1080+96, margin:'0 auto', padding:'clamp(28px,4vw,44px) clamp(20px,5vw,48px) 100px'}}>
+        {filtrados.length > 0 ? (
+          <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(min(100%, 300px), 1fr))', gap:'clamp(16px,3vw,28px)'}}>
+            {filtrados.map(im => <Card key={im.id} im={im}/>)}
+          </div>
+        ) : (
+          <div style={{textAlign:'center', padding:'80px 0', color: C.textMuted}}>
+            <div style={{fontFamily:'Playfair Display', fontSize:22, marginBottom:10}}>Nenhum imóvel encontrado</div>
+            <p style={{fontSize:14}}>Ajuste os filtros acima para ver mais opções.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─── CONTACT CHANNEL CARD ─── */
+function ChannelCard({ icon, label, title, sub, href }) {
+  const [h, setH] = React.useState(false);
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer"
+      onMouseEnter={()=>setH(true)} onMouseLeave={()=>setH(false)}
+      style={{
+        display:'flex', alignItems:'center', gap:18,
+        background: h ? C.olive : '#fcfcfc',
+        border:`1.5px solid ${h ? C.olive : C.border}`,
+        borderRadius:14, padding:'22px 24px',
+        textDecoration:'none', cursor:'pointer',
+        transition:'all 0.2s ease',
+        boxShadow: h ? `0 12px 32px rgba(88,90,79,0.2)` : '0 2px 8px rgba(88,90,79,0.04)',
+      }}>
+      <div style={{
+        width:48, height:48, borderRadius:'50%',
+        background: h ? 'rgba(216,203,106,0.15)' : C.bg,
+        display:'flex', alignItems:'center', justifyContent:'center',
+        flexShrink:0, color: h ? C.gold : C.olive, transition:'all 0.2s',
+      }}>{icon}</div>
+      <div style={{flex:1, minWidth:0}}>
+        <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.15em', textTransform:'uppercase', color: h ? 'rgba(252,252,252,0.4)' : C.textMuted, marginBottom:4}}>{label}</div>
+        <div style={{fontFamily:'Playfair Display', fontSize:18, fontWeight:500, color: h ? '#fcfcfc' : C.text, marginBottom:3, textWrap:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>{title}</div>
+        <div style={{fontSize:13, color: h ? 'rgba(252,252,252,0.5)' : C.textMuted, lineHeight:1.5}}>{sub}</div>
+      </div>
+      <div style={{color: h ? C.gold : C.border, transition:'color 0.2s', flexShrink:0}}><Ic.Arrow/></div>
+    </a>
+  );
+}
+
+/* ─── PAGE CONTATO ─── */
+function PageContato() {
+  return (
+    <div>
+      {/* Hero */}
+      <div style={{background: C.olive}}>
+        <div style={{maxWidth:1080, margin:'0 auto', padding:'clamp(48px,6vw,72px) clamp(20px,5vw,48px) clamp(48px,6vw,72px)'}}>
+          {/* Tag */}
+          <div style={{display:'inline-flex', alignItems:'center', gap:8, background:'rgba(216,203,106,0.12)', border:`1px solid rgba(216,203,106,0.3)`, borderRadius:100, padding:'5px 14px', marginBottom:24}}>
+            <div style={{width:6, height:6, borderRadius:'50%', background: C.gold}}/>
+            <span style={{fontSize:11, fontWeight:600, letterSpacing:'0.16em', textTransform:'uppercase', color: C.gold}}>Atendimento</span>
+          </div>
+
+          {/* Headline em 2 blocos: slogan + texto */}
+          <div style={{display:'grid', gridTemplateColumns:'clamp(240px,55%,560px) 1fr', gap:'clamp(24px,5vw,64px)', alignItems:'center'}}>
+            <div>
+              <h1 style={{fontFamily:'Playfair Display', fontSize:'clamp(30px,4.5vw,52px)', fontWeight:500, color:'#fcfcfc', lineHeight:1.1, marginBottom:20}}>
+                Simples.<br/>Eficiente.<br/><em style={{color: C.goldLight}}>Humanizada.</em>
+              </h1>
+              <p style={{fontSize:'clamp(14px,1.5vw,16px)', color:'rgba(252,252,252,0.62)', lineHeight:1.8, maxWidth:400}}>
+                Atendimento direto e sem burocracia, do primeiro contato até a entrega das chaves. Zona Sul, Rio de Janeiro.
+              </p>
+              <div style={{display:'flex', alignItems:'center', gap:8, marginTop:24}}>
+                <div style={{display:'flex', alignItems:'center', gap:6, color:'rgba(252,252,252,0.4)', fontSize:13}}>
+                  <Ic.Pin/> Zona Sul · RJ
+                </div>
+                <span style={{background:'rgba(252,252,252,0.07)', border:'1px solid rgba(252,252,252,0.12)', color:'rgba(252,252,252,0.45)', fontSize:11, fontWeight:600, letterSpacing:'0.1em', padding:'3px 10px', borderRadius:100, textTransform:'uppercase'}}>100% Digital</span>
+              </div>
+            </div>
+
+            {/* Valores da marca em destaque */}
+            <div style={{display:'grid', gridTemplateRows:'1fr 1fr 1fr', gap:10}} className="hide-mobile">
+              {[
+                {n:'+ de 10', d:'anos de mercado'},
+                {n:'100%', d:'atendimento online'},
+                {n:'Zona Sul', d:'Rio de Janeiro · RJ'},
+              ].map(({n,d}) => (
+                <div key={n} style={{
+                  background:'rgba(252,252,252,0.06)', border:'1px solid rgba(252,252,252,0.09)',
+                  borderRadius:10, padding:'14px 18px', display:'flex', alignItems:'center', gap:14,
+                }}>
+                  <div style={{fontSize:'clamp(18px,2vw,24px)', fontFamily:'Playfair Display', fontWeight:600, color: C.gold, flexShrink:0}}>{n}</div>
+                  <div style={{fontSize:13, color:'rgba(252,252,252,0.5)', lineHeight:1.4}}>{d}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Canais */}
+      <div style={{maxWidth:680, margin:'0 auto', padding:'clamp(40px,5vw,60px) clamp(20px,5vw,48px) 100px'}}>
+        <div style={{fontSize:11, fontWeight:700, letterSpacing:'0.18em', textTransform:'uppercase', color: C.textMuted, marginBottom:20}}>Fale com a gente</div>
+
+        <div style={{display:'flex', flexDirection:'column', gap:14}}>
+          <ChannelCard
+            icon={<Ic.WA/>}
+            label="WhatsApp"
+            title="(21) 99772 9990"
+            sub="Atendimento direto, sem robôs. Horário comercial."
+            href="https://wa.link/we06jw"
+          />
+          <ChannelCard
+            icon={<Ic.IG/>}
+            label="Instagram"
+            title="@morabilidade"
+            sub="Imóveis, bastidores e novidades do mercado carioca."
+            href="https://instagram.com/morabilidade"
+          />
+
+        </div>
+
+        {/* Rodapé da seção */}
+        <div style={{marginTop:48, display:'flex', alignItems:'center', gap:14}}>
+          <div style={{flex:1, height:1, background: C.border}}/>
+          <p style={{fontSize:13, color:'#b5b8ac', fontStyle:'italic', textAlign:'center', whiteSpace:'nowrap'}}>
+            Imobiliária 100% digital · sem sede física
+          </p>
+          <div style={{flex:1, height:1, background: C.border}}/>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── PAGE INICIO ─── */
+const destaques = [
+  { id:1, bairro:'Copacabana', cidade:'Rio de Janeiro', tipo:'Apartamento', neg:'Venda', quartos:3, area:110,
+    preco:'R$ 2.300.000', img:'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=700&q=80&auto=format' },
+  { id:2, bairro:'Praia', cidade:'Teresópolis', tipo:'Casa', neg:'Venda', quartos:3, area:350,
+    preco:'R$ 600.000', img:'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=700&q=80&auto=format' },
+  { id:3, bairro:'Panorama', cidade:'Teresópolis', tipo:'Casa', neg:'Venda', quartos:5, area:564,
+    preco:'R$ 1.200.000', img:'https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?w=700&q=80&auto=format' },
+  { id:4, bairro:'Leblon', cidade:'Rio de Janeiro', tipo:'Cobertura', neg:'Locação', quartos:3, area:180,
+    preco:'R$ 14.000/mês', img:'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=700&q=80&auto=format' },
+];
+
+const depoimentos = [
+  { nome:'Juliana Paiva', texto:'Além de ser extremamente comprometido e ter bons imóveis, tem uma preocupação genuína em ver as pessoas felizes. Pode ter certeza de que será bem assessorado.' },
+  { nome:'Fabiano Sanches', texto:'O apartamento foi anunciado, visitado e vendido em 1 dia! Tudo com muita transparência e com uma assessoria jurídica impecável.' },
+  { nome:'Fernanda Cozac', texto:'Com muita paciência, perseverança, transparência e parceria na condução da negociação conseguimos adquirir a casa dos sonhos. Recomendo para todos.' },
+];
+
+function DestCard({ im }) {
+  const [h, setH] = React.useState(false);
+  return (
+    <div onMouseEnter={()=>setH(true)} onMouseLeave={()=>setH(false)} style={{
+      background:'#fcfcfc', borderRadius:14, overflow:'hidden', cursor:'pointer', flexShrink:0,
+      width: 'clamp(260px, 30vw, 320px)',
+      boxShadow: h ? '0 16px 40px rgba(88,90,79,0.18)' : '0 2px 10px rgba(88,90,79,0.07)',
+      transform: h ? 'translateY(-3px)' : 'translateY(0)',
+      transition:'all 0.25s cubic-bezier(0.4,0,0.2,1)',
+      border:`1px solid ${h ? 'transparent' : C.border}`,
+    }}>
+      <div style={{position:'relative', paddingTop:'65%', overflow:'hidden', background:'#e0ddd4'}}>
+        <img src={im.img} alt={im.bairro} style={{
+          position:'absolute', top:0, left:0, width:'100%', height:'100%', objectFit:'cover',
+          transform: h ? 'scale(1.05)' : 'scale(1)', transition:'transform 0.4s ease',
+        }}/>
+        <div style={{
+          position:'absolute', top:12, left:12,
+          background: im.neg==='Venda' ? C.gold : C.olive,
+          color: im.neg==='Venda' ? C.oliveDark : '#fcfcfc',
+          fontSize:10, fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase',
+          padding:'3px 9px', borderRadius:100,
+        }}>{im.neg}</div>
+      </div>
+      <div style={{padding:'14px 16px 16px'}}>
+        <div style={{fontSize:12, fontWeight:600, color: C.text, marginBottom:4}}>{im.tipo}</div>
+        <div style={{display:'flex', alignItems:'center', gap:5, fontSize:12, color: C.textMuted, marginBottom:10}}>
+          <Ic.Pin/>{im.bairro}, {im.cidade}
+        </div>
+        <div style={{display:'flex', alignItems:'center', gap:12, fontSize:12, color: C.textMuted, marginBottom:12}}>
+          <span style={{display:'flex', alignItems:'center', gap:4}}><Ic.Bed/>{im.quartos} dorm.</span>
+          <span style={{display:'flex', alignItems:'center', gap:4}}><Ic.Area/>{im.area} m²</span>
+        </div>
+        <div style={{display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+          <div style={{fontSize:17, fontFamily:'Playfair Display', fontWeight:500, color: C.text}}>{im.preco}</div>
+          <span style={{fontSize:12, fontWeight:600, color: C.olive, display:'flex', alignItems:'center', gap:4}}>Ver mais <Ic.Arrow/></span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PageInicio({ setPage }) {
+  const [tab, setTab] = React.useState('tudo');
+  const [depIdx, setDepIdx] = React.useState(0);
+
+  return (
+    <div>
+
+      {/* ── HERO ── */}
+      <div style={{position:'relative', minHeight:'clamp(480px,70vh,700px)', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden'}}>
+        <img
+          src="https://images.unsplash.com/photo-1483729558449-99ef09a8c325?w=1600&q=80&auto=format"
+          alt="Rio de Janeiro"
+          style={{position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover'}}
+        />
+        <div style={{position:'absolute', inset:0, background:'linear-gradient(to bottom, rgba(45,47,40,0.62) 0%, rgba(30,32,25,0.78) 100%)'}}/>
+        <div style={{position:'relative', zIndex:1, textAlign:'center', padding:'0 clamp(20px,5vw,48px)', width:'100%', maxWidth:780}}>
+          {/* Tag */}
+          <div style={{display:'inline-flex', alignItems:'center', gap:7, background:'rgba(216,203,106,0.15)', border:'1px solid rgba(216,203,106,0.35)', borderRadius:100, padding:'5px 14px', marginBottom:24}}>
+            <div style={{width:5, height:5, borderRadius:'50%', background:C.gold}}/>
+            <span style={{fontSize:11, fontWeight:600, letterSpacing:'0.16em', textTransform:'uppercase', color:C.gold}}>Imobiliária de confiança</span>
+          </div>
+          <h1 style={{fontFamily:'Playfair Display', fontSize:'clamp(32px,5.5vw,62px)', fontWeight:500, color:'#fcfcfc', lineHeight:1.1, marginBottom:20}}>
+            Encontre o imóvel<br/><em style={{color:C.goldLight}}>ideal para você</em>
+          </h1>
+          <p style={{fontSize:'clamp(14px,1.8vw,17px)', color:'rgba(252,252,252,0.65)', lineHeight:1.7, marginBottom:32}}>
+            Casas, apartamentos e muito mais para venda e locação nas melhores regiões.
+          </p>
+
+          {/* Tabs */}
+          <div style={{display:'inline-flex', gap:4, background:'rgba(255,255,255,0.1)', borderRadius:100, padding:4, marginBottom:20}}>
+            {[{v:'tudo',l:'Tudo'},{v:'compra',l:'Comprar'},{v:'aluguel',l:'Alugar'}].map(({v,l})=>(
+              <button key={v} onClick={()=>setTab(v)} style={{
+                background: tab===v ? C.gold : 'transparent',
+                color: tab===v ? C.oliveDark : 'rgba(252,252,252,0.7)',
+                border:'none', borderRadius:100, padding:'8px 20px',
+                fontSize:14, fontWeight: tab===v ? 700 : 400,
+                cursor:'pointer', transition:'all 0.18s', fontFamily:'Inter',
+              }}>{l}</button>
+            ))}
+          </div>
+
+          {/* Search bar */}
+          <div style={{background:'#fcfcfc', borderRadius:12, padding:'10px 10px 10px 16px', display:'flex', alignItems:'center', gap:10, maxWidth:580, margin:'0 auto 16px', boxShadow:'0 8px 32px rgba(0,0,0,0.18)'}}>
+            <div style={{position:'relative', display:'flex', alignItems:'center', flexShrink:0}}>
+              <select style={{appearance:'none', background:'transparent', border:'none', fontSize:14, fontFamily:'Inter', color:C.olive, paddingRight:20, cursor:'pointer', outline:'none'}}>
+                <option>Todos os tipos</option>
+                <option>Apartamento</option>
+                <option>Casa</option>
+                <option>Cobertura</option>
+              </select>
+              <span style={{position:'absolute', right:0, pointerEvents:'none', color:C.oliveLight, display:'flex'}}><Ic.Chevron/></span>
+            </div>
+            <div style={{width:1, height:22, background:C.border, flexShrink:0}}/>
+            <div style={{display:'flex', alignItems:'center', gap:8, flex:1, color:C.textMuted}}>
+              <Ic.Pin/>
+              <input placeholder="Ipanema, Leblon, Botafogo..." style={{border:'none', outline:'none', background:'transparent', fontSize:14, fontFamily:'Inter', color:C.text, width:'100%'}}/>
+            </div>
+            <button onClick={()=>setPage('imoveis')} style={{
+              background:C.gold, color:C.oliveDark, border:'none', borderRadius:8,
+              padding:'10px 20px', fontSize:14, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', gap:7, flexShrink:0, fontFamily:'Inter',
+            }}>
+              <Ic.Search/> Buscar
+            </button>
+          </div>
+          <div style={{fontSize:12, color:'rgba(252,252,252,0.38)', letterSpacing:'0.03em'}}>{imoveis.length} imóveis disponíveis agora</div>
+        </div>
+      </div>
+
+      {/* ── DESTAQUES ── */}
+      <div style={{background:'#fcfcfc', padding:'clamp(48px,6vw,72px) 0'}}>
+        <div style={{maxWidth:1080+96, margin:'0 auto', padding:'0 clamp(20px,5vw,48px)'}}>
+          <div style={{display:'flex', alignItems:'flex-end', justifyContent:'space-between', marginBottom:32, gap:16, flexWrap:'wrap'}}>
+            <div>
+              <div style={{fontSize:11, fontWeight:700, letterSpacing:'0.18em', textTransform:'uppercase', color:C.gold, marginBottom:10}}>Selecionados a dedo</div>
+              <h2 style={{fontFamily:'Playfair Display', fontSize:'clamp(26px,3.5vw,38px)', fontWeight:500, color:C.text}}>Nossos destaques</h2>
+              <div style={{fontSize:14, color:C.textMuted, marginTop:6}}>{destaques.length} imóveis disponíveis no portfólio</div>
+            </div>
+            <a href="#" onClick={e=>{e.preventDefault(); setPage('imoveis');}} style={{display:'flex', alignItems:'center', gap:6, fontSize:14, fontWeight:600, color:C.olive, textDecoration:'none', flexShrink:0}}>Ver todos <Ic.Arrow/></a>
+          </div>
+          {/* Horizontal scroll */}
+          <div style={{display:'flex', gap:20, overflowX:'auto', paddingBottom:8, scrollbarWidth:'thin'}}>
+            {destaques.map(im => <DestCard key={im.id} im={im}/>)}
+          </div>
+        </div>
+        {/* CTA */}
+        <div style={{textAlign:'center', marginTop:40}}>
+          <button onClick={()=>setPage('imoveis')} style={{
+            background:C.olive, color:'#fcfcfc', border:'none', borderRadius:8,
+            padding:'13px 28px', fontSize:14, fontWeight:600, cursor:'pointer',
+            display:'inline-flex', alignItems:'center', gap:8, fontFamily:'Inter',
+          }}>Ver todos os imóveis <Ic.Arrow/></button>
+        </div>
+      </div>
+
+      {/* ── REGIÃO ── */}
+      <div style={{position:'relative', height:160, overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center'}}>
+        <img src="https://images.unsplash.com/photo-1516306580123-e6e52b1b7b5f?w=1400&q=75&auto=format" alt="Zona Sul" style={{position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover'}}/>
+        <div style={{position:'absolute', inset:0, background:'rgba(30,32,25,0.72)'}}/>
+        <div style={{position:'relative', zIndex:1, textAlign:'center'}}>
+          <div style={{fontSize:10, fontWeight:700, letterSpacing:'0.2em', textTransform:'uppercase', color:C.gold, marginBottom:10}}>Nossa região</div>
+          <div style={{fontFamily:'Playfair Display', fontSize:'clamp(20px,3vw,32px)', fontWeight:500, color:'#fcfcfc'}}>Zona Sul · Rio de Janeiro, RJ</div>
+        </div>
+      </div>
+
+      {/* ── POR QUE ESCOLHER ── */}
+      <div style={{background:C.bg, padding:'clamp(56px,7vw,88px) clamp(20px,5vw,48px)'}}>
+        <div style={{maxWidth:1080, margin:'0 auto', textAlign:'center', marginBottom:48}}>
+          <div style={{fontSize:11, fontWeight:700, letterSpacing:'0.18em', textTransform:'uppercase', color:C.gold, marginBottom:12}}>Diferenciais</div>
+          <h2 style={{fontFamily:'Playfair Display', fontSize:'clamp(24px,3.5vw,38px)', fontWeight:500, color:C.text}}>Por que escolher a Morabilidade?</h2>
+        </div>
+        <div style={{maxWidth:1080, margin:'0 auto', display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(240px, 1fr))', gap:20}}>
+          {[
+            { icon:'◈', titulo:'Amplo portfólio', texto:'Imóveis selecionados para venda e locação nas melhores regiões da Zona Sul.' },
+            { icon:'◎', titulo:'Atendimento personalizado', texto:'Nossa equipe está pronta para entender suas necessidades e encontrar o imóvel certo.' },
+            { icon:'◇', titulo:'Processo ágil', texto:'Da visita à assinatura, cuidamos de toda a burocracia para você.' },
+          ].map(({icon,titulo,texto}) => (
+            <div key={titulo} style={{background:'#fcfcfc', border:`1px solid ${C.border}`, borderRadius:14, padding:'28px 24px'}}>
+              <div style={{fontSize:22, color:C.gold, marginBottom:16, lineHeight:1}}>{icon}</div>
+              <div style={{fontSize:15, fontWeight:600, color:C.text, marginBottom:8}}>{titulo}</div>
+              <div style={{fontSize:14, color:C.textMuted, lineHeight:1.7}}>{texto}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── DEPOIMENTOS ── */}
+      <div style={{background:'#fcfcfc', padding:'clamp(56px,7vw,88px) clamp(20px,5vw,48px)'}}>
+        <div style={{maxWidth:800, margin:'0 auto', textAlign:'center'}}>
+          <div style={{fontSize:11, fontWeight:700, letterSpacing:'0.18em', textTransform:'uppercase', color:C.gold, marginBottom:12}}>Depoimentos</div>
+          <h2 style={{fontFamily:'Playfair Display', fontSize:'clamp(24px,3.5vw,36px)', fontWeight:500, color:C.text, marginBottom:8}}>O que nossos clientes dizem</h2>
+          <p style={{fontSize:14, color:C.textMuted, marginBottom:48}}>Histórias reais de quem encontrou o imóvel certo com a Morabilidade.</p>
+          {/* Stars */}
+          <div style={{display:'flex', justifyContent:'center', gap:4, marginBottom:28}}>
+            {[1,2,3,4,5].map(i=><span key={i} style={{color:C.gold, fontSize:18}}>★</span>)}
+          </div>
+          <blockquote style={{fontFamily:'Playfair Display', fontSize:'clamp(16px,2vw,20px)', fontStyle:'italic', color:C.text, lineHeight:1.7, marginBottom:24, position:'relative'}}>
+            <span style={{fontSize:60, color:C.gold, opacity:0.18, position:'absolute', top:-20, left:'50%', transform:'translateX(-50%)', fontFamily:'Georgia', lineHeight:1}}>"</span>
+            "{depoimentos[depIdx].texto}"
+          </blockquote>
+          <div style={{fontSize:14, fontWeight:600, color:C.olive}}>{depoimentos[depIdx].nome}</div>
+          {/* Dots */}
+          <div style={{display:'flex', justifyContent:'center', gap:8, marginTop:28}}>
+            {depoimentos.map((_,i)=>(
+              <button key={i} onClick={()=>setDepIdx(i)} style={{
+                width: i===depIdx ? 24 : 8, height:8, borderRadius:100,
+                background: i===depIdx ? C.gold : C.border,
+                border:'none', cursor:'pointer', transition:'all 0.2s', padding:0,
+              }}/>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── HISTÓRIA ── */}
+      <div style={{background:C.bg, padding:'clamp(56px,7vw,88px) clamp(20px,5vw,48px)'}}>
+        <div style={{maxWidth:1080, margin:'0 auto', display:'grid', gridTemplateColumns:'clamp(220px,38%,380px) 1fr', gap:'clamp(32px,6vw,80px)', alignItems:'start'}}>
+          <div>
+            <div style={{fontSize:11, fontWeight:700, letterSpacing:'0.18em', textTransform:'uppercase', color:C.gold, marginBottom:14}}>Quem somos</div>
+            <h2 style={{fontFamily:'Playfair Display', fontSize:'clamp(24px,3vw,34px)', fontWeight:500, color:C.text, lineHeight:1.2, marginBottom:28}}>A história por trás da Morabilidade</h2>
+            <div style={{background:C.olive, borderRadius:12, padding:'24px 26px', marginBottom:28}}>
+              <div style={{fontSize:36, fontFamily:'Playfair Display', fontWeight:600, color:C.gold}}>+10</div>
+              <div style={{fontSize:13, fontWeight:600, color:'rgba(252,252,252,0.75)', marginTop:6}}>Anos de Mercado</div>
+              <div style={{fontSize:12, color:'rgba(252,252,252,0.4)', marginTop:3}}>Zona Sul · Rio de Janeiro</div>
+            </div>
+            <a href="#" onClick={e=>{e.preventDefault(); setPage('sobre');}} style={{display:'inline-flex', alignItems:'center', gap:6, fontSize:13, fontWeight:600, color:C.olive, textDecoration:'none', borderBottom:`1px solid ${C.gold}`, paddingBottom:2}}>Conhecer mais sobre nós <Ic.Arrow/></a>
+          </div>
+          <div style={{paddingTop:4}}>
+            <p style={{fontSize:15, color:C.textMuted, lineHeight:1.9, marginBottom:20}}>
+              Rodrigo é carioca, quase da gema. Nasceu em Teresópolis mas viveu até os 21 anos no Rio, quando se mudou para o outro lado do mundo. Foram cinco anos em Pequim, até 2010, onde o amor pela arquitetura nasceu.
+            </p>
+            <p style={{fontSize:15, color:C.textMuted, lineHeight:1.9, marginBottom:28}}>
+              Ao todo, nove mudanças em nove anos, em quatro cidades e três países. E foram essas experiências que fizeram com que escolhesse ser corretor de imóveis.
+            </p>
+            <div style={{background:C.olive, borderRadius:12, padding:'22px 24px', borderLeft:`4px solid ${C.gold}`}}>
+              <p style={{fontFamily:'Playfair Display', fontSize:16, fontStyle:'italic', color:'rgba(252,252,252,0.88)', lineHeight:1.7, marginBottom:10}}>
+                "Esse apartamento tem morabilidade, uma palavra que não existe, mas a gente sabe o que significa."
+              </p>
+              <div style={{fontSize:12, color:'rgba(252,252,252,0.42)'}}>Cliente, durante uma visita no fim do dia</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── CTA ── */}
+      <div style={{background:C.oliveDark, padding:'clamp(56px,8vw,96px) clamp(20px,5vw,48px)'}}>
+        <div style={{textAlign:'center'}}>
+          <div style={{fontSize:11, fontWeight:700, letterSpacing:'0.18em', textTransform:'uppercase', color:C.gold, marginBottom:16}}>Fale conosco</div>
+          <h2 style={{fontFamily:'Playfair Display', fontSize:'clamp(26px,4vw,46px)', fontWeight:500, color:'#fcfcfc', marginBottom:14, lineHeight:1.15}}>Não encontrou o que procura?</h2>
+          <p style={{fontSize:15, color:'rgba(252,252,252,0.5)', maxWidth:440, margin:'0 auto 36px', lineHeight:1.75}}>
+            Fale com nossa equipe e deixe que encontremos o imóvel ideal para você.
+          </p>
+          <button onClick={()=>setPage('contato')} style={{
+            background:C.gold, color:C.oliveDark, border:'none', borderRadius:8,
+            padding:'14px 30px', fontSize:14, fontWeight:700, cursor:'pointer',
+            display:'inline-flex', alignItems:'center', gap:8, fontFamily:'Inter',
+          }}><Ic.WA/> Falar com um corretor <Ic.Arrow/></button>
+        </div>
+      </div>
+
+    </div>
+  );
+}
+
+/* ─── PAGE SOBRE ─── */
+const todosDepoimentos = [
+  { nome:'Marcelo Guidini', inicial:'M', texto:'Rodrigo foi atencioso em todas as etapas da compra do imóvel, desde a primeira visita até a assinatura da escritura. Esclareceu minhas dúvidas, sempre com agilidade e transparência, o que me deixou muito seguro de estar fazendo um bom negócio.' },
+  { nome:'Juliana Paiva', inicial:'J', texto:'Comprar, vender ou investir em um imóvel é sempre delicado. Ter um corretor como o Rodrigo é um porto seguro. Além de ser extremamente comprometido e ter bons imóveis, ele demonstra uma preocupação genuína em ver as pessoas felizes.' },
+  { nome:'Fabiano Sanches', inicial:'F', texto:'Eu não sabia que uma imobiliária poderia fazer mais do que simplesmente multiplicar o preço médio do m² pela área do imóvel. Encontrei na Morabilidade outra abordagem. O resultado? O apartamento foi anunciado, visitado e vendido em 1 dia!' },
+  { nome:'Fernanda Cozac', inicial:'F', texto:'Rodrigo desde o início entendeu qual era o estilo de imóvel que estávamos procurando e fez um filtro muito bom. Com muita paciência, perseverança, transparência e parceria na condução da negociação, conseguimos adquirir a casa.' },
+];
+
+const passos = [
+  { n:'01', titulo:'Entre em contato', texto:'Fale conosco pelo WhatsApp ou nos envie uma mensagem pelo Instagram. A conversa começa de forma simples e sem compromisso.' },
+  { n:'02', titulo:'Entendemos seu perfil', texto:'Conversamos sobre o que você busca: localização, tipo de imóvel, faixa de preço e suas prioridades. Sem questionários longos.' },
+  { n:'03', titulo:'Selecionamos as melhores opções', texto:'Com base no seu perfil, apresentamos imóveis que realmente fazem sentido para você, sem perda de tempo com opções fora do seu interesse.' },
+  { n:'04', titulo:'Agendamos a visita', texto:'Organizamos tudo para a visita ao imóvel no horário mais conveniente para você, acompanhado pela nossa equipe.' },
+  { n:'05', titulo:'Negociação e fechamento', texto:'Assessoramos a proposta, negociação e toda a documentação até a entrega das chaves. Com transparência do início ao fim.' },
+];
+
+function PageSobre({ setPage }) {
+  return (
+    <div>
+      {/* ── HERO ── */}
+      <div style={{background:C.olive, padding:'clamp(48px,6vw,72px) clamp(20px,5vw,48px) clamp(48px,6vw,72px)'}}>
+        <div style={{maxWidth:760, margin:'0 auto', textAlign:'center'}}>
+          <div style={{fontSize:11, fontWeight:700, letterSpacing:'0.18em', textTransform:'uppercase', color:C.gold, marginBottom:16}}>Sobre nós</div>
+          <h1 style={{fontFamily:'Playfair Display', fontSize:'clamp(28px,5vw,52px)', fontWeight:500, color:'#fcfcfc', lineHeight:1.1, marginBottom:20}}>
+            Imobiliária feita para<br/>o mundo digital
+          </h1>
+          <p style={{fontSize:15, color:'rgba(252,252,252,0.62)', lineHeight:1.8, maxWidth:520, margin:'0 auto 28px'}}>
+            A Morabilidade nasceu digital e cresceu conectando pessoas ao imóvel certo, com agilidade, transparência e atendimento humanizado.
+          </p>
+          <div style={{display:'inline-flex', alignItems:'center', gap:8, background:'rgba(252,252,252,0.08)', border:'1px solid rgba(252,252,252,0.14)', borderRadius:100, padding:'8px 16px'}}>
+            <Ic.IG/>
+            <span style={{fontSize:13, color:'rgba(252,252,252,0.7)', fontWeight:500}}>@morabilidade</span>
+            <div style={{width:1, height:14, background:'rgba(252,252,252,0.2)'}}/>
+            <span style={{fontSize:13, color:C.gold, fontWeight:600}}>+80k seguidores</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ── NOSSA HISTÓRIA ── */}
+      <div style={{background:'#fcfcfc', padding:'clamp(56px,7vw,80px) clamp(20px,5vw,48px)'}}>
+        <div style={{maxWidth:1080, margin:'0 auto', display:'grid', gridTemplateColumns:'1fr clamp(200px,30%,300px)', gap:'clamp(32px,6vw,64px)', alignItems:'start'}}>
+          <div>
+            <div style={{fontSize:11, fontWeight:700, letterSpacing:'0.18em', textTransform:'uppercase', color:C.gold, marginBottom:14}}>Nossa história</div>
+            <p style={{fontSize:15, color:C.textMuted, lineHeight:1.9, marginBottom:18}}>
+              A Morabilidade surgiu com uma proposta diferente: oferecer uma experiência imobiliária completamente digital, sem burocracia e sem a necessidade de uma sede física. Desde o início, apostamos nas redes sociais e no WhatsApp como nossos principais canais de atendimento.
+            </p>
+            <p style={{fontSize:15, color:C.textMuted, lineHeight:1.9, marginBottom:18}}>
+              O que começou como uma nova forma de conectar compradores e locatários a imóveis de qualidade ao bairro, tem hoje uma comunidade ativa de mais de 80 mil pessoas no Instagram, que acompanham lançamentos, dicas de mercado e oportunidades exclusivas.
+            </p>
+            <p style={{fontSize:15, color:C.textMuted, lineHeight:1.9}}>
+              Hoje, ajudamos centenas de famílias e investidores a encontrar o imóvel ideal, com agilidade, cuidado e um atendimento que respeita o seu tempo.
+            </p>
+          </div>
+          <div style={{background:C.bg, border:`1px solid ${C.border}`, borderRadius:14, padding:'32px 24px', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', textAlign:'center', gap:12}}>
+            <img src="uploads/Logo_fundoTransparente-7574853e.png" alt="Morabilidade" style={{width:'80%', height:'auto', filter:'invert(0.3) sepia(0.5) saturate(0.8)'}}/>
+            <div style={{fontSize:12, color:C.textMuted, fontStyle:'italic'}}>Imobiliária 100% digital</div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── NÚMEROS ── */}
+      <div style={{background:C.olive, padding:'clamp(48px,6vw,64px) clamp(20px,5vw,48px)'}}>
+        <div style={{maxWidth:1080, margin:'0 auto', textAlign:'center', marginBottom:40}}>
+          <div style={{fontSize:11, fontWeight:700, letterSpacing:'0.18em', textTransform:'uppercase', color:C.gold, marginBottom:12}}>Morabilidade em números</div>
+          <p style={{fontSize:14, color:'rgba(252,252,252,0.55)'}}>Mais de uma década atuando na Zona Sul do Rio com transparência e dedicação</p>
+        </div>
+        <div style={{maxWidth:900, margin:'0 auto', display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(180px, 1fr))', gap:20}}>
+          {[{n:'+10',d:'Anos de mercado'},{n:'+80k',d:'Seguidores no Instagram'},{n:'100%',d:'Atendimento digital'},{n:'ZS',d:'Zona Sul · Rio de Janeiro'}].map(({n,d})=>(
+            <div key={d} style={{textAlign:'center', padding:'24px 16px', borderRadius:12, background:'rgba(252,252,252,0.06)', border:'1px solid rgba(252,252,252,0.1)'}}>
+              <div style={{fontFamily:'Playfair Display', fontSize:36, fontWeight:600, color:C.gold, marginBottom:8}}>{n}</div>
+              <div style={{fontSize:13, color:'rgba(252,252,252,0.55)', lineHeight:1.5}}>{d}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── POR QUE ESCOLHER ── */}
+      <div style={{background:C.bg, padding:'clamp(56px,7vw,80px) clamp(20px,5vw,48px)'}}>
+        <div style={{maxWidth:1080, margin:'0 auto'}}>
+          <div style={{textAlign:'center', marginBottom:48}}>
+            <h2 style={{fontFamily:'Playfair Display', fontSize:'clamp(24px,3.5vw,36px)', fontWeight:500, color:C.text, marginBottom:10}}>Por que escolher a Morabilidade?</h2>
+            <p style={{fontSize:14, color:C.textMuted}}>Combinamos tecnologia, atendimento humano e profundo conhecimento do mercado.</p>
+          </div>
+          <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(280px, 1fr))', gap:16}}>
+            {[
+              {titulo:'100% digital', texto:'Sem sede física, sem burocracia desnecessária. Todo o processo, da busca ao fechamento, acontece de forma ágil e online.'},
+              {titulo:'Atendimento personalizado', texto:'Cada cliente recebe atenção individual. Entendemos seu perfil, seus objetivos e apresentamos apenas os imóveis que fazem sentido para você.'},
+              {titulo:'Agilidade via WhatsApp', texto:'Dúvidas, propostas e agendamentos resolvíveis no mesmo dia, sem filas nem espera. Nossa equipe responde no mesmo dia.'},
+              {titulo:'Curadoria de imóveis', texto:'Selecionamos e verificamos cada imóvel antes de publicar. Você só acessa opções reais, com informações completas e fotos atualizadas.'},
+              {titulo:'Transparência total', texto:'Valores, condições e documentação apresentados com clareza desde o primeiro contato. Sem surpresas no processo.'},
+              {titulo:'Comunidade engajada', texto:'Com mais de 80 mil seguidores no Instagram, somos referência em conteúdo imobiliário e alcançamos compradores e locatários ativos.'},
+            ].map(({titulo,texto}) => (
+              <div key={titulo} style={{background:'#fcfcfc', border:`1px solid ${C.border}`, borderRadius:12, padding:'24px 22px'}}>
+                <div style={{width:8, height:8, borderRadius:'50%', background:C.gold, marginBottom:14}}/>
+                <div style={{fontSize:14, fontWeight:600, color:C.text, marginBottom:8}}>{titulo}</div>
+                <div style={{fontSize:13, color:C.textMuted, lineHeight:1.7}}>{texto}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── COMO FUNCIONA ── */}
+      <div style={{background:'#fcfcfc', padding:'clamp(56px,7vw,80px) clamp(20px,5vw,48px)'}}>
+        <div style={{maxWidth:680, margin:'0 auto'}}>
+          <div style={{textAlign:'center', marginBottom:52}}>
+            <h2 style={{fontFamily:'Playfair Display', fontSize:'clamp(24px,3.5vw,36px)', fontWeight:500, color:C.text, marginBottom:10}}>Como funciona o atendimento</h2>
+            <p style={{fontSize:14, color:C.textMuted}}>Um processo simples, transparente e pensado para respeitar o seu tempo.</p>
+          </div>
+          <div style={{display:'flex', flexDirection:'column', gap:0}}>
+            {passos.map((p, i) => (
+              <div key={p.n} style={{display:'flex', gap:20, alignItems:'flex-start', paddingBottom: i < passos.length-1 ? 32 : 0}}>
+                <div style={{display:'flex', flexDirection:'column', alignItems:'center', flexShrink:0}}>
+                  <div style={{width:40, height:40, borderRadius:'50%', background:C.olive, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0}}>
+                    <span style={{fontSize:11, fontWeight:700, color:C.gold, letterSpacing:'0.05em'}}>{p.n}</span>
+                  </div>
+                  {i < passos.length-1 && <div style={{width:1, flex:1, background:C.border, marginTop:8, minHeight:24}}/>}
+                </div>
+                <div style={{paddingTop:8, paddingBottom: i < passos.length-1 ? 8 : 0}}>
+                  <div style={{fontSize:14, fontWeight:600, color:C.olive, marginBottom:6}}>{p.titulo}</div>
+                  <div style={{fontSize:14, color:C.textMuted, lineHeight:1.7}}>{p.texto}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── DEPOIMENTOS 2x2 ── */}
+      <div style={{background:C.bg, padding:'clamp(56px,7vw,80px) clamp(20px,5vw,48px)'}}>
+        <div style={{maxWidth:1080, margin:'0 auto'}}>
+          <div style={{textAlign:'center', marginBottom:48}}>
+            <h2 style={{fontFamily:'Playfair Display', fontSize:'clamp(24px,3.5vw,36px)', fontWeight:500, color:C.text, marginBottom:8}}>O que nossos clientes dizem</h2>
+            <p style={{fontSize:14, color:C.textMuted}}>Histórias reais de quem encontrou o imóvel certo com a Morabilidade.</p>
+          </div>
+          <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(300px, 1fr))', gap:20}}>
+            {todosDepoimentos.map(d => (
+              <div key={d.nome} style={{background:'#fcfcfc', border:`1px solid ${C.border}`, borderRadius:14, padding:'24px 22px', display:'flex', flexDirection:'column', gap:16}}>
+                <div style={{display:'flex', gap:4}}>
+                  {[1,2,3,4,5].map(i=><span key={i} style={{color:C.gold, fontSize:14}}>★</span>)}
+                </div>
+                <p style={{fontSize:14, color:C.textMuted, lineHeight:1.75, fontStyle:'italic', flex:1}}>
+                  "{d.texto}"
+                </p>
+                <div style={{display:'flex', alignItems:'center', gap:10, borderTop:`1px solid ${C.border}`, paddingTop:14}}>
+                  <div style={{width:34, height:34, borderRadius:'50%', background:C.olive, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0}}>
+                    <span style={{fontSize:13, fontWeight:700, color:C.gold}}>{d.inicial}</span>
+                  </div>
+                  <div style={{fontSize:13, fontWeight:600, color:C.text}}>{d.nome}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── CTA FINAL ── */}
+      <div style={{background:C.oliveDark, padding:'clamp(56px,8vw,88px) clamp(20px,5vw,48px)', textAlign:'center'}}>
+        <h2 style={{fontFamily:'Playfair Display', fontSize:'clamp(24px,4vw,42px)', fontWeight:500, color:'#fcfcfc', marginBottom:14, lineHeight:1.15}}>Pronto para encontrar seu imóvel?</h2>
+        <p style={{fontSize:15, color:'rgba(252,252,252,0.5)', maxWidth:400, margin:'0 auto 36px', lineHeight:1.75}}>
+          Nossa equipe está à disposição para ajudar você em cada etapa, do primeiro contato à entrega das chaves.
+        </p>
+        <div style={{display:'flex', justifyContent:'center', gap:14, flexWrap:'wrap'}}>
+          <button onClick={()=>setPage('imoveis')} style={{background:C.gold, color:C.oliveDark, border:'none', borderRadius:8, padding:'13px 26px', fontSize:14, fontWeight:700, cursor:'pointer', display:'inline-flex', alignItems:'center', gap:8, fontFamily:'Inter'}}>
+            Ver imóveis <Ic.Arrow/>
+          </button>
+          <button onClick={()=>setPage('contato')} style={{background:'transparent', color:'#fcfcfc', border:'1.5px solid rgba(252,252,252,0.3)', borderRadius:8, padding:'13px 26px', fontSize:14, fontWeight:600, cursor:'pointer', display:'inline-flex', alignItems:'center', gap:8, fontFamily:'Inter'}}>
+            <Ic.WA/> Falar com a equipe
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── APP ─── */
+function App() {
+  const [page, setPage] = React.useState('inicio');
+
+  return (
+    <div style={{minHeight:'100vh', background: C.bg}}>
+      <Nav page={page} setPage={setPage}/>
+
+      <div key={page} style={{animation:'fadeIn 0.2s ease'}}>
+        {page === 'inicio' && <PageInicio setPage={setPage}/>}
+        {page === 'imoveis' && <PageImoveis/>}
+        {page === 'contato' && <PageContato/>}
+        {page === 'sobre' && <PageSobre setPage={setPage}/>}
+      </div>
+
+      {/* Page switcher */}
+      <div className="switcher">
+        {[{v:'inicio',l:'Início'},{v:'imoveis',l:'Imóveis'},{v:'sobre',l:'Sobre'},{v:'contato',l:'Contato'}].map(({v,l})=>(
+          <button key={v} className={page===v?'on':''} onClick={()=>setPage(v)}>{l}</button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App/>);
+</script>
+
+<style>
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</body>
+</html>

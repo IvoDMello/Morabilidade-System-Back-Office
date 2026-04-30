@@ -50,8 +50,11 @@ export function ImovelCard({ imovel }: { imovel: ImovelCardType }) {
 
         {/* Badge negócio */}
         <span
-          className="absolute top-3 left-3 px-2.5 py-1 text-xs font-bold rounded-full text-white shadow-sm tracking-wide"
-          style={{ backgroundColor: isVenda ? "#585a4f" : "#4a4d43" }}
+          className="absolute top-3 left-3 px-2.5 py-1 text-[10px] font-bold rounded-full shadow-sm tracking-[0.1em] uppercase"
+          style={{
+            backgroundColor: isVenda ? "#d8cb6a" : "#585a4f",
+            color: isVenda ? "#3e4037" : "#fcfcfc",
+          }}
         >
           {negocioLabel}
         </span>

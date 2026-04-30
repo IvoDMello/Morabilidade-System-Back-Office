@@ -55,7 +55,13 @@ export function ListagemContent({ imoveis, total, page, totalPages }: Props) {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 300px), 1fr))",
+            gap: "clamp(16px, 3vw, 28px)",
+          }}
+        >
           {imoveis.map((imovel) => (
             <ImovelCard key={imovel.id} imovel={imovel} />
           ))}

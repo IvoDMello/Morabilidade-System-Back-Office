@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import { Instagram, MapPin, MessageCircle } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { ChannelCards } from "@/components/contato/ChannelCards";
 
 export const metadata: Metadata = {
   title: "Contato",
@@ -25,99 +25,206 @@ export default async function ContatoPage({ searchParams }: Props) {
 
   const hrefWhatsapp = NUMERO_WHATSAPP
     ? `https://wa.me/${NUMERO_WHATSAPP}?text=${encodeURIComponent(mensagem)}`
-    : INSTAGRAM;
+    : "https://wa.link/we06jw";
+
+  const stats = [
+    { n: "+ de 10", d: "anos de mercado" },
+    { n: "100%", d: "atendimento online" },
+    { n: "Zona Sul", d: "Rio de Janeiro · RJ" },
+  ];
 
   return (
     <>
       <Navbar />
 
-      {/* Hero */}
-      <section className="py-12 px-4 text-center" style={{ backgroundColor: "#585a4f" }}>
-        <h1 className="text-3xl font-bold text-white mb-2">Fale com a gente</h1>
-        <p className="text-white/70">
-          Atendimento direto pelo WhatsApp ou Instagram.
-        </p>
-      </section>
-
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
-        <div className="space-y-6">
-
-          {imovel && (
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
-              Você quer falar sobre o imóvel <strong className="font-mono">{imovel}</strong>.
-              Já incluímos isso na mensagem do WhatsApp.
-            </div>
-          )}
-
-          {/* WhatsApp — canal principal */}
-          <a
-            href={hrefWhatsapp}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group block rounded-xl p-6 transition hover:shadow-lg"
-            style={{ backgroundColor: "#25D366" }}
+      {/* ── Hero ── */}
+      <div style={{ backgroundColor: "#585a4f" }}>
+        <div
+          style={{
+            maxWidth: 1080,
+            margin: "0 auto",
+            padding: "clamp(48px,6vw,72px) clamp(20px,5vw,48px)",
+          }}
+        >
+          {/* Tag badge */}
+          <div
+            className="inline-flex items-center gap-2 rounded-full mb-6"
+            style={{
+              background: "rgba(216,203,106,0.12)",
+              border: "1px solid rgba(216,203,106,0.3)",
+              padding: "5px 14px",
+            }}
           >
-            <div className="flex items-center gap-5">
-              <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-                <MessageCircle className="w-7 h-7 text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-widest text-white/80">
-                  Canal recomendado
-                </p>
-                <p className="text-xl font-bold text-white mt-1">Conversar pelo WhatsApp</p>
-                <p className="text-white/85 text-sm mt-1">
-                  Resposta rápida — atendimento humano em horário comercial
-                </p>
-              </div>
-            </div>
-          </a>
-
-          {/* Instagram */}
-          <a
-            href={INSTAGRAM}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group block rounded-xl p-5 transition hover:shadow-md"
-            style={{ backgroundColor: "#585a4f" }}
-          >
-            <div className="flex items-center gap-4">
-              <div
-                className="w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0"
-                style={{ backgroundColor: "#d8cb6a" }}
-              >
-                <Instagram className="w-5 h-5" style={{ color: "#585a4f" }} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-base font-semibold text-white">@morabilidade</p>
-                <p className="text-white/60 text-xs mt-0.5">
-                  Acompanhe os lançamentos e mande DM
-                </p>
-              </div>
-            </div>
-          </a>
-
-          {/* Área de atuação */}
-          <div className="bg-white rounded-xl border border-slate-200 p-5 flex items-center gap-4">
             <div
-              className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-              style={{ backgroundColor: "#f5f5f3" }}
+              className="rounded-full"
+              style={{ width: 6, height: 6, backgroundColor: "#d8cb6a" }}
+            />
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                letterSpacing: "0.16em",
+                textTransform: "uppercase",
+                color: "#d8cb6a",
+              }}
             >
-              <MapPin className="w-4 h-4" style={{ color: "#585a4f" }} />
-            </div>
-            <div>
-              <p className="text-xs text-slate-400">Área de atuação</p>
-              <p className="text-sm font-medium text-slate-800">
-                Zona Sul · Rio de Janeiro · RJ
-              </p>
-            </div>
+              Atendimento
+            </span>
           </div>
 
-          <p className="text-center text-xs text-slate-400 pt-4">
-            Imobiliária 100% digital — sem sede física. Todo o atendimento é online.
-          </p>
+          {/* Grid: slogan + stats */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "clamp(240px,55%,560px) 1fr",
+              gap: "clamp(24px,5vw,64px)",
+              alignItems: "center",
+            }}
+          >
+            {/* Esquerda */}
+            <div>
+              <h1
+                className="font-serif text-white"
+                style={{
+                  fontSize: "clamp(30px,4.5vw,52px)",
+                  fontWeight: 500,
+                  lineHeight: 1.1,
+                  marginBottom: 20,
+                }}
+              >
+                Simples.
+                <br />
+                Eficiente.
+                <br />
+                <em style={{ color: "#e8dea0" }}>Humanizada.</em>
+              </h1>
+              <p
+                style={{
+                  fontSize: "clamp(14px,1.5vw,16px)",
+                  color: "rgba(252,252,252,0.62)",
+                  lineHeight: 1.8,
+                  maxWidth: 400,
+                  marginBottom: 24,
+                }}
+              >
+                Atendimento direto e sem burocracia, do primeiro contato até a entrega das
+                chaves.
+              </p>
+              <div className="flex items-center gap-2">
+                <span
+                  style={{
+                    backgroundColor: "rgba(252,252,252,0.07)",
+                    border: "1px solid rgba(252,252,252,0.12)",
+                    color: "rgba(252,252,252,0.45)",
+                    fontSize: 11,
+                    fontWeight: 600,
+                    letterSpacing: "0.1em",
+                    padding: "3px 10px",
+                    borderRadius: 100,
+                    textTransform: "uppercase",
+                  }}
+                >
+                  100% Digital
+                </span>
+              </div>
+            </div>
+
+            {/* Direita — stats (hidden mobile) */}
+            <div
+              className="hidden md:grid"
+              style={{ gridTemplateRows: "1fr 1fr 1fr", gap: 10 }}
+            >
+              {stats.map(({ n, d }) => (
+                <div
+                  key={n}
+                  style={{
+                    backgroundColor: "rgba(252,252,252,0.06)",
+                    border: "1px solid rgba(252,252,252,0.09)",
+                    borderRadius: 10,
+                    padding: "14px 18px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 14,
+                  }}
+                >
+                  <div
+                    className="font-serif"
+                    style={{
+                      fontSize: "clamp(18px,2vw,24px)",
+                      fontWeight: 600,
+                      color: "#d8cb6a",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {n}
+                  </div>
+                  <div style={{ fontSize: 13, color: "rgba(252,252,252,0.5)", lineHeight: 1.4 }}>
+                    {d}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-      </main>
+      </div>
+
+      {/* ── Canais ── */}
+      <div
+        style={{
+          maxWidth: 680,
+          margin: "0 auto",
+          padding: "clamp(40px,5vw,60px) clamp(20px,5vw,48px) 80px",
+        }}
+      >
+        {imovel && (
+          <div
+            className="rounded-xl p-4 text-sm mb-6"
+            style={{
+              backgroundColor: "rgba(216,203,106,0.1)",
+              border: "1px solid rgba(216,203,106,0.3)",
+              color: "#585a4f",
+            }}
+          >
+            Você quer falar sobre o imóvel{" "}
+            <strong className="font-mono">{imovel}</strong>. Já incluímos isso na mensagem
+            do WhatsApp.
+          </div>
+        )}
+
+        <p
+          style={{
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: "0.18em",
+            textTransform: "uppercase",
+            color: "#7a7c72",
+            marginBottom: 20,
+          }}
+        >
+          Fale com a gente
+        </p>
+
+        <ChannelCards hrefWhatsapp={hrefWhatsapp} hrefInstagram={INSTAGRAM} />
+
+        {/* Rodapé da seção */}
+        <div
+          style={{ marginTop: 48, display: "flex", alignItems: "center", gap: 14 }}
+        >
+          <div style={{ flex: 1, height: 1, backgroundColor: "#e4e1d6" }} />
+          <p
+            style={{
+              fontSize: 13,
+              color: "#b5b8ac",
+              fontStyle: "italic",
+              textAlign: "center",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Imobiliária 100% digital · sem sede física
+          </p>
+          <div style={{ flex: 1, height: 1, backgroundColor: "#e4e1d6" }} />
+        </div>
+      </div>
 
       <Footer />
     </>

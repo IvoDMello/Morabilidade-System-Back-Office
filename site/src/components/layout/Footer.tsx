@@ -18,9 +18,10 @@ export function Footer() {
             <Image
               src="/logo.jpeg"
               alt="Morabilidade"
-              width={140}
-              height={38}
+              width={260}
+              height={72}
               className="object-contain mb-5"
+              style={{ height: "auto", width: "clamp(160px, 20vw, 260px)" }}
             />
             <p className="text-white/50 text-sm leading-relaxed max-w-xs mb-6">
               Simples, eficiente e humanizada. Conectando pessoas ao imóvel certo

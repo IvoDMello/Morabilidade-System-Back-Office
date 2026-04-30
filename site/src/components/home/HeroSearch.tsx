@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Home, Building2, MapPin, ChevronDown } from "lucide-react";
+import { Search, MapPin, ChevronDown } from "lucide-react";
 
 type TipoNegocio = "venda" | "locacao" | "";
 
@@ -50,14 +50,12 @@ export function HeroSearch() {
           <SegmentButton
             active={tipoNegocio === "venda"}
             onClick={() => setTipoNegocio("venda")}
-            icon={<Home className="w-3.5 h-3.5" />}
           >
             Comprar
           </SegmentButton>
           <SegmentButton
             active={tipoNegocio === "locacao"}
             onClick={() => setTipoNegocio("locacao")}
-            icon={<Building2 className="w-3.5 h-3.5" />}
           >
             Alugar
           </SegmentButton>
@@ -68,11 +66,10 @@ export function HeroSearch() {
       <div className="bg-white rounded-2xl shadow-xl shadow-black/30 p-2 sm:p-2.5 flex flex-col sm:flex-row gap-2 items-stretch">
         {/* Tipo de imóvel */}
         <div className="relative flex-1 min-w-0">
-          <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
           <select
             value={tipoImovel}
             onChange={(e) => setTipoImovel(e.target.value)}
-            className="w-full pl-10 pr-9 py-3 sm:py-3.5 rounded-xl text-sm font-medium text-slate-700 bg-slate-50 hover:bg-slate-100 border-0 focus:outline-none focus:ring-2 focus:ring-[#585a4f]/30 cursor-pointer appearance-none transition"
+            className="w-full pl-4 pr-9 py-3 sm:py-3.5 rounded-xl text-sm font-medium text-slate-700 bg-slate-50 hover:bg-slate-100 border-0 focus:outline-none focus:ring-2 focus:ring-[#585a4f]/30 cursor-pointer appearance-none transition"
           >
             {TIPOS_IMOVEL.map((t) => (
               <option key={t.value} value={t.value}>
@@ -113,27 +110,20 @@ function SegmentButton({
   active,
   onClick,
   children,
-  icon,
 }: {
   active: boolean;
   onClick: () => void;
   children: React.ReactNode;
-  icon?: React.ReactNode;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`flex items-center gap-1.5 px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-semibold transition-all ${
+      className={`px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-semibold transition-all ${
         active ? "shadow-md" : "text-white/70 hover:text-white"
       }`}
-      style={
-        active
-          ? { backgroundColor: "#d8cb6a", color: "#2e302a" }
-          : undefined
-      }
+      style={active ? { backgroundColor: "#d8cb6a", color: "#3e4037" } : undefined}
     >
-      {icon}
       {children}
     </button>
   );

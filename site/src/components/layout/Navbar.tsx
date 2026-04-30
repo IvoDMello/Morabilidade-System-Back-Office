@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Menu, X, Instagram } from "lucide-react";
+import { Menu, X, Instagram, ArrowRight } from "lucide-react";
 
 const links = [
   { href: "/", label: "Início" },
@@ -15,134 +15,145 @@ const links = [
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
-
-  useEffect(() => {
-    function onScroll() {
-      setScrolled(window.scrollY > 12);
-    }
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
 
   function isActive(href: string) {
     return href === "/" ? pathname === "/" : pathname.startsWith(href);
   }
 
   return (
-    <header
-      className="sticky top-0 z-50 transition-all duration-200 border-b"
-      style={{
-        backgroundColor: "#585a4f",
-        borderColor: "rgba(255,255,255,0.08)",
-        boxShadow: scrolled ? "0 2px 16px rgba(0,0,0,0.30)" : "none",
-      }}
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 lg:h-18">
+    <>
+      <header
+        className="sticky top-0 z-50"
+        style={{ backgroundColor: "#585a4f", height: "clamp(64px, 8vw, 76px)" }}
+      >
+        <div
+          className="flex items-center justify-between h-full"
+          style={{ padding: "0 clamp(20px, 5vw, 48px)" }}
+        >
           {/* Logo */}
           <Link href="/" className="flex-shrink-0 flex items-center">
             <Image
-              src="/logo.jpeg"
+              src="/Logo_fundoTransparente.png"
               alt="Morabilidade"
-              width={120}
-              height={34}
-              className="object-contain"
+              width={220}
+              height={64}
+              style={{ height: "clamp(50px, 6vw, 62px)", width: "auto", objectFit: "contain" }}
               priority
             />
           </Link>
 
           {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-1">
-            {links.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`relative px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                  isActive(link.href)
-                    ? "text-white"
-                    : "text-white/70 hover:text-white hover:bg-white/10"
-                }`}
-              >
-                {link.label}
-                {isActive(link.href) && (
-                  <span
-                    className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full"
-                    style={{ backgroundColor: "#d8cb6a" }}
-                  />
-                )}
-              </Link>
-            ))}
-            <div className="ml-4 pl-4 border-l border-white/20 flex items-center gap-3">
-              <a
-                href="https://www.instagram.com/morabilidade"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Instagram @morabilidade"
-                className="p-1.5 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition"
-              >
-                <Instagram className="w-5 h-5" />
-              </a>
-              <Link
-                href="/imoveis"
-                className="px-4 py-2 rounded-lg text-sm font-semibold transition-all hover:opacity-90 hover:shadow-md"
-                style={{ backgroundColor: "#d8cb6a", color: "#2e302a" }}
-              >
-                Ver imóveis
-              </Link>
-            </div>
+          <nav className="hidden md:flex items-center gap-6">
+            {links.map((link) => {
+              const active = isActive(link.href);
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  style={{
+                    fontSize: 14,
+                    color: active ? "#fcfcfc" : "rgba(252,252,252,0.6)",
+                    textDecoration: "none",
+                    borderBottom: active ? "1.5px solid #d8cb6a" : "none",
+                    paddingBottom: active ? 2 : 0,
+                    transition: "color 0.15s",
+                    fontWeight: active ? 500 : 400,
+                  }}
+                  className="hover:!text-[#fcfcfc]"
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
+            <div style={{ width: 1, height: 18, backgroundColor: "rgba(252,252,252,0.18)" }} />
+            <a
+              href="https://www.instagram.com/morabilidade"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Instagram @morabilidade"
+              style={{ color: "rgba(252,252,252,0.6)", display: "flex", alignItems: "center" }}
+              className="hover:!text-[#fcfcfc] transition-colors"
+            >
+              <Instagram className="w-[18px] h-[18px]" />
+            </a>
+            <Link
+              href="/imoveis"
+              style={{
+                backgroundColor: "#d8cb6a",
+                color: "#3e4037",
+                fontWeight: 700,
+                padding: "7px 16px",
+                borderRadius: 6,
+                fontSize: 13,
+                textDecoration: "none",
+                letterSpacing: "0.01em",
+                transition: "opacity 0.15s",
+              }}
+              className="hover:opacity-90"
+            >
+              Ver imóveis
+            </Link>
           </nav>
 
           {/* Mobile hamburger */}
           <button
-            className="md:hidden p-2 rounded-lg text-white/80 hover:bg-white/10 transition"
+            className="md:hidden flex items-center justify-center"
+            style={{ background: "transparent", border: "none", color: "#fcfcfc", cursor: "pointer", padding: 4 }}
             onClick={() => setOpen((v) => !v)}
             aria-label={open ? "Fechar menu" : "Abrir menu"}
           >
             {open ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
-      </div>
+      </header>
 
-      {/* Mobile menu */}
+      {/* Mobile menu — fullscreen overlay */}
       {open && (
-        <div className="md:hidden border-t border-white/10" style={{ backgroundColor: "#4a4d43" }}>
-          <nav className="flex flex-col px-4 py-3 gap-0.5">
-            {links.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setOpen(false)}
-                className={`px-3 py-3 text-sm font-medium rounded-lg transition-colors ${
-                  isActive(link.href)
-                    ? "bg-white/10 text-white"
-                    : "text-white/70 hover:bg-white/10 hover:text-white"
-                }`}
-              >
-                {link.label}
-              </Link>
-            ))}
+        <div
+          className="md:hidden fixed inset-0 z-40 flex flex-col"
+          style={{ top: "clamp(64px, 8vw, 76px)", backgroundColor: "#3e4037", padding: "32px 28px" }}
+        >
+          {links.map((link) => (
             <Link
-              href="/imoveis"
+              key={link.href}
+              href={link.href}
               onClick={() => setOpen(false)}
-              className="mt-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-center"
-              style={{ backgroundColor: "#d8cb6a", color: "#2e302a" }}
+              style={{
+                display: "block",
+                padding: "18px 0",
+                fontSize: 22,
+                fontFamily: "var(--font-playfair), Georgia, serif",
+                color: "#fcfcfc",
+                textDecoration: "none",
+                borderBottom: "1px solid rgba(252,252,252,0.08)",
+              }}
             >
-              Ver todos os imóveis
+              {link.label}
             </Link>
-            <a
-              href="https://www.instagram.com/morabilidade"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-1 px-3 py-2.5 rounded-lg text-sm font-medium text-white/70 hover:bg-white/10 flex items-center gap-2"
-            >
-              <Instagram className="w-4 h-4" />
-              @morabilidade
-            </a>
-          </nav>
+          ))}
+          <Link
+            href="/imoveis"
+            onClick={() => setOpen(false)}
+            style={{
+              display: "inline-flex",
+              marginTop: 32,
+              backgroundColor: "#d8cb6a",
+              color: "#3e4037",
+              fontWeight: 700,
+              padding: "12px 24px",
+              borderRadius: 8,
+              fontSize: 15,
+              textDecoration: "none",
+              alignItems: "center",
+              gap: 8,
+              width: "fit-content",
+            }}
+          >
+            Ver imóveis <ArrowRight className="w-4 h-4" />
+          </Link>
         </div>
       )}
-    </header>
+    </>
   );
 }
