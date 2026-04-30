@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -113,6 +113,11 @@ export function ImovelForm({
   const [tags, setTags] = useState<Tag[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [cepLoading, setCepLoading] = useState(false);
+  const [iptuPeriodo, setIptuPeriodo] = useState<"mensal" | "anual">("mensal");
+  const [iptuDisplay, setIptuDisplay] = useState<string>(
+    defaultValues?.iptu_mensal != null ? String(defaultValues.iptu_mensal) : ""
+  );
+  const descricaoRef = useRef<HTMLTextAreaElement | null>(null);
 
   const {
     register,
@@ -135,11 +140,21 @@ export function ImovelForm({
 
   const tipoNegocio = watch("tipo_negocio");
   const selectedTagIds = watch("tag_ids") ?? [];
+  const descricaoValue = watch("descricao");
 
   useEffect(() => {
     api.get<Tag[]>("/tags/").then((r) => setTags(r.data)).catch(() => {});
     api.get<User[]>("/usuarios/").then((r) => setUsers(r.data)).catch(() => {});
   }, []);
+
+  // Auto-resize da textarea de descrição para eliminar scrollbar dupla
+  useEffect(() => {
+    const el = descricaoRef.current;
+    if (el) {
+      el.style.height = "auto";
+      el.style.height = el.scrollHeight + "px";
+    }
+  }, [descricaoValue]);
 
   async function buscarCep(cep: string) {
     const clean = cep.replace(/\D/g, "");
@@ -160,6 +175,30 @@ export function ImovelForm({
     }
   }
 
+  function handleIptuPeriodoChange(periodo: "mensal" | "anual") {
+    if (periodo === iptuPeriodo) return;
+    const num = parseFloat(iptuDisplay);
+    if (!isNaN(num) && num > 0) {
+      const converted =
+        periodo === "anual"
+          ? parseFloat((num * 12).toFixed(2))
+          : parseFloat((num / 12).toFixed(2));
+      setIptuDisplay(String(converted));
+      setValue("iptu_mensal", periodo === "anual" ? parseFloat((converted / 12).toFixed(2)) : converted);
+    }
+    setIptuPeriodo(periodo);
+  }
+
+  function handleIptuDisplayChange(value: string) {
+    setIptuDisplay(value);
+    const num = parseFloat(value);
+    if (isNaN(num) || value === "") {
+      setValue("iptu_mensal", null);
+    } else {
+      setValue("iptu_mensal", iptuPeriodo === "anual" ? parseFloat((num / 12).toFixed(2)) : num);
+    }
+  }
+
   function toggleTag(id: string) {
     const current = selectedTagIds;
     const updated = current.includes(id)
@@ -167,6 +206,8 @@ export function ImovelForm({
       : [...current, id];
     setValue("tag_ids", updated);
   }
+
+  const { ref: descricaoFormRef, ...descricaoReg } = register("descricao");
 
   const submitButton = (
     <button
@@ -389,8 +430,43 @@ export function ImovelForm({
           )}
 
           <div>
-            <Label>IPTU mensal (R$)</Label>
-            <input type="number" step="0.01" min={0} {...register("iptu_mensal")} className={inputClass} placeholder="0,00" />
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-sm font-medium text-slate-700">IPTU (R$)</label>
+              <div className="flex text-xs rounded-md overflow-hidden border border-slate-200">
+                {(["mensal", "anual"] as const).map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => handleIptuPeriodoChange(p)}
+                    className={`px-2.5 py-0.5 capitalize transition ${
+                      iptuPeriodo === p ? "text-white" : "text-slate-500 hover:bg-slate-50"
+                    }`}
+                    style={iptuPeriodo === p ? { backgroundColor: "#585a4f" } : undefined}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <input
+              type="number"
+              step="0.01"
+              min={0}
+              value={iptuDisplay}
+              onChange={(e) => handleIptuDisplayChange(e.target.value)}
+              className={inputClass}
+              placeholder="0,00"
+            />
+            {iptuPeriodo === "anual" && parseFloat(iptuDisplay) > 0 && (
+              <p className="mt-1 text-xs text-slate-400">
+                ≈ R${" "}
+                {(parseFloat(iptuDisplay) / 12).toLocaleString("pt-BR", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}{" "}
+                /mês
+              </p>
+            )}
           </div>
 
           <div>
@@ -407,8 +483,12 @@ export function ImovelForm({
           <div className="lg:col-span-2">
             <Label>Descrição</Label>
             <textarea
-              {...register("descricao")}
-              rows={4}
+              {...descricaoReg}
+              ref={(el) => {
+                descricaoFormRef(el);
+                descricaoRef.current = el;
+              }}
+              style={{ minHeight: "6rem", overflow: "hidden" }}
               className={inputClass + " resize-none"}
               placeholder="Descreva o imóvel..."
             />
