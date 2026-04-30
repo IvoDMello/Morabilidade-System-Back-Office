@@ -116,6 +116,7 @@ export default function ImoveisPage() {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const buscar = useCallback(async (pg: number, f: Filtros) => {
+    console.log("[buscar] token no Zustand:", useAuthStore.getState().token ? "PRESENTE" : "NULL");
     setLoading(true);
     try {
       const params: Record<string, string> = { page: String(pg), page_size: String(PAGE_SIZE) };
