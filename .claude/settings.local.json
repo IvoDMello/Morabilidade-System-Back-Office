@@ -102,7 +102,9 @@
       "Bash(curl -s -o /dev/null -w \"API:%{http_code}\\\\n\" http://localhost:8000/imoveis/publico/destaques --max-time 5)",
       "Bash(curl -s http://localhost:8000/imoveis/publico/destaques --max-time 5)",
       "Bash(venv/Scripts/python.exe -c \"from app.main import app; print\\('OK', len\\(app.routes\\)\\)\")",
-      "Read(//c/Users/novopc2024/**)"
+      "Read(//c/Users/novopc2024/**)",
+      "Bash(npm show *)",
+      "Bash(npm audit *)"
     ]
   }
 }
