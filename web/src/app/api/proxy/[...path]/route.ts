@@ -27,7 +27,27 @@ async function handler(
       if (val) authHeader = `Bearer ${val}`;
     }
   }
-  console.log("[proxy] %s /%s auth=%s", request.method, path.join("/"), authHeader ? "ok" : "MISSING");
+  const cookieDbg = request.headers.get("cookie") ?? "";
+  console.log(
+    "[proxy] %s /%s auth=%s cookie_present=%s cookie_has_token=%s",
+    request.method, path.join("/"),
+    authHeader ? "ok" : "MISSING",
+    !!cookieDbg,
+    cookieDbg.includes("morabilidade-auth"),
+  );
+
+  if (!authHeader) {
+    return NextResponse.json(
+      {
+        detail: "Proxy: sem token de autenticação.",
+        debug: {
+          cookie_header_present: !!cookieDbg,
+          cookie_has_morabilidade: cookieDbg.includes("morabilidade-auth"),
+        },
+      },
+      { status: 401 },
+    );
+  }
 
   // A API tem redirect_slashes=False, então a barra final precisa ser preservada
   const trailingSlash = request.nextUrl.pathname.endsWith("/") ? "/" : "";
