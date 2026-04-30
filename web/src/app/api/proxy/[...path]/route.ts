@@ -75,11 +75,31 @@ async function handler(
   }
 
   try {
-    const res = await fetch(targetUrl.toString(), {
+    // redirect:"manual" preserves the Authorization header on HTTP→HTTPS redirects.
+    // Node.js fetch (undici) strips it on cross-origin redirects just like browsers do.
+    let res = await fetch(targetUrl.toString(), {
       method: request.method,
       headers,
       body,
+      redirect: "manual",
     });
+
+    // Follow redirects manually so Authorization header survives (e.g. Railway HTTP→HTTPS)
+    let hops = 0;
+    while (res.status >= 301 && res.status <= 308 && hops < 5) {
+      const location = res.headers.get("location");
+      if (!location) break;
+      console.log("[proxy] redirect %d → %s", res.status, location);
+      const redirectMethod = res.status === 303 ? "GET" : request.method;
+      const redirectBody = res.status === 303 ? undefined : body;
+      res = await fetch(location, {
+        method: redirectMethod,
+        headers,
+        body: redirectBody,
+        redirect: "manual",
+      });
+      hops++;
+    }
 
     if (res.status === 204) {
       const resHeaders = new Headers();
