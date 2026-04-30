@@ -10,14 +10,24 @@ async function handler(
 ) {
   const { path } = await params;
 
-  // Prioridade 1: token enviado diretamente pelo cliente via Authorization header
-  // Prioridade 2: cookie httpOnly lido server-side (via next/headers, mais confiável no Next.js 15)
+  // Prioridade 1: Authorization header enviado pelo cliente (Axios interceptor)
+  // Prioridade 2: cookies() do Next.js 15 (mais confiável que request.cookies em Route Handlers)
+  // Prioridade 3: parse manual do header Cookie (fallback garantido)
   let authHeader = request.headers.get("authorization");
   if (!authHeader) {
     const cookieStore = await cookies();
     const token = cookieStore.get("morabilidade-auth")?.value;
     if (token) authHeader = `Bearer ${token}`;
   }
+  if (!authHeader) {
+    const rawCookie = request.headers.get("cookie") ?? "";
+    const seg = rawCookie.split(";").find(c => c.trim().startsWith("morabilidade-auth="));
+    if (seg) {
+      const val = seg.split("=").slice(1).join("=").trim();
+      if (val) authHeader = `Bearer ${val}`;
+    }
+  }
+  console.log("[proxy] %s /%s auth=%s", request.method, path.join("/"), authHeader ? "ok" : "MISSING");
 
   // A API tem redirect_slashes=False, então a barra final precisa ser preservada
   const trailingSlash = request.nextUrl.pathname.endsWith("/") ? "/" : "";

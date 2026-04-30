@@ -132,8 +132,16 @@ export default function ImoveisPage() {
       const res = await api.get<ImovelListOut[]>("/imoveis/", { params });
       setImoveis(res.data);
       setTotal(Number(res.headers["x-total-count"] ?? res.data.length));
-    } catch {
-      toast.error("Erro ao carregar imóveis.");
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      console.error("[imoveis] erro ao carregar (status=%s):", status, err);
+      if (status === 401 || status === 403) {
+        toast.error(`Sessão inválida (${status}). Saia e entre novamente.`);
+      } else if (status === 502) {
+        toast.error("API indisponível. Tente mais tarde.");
+      } else {
+        toast.error("Erro ao carregar imóveis.");
+      }
     } finally {
       setLoading(false);
     }
