@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
   console.log("[api/auth/login] login concluído para %s", user?.email);
 
   // ── 3. Setar cookie httpOnly e responder ─────────────────────────────────
-  const response = NextResponse.json({ user });
+  const response = NextResponse.json({ user, access_token });
   response.cookies.set("morabilidade-auth", access_token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",

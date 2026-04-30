@@ -13,7 +13,9 @@ interface User {
 
 interface AuthState {
   user: User | null;
+  token: string | null;
   setUser: (user: User) => void;
+  setToken: (token: string) => void;
   clearAuth: () => void;
   logout: () => void;
 }
@@ -22,10 +24,12 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
+      token: null,
       setUser: (user) => set({ user }),
-      clearAuth: () => set({ user: null }),
+      setToken: (token) => set({ token }),
+      clearAuth: () => set({ user: null, token: null }),
       logout: () => {
-        set({ user: null });
+        set({ user: null, token: null });
         if (typeof window !== "undefined") {
           fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
         }

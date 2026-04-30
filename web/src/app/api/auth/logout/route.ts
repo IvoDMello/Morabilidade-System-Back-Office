@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 export async function POST(request: NextRequest) {
-  const token = request.cookies.get("morabilidade-auth")?.value;
+  const cookieStore = await cookies();
+  const token = cookieStore.get("morabilidade-auth")?.value
+    ?? request.headers.get("authorization")?.replace("Bearer ", "");
 
   if (token) {
     await fetch(`${API_URL}/auth/logout`, {

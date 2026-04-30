@@ -21,6 +21,7 @@ type LoginForm = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const router = useRouter();
   const setUser = useAuthStore((s) => s.setUser);
+  const setToken = useAuthStore((s) => s.setToken);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -52,6 +53,7 @@ export default function LoginPage() {
       }
 
       setUser(json.user);
+      if (json.access_token) setToken(json.access_token);
       router.push("/");
     } catch (err) {
       console.error("[login] erro inesperado:", err);
