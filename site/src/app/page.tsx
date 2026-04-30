@@ -275,7 +275,7 @@ export default async function HomePage() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+              gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))",
               gap: 20,
             }}
           >
@@ -338,11 +338,10 @@ export default async function HomePage() {
       {/* ── História ── */}
       <section style={{ backgroundColor: "#f7f6f2", padding: "clamp(56px,7vw,88px) clamp(20px,5vw,48px)" }}>
         <div
+          className="grid grid-cols-1 md:grid-cols-[clamp(220px,38%,380px)_1fr]"
           style={{
             maxWidth: 1080,
             margin: "0 auto",
-            display: "grid",
-            gridTemplateColumns: "clamp(220px,38%,380px) 1fr",
             gap: "clamp(32px,6vw,80px)",
             alignItems: "start",
           }}

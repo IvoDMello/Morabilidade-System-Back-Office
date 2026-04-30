@@ -24,7 +24,7 @@ export function DestCard({ imovel }: { imovel: ImovelCard }) {
       href={`/imoveis/${imovel.codigo}`}
       className="group flex-shrink-0 block overflow-hidden transition-all duration-300 hover:-translate-y-[3px] hover:shadow-[0_16px_40px_rgba(88,90,79,0.18)] hover:border-transparent"
       style={{
-        width: "clamp(260px, 30vw, 320px)",
+        width: "clamp(220px, 75vw, 320px)",
         borderRadius: 14,
         backgroundColor: "#fcfcfc",
         border: "1px solid #e4e1d6",
@@ -43,7 +43,7 @@ export function DestCard({ imovel }: { imovel: ImovelCard }) {
             alt={`${labelTipoImovel(imovel.tipo_imovel)} em ${imovel.bairro}`}
             fill
             className="object-cover object-center group-hover:scale-105 transition-transform duration-500"
-            sizes="320px"
+            sizes="(max-width: 640px) 75vw, 320px"
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">

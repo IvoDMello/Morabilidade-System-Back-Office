@@ -20,6 +20,7 @@ html {
 
 body {
   @apply bg-[#fcfcfc] text-[#2d2f28] antialiased;
+  overflow-x: hidden;
 }
 
 .hide-scrollbar {

@@ -192,11 +192,10 @@ export default function SobrePage() {
         }}
       >
         <div
+          className="grid grid-cols-1 md:grid-cols-[1fr_clamp(200px,30%,300px)]"
           style={{
             maxWidth: 1080,
             margin: "0 auto",
-            display: "grid",
-            gridTemplateColumns: "1fr clamp(200px,30%,300px)",
             gap: "clamp(32px,6vw,64px)",
             alignItems: "start",
           }}
@@ -345,7 +344,7 @@ export default function SobrePage() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+              gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))",
               gap: 16,
             }}
           >
@@ -485,7 +484,7 @@ export default function SobrePage() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+              gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))",
               gap: 20,
             }}
           >
