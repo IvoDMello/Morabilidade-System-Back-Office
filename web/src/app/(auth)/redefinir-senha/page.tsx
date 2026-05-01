@@ -113,7 +113,7 @@ export default function RedefinirSenhaPage() {
             style={{ backgroundColor: "#585a4f" }}
           >
             <Image
-              src="/logo.jpeg"
+              src="/Logo_fundoTransparente.png"
               alt="Morabilidade"
               width={160}
               height={44}

@@ -88,7 +88,7 @@ export default function LoginPage() {
           {/* Logo */}
           <div>
             <Image
-              src="/logo.jpeg"
+              src="/Logo_fundoTransparente.png"
               alt="Morabilidade"
               width={180}
               height={48}
@@ -127,7 +127,7 @@ export default function LoginPage() {
           {/* Logo mobile (aparece só em telas pequenas) */}
           <div className="lg:hidden mb-10 flex flex-col items-center gap-3">
             <Image
-              src="/logo.jpeg"
+              src="/Logo_fundoTransparente.png"
               alt="Morabilidade"
               width={160}
               height={44}

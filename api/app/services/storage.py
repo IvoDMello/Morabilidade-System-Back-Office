@@ -1,7 +1,11 @@
+import io
+import logging
+
 from fastapi import UploadFile, HTTPException
 from app.database import supabase_admin
 from PIL import Image
-import io
+
+logger = logging.getLogger(__name__)
 
 BUCKET = "media"
 ALLOWED_TYPES = {"image/jpeg", "image/png", "image/webp"}
@@ -42,8 +46,8 @@ async def deletar_foto(url: str) -> None:
         parte = url.split("/object/public/")[1]
         bucket, path = parte.split("/", 1)
         supabase_admin.storage.from_(bucket).remove([path])
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("Falha ao deletar foto do storage: url=%s erro=%s", url, e)
 
 
 def _para_jpeg(contents: bytes, qualidade: int = 85) -> bytes:

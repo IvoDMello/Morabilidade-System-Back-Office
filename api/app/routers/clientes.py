@@ -281,6 +281,8 @@ async def importar_clientes_csv(
         raise HTTPException(status_code=400, detail="Envie um arquivo .csv")
 
     content = await file.read()
+    if len(content) > 5 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Arquivo muito grande. Máximo permitido: 5 MB.")
     try:
         text = content.decode("utf-8-sig")
     except UnicodeDecodeError:

@@ -328,7 +328,12 @@ def criar_imovel(body: ImovelCreate, current_user: dict = Depends(require_admin)
     if data.get("destaque_ordem") is not None:
         _liberar_posicao_destaque(data["destaque_ordem"])
 
-    result = supabase_admin.table("imoveis").insert(data).execute()
+    try:
+        result = supabase_admin.table("imoveis").insert(data).execute()
+    except Exception as e:
+        if "23505" in str(e):
+            raise HTTPException(status_code=409, detail="Posição de destaque já ocupada. Tente novamente.")
+        raise HTTPException(status_code=500, detail="Erro ao criar imóvel.")
     imovel = result.data[0]
 
     if body.tag_ids:
@@ -358,7 +363,12 @@ def atualizar_imovel(
     if "destaque_ordem" in updates and updates["destaque_ordem"] is not None:
         _liberar_posicao_destaque(updates["destaque_ordem"], exceto_imovel_id=imovel_id)
 
-    supabase_admin.table("imoveis").update(updates).eq("id", imovel_id).execute()
+    try:
+        supabase_admin.table("imoveis").update(updates).eq("id", imovel_id).execute()
+    except Exception as e:
+        if "23505" in str(e):
+            raise HTTPException(status_code=409, detail="Posição de destaque já ocupada. Tente novamente.")
+        raise HTTPException(status_code=500, detail="Erro ao atualizar imóvel.")
 
     if body.tag_ids is not None:
         supabase_admin.table("imovel_tags").delete().eq("imovel_id", imovel_id).execute()

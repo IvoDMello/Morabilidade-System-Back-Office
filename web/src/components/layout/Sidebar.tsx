@@ -62,7 +62,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         {/* Logo + fechar (mobile) */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-white/10">
           <Image
-            src="/logo.jpeg"
+            src="/Logo_fundoTransparente.png"
             alt="Morabilidade"
             width={168}
             height={46}
