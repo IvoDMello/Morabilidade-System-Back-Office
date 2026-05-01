@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import logoSrc from "@/public/Logo_fundoTransparente.png";
 import { usePathname } from "next/navigation";
 import {
   Building2,
@@ -62,7 +63,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         {/* Logo + fechar (mobile) */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-white/10">
           <Image
-            src="/Logo_fundoTransparente.png"
+            src={logoSrc}
             alt="Morabilidade"
             width={168}
             height={46}

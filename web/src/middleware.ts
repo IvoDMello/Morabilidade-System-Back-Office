@@ -39,5 +39,5 @@ export const config = {
   // Exclui /api/* do middleware — essas rotas precisam funcionar sem cookie
   // (ex.: /api/auth/login cria o cookie após o login bem-sucedido) e elas
   // já tratam autenticação internamente quando necessário.
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|gif|svg|ico|webp)$).*)"],
 };
