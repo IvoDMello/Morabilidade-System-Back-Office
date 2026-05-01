@@ -15,6 +15,11 @@ function jwtNaoExpirado(token: string): boolean {
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  if (/\.(?:png|jpe?g|gif|svg|ico|webp|woff2?)$/.test(pathname)) {
+    return NextResponse.next();
+  }
+
   const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
 
   const tokenCookie = request.cookies.get("morabilidade-auth");

@@ -6,7 +6,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import logoSrc from "@/public/Logo_fundoTransparente.png";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Eye, EyeOff, MapPin } from "lucide-react";
@@ -89,7 +88,7 @@ export default function LoginPage() {
           {/* Logo */}
           <div>
             <Image
-              src={logoSrc}
+              src="/Logo_fundoTransparente.png"
               alt="Morabilidade"
               width={180}
               height={48}
@@ -128,7 +127,7 @@ export default function LoginPage() {
           {/* Logo mobile (aparece só em telas pequenas) */}
           <div className="lg:hidden mb-10 flex flex-col items-center gap-3">
             <Image
-              src={logoSrc}
+              src="/Logo_fundoTransparente.png"
               alt="Morabilidade"
               width={160}
               height={44}

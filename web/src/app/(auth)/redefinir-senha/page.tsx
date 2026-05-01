@@ -7,7 +7,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import logoSrc from "@/public/Logo_fundoTransparente.png";
 import { toast } from "sonner";
 import { ArrowLeft, CheckCircle2, Eye, EyeOff, Loader2 } from "lucide-react";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
@@ -114,7 +113,7 @@ export default function RedefinirSenhaPage() {
             style={{ backgroundColor: "#585a4f" }}
           >
             <Image
-              src={logoSrc}
+              src="/Logo_fundoTransparente.png"
               alt="Morabilidade"
               width={160}
               height={44}

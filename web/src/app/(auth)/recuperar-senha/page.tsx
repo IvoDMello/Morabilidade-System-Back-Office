@@ -6,7 +6,6 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import Image from "next/image";
-import logoSrc from "@/public/Logo_fundoTransparente.png";
 import { toast } from "sonner";
 import { CheckCircle2, ArrowLeft } from "lucide-react";
 import { api } from "@/lib/api";
@@ -57,7 +56,7 @@ export default function RecuperarSenhaPage() {
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
           {/* Topo com logo */}
           <div className="flex items-center justify-center py-6 px-8" style={{ backgroundColor: "#585a4f" }}>
-            <Image src={logoSrc} alt="Morabilidade" width={160} height={44} className="object-contain" priority />
+            <Image src="/Logo_fundoTransparente.png" alt="Morabilidade" width={160} height={44} className="object-contain" priority />
           </div>
 
           <div className="p-8">
