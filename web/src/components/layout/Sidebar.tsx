@@ -64,8 +64,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           <Image
             src="/logo.jpeg"
             alt="Morabilidade"
-            width={140}
-            height={38}
+            width={168}
+            height={46}
             className="object-contain"
             priority
           />

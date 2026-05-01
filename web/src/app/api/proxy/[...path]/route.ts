@@ -27,26 +27,8 @@ async function handler(
       if (val) authHeader = `Bearer ${val}`;
     }
   }
-  const cookieDbg = request.headers.get("cookie") ?? "";
-  console.log(
-    "[proxy] %s /%s auth=%s cookie_present=%s cookie_has_token=%s",
-    request.method, path.join("/"),
-    authHeader ? "ok" : "MISSING",
-    !!cookieDbg,
-    cookieDbg.includes("morabilidade-auth"),
-  );
-
   if (!authHeader) {
-    return NextResponse.json(
-      {
-        detail: "Proxy: sem token de autenticação.",
-        debug: {
-          cookie_header_present: !!cookieDbg,
-          cookie_has_morabilidade: cookieDbg.includes("morabilidade-auth"),
-        },
-      },
-      { status: 401 },
-    );
+    return NextResponse.json({ detail: "Não autorizado." }, { status: 401 });
   }
 
   // A API tem redirect_slashes=False, então a barra final precisa ser preservada
@@ -89,8 +71,7 @@ async function handler(
     while (res.status >= 301 && res.status <= 308 && hops < 5) {
       const location = res.headers.get("location");
       if (!location) break;
-      console.log("[proxy] redirect %d → %s", res.status, location);
-      const redirectMethod = res.status === 303 ? "GET" : request.method;
+const redirectMethod = res.status === 303 ? "GET" : request.method;
       const redirectBody = res.status === 303 ? undefined : body;
       res = await fetch(location, {
         method: redirectMethod,
