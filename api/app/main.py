@@ -135,3 +135,88 @@ def get_stats(current_user: dict = Depends(get_current_user)):
         "clientes_por_origem": por_origem,
         "imovel_mais_antigo": imovel_mais_antigo,
     }
+
+
+@app.get("/relatorios", tags=["Relatórios"])
+def get_relatorios(current_user: dict = Depends(get_current_user)):
+    from datetime import datetime, timezone
+    from collections import defaultdict
+
+    agora = datetime.now(timezone.utc)
+
+    # Gera lista ordenada dos últimos 12 meses no formato "YYYY-MM"
+    meses_labels = []
+    for i in range(11, -1, -1):
+        offset = agora.month - 1 - i
+        mes_0 = offset % 12
+        yr = agora.year + offset // 12
+        meses_labels.append(f"{yr}-{mes_0 + 1:02d}")
+
+    # Busca todos os imóveis com os campos relevantes para relatórios
+    imoveis_raw = (
+        supabase_admin.table("imoveis")
+        .select("created_at, tipo_imovel, tipo_negocio, disponibilidade, bairro, valor_venda")
+        .execute()
+        .data or []
+    )
+
+    # Imóveis cadastrados por mês
+    imoveis_por_mes: dict = {m: 0 for m in meses_labels}
+    tipo_imovel_count: dict = defaultdict(int)
+    tipo_negocio_count: dict = defaultdict(int)
+    disponibilidade_count: dict = defaultdict(int)
+    bairro_count: dict = defaultdict(int)
+    tipo_venda_sum: dict = defaultdict(float)
+    tipo_venda_n: dict = defaultdict(int)
+
+    for im in imoveis_raw:
+        mes_str = (im.get("created_at") or "")[:7]
+        if mes_str in imoveis_por_mes:
+            imoveis_por_mes[mes_str] += 1
+
+        tipo_imovel_count[im.get("tipo_imovel") or "outro"] += 1
+        tipo_negocio_count[im.get("tipo_negocio") or "indefinido"] += 1
+        disponibilidade_count[im.get("disponibilidade") or "indefinido"] += 1
+
+        bairro = (im.get("bairro") or "").strip()
+        if bairro:
+            bairro_count[bairro] += 1
+
+        vv = im.get("valor_venda")
+        if vv is not None and float(vv) > 0:
+            t = im.get("tipo_imovel") or "outro"
+            tipo_venda_sum[t] += float(vv)
+            tipo_venda_n[t] += 1
+
+    top_bairros = dict(sorted(bairro_count.items(), key=lambda x: x[1], reverse=True)[:10])
+
+    preco_medio_por_tipo = {
+        t: round(tipo_venda_sum[t] / tipo_venda_n[t])
+        for t in tipo_venda_n
+        if tipo_venda_n[t] > 0
+    }
+
+    # Clientes cadastrados por mês
+    clientes_raw = (
+        supabase_admin.table("clientes")
+        .select("created_at")
+        .execute()
+        .data or []
+    )
+
+    clientes_por_mes: dict = {m: 0 for m in meses_labels}
+    for cl in clientes_raw:
+        mes_str = (cl.get("created_at") or "")[:7]
+        if mes_str in clientes_por_mes:
+            clientes_por_mes[mes_str] += 1
+
+    return {
+        "meses_labels": meses_labels,
+        "imoveis_por_mes": imoveis_por_mes,
+        "imoveis_por_tipo": dict(tipo_imovel_count),
+        "imoveis_por_tipo_negocio": dict(tipo_negocio_count),
+        "imoveis_por_disponibilidade": dict(disponibilidade_count),
+        "top_bairros": top_bairros,
+        "preco_medio_por_tipo": preco_medio_por_tipo,
+        "clientes_por_mes": clientes_por_mes,
+    }
