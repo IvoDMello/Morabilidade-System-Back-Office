@@ -110,7 +110,8 @@
       "Bash(grep -E \"\\\\.env$|firebase-credentials\")",
       "Bash(git -C \"c:\\\\Users\\\\novopc2024\\\\Documents\\\\GitHub\\\\Morabilidade-System-Back-Office\" status --short)",
       "Bash(git commit *)",
-      "Bash(login-bg\")"
+      "Bash(login-bg\")",
+      "WebFetch(domain:painel.morabilidade.com.br)"
     ]
   }
 }
