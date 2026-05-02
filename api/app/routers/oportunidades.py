@@ -36,7 +36,7 @@ def _score_imovel_preferencia(pref: dict) -> int:
         score += 1
     if (pref.get("bairro") or "").strip():
         score += 1
-    if pref.get("dormitorios_min") is not None:
+    if pref.get("dormitorios_min"):  # 0 não filtra nada, não conta
         score += 1
     if pref.get("valor_min") is not None or pref.get("valor_max") is not None:
         score += 1

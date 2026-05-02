@@ -9,14 +9,14 @@ import { useAuthStore } from "@/lib/auth-store";
 interface Preferencia {
   id?: string;
   cliente_id?: string;
-  tipo_negocio?: string;
-  tipo_imovel?: string;
-  cidade?: string;
-  bairro?: string;
+  tipo_negocio?: string | null;
+  tipo_imovel?: string | null;
+  cidade?: string | null;
+  bairro?: string | null;
   valor_min?: number | null;
   valor_max?: number | null;
   dormitorios_min?: number | null;
-  observacoes?: string;
+  observacoes?: string | null;
   ativa?: boolean;
 }
 
@@ -54,6 +54,14 @@ export function PreferenciaForm({ clienteId }: Props) {
     try {
       const payload = {
         ...pref,
+        // Selects: undefined/empty → null para garantir que o banco limpa o campo
+        tipo_negocio: pref.tipo_negocio || null,
+        tipo_imovel: pref.tipo_imovel || null,
+        // Textos: string vazia → null para manter o banco limpo
+        cidade: pref.cidade?.trim() || null,
+        bairro: pref.bairro?.trim() || null,
+        observacoes: pref.observacoes?.trim() || null,
+        // Números: string vazia ou null → null
         valor_min: pref.valor_min === ("" as unknown) || pref.valor_min == null ? null : Number(pref.valor_min),
         valor_max: pref.valor_max === ("" as unknown) || pref.valor_max == null ? null : Number(pref.valor_max),
         dormitorios_min:
@@ -96,7 +104,7 @@ export function PreferenciaForm({ clienteId }: Props) {
           <select
             value={pref.tipo_negocio ?? ""}
             disabled={!isAdmin}
-            onChange={(e) => setPref((p) => ({ ...p, tipo_negocio: e.target.value || undefined }))}
+            onChange={(e) => setPref((p) => ({ ...p, tipo_negocio: e.target.value || null }))}
             className={inputClass}
           >
             <option value="">— Qualquer —</option>
@@ -110,7 +118,7 @@ export function PreferenciaForm({ clienteId }: Props) {
           <select
             value={pref.tipo_imovel ?? ""}
             disabled={!isAdmin}
-            onChange={(e) => setPref((p) => ({ ...p, tipo_imovel: e.target.value || undefined }))}
+            onChange={(e) => setPref((p) => ({ ...p, tipo_imovel: e.target.value || null }))}
             className={inputClass}
           >
             <option value="">— Qualquer —</option>
