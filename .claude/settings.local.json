@@ -119,7 +119,20 @@
       "Bash(Sort-Object FullName)",
       "Bash(New-Item -ItemType Directory -Force -Path \"c:\\\\Users\\\\novopc2024\\\\Documents\\\\GitHub\\\\Morabilidade-System-Back-Office\\\\web\\\\src\\\\app\\\\\\(dashboard\\)\\\\relatorios\")",
       "Bash(Out-Null)",
-      "Bash(Write-Output \"ok\")"
+      "Bash(Write-Output \"ok\")",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\novopc2024\\\\Documents\\\\GitHub\\\\Morabilidade-System-Back-Office\" -Directory)",
+      "Bash(Select-Object Name)",
+      "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\novopc2024\\\\Documents\\\\GitHub\\\\Morabilidade-System-Back-Office\\\\api\" -Recurse -Directory | Select-Object -ExpandProperty FullName | ForEach-Object { $_.Replace\\(\"c:\\\\Users\\\\novopc2024\\\\Documents\\\\GitHub\\\\Morabilidade-System-Back-Office\\\\api\", \"\"\\) })",
+      "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\novopc2024\\\\Documents\\\\GitHub\\\\Morabilidade-System-Back-Office\\\\api\\\\app\" -Recurse -File | Select-Object -ExpandProperty FullName | ForEach-Object { $_.Replace\\(\"c:\\\\Users\\\\novopc2024\\\\Documents\\\\GitHub\\\\Morabilidade-System-Back-Office\", \"\"\\) })",
+      "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\novopc2024\\\\Documents\\\\GitHub\\\\Morabilidade-System-Back-Office\\\\web\\\\src\" -Recurse -File | Select-Object -ExpandProperty FullName | ForEach-Object { $_.Replace\\(\"c:\\\\Users\\\\novopc2024\\\\Documents\\\\GitHub\\\\Morabilidade-System-Back-Office\", \"\"\\) })",
+      "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\novopc2024\\\\Documents\\\\GitHub\\\\Morabilidade-System-Back-Office\\\\web\" -File | Where-Object {$_.Name -match \"config|tsconfig\"})",
+      "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\novopc2024\\\\Documents\\\\GitHub\\\\Morabilidade-System-Back-Office\\\\api\\\\tests\" -Recurse -File | Select-Object -ExpandProperty FullName | ForEach-Object { $_.Replace\\(\"c:\\\\Users\\\\novopc2024\\\\Documents\\\\GitHub\\\\Morabilidade-System-Back-Office\", \"\"\\) })",
+      "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\novopc2024\\\\Documents\\\\GitHub\\\\Morabilidade-System-Back-Office\\\\site\" -Recurse -File | Where-Object {$_.Name -notmatch \"node_modules|\\\\.next\"} | Select-Object -ExpandProperty FullName | ForEach-Object { $_.Replace\\(\"c:\\\\Users\\\\novopc2024\\\\Documents\\\\GitHub\\\\Morabilidade-System-Back-Office\", \"\"\\) } | Select-Object -First 50)",
+      "Bash(python -m pytest tests/ -v --tb=short)",
+      "Bash(pip --version)",
+      "Bash(.\\\\venv\\\\Scripts\\\\python.exe -m pytest tests/ -v --tb=short)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\novopc2024\\\\Documents\\\\GitHub\\\\Morabilidade-System-Back-Office\" -Recurse -Force)",
+      "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\novopc2024\\\\Documents\\\\GitHub\\\\Morabilidade-System-Back-Office\" -Recurse -Force | Select-Object -First 100 | ForEach-Object { $_.FullName })"
     ]
   }
 }
