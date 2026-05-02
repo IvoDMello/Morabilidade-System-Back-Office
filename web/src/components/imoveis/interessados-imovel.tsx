@@ -13,12 +13,31 @@ interface Interessado {
   tipo_cliente?: string;
   preferencia_id: string;
   observacoes_preferencia?: string;
+  score: number;
 }
 
 interface Props {
   imovelId: string;
   imovelCodigo: string;
   imovelBairro: string;
+}
+
+const SCORE_MAX = 6;
+
+function ScoreDots({ score }: { score: number }) {
+  return (
+    <span
+      className="flex items-center gap-0.5 flex-shrink-0"
+      title={`${score} de ${SCORE_MAX} critérios de busca definidos`}
+    >
+      {Array.from({ length: SCORE_MAX }).map((_, i) => (
+        <span
+          key={i}
+          className={`w-1.5 h-1.5 rounded-full ${i < score ? "bg-amber-400" : "bg-slate-200"}`}
+        />
+      ))}
+    </span>
+  );
 }
 
 function whatsappLink(telefone: string, codigo: string, bairro: string) {
@@ -52,11 +71,15 @@ export function InteressadosImovel({ imovelId, imovelCodigo, imovelBairro }: Pro
   }
 
   return (
-    <div className="space-y-2">
-      <p className="text-xs text-slate-500">
-        <Sparkles className="w-3.5 h-3.5 inline-block mr-1 text-amber-500" />
-        {lista.length} cliente{lista.length !== 1 ? "s" : ""} pode{lista.length === 1 ? "" : "m"} ter interesse neste imóvel:
-      </p>
+    <div className="space-y-3">
+      {/* Banner de notificação */}
+      <div className="flex items-center gap-2 px-3 py-2.5 bg-amber-50 rounded-lg border border-amber-200">
+        <Sparkles className="w-4 h-4 text-amber-500 flex-shrink-0" />
+        <p className="text-sm font-medium text-amber-800">
+          {lista.length} cliente{lista.length !== 1 ? "s" : ""} com preferência ativa compatível com este imóvel
+        </p>
+      </div>
+
       <div className="space-y-2">
         {lista.map((c) => (
           <div
@@ -64,7 +87,10 @@ export function InteressadosImovel({ imovelId, imovelCodigo, imovelBairro }: Pro
             className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-100"
           >
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-slate-800">{c.nome_completo}</p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-sm font-medium text-slate-800">{c.nome_completo}</p>
+                <ScoreDots score={c.score} />
+              </div>
               <p className="text-xs text-slate-500">
                 {c.telefone}
                 {c.email ? ` · ${c.email}` : ""}

@@ -61,6 +61,7 @@ class MatchClienteImovel(BaseModel):
     valor_locacao: Optional[float] = None
     dormitorios: Optional[int] = None
     foto_capa: Optional[str] = None
+    score: int = 0
 
 
 class MatchImovelCliente(BaseModel):
@@ -72,6 +73,7 @@ class MatchImovelCliente(BaseModel):
     tipo_cliente: Optional[str] = None
     preferencia_id: str
     observacoes_preferencia: Optional[str] = None
+    score: int = 0
 
 
 class MatchsList(BaseModel):

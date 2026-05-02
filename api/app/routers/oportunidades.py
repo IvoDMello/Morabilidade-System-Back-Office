@@ -23,6 +23,26 @@ VALOR_MINIMO_OPORTUNIDADE = 2_000_000.0
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
+def _score_imovel_preferencia(pref: dict) -> int:
+    """Score de compatibilidade (0-6): conta quantos critérios foram definidos na preferência.
+    Preferências mais específicas produzem score maior, indicando leads mais qualificados.
+    Só deve ser chamado após confirmar que o match já é válido."""
+    score = 0
+    if pref.get("tipo_negocio") and pref.get("tipo_negocio") != "ambos":
+        score += 1
+    if pref.get("tipo_imovel"):
+        score += 1
+    if (pref.get("cidade") or "").strip():
+        score += 1
+    if (pref.get("bairro") or "").strip():
+        score += 1
+    if pref.get("dormitorios_min") is not None:
+        score += 1
+    if pref.get("valor_min") is not None or pref.get("valor_max") is not None:
+        score += 1
+    return score
+
+
 def _imovel_casa_preferencia(imovel: dict, pref: dict) -> bool:
     """Decide se um imóvel disponível atende à preferência. Critérios:
     - Tipo de negócio: se pref tem 'venda', imóvel precisa ser 'venda' ou 'ambos'.
@@ -179,7 +199,9 @@ def matches_de_um_cliente(cliente_id: str, current_user: dict = Depends(get_curr
             "valor_locacao": imovel.get("valor_locacao"),
             "dormitorios": imovel.get("dormitorios"),
             "foto_capa": foto_capa,
+            "score": _score_imovel_preferencia(pref),
         })
+    matches.sort(key=lambda m: m["score"], reverse=True)
     return matches
 
 
@@ -226,7 +248,9 @@ def interessados_em_um_imovel(imovel_id: str, current_user: dict = Depends(get_c
             "tipo_cliente": cliente.get("tipo_cliente"),
             "preferencia_id": pref["id"],
             "observacoes_preferencia": pref.get("observacoes"),
+            "score": _score_imovel_preferencia(pref),
         })
+    interessados.sort(key=lambda i: i["score"], reverse=True)
     return interessados
 
 

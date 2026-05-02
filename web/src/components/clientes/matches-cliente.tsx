@@ -17,6 +17,7 @@ interface Match {
   valor_locacao?: number;
   dormitorios?: number;
   foto_capa?: string;
+  score: number;
 }
 
 interface Props {
@@ -24,6 +25,8 @@ interface Props {
   clienteNome: string;
   clienteTelefone: string;
 }
+
+const SCORE_MAX = 6;
 
 const TIPO_IMOVEL_LABEL: Record<string, string> = {
   apartamento: "Apartamento",
@@ -37,9 +40,25 @@ const TIPO_IMOVEL_LABEL: Record<string, string> = {
   outro: "Outro",
 };
 
+function ScoreDots({ score }: { score: number }) {
+  return (
+    <span
+      className="flex items-center gap-0.5 flex-shrink-0"
+      title={`${score} de ${SCORE_MAX} critérios de busca satisfeitos`}
+    >
+      {Array.from({ length: SCORE_MAX }).map((_, i) => (
+        <span
+          key={i}
+          className={`w-1.5 h-1.5 rounded-full ${i < score ? "bg-amber-400" : "bg-slate-200"}`}
+        />
+      ))}
+    </span>
+  );
+}
+
 function whatsappLink(telefone: string, codigo: string, bairro: string) {
   const numero = telefone.replace(/\D/g, "");
-  const mensagem = `Olá! Apareceu um imóvel na Morabilidade que combina com o que você procura: ${TIPO_IMOVEL_LABEL[bairro] ?? ""} código *${codigo}* em ${bairro}. Posso te mandar mais detalhes?`;
+  const mensagem = `Olá! Apareceu um imóvel na Morabilidade que combina com o que você procura: código *${codigo}* em ${bairro}. Posso te mandar mais detalhes?`;
   return `https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}`;
 }
 
@@ -69,11 +88,15 @@ export function MatchesCliente({ clienteId, clienteNome, clienteTelefone }: Prop
   }
 
   return (
-    <div className="space-y-2">
-      <p className="text-xs text-slate-500">
-        <Sparkles className="w-3.5 h-3.5 inline-block mr-1 text-amber-500" />
-        {matches.length} imóvel{matches.length !== 1 ? "is" : ""} disponível{matches.length !== 1 ? "is" : ""} casa{matches.length === 1 ? "" : "m"} com a preferência de <strong>{clienteNome}</strong>:
-      </p>
+    <div className="space-y-3">
+      {/* Banner de notificação */}
+      <div className="flex items-center gap-2 px-3 py-2.5 bg-amber-50 rounded-lg border border-amber-200">
+        <Sparkles className="w-4 h-4 text-amber-500 flex-shrink-0" />
+        <p className="text-sm font-medium text-amber-800">
+          {matches.length} imóvel{matches.length !== 1 ? "is" : ""} disponível{matches.length !== 1 ? "is" : ""} combina{matches.length === 1 ? "" : "m"} com a preferência de <strong>{clienteNome}</strong>
+        </p>
+      </div>
+
       <div className="space-y-2">
         {matches.map((m) => {
           const valor = m.tipo_negocio === "locacao" ? m.valor_locacao : m.valor_venda;
@@ -93,9 +116,12 @@ export function MatchesCliente({ clienteId, clienteNome, clienteTelefone }: Prop
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-slate-800">
-                  <span className="font-mono">{m.codigo}</span> · {TIPO_IMOVEL_LABEL[m.tipo_imovel] ?? m.tipo_imovel}
-                </p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-sm font-medium text-slate-800">
+                    <span className="font-mono">{m.codigo}</span> · {TIPO_IMOVEL_LABEL[m.tipo_imovel] ?? m.tipo_imovel}
+                  </p>
+                  <ScoreDots score={m.score} />
+                </div>
                 <p className="text-xs text-slate-500">
                   {m.bairro}, {m.cidade}
                   {m.dormitorios ? ` · ${m.dormitorios} dorm.` : ""}
