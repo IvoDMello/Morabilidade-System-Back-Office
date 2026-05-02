@@ -18,6 +18,7 @@ export default function EditarClientePage({ params }: { params: Promise<{ id: st
   const [cliente, setCliente] = useState<Cliente | null>(null);
   const [loadingDados, setLoadingDados] = useState(true);
   const [salvando, setSalvando] = useState(false);
+  const [matchesKey, setMatchesKey] = useState(0);
 
   const carregarCliente = useCallback(async () => {
     try {
@@ -137,7 +138,7 @@ export default function EditarClientePage({ params }: { params: Promise<{ id: st
             · o que este cliente está procurando
           </span>
         </div>
-        <PreferenciaForm clienteId={cliente.id} />
+        <PreferenciaForm clienteId={cliente.id} onSaved={() => setMatchesKey((k) => k + 1)} />
       </div>
 
       {/* Oportunidades (matches) */}
@@ -150,6 +151,7 @@ export default function EditarClientePage({ params }: { params: Promise<{ id: st
           </span>
         </div>
         <MatchesCliente
+          key={matchesKey}
           clienteId={cliente.id}
           clienteNome={cliente.nome_completo}
           clienteTelefone={cliente.telefone}

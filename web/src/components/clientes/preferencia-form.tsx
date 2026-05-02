@@ -27,9 +27,10 @@ const labelClass = "block text-xs font-medium text-slate-600 mb-1";
 
 interface Props {
   clienteId: string;
+  onSaved?: () => void;
 }
 
-export function PreferenciaForm({ clienteId }: Props) {
+export function PreferenciaForm({ clienteId, onSaved }: Props) {
   const isAdmin = useAuthStore((s) => s.user?.perfil === "admin");
   const [pref, setPref] = useState<Preferencia>({ ativa: true });
   const [loading, setLoading] = useState(true);
@@ -73,6 +74,7 @@ export function PreferenciaForm({ clienteId }: Props) {
       setPref(res.data);
       setExiste(true);
       toast.success("Preferência salva.");
+      onSaved?.();
     } catch {
       toast.error("Erro ao salvar preferência.");
     } finally {
