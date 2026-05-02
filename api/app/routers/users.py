@@ -1,10 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+import logging
 from typing import List
+
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+
 from app.auth.dependencies import get_current_user, require_admin
-from app.schemas.user import UserCreate, UserUpdate, UserOut, UserChangePassword
 from app.database import supabase, supabase_admin
+from app.schemas.user import UserCreate, UserUpdate, UserOut, UserChangePassword
 from app.services.storage import upload_foto
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -22,8 +26,9 @@ def criar_usuario(body: UserCreate, admin: dict = Depends(require_admin)):
         auth_response = supabase_admin.auth.admin.create_user(
             {"email": body.email, "password": body.senha, "email_confirm": True}
         )
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Erro ao criar usuário: {str(e)}")
+    except Exception:
+        logger.error("Erro ao criar usuário no Supabase Auth", exc_info=True)
+        raise HTTPException(status_code=400, detail="Não foi possível criar o usuário. Verifique se o e-mail já está em uso.")
 
     user_id = auth_response.user.id
 
@@ -130,5 +135,5 @@ def desativar_usuario(user_id: str, admin: dict = Depends(require_admin)):
     try:
         supabase_admin.auth.admin.update_user_by_id(user_id, {"ban_duration": "876600h"})
     except Exception:
-        pass
+        logger.error("Falha ao banir usuário %s no Supabase Auth — ativo=False aplicado na tabela", user_id, exc_info=True)
     supabase_admin.table("usuarios").update({"ativo": False}).eq("id", user_id).execute()

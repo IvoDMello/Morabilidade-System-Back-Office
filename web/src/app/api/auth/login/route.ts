@@ -15,8 +15,6 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  console.log("[api/auth/login] iniciando login, API_URL=%s", API_URL);
-
   // ── 1. Login na API FastAPI ──────────────────────────────────────────────
   let loginRes: Response;
   try {
@@ -92,16 +90,29 @@ export async function POST(request: NextRequest) {
   }
 
   const user = await meRes.json();
-  console.log("[api/auth/login] login concluído para %s", user?.email);
 
   // ── 3. Setar cookie httpOnly e responder ─────────────────────────────────
-  const response = NextResponse.json({ user, access_token });
+  // Sync cookie TTL with JWT exp — avoids stale-cookie 401s when Supabase
+  // session expires before the 8h fallback.
+  let cookieMaxAge = 60 * 60 * 8;
+  try {
+    const [, payloadB64] = access_token.split(".");
+    const payloadStr = payloadB64.replace(/-/g, "+").replace(/_/g, "/");
+    const payload = JSON.parse(atob(payloadStr)) as { exp?: number };
+    if (typeof payload.exp === "number") {
+      const secondsLeft = payload.exp - Math.floor(Date.now() / 1000);
+      if (secondsLeft > 60) cookieMaxAge = secondsLeft;
+    }
+  } catch {}
+
+  // Token fica apenas no cookie httpOnly — não exposto ao JS do cliente.
+  const response = NextResponse.json({ user });
   response.cookies.set("morabilidade-auth", access_token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
     path: "/",
-    maxAge: 60 * 60 * 8,
+    maxAge: cookieMaxAge,
   });
   return response;
 }

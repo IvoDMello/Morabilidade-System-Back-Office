@@ -154,7 +154,7 @@ describe("LoginPage — submissão", () => {
 
   it("exibe toast de erro ao receber resposta não-ok", async () => {
     const { toast } = await import("sonner");
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false }));
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, json: async () => ({}) }));
 
     render(<LoginPage />);
     await userEvent.type(screen.getByPlaceholderText("seu@email.com"), "admin@teste.com");
