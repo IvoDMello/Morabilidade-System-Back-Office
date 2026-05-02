@@ -7,9 +7,12 @@ de preferências e cruza-se com a de imóveis disponíveis.
 """
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from app.schemas.imovel import Disponibilidade, TipoImovel, TipoNegocio
+
+# Deve ser igual ao VALOR_MINIMO_OPORTUNIDADE em routers/oportunidades.py.
+_VALOR_MIN_OPOR = 2_000_000.0
 
 
 class PreferenciaBase(BaseModel):
@@ -17,11 +20,18 @@ class PreferenciaBase(BaseModel):
     tipo_imovel: Optional[TipoImovel] = None
     cidade: Optional[str] = None
     bairro: Optional[str] = None
-    valor_min: Optional[float] = Field(default=None, ge=0)
-    valor_max: Optional[float] = Field(default=None, ge=0)
+    valor_min: Optional[float] = Field(default=None, ge=_VALOR_MIN_OPOR)
+    valor_max: Optional[float] = Field(default=None, ge=_VALOR_MIN_OPOR)
     dormitorios_min: Optional[int] = Field(default=None, ge=0)
     observacoes: Optional[str] = None
     ativa: bool = True
+
+    @model_validator(mode="after")
+    def valor_min_menor_que_max(self) -> "PreferenciaBase":
+        if self.valor_min is not None and self.valor_max is not None:
+            if self.valor_min > self.valor_max:
+                raise ValueError("valor_min não pode ser maior que valor_max.")
+        return self
 
 
 class PreferenciaCreate(PreferenciaBase):

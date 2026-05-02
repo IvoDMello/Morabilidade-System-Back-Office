@@ -17,6 +17,9 @@ from app.schemas.oportunidade import (
 
 router = APIRouter()
 
+# Imóveis de venda abaixo desse valor têm alta demanda orgânica e são excluídos das oportunidades.
+VALOR_MINIMO_OPORTUNIDADE = 2_000_000.0
+
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -25,6 +28,7 @@ def _imovel_casa_preferencia(imovel: dict, pref: dict) -> bool:
     - Tipo de negócio: se pref tem 'venda', imóvel precisa ser 'venda' ou 'ambos'.
     - Tipo de imóvel: igual quando definido.
     - Cidade/bairro: case-insensitive substring (cobre erros de digitação leves).
+    - Valor mínimo: imóveis de venda < R$ 2M são excluídos (ver VALOR_MINIMO_OPORTUNIDADE).
     - Valor: dentro da faixa quando definido (usa o valor compatível com o tipo de negócio).
     - Dormitórios: imovel.dormitorios >= pref.dormitorios_min.
     Campos não definidos na preferência não filtram (preferência mais permissiva).
@@ -50,6 +54,12 @@ def _imovel_casa_preferencia(imovel: dict, pref: dict) -> bool:
     if pref_dorm is not None:
         imovel_dorm = imovel.get("dormitorios")
         if imovel_dorm is None or imovel_dorm < pref_dorm:
+            return False
+
+    # Imóveis de venda (incluindo 'ambos') abaixo de R$ 2M não entram como oportunidade.
+    if imovel.get("tipo_negocio") != "locacao":
+        valor_venda = imovel.get("valor_venda")
+        if valor_venda is None or valor_venda < VALOR_MINIMO_OPORTUNIDADE:
             return False
 
     # Valor: escolhe o lado correto baseado em tipo_negocio do imóvel
