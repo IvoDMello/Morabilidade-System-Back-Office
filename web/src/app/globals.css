@@ -46,7 +46,13 @@
   * {
     @apply border-border;
   }
+  html {
+    height: 100%;
+    overflow: hidden;
+  }
   body {
     @apply bg-background text-foreground;
+    height: 100%;
+    overflow: hidden;
   }
 }

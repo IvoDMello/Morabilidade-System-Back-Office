@@ -12,6 +12,7 @@ import {
   LogOut,
   X,
   BarChart2,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/lib/auth-store";
@@ -26,6 +27,7 @@ const navItems = [
   { href: "/", label: "Painel", icon: LayoutDashboard },
   { href: "/imoveis", label: "Imóveis", icon: Building2 },
   { href: "/clientes", label: "Clientes", icon: Users },
+  { href: "/oportunidades", label: "Oportunidades", icon: Sparkles },
   { href: "/tags", label: "Tags", icon: Tags },
   { href: "/relatorios", label: "Relatórios", icon: BarChart2 },
   { href: "/usuarios", label: "Usuários", icon: UserCog, adminOnly: true },
