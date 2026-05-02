@@ -8,7 +8,8 @@ import {
   ChevronUp,
   MessageCircle,
   Building2,
-  AlertTriangle,
+  Check,
+  X,
   Loader2,
   Filter,
   Users,
@@ -102,26 +103,86 @@ async function fetchAllClientes(): Promise<ClienteItem[]> {
   return todos;
 }
 
-function getOutFields(m: Match, p: Preferencia): string[] {
-  const out: string[] = [];
-  const valor = m.tipo_negocio === "locacao" ? m.valor_locacao : m.valor_venda;
+interface CriterioStatus {
+  key: string;
+  label: string;
+  detail: string;
+  status: "ok" | "fail" | "na";
+}
 
-  if (p.tipo_negocio && p.tipo_negocio !== "ambos" && m.tipo_negocio !== p.tipo_negocio)
-    out.push("Tipo de negócio");
-  if (p.tipo_imovel && m.tipo_imovel !== p.tipo_imovel)
-    out.push("Tipo de imóvel");
-  if (p.cidade?.trim() && !m.cidade?.toLowerCase().includes(p.cidade.toLowerCase().trim()))
-    out.push("Cidade");
-  if (p.bairro?.trim() && !m.bairro?.toLowerCase().includes(p.bairro.toLowerCase().trim()))
-    out.push("Bairro");
-  if (p.dormitorios_min && (m.dormitorios ?? 0) < p.dormitorios_min)
-    out.push(`Dormitórios (${m.dormitorios ?? 0} < mín. ${p.dormitorios_min})`);
-  if (valor != null && p.valor_min != null && valor < p.valor_min)
-    out.push("Valor abaixo do mínimo");
-  if (valor != null && p.valor_max != null && valor > p.valor_max)
-    out.push("Valor acima do máximo");
+function formatMoedaCurta(v: number): string {
+  if (v >= 1_000_000) {
+    const m = v / 1_000_000;
+    return `R$ ${Number.isInteger(m) ? m : m.toFixed(1)}M`;
+  }
+  if (v >= 1_000) return `R$ ${Math.round(v / 1_000)}K`;
+  return `R$ ${v}`;
+}
 
-  return out;
+function getCriteriaStatus(m: Match, p: Preferencia): CriterioStatus[] {
+  const criteria: CriterioStatus[] = [];
+
+  // 1. Tipo de negócio ("ambos" não conta como critério definido)
+  const prefNeg = p.tipo_negocio && p.tipo_negocio !== "ambos" ? p.tipo_negocio : null;
+  if (!prefNeg) {
+    criteria.push({ key: "negocio", label: "Negócio", detail: "—", status: "na" });
+  } else {
+    const ok = m.tipo_negocio === prefNeg || m.tipo_negocio === "ambos";
+    criteria.push({ key: "negocio", label: "Negócio", detail: TIPO_NEGOCIO_LABEL[prefNeg] ?? prefNeg, status: ok ? "ok" : "fail" });
+  }
+
+  // 2. Tipo de imóvel
+  if (!p.tipo_imovel) {
+    criteria.push({ key: "tipo", label: "Tipo", detail: "—", status: "na" });
+  } else {
+    criteria.push({ key: "tipo", label: "Tipo", detail: TIPO_IMOVEL_LABEL[p.tipo_imovel] ?? p.tipo_imovel, status: m.tipo_imovel === p.tipo_imovel ? "ok" : "fail" });
+  }
+
+  // 3. Cidade
+  const cidadePref = p.cidade?.trim() ?? "";
+  if (!cidadePref) {
+    criteria.push({ key: "cidade", label: "Cidade", detail: "—", status: "na" });
+  } else {
+    const ok = (m.cidade ?? "").toLowerCase().includes(cidadePref.toLowerCase());
+    criteria.push({ key: "cidade", label: "Cidade", detail: cidadePref, status: ok ? "ok" : "fail" });
+  }
+
+  // 4. Bairro
+  const bairroPref = p.bairro?.trim() ?? "";
+  if (!bairroPref) {
+    criteria.push({ key: "bairro", label: "Bairro", detail: "—", status: "na" });
+  } else {
+    const ok = (m.bairro ?? "").toLowerCase().includes(bairroPref.toLowerCase());
+    criteria.push({ key: "bairro", label: "Bairro", detail: bairroPref, status: ok ? "ok" : "fail" });
+  }
+
+  // 5. Dormitórios (0 = sem requisito)
+  const dormPref = p.dormitorios_min && p.dormitorios_min > 0 ? p.dormitorios_min : null;
+  if (!dormPref) {
+    criteria.push({ key: "dorm", label: "Dorm.", detail: "—", status: "na" });
+  } else {
+    criteria.push({ key: "dorm", label: "Dorm.", detail: `≥ ${dormPref}`, status: (m.dormitorios ?? 0) >= dormPref ? "ok" : "fail" });
+  }
+
+  // 6. Faixa de valor
+  const hasValor = p.valor_min != null || p.valor_max != null;
+  if (!hasValor) {
+    criteria.push({ key: "valor", label: "Valor", detail: "—", status: "na" });
+  } else {
+    const isLocacaoMatch = m.tipo_negocio === "locacao" || (m.tipo_negocio === "ambos" && p.tipo_negocio === "locacao");
+    const valor = isLocacaoMatch ? m.valor_locacao : m.valor_venda;
+    let ok = valor != null;
+    if (ok && valor != null) {
+      if (p.valor_min != null && valor < p.valor_min) ok = false;
+      if (p.valor_max != null && valor > p.valor_max) ok = false;
+    }
+    const partes: string[] = [];
+    if (p.valor_min != null) partes.push(`≥ ${formatMoedaCurta(p.valor_min)}`);
+    if (p.valor_max != null) partes.push(`≤ ${formatMoedaCurta(p.valor_max)}`);
+    criteria.push({ key: "valor", label: "Valor", detail: partes.join("  "), status: ok ? "ok" : "fail" });
+  }
+
+  return criteria;
 }
 
 function whatsappLink(telefone: string, codigo: string, bairro: string) {
@@ -143,7 +204,7 @@ export default function OportunidadesPage() {
   const [loadingMatchesCount, setLoadingMatchesCount] = useState(0);
   const [totalMatchesLoading, setTotalMatchesLoading] = useState(0);
   const [matchesLoaded, setMatchesLoaded] = useState(false);
-  const [minScore, setMinScore] = useState(5);
+  const [minScore, setMinScore] = useState(0);
 
   useEffect(() => {
     async function load() {
@@ -426,7 +487,7 @@ export default function OportunidadesPage() {
                     {matches.map((m) => {
                       const valor =
                         m.tipo_negocio === "locacao" ? m.valor_locacao : m.valor_venda;
-                      const outFields = pref ? getOutFields(m, pref) : [];
+                      const criteria = pref != null ? getCriteriaStatus(m, pref) : null;
                       const pct = scorePercent(m.score);
                       const scoreCls =
                         pct >= 83
@@ -480,15 +541,31 @@ export default function OportunidadesPage() {
                               {valor ? ` · ${formatarMoeda(valor)}` : ""}
                             </p>
 
-                            {outFields.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-1.5">
-                                {outFields.map((f) => (
+                            {criteria && (
+                              <div className="flex flex-wrap gap-1 mt-2">
+                                {criteria.map((crit) => (
                                   <span
-                                    key={f}
-                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-orange-50 text-orange-700 border border-orange-200 rounded text-xs"
+                                    key={crit.key}
+                                    className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded border text-xs ${
+                                      crit.status === "ok"
+                                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                        : crit.status === "fail"
+                                        ? "bg-red-50 text-red-700 border-red-200"
+                                        : "bg-slate-50 text-slate-400 border-slate-200"
+                                    }`}
                                   >
-                                    <AlertTriangle className="w-3 h-3 flex-shrink-0" />
-                                    {f}
+                                    {crit.status === "ok" && <Check className="w-3 h-3 flex-shrink-0" />}
+                                    {crit.status === "fail" && <X className="w-3 h-3 flex-shrink-0" />}
+                                    <span className={crit.status === "na" ? "text-slate-400" : "font-medium"}>
+                                      {crit.label}
+                                    </span>
+                                    <span className={
+                                      crit.status === "ok" ? "text-emerald-600" :
+                                      crit.status === "fail" ? "text-red-600" :
+                                      "text-slate-300"
+                                    }>
+                                      {crit.detail}
+                                    </span>
                                   </span>
                                 ))}
                               </div>
@@ -568,12 +645,33 @@ function LegendCard() {
   const [open, setOpen] = useState(false);
 
   const criterios = [
-    { num: 1, label: "Tipo de negócio", desc: "Venda, Locação — ou ambos" },
+    { num: 1, label: "Tipo de negócio", desc: "Venda ou Locação (\"Ambos\" não conta)" },
     { num: 2, label: "Tipo de imóvel", desc: "Apartamento, casa, cobertura, etc." },
     { num: 3, label: "Cidade", desc: "Cidade preferida pelo cliente" },
-    { num: 4, label: "Bairro", desc: "Bairro preferido (busca por correspondência parcial)" },
+    { num: 4, label: "Bairro", desc: "Bairro preferido (correspondência parcial)" },
     { num: 5, label: "Dormitórios mínimos", desc: "Número mínimo de quartos solicitado" },
     { num: 6, label: "Faixa de valor", desc: "Valor mínimo e/ou máximo aceito" },
+  ];
+
+  const cores = [
+    {
+      icon: <Check className="w-3 h-3 text-emerald-600" />,
+      cls: "bg-emerald-50 border-emerald-200",
+      title: "Critério atendido",
+      desc: "O campo foi definido na preferência e o imóvel está dentro do esperado. Conta para o % de match.",
+    },
+    {
+      icon: <X className="w-3 h-3 text-red-600" />,
+      cls: "bg-red-50 border-red-200",
+      title: "Critério fora da busca",
+      desc: "O campo foi definido, mas o imóvel não atende. Isso pode indicar que o match foi gerado via outro critério.",
+    },
+    {
+      icon: <span className="text-xs text-slate-400 font-medium leading-none">—</span>,
+      cls: "bg-slate-50 border-slate-200",
+      title: "Não informado",
+      desc: "O campo não foi preenchido na preferência. Qualquer valor do imóvel é aceito e não conta para o %.",
+    },
   ];
 
   return (
@@ -596,35 +694,48 @@ function LegendCard() {
       </button>
 
       {open && (
-        <div className="border-t border-slate-100 p-4">
-          <p className="text-xs text-slate-500 mb-3">
-            O percentual de correspondência indica quantos dos 6 critérios abaixo foram
-            definidos na preferência do cliente. Quanto maior, mais específico e qualificado
-            é o match.
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-            {criterios.map((c) => (
-              <div key={c.num} className="flex items-start gap-2.5 p-2.5 bg-slate-50 rounded-lg">
-                <span
-                  className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white"
-                  style={{ backgroundColor: "#585a4f" }}
-                >
-                  {c.num}
-                </span>
-                <div>
-                  <p className="text-xs font-medium text-slate-700">{c.label}</p>
-                  <p className="text-xs text-slate-400">{c.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="mt-3 pt-3 border-t border-slate-100 flex items-start gap-2">
-            <AlertTriangle className="w-3.5 h-3.5 text-orange-500 flex-shrink-0 mt-0.5" />
-            <p className="text-xs text-slate-500">
-              <span className="font-medium text-orange-700">Fora do esperado</span>
-              {" "}— aparece na linha do imóvel quando algum critério está fora da
-              preferência definida pelo cliente.
+        <div className="border-t border-slate-100 p-4 space-y-4">
+          {/* Cores */}
+          <div>
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">
+              Indicadores por critério
             </p>
+            <div className="flex flex-col sm:flex-row gap-2">
+              {cores.map((c) => (
+                <div key={c.title} className={`flex items-start gap-2 flex-1 p-2.5 rounded-lg border ${c.cls}`}>
+                  <span className="flex-shrink-0 w-4 h-4 flex items-center justify-center mt-0.5">
+                    {c.icon}
+                  </span>
+                  <div>
+                    <p className="text-xs font-semibold text-slate-700">{c.title}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{c.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Critérios */}
+          <div>
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">
+              Os 6 critérios (quanto mais definidos, maior o % de match)
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              {criterios.map((c) => (
+                <div key={c.num} className="flex items-start gap-2.5 p-2.5 bg-slate-50 rounded-lg">
+                  <span
+                    className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                    style={{ backgroundColor: "#585a4f" }}
+                  >
+                    {c.num}
+                  </span>
+                  <div>
+                    <p className="text-xs font-medium text-slate-700">{c.label}</p>
+                    <p className="text-xs text-slate-400">{c.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}

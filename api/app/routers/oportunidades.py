@@ -71,25 +71,25 @@ def _imovel_casa_preferencia(imovel: dict, pref: dict) -> bool:
         return False
 
     pref_dorm = pref.get("dormitorios_min")
-    if pref_dorm is not None:
+    if pref_dorm:  # 0 ou None = sem requisito
         imovel_dorm = imovel.get("dormitorios")
         if imovel_dorm is None or imovel_dorm < pref_dorm:
             return False
 
-    # Imóveis de venda (incluindo 'ambos') abaixo de R$ 2M não entram como oportunidade.
-    if imovel.get("tipo_negocio") != "locacao":
+    # Imóveis de venda abaixo de R$ 2M não entram como oportunidade.
+    # Exceção: se o cliente quer locação e o imóvel suporta locação ("ambos"), não bloquear.
+    imovel_neg = imovel.get("tipo_negocio")
+    if imovel_neg == "venda" or (imovel_neg == "ambos" and pref_neg != "locacao"):
         valor_venda = imovel.get("valor_venda")
         if valor_venda is None or valor_venda < VALOR_MINIMO_OPORTUNIDADE:
             return False
 
-    # Valor: escolhe o lado correto baseado em tipo_negocio do imóvel
+    # Valor: escolhe o lado correto baseado no contexto do match
     valor_min = pref.get("valor_min")
     valor_max = pref.get("valor_max")
     if valor_min is not None or valor_max is not None:
-        if imovel.get("tipo_negocio") == "locacao":
-            valor = imovel.get("valor_locacao")
-        else:
-            valor = imovel.get("valor_venda")
+        is_locacao_match = imovel_neg == "locacao" or (imovel_neg == "ambos" and pref_neg == "locacao")
+        valor = imovel.get("valor_locacao") if is_locacao_match else imovel.get("valor_venda")
         if valor is None:
             return False
         if valor_min is not None and valor < valor_min:

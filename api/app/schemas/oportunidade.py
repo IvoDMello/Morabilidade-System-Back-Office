@@ -20,8 +20,8 @@ class PreferenciaBase(BaseModel):
     tipo_imovel: Optional[TipoImovel] = None
     cidade: Optional[str] = None
     bairro: Optional[str] = None
-    valor_min: Optional[float] = Field(default=None, ge=_VALOR_MIN_OPOR)
-    valor_max: Optional[float] = Field(default=None, ge=_VALOR_MIN_OPOR)
+    valor_min: Optional[float] = Field(default=None, ge=0)
+    valor_max: Optional[float] = Field(default=None, ge=0)
     dormitorios_min: Optional[int] = Field(default=None, ge=0)
     observacoes: Optional[str] = None
     ativa: bool = True
