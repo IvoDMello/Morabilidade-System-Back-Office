@@ -172,6 +172,55 @@ def enviar_confirmacao_contato(nome_visitante: str, email_visitante: str) -> Non
     enviar_email(email_visitante, "Recebemos seu contato — Morabilidade", html)
 
 
+def enviar_recuperacao_senha(email: str, link: str) -> None:
+    """E-mail de recuperação de senha com link de redefinição."""
+    conteudo = f"""
+      <h1 style="margin:0 0 12px;font-size:22px;color:{_OLIVE};font-weight:600;">
+        Redefinição de senha
+      </h1>
+      <p style="margin:0 0 16px;">
+        Recebemos uma solicitação para redefinir a senha da sua conta no sistema Morabilidade.
+      </p>
+      <p style="margin:0 0 24px;color:#555;">
+        Clique no botão abaixo para criar uma nova senha. O link é válido por
+        <strong>1 hora</strong> e pode ser usado apenas uma vez.
+      </p>
+
+      <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+        <tr>
+          <td style="background:{_OLIVE};border-radius:8px;">
+            <a href="{link}"
+               style="display:inline-block;padding:14px 28px;color:#ffffff;
+                      text-decoration:none;font-weight:600;font-size:15px;
+                      letter-spacing:0.3px;">
+              Redefinir minha senha
+            </a>
+          </td>
+        </tr>
+      </table>
+
+      <p style="margin:0 0 8px;font-size:13px;color:#888;">
+        Se o botão não funcionar, copie e cole o link abaixo no seu navegador:
+      </p>
+      <p style="margin:0 0 24px;font-size:12px;word-break:break-all;">
+        <a href="{link}" style="color:{_OLIVE};text-decoration:none;">{link}</a>
+      </p>
+
+      <div style="border-top:1px solid #e6e6dd;padding-top:16px;margin-top:8px;">
+        <p style="margin:0;font-size:13px;color:#aaa;">
+          Se você não solicitou a redefinição de senha, ignore este e-mail.
+          Sua senha permanece a mesma.
+        </p>
+      </div>
+    """
+    html = _render_template(
+        titulo="Redefinição de senha — Morabilidade",
+        preheader="Clique no link para criar uma nova senha. Válido por 1 hora.",
+        conteudo_html=conteudo,
+    )
+    enviar_email(email, "Redefinição de senha — Morabilidade", html)
+
+
 def enviar_notificacao_lead(
     *, nome: str, email: str, telefone: str, mensagem: str
 ) -> None:

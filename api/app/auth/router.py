@@ -4,6 +4,7 @@ from app.limiter import limiter
 from app.auth.schemas import LoginRequest, LoginResponse, ForgotPasswordRequest
 from app.auth.dependencies import get_current_user
 from app.database import supabase, supabase_admin
+from app.services.email import enviar_recuperacao_senha
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -52,21 +53,27 @@ def logout(current_user: dict = Depends(get_current_user)):
 @router.post("/recuperar-senha", status_code=status.HTTP_204_NO_CONTENT)
 @limiter.limit("5/minute")
 def forgot_password(request: Request, body: ForgotPasswordRequest):
-    """Envia e-mail de recuperação de senha via Supabase Auth."""
+    """Gera link de recuperação via Supabase Admin e envia e-mail branded via Resend."""
     logger.info(
         "[recuperar-senha] solicitação recebida para email=%s, redirect_to=%s",
         body.email,
         body.redirect_to,
     )
     try:
+        params: dict = {"type": "recovery", "email": body.email}
         if body.redirect_to:
-            supabase.auth.reset_password_email(
-                body.email, options={"redirect_to": body.redirect_to}
-            )
-        else:
-            supabase.auth.reset_password_email(body.email)
-        logger.info("[recuperar-senha] chamada Supabase concluída sem erro")
+            params["options"] = {"redirect_to": body.redirect_to}
+
+        response = supabase_admin.auth.admin.generate_link(params)
+        action_link = response.properties.action_link
+        logger.info("[recuperar-senha] link gerado com sucesso para email=%s", body.email)
     except Exception:
-        # Server-side log para diagnóstico — o cliente continua recebendo 204
-        # para não revelar se o e-mail está cadastrado.
-        logger.exception("[recuperar-senha] falha ao chamar Supabase Auth")
+        # Não revela ao cliente se o e-mail existe ou não.
+        logger.exception("[recuperar-senha] falha ao gerar link no Supabase Admin")
+        return
+
+    try:
+        enviar_recuperacao_senha(body.email, action_link)
+        logger.info("[recuperar-senha] e-mail enviado via Resend para email=%s", body.email)
+    except Exception:
+        logger.exception("[recuperar-senha] falha ao enviar e-mail via Resend")
