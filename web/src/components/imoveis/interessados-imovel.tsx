@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { MessageCircle, Sparkles } from "lucide-react";
 import { api } from "@/lib/api";
+import { whatsappLink } from "@/lib/whatsapp";
 
 interface Interessado {
   cliente_id: string;
@@ -20,6 +21,12 @@ interface Props {
   imovelId: string;
   imovelCodigo: string;
   imovelBairro: string;
+  imovelCidade?: string;
+  imovelTipoImovel?: string;
+  imovelTipoNegocio?: string;
+  imovelDormitorios?: number;
+  imovelValorVenda?: number;
+  imovelValorLocacao?: number;
 }
 
 const SCORE_MAX = 6;
@@ -40,13 +47,11 @@ function ScoreDots({ score }: { score: number }) {
   );
 }
 
-function whatsappLink(telefone: string, codigo: string, bairro: string) {
-  const numero = telefone.replace(/\D/g, "");
-  const mensagem = `Olá! Apareceu um imóvel na Morabilidade que combina com o que você procura: código *${codigo}* em ${bairro}. Posso te mandar mais detalhes?`;
-  return `https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}`;
-}
-
-export function InteressadosImovel({ imovelId, imovelCodigo, imovelBairro }: Props) {
+export function InteressadosImovel({
+  imovelId, imovelCodigo, imovelBairro, imovelCidade,
+  imovelTipoImovel, imovelTipoNegocio, imovelDormitorios,
+  imovelValorVenda, imovelValorLocacao,
+}: Props) {
   const [lista, setLista] = useState<Interessado[] | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -110,7 +115,16 @@ export function InteressadosImovel({ imovelId, imovelCodigo, imovelBairro }: Pro
               </Link>
               {c.telefone && (
                 <a
-                  href={whatsappLink(c.telefone, imovelCodigo, imovelBairro)}
+                  href={whatsappLink(c.telefone, {
+                    codigo: imovelCodigo,
+                    bairro: imovelBairro,
+                    cidade: imovelCidade,
+                    tipo_imovel: imovelTipoImovel,
+                    tipo_negocio: imovelTipoNegocio,
+                    dormitorios: imovelDormitorios,
+                    valor_venda: imovelValorVenda,
+                    valor_locacao: imovelValorLocacao,
+                  })}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-white rounded-md transition hover:opacity-90"

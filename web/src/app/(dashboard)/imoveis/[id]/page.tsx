@@ -308,6 +308,12 @@ export default function EditarImovelPage({
           imovelId={imovel.id}
           imovelCodigo={imovel.codigo}
           imovelBairro={imovel.bairro}
+          imovelCidade={imovel.cidade}
+          imovelTipoImovel={imovel.tipo_imovel}
+          imovelTipoNegocio={imovel.tipo_negocio}
+          imovelDormitorios={imovel.dormitorios}
+          imovelValorVenda={imovel.valor_venda}
+          imovelValorLocacao={imovel.valor_locacao}
         />
       </div>
     </div>

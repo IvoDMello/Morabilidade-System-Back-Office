@@ -5,6 +5,7 @@ import Link from "next/link";
 import { MessageCircle, Building2, Sparkles } from "lucide-react";
 import { api } from "@/lib/api";
 import { formatarMoeda } from "@/lib/utils";
+import { whatsappLink } from "@/lib/whatsapp";
 
 interface Match {
   imovel_id: string;
@@ -56,11 +57,6 @@ function ScoreDots({ score }: { score: number }) {
   );
 }
 
-function whatsappLink(telefone: string, codigo: string, bairro: string) {
-  const numero = telefone.replace(/\D/g, "");
-  const mensagem = `Olá! Apareceu um imóvel na Morabilidade que combina com o que você procura: código *${codigo}* em ${bairro}. Posso te mandar mais detalhes?`;
-  return `https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}`;
-}
 
 export function MatchesCliente({ clienteId, clienteNome, clienteTelefone }: Props) {
   const [matches, setMatches] = useState<Match[] | null>(null);
@@ -137,7 +133,7 @@ export function MatchesCliente({ clienteId, clienteNome, clienteTelefone }: Prop
                 </Link>
                 {clienteTelefone && (
                   <a
-                    href={whatsappLink(clienteTelefone, m.codigo, m.bairro)}
+                    href={whatsappLink(clienteTelefone, m)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-white rounded-md transition hover:opacity-90"

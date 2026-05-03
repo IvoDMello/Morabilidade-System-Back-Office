@@ -105,7 +105,11 @@ export default function ClientesPage() {
   async function handleExportar() {
     setExportando(true);
     try {
-      const res = await api.get("/clientes/exportar", { responseType: "blob" });
+      const params: Record<string, string> = {};
+      if (filtros.nome) params.nome = filtros.nome;
+      if (filtros.email) params.email = filtros.email;
+      if (filtros.status) params.status = filtros.status;
+      const res = await api.get("/clientes/exportar", { responseType: "blob", params });
       const blob = new Blob([res.data], { type: "text/csv;charset=utf-8" });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");

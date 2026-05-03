@@ -212,15 +212,33 @@ def detalhe_imovel_publico(request: Request, codigo: str):
 # senão "exportar" é capturado como UUID.
 
 @router.get("/exportar")
-def exportar_imoveis_csv(current_user: dict = Depends(get_current_user)):
-    """Baixa todos os imóveis como CSV (UTF-8 com BOM, delimitador ';' para Excel PT-BR)."""
+def exportar_imoveis_csv(
+    tipo_negocio: Optional[TipoNegocio] = None,
+    disponibilidade: Optional[Disponibilidade] = None,
+    cidade: Optional[str] = None,
+    bairro: Optional[str] = None,
+    tipo_imovel: Optional[TipoImovel] = None,
+    dormitorios_min: Optional[int] = None,
+    preco_min: Optional[float] = None,
+    preco_max: Optional[float] = None,
+    condicao: Optional[CondicaoImovel] = None,
+    mobiliado: Optional[Mobiliado] = None,
+    codigo: Optional[str] = None,
+    current_user: dict = Depends(get_current_user),
+):
+    """Baixa imóveis como CSV respeitando os filtros ativos (UTF-8 com BOM, delimitador ';' para Excel PT-BR)."""
+    filtros = dict(
+        tipo_negocio=tipo_negocio, disponibilidade=disponibilidade,
+        cidade=cidade, bairro=bairro, tipo_imovel=tipo_imovel,
+        dormitorios_min=dormitorios_min, preco_min=preco_min, preco_max=preco_max,
+        condicao=condicao, mobiliado=mobiliado, codigo=codigo,
+    )
     todos = []
     offset = 0
     page_size = 1000
     while True:
         result = (
-            supabase_admin.table("imoveis")
-            .select("*")
+            _aplicar_filtros(supabase_admin.table("imoveis").select("*"), **filtros)
             .order("created_at", desc=True)
             .range(offset, offset + page_size - 1)
             .execute()

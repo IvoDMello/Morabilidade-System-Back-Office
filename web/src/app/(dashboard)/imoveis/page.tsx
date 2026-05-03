@@ -94,7 +94,17 @@ export default function ImoveisPage() {
   async function handleExportar() {
     setExportando(true);
     try {
-      const res = await api.get("/imoveis/exportar", { responseType: "blob" });
+      const params: Record<string, string> = {};
+      const busca = filtros.busca || filtros.codigo;
+      if (busca) params.codigo = busca;
+      if (filtros.tipo_negocio) params.tipo_negocio = filtros.tipo_negocio;
+      if (filtros.disponibilidade) params.disponibilidade = filtros.disponibilidade;
+      if (filtros.cidade) params.cidade = filtros.cidade;
+      if (filtros.bairro) params.bairro = filtros.bairro;
+      if (filtros.tipo_imovel) params.tipo_imovel = filtros.tipo_imovel;
+      if (filtros.preco_min) params.preco_min = filtros.preco_min;
+      if (filtros.preco_max) params.preco_max = filtros.preco_max;
+      const res = await api.get("/imoveis/exportar", { responseType: "blob", params });
       const blob = new Blob([res.data], { type: "text/csv;charset=utf-8" });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");

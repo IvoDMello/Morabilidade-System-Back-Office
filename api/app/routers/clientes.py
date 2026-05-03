@@ -223,15 +223,28 @@ def listar_clientes(
 # senão o roteador captura "exportar"/"importar" como UUID.
 
 @router.get("/exportar")
-def exportar_clientes_csv(current_user: dict = Depends(get_current_user)):
-    """Baixa todos os clientes como CSV (UTF-8 com BOM para abrir no Excel)."""
+def exportar_clientes_csv(
+    nome: Optional[str] = None,
+    email: Optional[str] = None,
+    status: Optional[StatusCliente] = None,
+    current_user: dict = Depends(get_current_user),
+):
+    """Baixa clientes como CSV respeitando os filtros ativos (UTF-8 com BOM para abrir no Excel)."""
+    def _aplicar_export(q):
+        if nome:
+            q = q.ilike("nome_completo", f"%{nome}%")
+        if email:
+            q = q.ilike("email", f"%{email}%")
+        if status:
+            q = q.eq("status", status)
+        return q
+
     todos = []
     offset = 0
     page_size = 1000
     while True:
         result = (
-            supabase_admin.table("clientes")
-            .select("*")
+            _aplicar_export(supabase_admin.table("clientes").select("*"))
             .order("created_at", desc=True)
             .range(offset, offset + page_size - 1)
             .execute()
@@ -332,7 +345,19 @@ async def importar_clientes_csv(
             supabase_admin.table("clientes").insert(cliente).execute()
             criadas += 1
         except Exception as e:
-            erros.append({"linha": i, "motivo": f"Erro do banco: {str(e)[:120]}"})
+            err_str = str(e).lower()
+            if "duplicate" in err_str or "unique" in err_str:
+                if "email" in err_str:
+                    motivo = f"E-mail já cadastrado: {cliente.get('email', '')}"
+                elif "telefone" in err_str or "phone" in err_str:
+                    motivo = f"Telefone já cadastrado: {cliente.get('telefone', '')}"
+                elif "cpf" in err_str or "cnpj" in err_str:
+                    motivo = f"CPF/CNPJ já cadastrado: {cliente.get('cpf_cnpj', '')}"
+                else:
+                    motivo = f"Registro duplicado — cliente já existe no sistema"
+            else:
+                motivo = f"Erro do banco: {str(e)[:120]}"
+            erros.append({"linha": i, "motivo": motivo})
 
     return {
         "total_lidas": criadas + len(erros),

@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { formatarMoeda } from "@/lib/utils";
+import { whatsappLink } from "@/lib/whatsapp";
 
 const SCORE_MAX = 6;
 
@@ -185,11 +186,6 @@ function getCriteriaStatus(m: Match, p: Preferencia): CriterioStatus[] {
   return criteria;
 }
 
-function whatsappLink(telefone: string, codigo: string, bairro: string) {
-  const numero = telefone.replace(/\D/g, "");
-  const msg = `Olá! Apareceu um imóvel na Morabilidade que combina com o que você procura: código *${codigo}* em ${bairro}. Posso te mandar mais detalhes?`;
-  return `https://wa.me/${numero}?text=${encodeURIComponent(msg)}`;
-}
 
 function scorePercent(score: number) {
   return Math.round((score / SCORE_MAX) * 100);
@@ -582,7 +578,7 @@ export default function OportunidadesPage() {
                             </Link>
                             {c.telefone && (
                               <a
-                                href={whatsappLink(c.telefone, m.codigo, m.bairro)}
+                                href={whatsappLink(c.telefone, m)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-white rounded-md transition hover:opacity-90"
