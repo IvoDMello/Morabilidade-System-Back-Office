@@ -146,7 +146,9 @@
       "Bash(find \"c:\\\\\\\\Users\\\\\\\\novopc2024\\\\\\\\Documents\\\\\\\\GitHub\\\\\\\\Morabilidade-System-Back-Office\" -name \"*.md\" -type f)",
       "Bash(findstr -E \"\\(redefinir|recuperar\\)\")",
       "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\novopc2024\\\\Documents\\\\GitHub\\\\Morabilidade-System-Back-Office\\\\web\\\\src\\\\app\" -Recurse -Include \"*senha*\" -ErrorAction SilentlyContinue)",
-      "Bash(npx vitest *)"
+      "Bash(npx vitest *)",
+      "Bash(.venv\\\\Scripts\\\\python.exe -m pytest tests/ -v)",
+      "Bash(.venv\\\\Scripts\\\\python.exe -m pytest web/ --collect-only)"
     ]
   }
 }
