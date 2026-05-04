@@ -12,7 +12,7 @@ const schema = z
   .object({
     nome_completo: z.string().min(2, "Nome obrigatório"),
     email: z.string().email("E-mail inválido").or(z.literal("")).optional(),
-    telefone: z.string().min(8, "Telefone obrigatório"),
+    telefone: z.string().min(8, "Número inválido").or(z.literal("")).optional(),
     cpf_cnpj: z.string().optional().or(z.literal("")),
     telefone_secundario: z.string().optional().or(z.literal("")),
     instagram: z.string().optional().or(z.literal("")),
@@ -32,7 +32,13 @@ const schema = z
   .refine((data) => data.estado !== "EX" || (data.pais && data.pais.trim().length > 0), {
     message: "Informe o país",
     path: ["pais"],
-  });
+  })
+  .refine(
+    (data) =>
+      (data.telefone && data.telefone.trim().length >= 8) ||
+      (data.instagram && data.instagram.trim().length > 0),
+    { message: "Informe ao menos o telefone ou o Instagram", path: ["telefone"] }
+  );
 
 export type ClienteFormData = z.infer<typeof schema>;
 
@@ -126,7 +132,7 @@ export function ClienteForm({ defaultValues, onSubmit, isLoading, submitLabel = 
             <input {...register("email")} type="email" className={inputClass} placeholder="email@exemplo.com" />
           </Field>
 
-          <Field label="Telefone / WhatsApp *" error={errors.telefone?.message}>
+          <Field label="Telefone / WhatsApp" error={errors.telefone?.message}>
             <input {...register("telefone")} className={inputClass} placeholder="(00) 00000-0000" />
           </Field>
 
@@ -134,8 +140,9 @@ export function ClienteForm({ defaultValues, onSubmit, isLoading, submitLabel = 
             <input {...register("telefone_secundario")} className={inputClass} placeholder="(00) 00000-0000" />
           </Field>
 
-          <Field label="Instagram">
+          <Field label="Instagram" error={undefined}>
             <input {...register("instagram")} className={inputClass} placeholder="@perfil ou link" />
+            <p className="text-[11px] text-slate-400 mt-1">Telefone ou Instagram — ao menos um obrigatório</p>
           </Field>
 
           <Field label="CPF / CNPJ">

@@ -24,7 +24,7 @@ VALOR_MINIMO_OPORTUNIDADE = 2_000_000.0
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
 def _score_imovel_preferencia(pref: dict) -> int:
-    """Score de compatibilidade (0-6): conta quantos critérios foram definidos na preferência.
+    """Score de compatibilidade (0-7): conta quantos critérios foram definidos na preferência.
     Preferências mais específicas produzem score maior, indicando leads mais qualificados.
     Só deve ser chamado após confirmar que o match já é válido."""
     score = 0
@@ -34,9 +34,11 @@ def _score_imovel_preferencia(pref: dict) -> int:
         score += 1
     if (pref.get("cidade") or "").strip():
         score += 1
-    if (pref.get("bairro") or "").strip():
+    if [b for b in (pref.get("bairros") or []) if b.strip()]:
         score += 1
     if pref.get("dormitorios_min"):  # 0 não filtra nada, não conta
+        score += 1
+    if pref.get("vagas_garagem_min"):
         score += 1
     if pref.get("valor_min") is not None or pref.get("valor_max") is not None:
         score += 1
@@ -66,14 +68,22 @@ def _imovel_casa_preferencia(imovel: dict, pref: dict) -> bool:
     if pref_cidade and pref_cidade not in (imovel.get("cidade") or "").lower():
         return False
 
-    pref_bairro = (pref.get("bairro") or "").strip().lower()
-    if pref_bairro and pref_bairro not in (imovel.get("bairro") or "").lower():
-        return False
+    pref_bairros = [b.strip().lower() for b in (pref.get("bairros") or []) if b.strip()]
+    if pref_bairros:
+        imovel_bairro = (imovel.get("bairro") or "").lower()
+        if not any(b in imovel_bairro for b in pref_bairros):
+            return False
 
     pref_dorm = pref.get("dormitorios_min")
     if pref_dorm:  # 0 ou None = sem requisito
         imovel_dorm = imovel.get("dormitorios")
         if imovel_dorm is None or imovel_dorm < pref_dorm:
+            return False
+
+    pref_vagas = pref.get("vagas_garagem_min")
+    if pref_vagas:
+        imovel_vagas = imovel.get("vagas_garagem")
+        if imovel_vagas is None or imovel_vagas < pref_vagas:
             return False
 
     # Imóveis de venda abaixo de R$ 2M não entram como oportunidade.
@@ -175,7 +185,7 @@ def matches_de_um_cliente(cliente_id: str, current_user: dict = Depends(get_curr
         supabase_admin.table("imoveis")
         .select(
             "id, codigo, cidade, bairro, tipo_imovel, tipo_negocio, "
-            "valor_venda, valor_locacao, dormitorios, "
+            "valor_venda, valor_locacao, dormitorios, vagas_garagem, "
             "imovel_fotos(url, ordem)"
         )
         .eq("disponibilidade", "disponivel")
@@ -198,6 +208,7 @@ def matches_de_um_cliente(cliente_id: str, current_user: dict = Depends(get_curr
             "valor_venda": imovel.get("valor_venda"),
             "valor_locacao": imovel.get("valor_locacao"),
             "dormitorios": imovel.get("dormitorios"),
+            "vagas_garagem": imovel.get("vagas_garagem"),
             "foto_capa": foto_capa,
             "score": _score_imovel_preferencia(pref),
         })
@@ -212,7 +223,7 @@ def interessados_em_um_imovel(imovel_id: str, current_user: dict = Depends(get_c
         supabase_admin.table("imoveis")
         .select(
             "id, tipo_negocio, tipo_imovel, cidade, bairro, "
-            "valor_venda, valor_locacao, dormitorios"
+            "valor_venda, valor_locacao, dormitorios, vagas_garagem"
         )
         .eq("id", imovel_id)
         .maybe_single()
@@ -225,8 +236,8 @@ def interessados_em_um_imovel(imovel_id: str, current_user: dict = Depends(get_c
     prefs_resp = (
         supabase_admin.table("cliente_preferencias")
         .select(
-            "id, cliente_id, tipo_negocio, tipo_imovel, cidade, bairro, "
-            "valor_min, valor_max, dormitorios_min, observacoes, "
+            "id, cliente_id, tipo_negocio, tipo_imovel, cidade, bairros, "
+            "valor_min, valor_max, dormitorios_min, vagas_garagem_min, observacoes, "
             "clientes(nome_completo, telefone, email, tipo_cliente)"
         )
         .eq("ativa", True)
@@ -263,8 +274,8 @@ def resumo_oportunidades(current_user: dict = Depends(get_current_user)):
     prefs_resp = (
         supabase_admin.table("cliente_preferencias")
         .select(
-            "id, cliente_id, tipo_negocio, tipo_imovel, cidade, bairro, "
-            "valor_min, valor_max, dormitorios_min"
+            "id, cliente_id, tipo_negocio, tipo_imovel, cidade, bairros, "
+            "valor_min, valor_max, dormitorios_min, vagas_garagem_min"
         )
         .eq("ativa", True)
         .execute()
@@ -278,7 +289,7 @@ def resumo_oportunidades(current_user: dict = Depends(get_current_user)):
         supabase_admin.table("imoveis")
         .select(
             "id, tipo_negocio, tipo_imovel, cidade, bairro, "
-            "valor_venda, valor_locacao, dormitorios"
+            "valor_venda, valor_locacao, dormitorios, vagas_garagem"
         )
         .eq("disponibilidade", "disponivel")
         .execute()

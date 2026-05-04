@@ -29,7 +29,7 @@ interface Props {
   imovelValorLocacao?: number;
 }
 
-const SCORE_MAX = 6;
+const SCORE_MAX = 7;
 
 function ScoreDots({ score }: { score: number }) {
   return (

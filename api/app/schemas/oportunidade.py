@@ -19,10 +19,11 @@ class PreferenciaBase(BaseModel):
     tipo_negocio: Optional[TipoNegocio] = None
     tipo_imovel: Optional[TipoImovel] = None
     cidade: Optional[str] = None
-    bairro: Optional[str] = None
+    bairros: List[str] = []
     valor_min: Optional[float] = Field(default=None, ge=0)
     valor_max: Optional[float] = Field(default=None, ge=0)
     dormitorios_min: Optional[int] = Field(default=None, ge=0)
+    vagas_garagem_min: Optional[int] = Field(default=None, ge=0)
     observacoes: Optional[str] = None
     ativa: bool = True
 
@@ -60,6 +61,7 @@ class MatchClienteImovel(BaseModel):
     valor_venda: Optional[float] = None
     valor_locacao: Optional[float] = None
     dormitorios: Optional[int] = None
+    vagas_garagem: Optional[int] = None
     foto_capa: Optional[str] = None
     score: int = 0
 
@@ -68,7 +70,7 @@ class MatchImovelCliente(BaseModel):
     """Cliente cuja preferência casa com um imóvel (visão do imóvel)."""
     cliente_id: str
     nome_completo: str
-    telefone: str
+    telefone: Optional[str] = None
     email: Optional[str] = None
     tipo_cliente: Optional[str] = None
     preferencia_id: str

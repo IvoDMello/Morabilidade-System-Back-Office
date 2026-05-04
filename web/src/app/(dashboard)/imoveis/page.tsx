@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   Search, ChevronLeft, ChevronRight, BedDouble, Bath,
   Car, Maximize2, Pencil, Info as InfoIcon,
-  LayoutList, Map, Building2, Trash2, Download,
+  LayoutList, Map, Building2, Trash2, Download, Filter, X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
@@ -87,6 +87,7 @@ export default function ImoveisPage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [filtros, setFiltros] = useState<Filtros>(FILTROS_VAZIOS);
+  const [filtrosOpen, setFiltrosOpen] = useState(false);
   const [deletando, setDeletando] = useState<{ id: string; codigo: string } | null>(null);
   const [deletandoLoading, setDeletandoLoading] = useState(false);
   const [exportando, setExportando] = useState(false);
@@ -206,10 +207,32 @@ setLoading(true);
       className="flex overflow-hidden -m-4 md:-m-6"
       style={{ height: "calc(100vh - 64px)" }}
     >
+      {/* Backdrop mobile */}
+      {filtrosOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 z-20 md:hidden"
+          onClick={() => setFiltrosOpen(false)}
+        />
+      )}
+
       {/* ── Sidebar de filtros ── */}
-      <aside className="w-72 shrink-0 bg-white border-r border-slate-200 flex flex-col overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center gap-2 px-4 py-4 border-b border-slate-100 text-slate-700 font-semibold text-sm shrink-0">
+      <aside
+        className={[
+          "w-72 shrink-0 bg-white border-r border-slate-200 flex flex-col overflow-hidden",
+          "fixed inset-y-0 left-0 z-30 transition-transform duration-200",
+          filtrosOpen ? "translate-x-0" : "-translate-x-full",
+          "md:relative md:inset-auto md:z-auto md:translate-x-0",
+        ].join(" ")}
+      >
+        {/* Header mobile */}
+        <div className="flex items-center justify-between px-4 py-4 border-b border-slate-100 md:hidden">
+          <span className="text-slate-700 font-semibold text-sm">Filtros</span>
+          <button onClick={() => setFiltrosOpen(false)} className="p-1 text-slate-500 hover:text-slate-700 rounded">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        {/* Header desktop */}
+        <div className="hidden md:flex items-center gap-2 px-4 py-4 border-b border-slate-100 text-slate-700 font-semibold text-sm shrink-0">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
               d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z" />
@@ -368,14 +391,21 @@ setLoading(true);
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-50">
 
         {/* Header */}
-        <div className="shrink-0 flex items-center justify-between px-5 py-3.5 bg-white border-b border-slate-200">
+        <div className="shrink-0 flex items-center justify-between px-4 py-3.5 bg-white border-b border-slate-200">
           <div className="flex items-center gap-2">
+            <button
+              className="md:hidden p-1.5 text-slate-600 hover:bg-slate-100 rounded-lg transition"
+              onClick={() => setFiltrosOpen(true)}
+              title="Filtros"
+            >
+              <Filter className="w-4 h-4" />
+            </button>
             <Building2 className="w-5 h-5 text-[#585a4f]" />
             <h1 className="text-sm font-semibold text-slate-800">
               Imóveis {!loading && `(${total})`}
             </h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 flex-wrap justify-end">
             <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white">
               <button className="p-1.5 bg-slate-100 text-slate-600" title="Lista">
                 <LayoutList className="w-4 h-4" />
@@ -473,7 +503,7 @@ setLoading(true);
                     {/* Barra de status + foto */}
                     <div className="flex gap-3 shrink-0">
                       <div className={`w-1 rounded-full self-stretch ${barColor}`} />
-                      <div className="relative w-44 h-32 rounded-lg overflow-hidden bg-slate-100 shrink-0">
+                      <div className="relative w-24 h-20 sm:w-36 sm:h-28 md:w-44 md:h-32 rounded-lg overflow-hidden bg-slate-100 shrink-0">
                         {imovel.foto_capa ? (
                           <img
                             src={imovel.foto_capa}
@@ -564,7 +594,7 @@ setLoading(true);
                     </div>
 
                     {/* Preço */}
-                    <div className="shrink-0 text-right min-w-[140px]">
+                    <div className="shrink-0 text-right min-w-[90px] sm:min-w-[140px]">
                       <p className="text-xs font-medium text-slate-400">{tipo}</p>
                       <p className="text-base font-bold text-slate-900">{valor}</p>
                       {imovel.condominio_mensal != null && (

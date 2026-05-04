@@ -19,7 +19,7 @@ import { api } from "@/lib/api";
 import { formatarMoeda } from "@/lib/utils";
 import { whatsappLink } from "@/lib/whatsapp";
 
-const SCORE_MAX = 6;
+const SCORE_MAX = 7;
 
 const FILTER_OPTIONS = [
   { label: "Todos", minScore: 0 },
@@ -72,6 +72,7 @@ interface Match {
   valor_venda?: number;
   valor_locacao?: number;
   dormitorios?: number;
+  vagas_garagem?: number;
   foto_capa?: string;
   score: number;
 }
@@ -80,10 +81,11 @@ interface Preferencia {
   tipo_negocio?: string | null;
   tipo_imovel?: string | null;
   cidade?: string | null;
-  bairro?: string | null;
+  bairros?: string[];
   valor_min?: number | null;
   valor_max?: number | null;
   dormitorios_min?: number | null;
+  vagas_garagem_min?: number | null;
   observacoes?: string | null;
 }
 
@@ -148,13 +150,13 @@ function getCriteriaStatus(m: Match, p: Preferencia): CriterioStatus[] {
     criteria.push({ key: "cidade", label: "Cidade", detail: cidadePref, status: ok ? "ok" : "fail" });
   }
 
-  // 4. Bairro
-  const bairroPref = p.bairro?.trim() ?? "";
-  if (!bairroPref) {
+  // 4. Bairros
+  const bairrosList = (p.bairros || []).filter((b) => b.trim());
+  if (!bairrosList.length) {
     criteria.push({ key: "bairro", label: "Bairro", detail: "—", status: "na" });
   } else {
-    const ok = (m.bairro ?? "").toLowerCase().includes(bairroPref.toLowerCase());
-    criteria.push({ key: "bairro", label: "Bairro", detail: bairroPref, status: ok ? "ok" : "fail" });
+    const ok = bairrosList.some((b) => (m.bairro ?? "").toLowerCase().includes(b.toLowerCase()));
+    criteria.push({ key: "bairro", label: "Bairro", detail: bairrosList.join(", "), status: ok ? "ok" : "fail" });
   }
 
   // 5. Dormitórios (0 = sem requisito)
@@ -165,7 +167,15 @@ function getCriteriaStatus(m: Match, p: Preferencia): CriterioStatus[] {
     criteria.push({ key: "dorm", label: "Dorm.", detail: `≥ ${dormPref}`, status: (m.dormitorios ?? 0) >= dormPref ? "ok" : "fail" });
   }
 
-  // 6. Faixa de valor
+  // 6. Vagas de garagem
+  const vagasPref = p.vagas_garagem_min && p.vagas_garagem_min > 0 ? p.vagas_garagem_min : null;
+  if (!vagasPref) {
+    criteria.push({ key: "vagas", label: "Vagas", detail: "—", status: "na" });
+  } else {
+    criteria.push({ key: "vagas", label: "Vagas", detail: `≥ ${vagasPref}`, status: (m.vagas_garagem ?? 0) >= vagasPref ? "ok" : "fail" });
+  }
+
+  // 7. Faixa de valor
   const hasValor = p.valor_min != null || p.valor_max != null;
   if (!hasValor) {
     criteria.push({ key: "valor", label: "Valor", detail: "—", status: "na" });
@@ -609,7 +619,7 @@ function PreferenciaResumo({ pref }: { pref: Preferencia }) {
   if (pref.tipo_negocio) itens.push(TIPO_NEGOCIO_LABEL[pref.tipo_negocio] ?? pref.tipo_negocio);
   if (pref.tipo_imovel) itens.push(TIPO_IMOVEL_LABEL[pref.tipo_imovel] ?? pref.tipo_imovel);
   if (pref.cidade) itens.push(pref.cidade);
-  if (pref.bairro) itens.push(pref.bairro);
+  if (pref.bairros?.length) itens.push(pref.bairros.join(", "));
   if (pref.dormitorios_min) itens.push(`${pref.dormitorios_min}+ dorm.`);
   if (pref.valor_min || pref.valor_max) {
     const faixa = [

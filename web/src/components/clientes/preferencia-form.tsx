@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Save, Trash2 } from "lucide-react";
+import { Loader2, Save, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
@@ -12,10 +12,11 @@ interface Preferencia {
   tipo_negocio?: string | null;
   tipo_imovel?: string | null;
   cidade?: string | null;
-  bairro?: string | null;
+  bairros?: string[];
   valor_min?: number | null;
   valor_max?: number | null;
   dormitorios_min?: number | null;
+  vagas_garagem_min?: number | null;
   observacoes?: string | null;
   ativa?: boolean;
 }
@@ -55,20 +56,21 @@ export function PreferenciaForm({ clienteId, onSaved }: Props) {
     try {
       const payload = {
         ...pref,
-        // Selects: undefined/empty → null para garantir que o banco limpa o campo
         tipo_negocio: pref.tipo_negocio || null,
         tipo_imovel: pref.tipo_imovel || null,
-        // Textos: string vazia → null para manter o banco limpo
         cidade: pref.cidade?.trim() || null,
-        bairro: pref.bairro?.trim() || null,
+        bairros: (pref.bairros || []).filter((b) => b.trim()),
         observacoes: pref.observacoes?.trim() || null,
-        // Números: string vazia ou null → null
         valor_min: pref.valor_min === ("" as unknown) || pref.valor_min == null ? null : Number(pref.valor_min),
         valor_max: pref.valor_max === ("" as unknown) || pref.valor_max == null ? null : Number(pref.valor_max),
         dormitorios_min:
           pref.dormitorios_min === ("" as unknown) || pref.dormitorios_min == null
             ? null
             : Number(pref.dormitorios_min),
+        vagas_garagem_min:
+          pref.vagas_garagem_min === ("" as unknown) || pref.vagas_garagem_min == null
+            ? null
+            : Number(pref.vagas_garagem_min),
       };
       const res = await api.put<Preferencia>(`/clientes/${clienteId}/preferencia`, payload);
       setPref(res.data);
@@ -146,15 +148,52 @@ export function PreferenciaForm({ clienteId, onSaved }: Props) {
             placeholder="Ex: Rio de Janeiro"
           />
         </div>
-        <div>
-          <label className={labelClass}>Bairro</label>
-          <input
-            value={pref.bairro ?? ""}
-            disabled={!isAdmin}
-            onChange={(e) => setPref((p) => ({ ...p, bairro: e.target.value }))}
-            className={inputClass}
-            placeholder="Ex: Leblon, Ipanema"
-          />
+        <div className="sm:col-span-2">
+          <label className={labelClass}>Bairros de interesse</label>
+          <div
+            className={
+              "flex flex-wrap gap-1.5 min-h-[42px] px-3 py-2 border border-slate-200 rounded-lg bg-white " +
+              (isAdmin ? "" : "opacity-60 cursor-not-allowed")
+            }
+          >
+            {(pref.bairros || []).map((b, i) => (
+              <span
+                key={i}
+                className="flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-700 text-xs rounded-md"
+              >
+                {b}
+                {isAdmin && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setPref((p) => ({ ...p, bairros: (p.bairros || []).filter((_, idx) => idx !== i) }))
+                    }
+                    className="text-slate-400 hover:text-red-500 transition"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </span>
+            ))}
+            {isAdmin && (
+              <input
+                placeholder={pref.bairros?.length ? "Adicionar bairro…" : "Ex: Humaitá, Leblon — Enter p/ adicionar"}
+                disabled={!isAdmin}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === ",") {
+                    e.preventDefault();
+                    const val = e.currentTarget.value.trim();
+                    if (val && !(pref.bairros || []).includes(val)) {
+                      setPref((p) => ({ ...p, bairros: [...(p.bairros || []), val] }));
+                    }
+                    e.currentTarget.value = "";
+                  }
+                }}
+                className="flex-1 min-w-[120px] text-sm outline-none bg-transparent text-slate-900 placeholder:text-slate-400"
+              />
+            )}
+          </div>
+          <p className="text-[11px] text-slate-400 mt-1">Enter ou vírgula para adicionar cada bairro.</p>
         </div>
 
         <div>
@@ -201,6 +240,23 @@ export function PreferenciaForm({ clienteId, onSaved }: Props) {
             }
             className={inputClass}
             placeholder="Ex: 3"
+          />
+        </div>
+        <div>
+          <label className={labelClass}>Vagas de garagem mínimas</label>
+          <input
+            type="number"
+            min={0}
+            value={pref.vagas_garagem_min ?? ""}
+            disabled={!isAdmin}
+            onChange={(e) =>
+              setPref((p) => ({
+                ...p,
+                vagas_garagem_min: e.target.value === "" ? null : Number(e.target.value),
+              }))
+            }
+            className={inputClass}
+            placeholder="Ex: 2"
           />
         </div>
         <div>
