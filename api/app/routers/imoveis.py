@@ -1,5 +1,6 @@
 import csv
 import io
+import unicodedata
 import uuid
 from datetime import date
 from enum import Enum
@@ -29,6 +30,12 @@ _CAMPOS_EXPORT = [
 def _ev(v):
     """Extrai o valor string de um enum, ou retorna o valor original."""
     return v.value if isinstance(v, Enum) else v
+
+
+def _norm(s: str) -> str:
+    """Lowercase sem acentos — espelha o que as colunas _norm armazenam no banco."""
+    nfkd = unicodedata.normalize("NFKD", s)
+    return "".join(c for c in nfkd if not unicodedata.combining(c)).lower()
 
 router = APIRouter()
 
@@ -60,9 +67,9 @@ def _aplicar_filtros(query, *, tipo_negocio, disponibilidade, cidade, bairro,
     if disponibilidade:
         query = query.eq("disponibilidade", _ev(disponibilidade))
     if cidade:
-        query = query.ilike("cidade", f"%{cidade}%")
+        query = query.ilike("cidade_norm", f"%{_norm(cidade)}%")
     if bairro:
-        query = query.ilike("bairro", f"%{bairro}%")
+        query = query.ilike("bairro_norm", f"%{_norm(bairro)}%")
     if tipo_imovel:
         query = query.eq("tipo_imovel", _ev(tipo_imovel))
     if dormitorios_min is not None:
