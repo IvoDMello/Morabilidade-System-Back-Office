@@ -27,7 +27,9 @@ async function handler(
       if (val) authHeader = `Bearer ${val}`;
     }
   }
-  if (!authHeader) {
+  const publicPaths = new Set(["auth/recuperar-senha"]);
+  const isPublic = publicPaths.has(path.join("/"));
+  if (!authHeader && !isPublic) {
     return NextResponse.json({ detail: "Não autorizado." }, { status: 401 });
   }
 
