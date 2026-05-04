@@ -4,6 +4,7 @@ Endpoints de preferências de cliente e cálculo de matches (oportunidades).
 Match = imóvel disponível que combina com a preferência ativa do cliente.
 A regra é simples e roda em Python (volume baixo: ~30 imóveis × ~50 clientes).
 """
+import unicodedata
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -22,6 +23,11 @@ VALOR_MINIMO_OPORTUNIDADE = 2_000_000.0
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
+
+def _norm(s: str) -> str:
+    """Lowercase sem acentos para comparações insensíveis a grafia."""
+    nfkd = unicodedata.normalize("NFKD", s)
+    return "".join(c for c in nfkd if not unicodedata.combining(c)).lower()
 
 def _score_imovel_preferencia(pref: dict) -> int:
     """Score de compatibilidade (0-7): conta quantos critérios foram definidos na preferência.
@@ -49,7 +55,7 @@ def _imovel_casa_preferencia(imovel: dict, pref: dict) -> bool:
     """Decide se um imóvel disponível atende à preferência. Critérios:
     - Tipo de negócio: se pref tem 'venda', imóvel precisa ser 'venda' ou 'ambos'.
     - Tipo de imóvel: igual quando definido.
-    - Cidade/bairro: case-insensitive substring (cobre erros de digitação leves).
+    - Cidade/bairro: accent- e case-insensitive substring (cobre erros de digitação leves).
     - Valor mínimo: imóveis de venda < R$ 2M são excluídos (ver VALOR_MINIMO_OPORTUNIDADE).
     - Valor: dentro da faixa quando definido (usa o valor compatível com o tipo de negócio).
     - Dormitórios: imovel.dormitorios >= pref.dormitorios_min.
@@ -64,13 +70,13 @@ def _imovel_casa_preferencia(imovel: dict, pref: dict) -> bool:
     if pref_tipo and imovel.get("tipo_imovel") != pref_tipo:
         return False
 
-    pref_cidade = (pref.get("cidade") or "").strip().lower()
-    if pref_cidade and pref_cidade not in (imovel.get("cidade") or "").lower():
+    pref_cidade = _norm((pref.get("cidade") or "").strip())
+    if pref_cidade and pref_cidade not in _norm(imovel.get("cidade") or ""):
         return False
 
-    pref_bairros = [b.strip().lower() for b in (pref.get("bairros") or []) if b.strip()]
+    pref_bairros = [_norm(b) for b in (pref.get("bairros") or []) if b.strip()]
     if pref_bairros:
-        imovel_bairro = (imovel.get("bairro") or "").lower()
+        imovel_bairro = _norm(imovel.get("bairro") or "")
         if not any(b in imovel_bairro for b in pref_bairros):
             return False
 

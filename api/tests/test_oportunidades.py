@@ -33,7 +33,7 @@ def _pref(**kwargs):
         "tipo_negocio": None,
         "tipo_imovel": None,
         "cidade": None,
-        "bairro": None,
+        "bairros": [],
         "dormitorios_min": None,
         "valor_min": None,
         "valor_max": None,
@@ -129,13 +129,13 @@ class TestFiltroBairro:
     def test_bairro_match_parcial(self):
         assert _imovel_casa_preferencia(
             _imovel(bairro="Pinheiros"),
-            _pref(bairro="pinheiro"),
+            _pref(bairros=["pinheiro"]),
         )
 
     def test_bairro_diferente_rejeita(self):
         assert not _imovel_casa_preferencia(
             _imovel(bairro="Moema"),
-            _pref(bairro="Pinheiros"),
+            _pref(bairros=["Pinheiros"]),
         )
 
 
@@ -249,7 +249,7 @@ class TestScorePreferencia:
             tipo_negocio="venda",
             tipo_imovel="apartamento",
             cidade="São Paulo",
-            bairro="Pinheiros",
+            bairros=["Pinheiros"],
             dormitorios_min=2,
             valor_min=2_000_000.0,
         )
