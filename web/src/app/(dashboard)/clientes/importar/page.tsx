@@ -14,6 +14,7 @@ interface ImportError {
 interface ImportResultado {
   total_lidas: number;
   criadas: number;
+  preferencias_criadas: number;
   erros: number;
   campos_reconhecidos: string[];
   campos_ignorados: string[];
@@ -40,6 +41,16 @@ const CAMPOS_RECONHECIDOS = [
   { campo: "como_conheceu", aliases: "Como Conheceu, Referência" },
   { campo: "observacoes", aliases: "Observações, Obs, Anotações" },
   { campo: "imovel_codigo", aliases: "Código do Imóvel (só para proprietário)" },
+  { campo: "— Perfil de oportunidade (opcional) —", aliases: "" },
+  { campo: "pref_tipo_negocio", aliases: "Pref Tipo Negócio (venda, locacao, ambos)" },
+  { campo: "pref_tipo_imovel", aliases: "Pref Tipo Imóvel (casa, apartamento, terreno, sala, galpao, loja, cobertura, kitnet, outro)" },
+  { campo: "pref_cidade", aliases: "Pref Cidade, Cidade de Interesse" },
+  { campo: "pref_bairros", aliases: "Pref Bairros (separados por vírgula, ex: Jardins,Itaim Bibi)" },
+  { campo: "pref_valor_min", aliases: "Pref Valor Min, Preço Mínimo, Orçamento Mínimo" },
+  { campo: "pref_valor_max", aliases: "Pref Valor Max, Preço Máximo, Orçamento Máximo" },
+  { campo: "pref_dormitorios_min", aliases: "Pref Dormitórios, Quartos Mín, Quartos Busca" },
+  { campo: "pref_vagas_garagem_min", aliases: "Pref Vagas, Vagas Mín, Vagas Garagem Busca" },
+  { campo: "pref_observacoes", aliases: "Pref Observações, Obs Busca, Obs Oportunidade" },
 ];
 
 export default function ImportarClientesPage() {
@@ -70,7 +81,9 @@ export default function ImportarClientesPage() {
       });
       setResultado(res.data);
       if (res.data.criadas > 0) {
-        toast.success(`${res.data.criadas} cliente(s) importado(s) com sucesso.`);
+        const pref = res.data.preferencias_criadas ?? 0;
+        const prefMsg = pref > 0 ? ` com ${pref} perfil(s) de oportunidade.` : ".";
+        toast.success(`${res.data.criadas} cliente(s) importado(s)${prefMsg}`);
       }
       if (res.data.erros > 0) {
         toast.warning(`${res.data.erros} linha(s) com erro — veja os detalhes abaixo.`);
@@ -184,14 +197,18 @@ export default function ImportarClientesPage() {
             </button>
           </div>
 
-          <div className="grid grid-cols-3 gap-3 mb-4">
+          <div className="grid grid-cols-4 gap-3 mb-4">
             <div className="bg-slate-50 rounded-lg p-3">
               <p className="text-xs text-slate-500 uppercase tracking-wide">Lidas</p>
               <p className="text-2xl font-bold text-slate-700">{resultado.total_lidas}</p>
             </div>
             <div className="bg-emerald-50 rounded-lg p-3">
-              <p className="text-xs text-emerald-600 uppercase tracking-wide">Criadas</p>
+              <p className="text-xs text-emerald-600 uppercase tracking-wide">Clientes</p>
               <p className="text-2xl font-bold text-emerald-700">{resultado.criadas}</p>
+            </div>
+            <div className="bg-blue-50 rounded-lg p-3">
+              <p className="text-xs text-blue-600 uppercase tracking-wide">Oportunidades</p>
+              <p className="text-2xl font-bold text-blue-700">{resultado.preferencias_criadas ?? 0}</p>
             </div>
             <div className="bg-amber-50 rounded-lg p-3">
               <p className="text-xs text-amber-600 uppercase tracking-wide">Erros</p>

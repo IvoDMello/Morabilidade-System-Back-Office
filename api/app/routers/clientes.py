@@ -32,6 +32,10 @@ _TIPOS_VALIDOS = {"comprador", "locatario", "proprietario", "investidor"}
 _ORIGENS_VALIDAS = {
     "site", "indicacao", "ligacao", "whatsapp", "instagram", "facebook", "outro",
 }
+_TIPOS_NEGOCIO_VALIDOS = {"venda", "locacao", "ambos"}
+_TIPOS_IMOVEL_VALIDOS = {
+    "casa", "apartamento", "terreno", "sala", "galpao", "loja", "cobertura", "kitnet", "outro",
+}
 
 # Aliases (sem acento, minúsculas, separadores normalizados) → campo do banco.
 # Aceita variações comuns em PT-BR e exports de outros CRMs.
@@ -70,6 +74,46 @@ _ALIASES_HEADER = {
     "imovel_codigo": [
         "imovel codigo", "codigo do imovel", "imovel", "codigo imovel",
         "codigo do imóvel",
+    ],
+}
+
+# Aliases para campos de preferência de oportunidade (prefixo pref_ no campo).
+_ALIASES_PREFERENCIA = {
+    "pref_tipo_negocio": [
+        "pref tipo negocio", "tipo negocio busca", "busca tipo negocio",
+        "negocio pretendido", "interesse tipo negocio",
+    ],
+    "pref_tipo_imovel": [
+        "pref tipo imovel", "tipo imovel busca", "busca tipo imovel",
+        "tipo de imovel buscado", "interesse tipo imovel",
+    ],
+    "pref_cidade": [
+        "pref cidade", "cidade busca", "cidade de interesse",
+        "cidade preferida", "cidade oportunidade",
+    ],
+    "pref_bairros": [
+        "pref bairros", "bairros busca", "bairros de interesse",
+        "pref bairro", "bairro busca", "bairros oportunidade",
+    ],
+    "pref_valor_min": [
+        "pref valor min", "valor minimo busca", "preco minimo",
+        "orcamento minimo", "valor min oportunidade",
+    ],
+    "pref_valor_max": [
+        "pref valor max", "valor maximo busca", "preco maximo",
+        "orcamento maximo", "valor max oportunidade",
+    ],
+    "pref_dormitorios_min": [
+        "pref dormitorios", "dormitorios busca", "dormitorios min busca",
+        "quartos busca", "quartos min", "dormitorios oportunidade",
+    ],
+    "pref_vagas_garagem_min": [
+        "pref vagas", "vagas busca", "vagas min busca",
+        "vagas garagem busca", "vagas oportunidade",
+    ],
+    "pref_observacoes": [
+        "pref observacoes", "observacoes busca", "obs busca",
+        "observacoes oportunidade", "obs oportunidade",
     ],
 }
 
@@ -114,10 +158,13 @@ def _normalizar_header(s: str) -> str:
 
 
 def _construir_mapa_colunas(headers: List[str]) -> dict:
-    """{header_original_no_csv: campo_do_banco}"""
+    """{header_original_no_csv: campo_do_banco}
+    Inclui tanto campos de cliente quanto campos de preferência (prefixo pref_).
+    """
+    todos_aliases = {**_ALIASES_HEADER, **_ALIASES_PREFERENCIA}
     aliases_normalizados = {
         campo: {_normalizar_header(a) for a in aliases} | {campo.replace("_", " ")}
-        for campo, aliases in _ALIASES_HEADER.items()
+        for campo, aliases in todos_aliases.items()
     }
     mapa = {}
     for header in headers:
@@ -153,10 +200,50 @@ def _parse_renda(valor: str) -> Optional[float]:
         return None
 
 
+def _row_para_preferencia(row: dict, mapa: dict) -> Optional[dict]:
+    """Extrai campos de preferência do row (colunas mapeadas com prefixo pref_).
+    Retorna None se nenhum campo de preferência estiver preenchido.
+    """
+    pref: dict = {}
+    for csv_col, campo in mapa.items():
+        if not campo.startswith("pref_"):
+            continue
+        valor = (row.get(csv_col) or "").strip()
+        if not valor:
+            continue
+        pref_campo = campo[5:]  # Remove "pref_" → nome real na tabela
+        if pref_campo == "tipo_negocio":
+            if valor.lower() in _TIPOS_NEGOCIO_VALIDOS:
+                pref["tipo_negocio"] = valor.lower()
+        elif pref_campo == "tipo_imovel":
+            if valor.lower() in _TIPOS_IMOVEL_VALIDOS:
+                pref["tipo_imovel"] = valor.lower()
+        elif pref_campo in ("cidade", "observacoes"):
+            pref[pref_campo] = valor
+        elif pref_campo == "bairros":
+            bairros = [b.strip() for b in valor.split(",") if b.strip()]
+            if bairros:
+                pref["bairros"] = bairros
+        elif pref_campo in ("valor_min", "valor_max"):
+            parsed = _parse_renda(valor)
+            if parsed is not None:
+                pref[pref_campo] = parsed
+        elif pref_campo in ("dormitorios_min", "vagas_garagem_min"):
+            try:
+                pref[pref_campo] = int(valor)
+            except ValueError:
+                pass
+    return pref if pref else None
+
+
 def _row_para_cliente(row: dict, mapa: dict) -> dict:
-    """Aplica mapeamento + sanitização de campos especiais (enum, data, renda)."""
+    """Aplica mapeamento + sanitização de campos especiais (enum, data, renda).
+    Campos com prefixo pref_ são ignorados aqui (pertencem à tabela de preferências).
+    """
     cliente = {}
     for csv_col, campo in mapa.items():
+        if campo.startswith("pref_"):  # Ignorar campos de preferência
+            continue
         valor = (row.get(csv_col) or "").strip()
         if not valor:
             continue
@@ -330,6 +417,7 @@ async def importar_clientes_csv(
     for i, row in enumerate(reader, start=2):  # linha 1 é o cabeçalho
         try:
             cliente = _row_para_cliente(row, mapa)
+            pref_data = _row_para_preferencia(row, mapa)
         except Exception as e:
             erros.append({"linha": i, "motivo": f"Erro ao processar linha: {e}"})
             continue
@@ -337,12 +425,14 @@ async def importar_clientes_csv(
         if not cliente.get("nome_completo") or not cliente.get("telefone"):
             erros.append({"linha": i, "motivo": "Nome ou telefone vazios"})
             continue
-        para_inserir.append((i, cliente))
+        para_inserir.append((i, (cliente, pref_data)))
 
     criadas = 0
-    for i, cliente in para_inserir:
+    preferencias_criadas = 0
+    for i, (cliente, pref_data) in para_inserir:
         try:
-            supabase_admin.table("clientes").insert(cliente).execute()
+            result = supabase_admin.table("clientes").insert(cliente).execute()
+            novo_id = result.data[0]["id"]
             criadas += 1
         except Exception as e:
             err_str = str(e).lower()
@@ -354,14 +444,28 @@ async def importar_clientes_csv(
                 elif "cpf" in err_str or "cnpj" in err_str:
                     motivo = f"CPF/CNPJ já cadastrado: {cliente.get('cpf_cnpj', '')}"
                 else:
-                    motivo = f"Registro duplicado — cliente já existe no sistema"
+                    motivo = "Registro duplicado — cliente já existe no sistema"
             else:
                 motivo = f"Erro do banco: {str(e)[:120]}"
             erros.append({"linha": i, "motivo": motivo})
+            continue
+
+        if pref_data:
+            try:
+                pref_data["cliente_id"] = novo_id
+                pref_data["ativa"] = True
+                supabase_admin.table("cliente_preferencias").insert(pref_data).execute()
+                preferencias_criadas += 1
+            except Exception as e:
+                erros.append({
+                    "linha": i,
+                    "motivo": f"Cliente criado, mas preferência falhou: {str(e)[:100]}",
+                })
 
     return {
         "total_lidas": criadas + len(erros),
         "criadas": criadas,
+        "preferencias_criadas": preferencias_criadas,
         "erros": len(erros),
         "campos_reconhecidos": sorted(campos_mapeados),
         "campos_ignorados": sorted(set(headers) - set(mapa.keys())),
