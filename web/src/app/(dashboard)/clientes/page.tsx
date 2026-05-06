@@ -134,7 +134,11 @@ export default function ClientesPage() {
       await api.delete(`/clientes/${deletando.id}`);
       toast.success("Cliente excluído com sucesso.");
       setDeletando(null);
-      buscar(page, filtros);
+      if (clientes.length === 1 && page > 1) {
+        setPage((p) => p - 1); // useEffect re-fetches página anterior
+      } else {
+        buscar(page, filtros);
+      }
     } catch {
       toast.error("Erro ao excluir cliente.");
     } finally {
@@ -268,11 +272,47 @@ export default function ClientesPage() {
 
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
         {loading ? (
-          <div className="p-12 text-center">
-            <div className="inline-flex items-center gap-2 text-slate-400 text-sm">
-              <div className="w-4 h-4 border-2 border-slate-200 border-t-[#585a4f] rounded-full animate-spin" />
-              Carregando clientes...
-            </div>
+          <div className="overflow-x-auto animate-pulse">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-100 bg-slate-50">
+                  <th className="text-left px-4 py-3"><div className="h-3 w-16 bg-slate-200 rounded" /></th>
+                  <th className="hidden md:table-cell text-left px-4 py-3"><div className="h-3 w-12 bg-slate-200 rounded" /></th>
+                  <th className="text-left px-4 py-3"><div className="h-3 w-14 bg-slate-200 rounded" /></th>
+                  <th className="hidden lg:table-cell text-left px-4 py-3"><div className="h-3 w-20 bg-slate-200 rounded" /></th>
+                  <th className="hidden sm:table-cell text-left px-4 py-3"><div className="h-3 w-16 bg-slate-200 rounded" /></th>
+                  <th className="px-4 py-3" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <tr key={i}>
+                    <td className="px-4 py-3">
+                      <div className="h-4 bg-slate-200 rounded w-40 mb-1.5" />
+                      <div className="h-3 bg-slate-100 rounded w-28" />
+                    </td>
+                    <td className="hidden md:table-cell px-4 py-3">
+                      <div className="h-3 bg-slate-100 rounded w-20" />
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="h-5 bg-slate-200 rounded-full w-20" />
+                    </td>
+                    <td className="hidden lg:table-cell px-4 py-3">
+                      <div className="h-3 bg-slate-100 rounded w-32" />
+                    </td>
+                    <td className="hidden sm:table-cell px-4 py-3">
+                      <div className="h-3 bg-slate-100 rounded w-16" />
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex justify-end gap-1">
+                        <div className="w-8 h-8 bg-slate-100 rounded-md" />
+                        <div className="w-8 h-8 bg-slate-100 rounded-md" />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         ) : clientes.length === 0 ? (
           <div className="p-16 text-center">
@@ -311,7 +351,7 @@ export default function ClientesPage() {
                       <td className="px-4 py-3">
                         <p className="font-medium text-slate-800">{c.nome_completo}</p>
                         <p className="text-xs text-slate-400 mt-0.5">{c.email || c.telefone}</p>
-                        {c.email && <p className="sm:hidden text-xs text-slate-400">{c.telefone}</p>}
+                        {c.email && c.telefone && <p className="sm:hidden text-xs text-slate-400">{c.telefone}</p>}
                         {c.tags && c.tags.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-1.5">
                             {c.tags.map((t) => (

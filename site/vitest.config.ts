@@ -8,6 +8,9 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./src/test/setup.tsx"],
     globals: true,
+    env: {
+      NEXT_PUBLIC_WHATSAPP: "5511999999999",
+    },
     coverage: {
       provider: "v8",
       reporter: ["text", "lcov"],

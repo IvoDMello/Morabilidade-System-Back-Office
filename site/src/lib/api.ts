@@ -48,6 +48,14 @@ export async function getTags(): Promise<Tag[]> {
   return res.json();
 }
 
+export async function getBairros(): Promise<string[]> {
+  const res = await fetch(`${API_URL}/imoveis/publico/bairros`, {
+    next: { revalidate: 3600 },
+  });
+  if (!res.ok) return [];
+  return res.json();
+}
+
 export async function enviarContato(body: {
   nome: string;
   email: string;

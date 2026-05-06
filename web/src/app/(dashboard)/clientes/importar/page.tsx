@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import Link from "next/link";
-import { ArrowLeft, Upload, FileText, CheckCircle2, AlertTriangle, X } from "lucide-react";
+import { ArrowLeft, Upload, FileText, CheckCircle2, AlertTriangle, X, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 
@@ -140,23 +140,33 @@ export default function ImportarClientesPage() {
             />
           </label>
 
-          <div className="flex justify-end gap-2 mt-4">
-            {arquivo && (
-              <button
-                onClick={reset}
-                className="px-4 py-2 text-sm text-slate-500 hover:text-slate-700 transition"
-              >
-                Cancelar
-              </button>
-            )}
-            <button
-              onClick={handleImportar}
-              disabled={!arquivo || enviando}
-              className="flex items-center gap-2 px-5 py-2 text-white text-sm font-medium rounded-lg transition hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ backgroundColor: "#585a4f" }}
+          <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-100">
+            <a
+              href="/template-clientes.csv"
+              download
+              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-[#585a4f] transition"
             >
-              {enviando ? "Importando..." : "Importar"}
-            </button>
+              <FileDown className="w-3.5 h-3.5" />
+              Baixar template CSV
+            </a>
+            <div className="flex gap-2">
+              {arquivo && (
+                <button
+                  onClick={reset}
+                  className="px-4 py-2 text-sm text-slate-500 hover:text-slate-700 transition"
+                >
+                  Cancelar
+                </button>
+              )}
+              <button
+                onClick={handleImportar}
+                disabled={!arquivo || enviando}
+                className="flex items-center gap-2 px-5 py-2 text-white text-sm font-medium rounded-lg transition hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ backgroundColor: "#585a4f" }}
+              >
+                {enviando ? "Importando..." : "Importar"}
+              </button>
+            </div>
           </div>
         </div>
       )}

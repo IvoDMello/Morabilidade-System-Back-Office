@@ -20,6 +20,7 @@ import {
   BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer,
   XAxis, YAxis, Tooltip, Legend, CartesianGrid,
 } from "recharts";
+import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 
@@ -88,16 +89,21 @@ export default function DashboardHome() {
   const user = useAuthStore((s) => s.user);
   const [stats, setStats] = useState<Stats | null>(null);
   const [oportunidades, setOportunidades] = useState<ResumoOportunidades | null>(null);
+  const [loadingStats, setLoadingStats] = useState(true);
 
   useEffect(() => {
-    api.get<Stats>("/stats").then((r) => setStats(r.data)).catch(() => {});
-    api
-      .get<ResumoOportunidades>("/oportunidades/resumo")
-      .then((r) => setOportunidades(r.data))
-      .catch(() => {});
+    Promise.all([
+      api.get<Stats>("/stats").then((r) => setStats(r.data)).catch(() => {
+        setStats({} as Stats);
+        toast.error("Não foi possível carregar as estatísticas.");
+      }),
+      api.get<ResumoOportunidades>("/oportunidades/resumo").then((r) => setOportunidades(r.data)).catch(() => {
+        setOportunidades({ total_oportunidades: 0, clientes_com_preferencia: 0 });
+      }),
+    ]).finally(() => setLoadingStats(false));
   }, []);
 
-  const v = (n: number | undefined) => (stats == null ? "…" : String(n ?? 0));
+  const v = (n: number | undefined) => String(n ?? 0);
   const primeiroNome = user?.nome_completo?.split(" ")[0] ?? "Usuário";
 
   return (
@@ -139,64 +145,94 @@ export default function DashboardHome() {
         <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
           Visão geral
         </h2>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard
-            label="Imóveis cadastrados"
-            value={v(stats?.total_imoveis)}
-            icon={<Building2 className="w-5 h-5 text-blue-500" />}
-            color="blue"
-            href="/imoveis"
-          />
-          <StatCard
-            label="Imóveis disponíveis"
-            value={v(stats?.imoveis_disponiveis)}
-            icon={<CheckCircle2 className="w-5 h-5 text-emerald-500" />}
-            color="emerald"
-            href="/imoveis?disponibilidade=disponivel"
-          />
-          <StatCard
-            label="Clientes cadastrados"
-            value={v(stats?.total_clientes)}
-            icon={<Users className="w-5 h-5 text-violet-500" />}
-            color="violet"
-            href="/clientes"
-          />
-          <StatCard
-            label="Em negociação"
-            value={v(stats?.clientes_em_negociacao)}
-            icon={<TrendingUp className="w-5 h-5 text-amber-500" />}
-            color="amber"
-            href="/clientes?status=em_negociacao"
-          />
-        </div>
 
-        {/* Indicadores operacionais — 2ª linha, alertas e pulso */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
-          <MiniCard
-            label="Sem foto"
-            value={v(stats?.imoveis_sem_foto)}
-            icon={<ImageOff className="w-4 h-4 text-rose-500" />}
-            tone={stats?.imoveis_sem_foto ? "alert" : "neutral"}
-            href="/imoveis"
-            hint="Imóveis publicados sem foto não convertem"
-          />
-          <MiniCard
-            label="Reservados"
-            value={v(stats?.imoveis_reservados)}
-            icon={<Lock className="w-4 h-4 text-amber-500" />}
-            tone="neutral"
-            href="/imoveis?disponibilidade=reservado"
-            hint="Imóveis em pipeline aguardando fechamento"
-          />
-          <MiniCard
-            label="Leads (7 dias)"
-            value={v(stats?.leads_ultimos_7_dias)}
-            icon={<CalendarPlus className="w-4 h-4 text-indigo-500" />}
-            tone="neutral"
-            href="/clientes"
-            hint="Clientes cadastrados na última semana"
-          />
-        </div>
+        {loadingStats ? (
+          <>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-pulse">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="bg-white rounded-xl border border-slate-200 p-5 flex items-start gap-4">
+                  <div className="w-9 h-9 rounded-lg bg-slate-100 flex-shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-3 bg-slate-100 rounded w-3/4" />
+                    <div className="h-8 bg-slate-200 rounded w-1/2" />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3 animate-pulse">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="bg-white rounded-lg border border-slate-200 px-4 py-2.5 flex items-center gap-3">
+                  <div className="w-4 h-4 rounded bg-slate-100" />
+                  <div className="flex-1 space-y-1.5">
+                    <div className="h-2.5 bg-slate-100 rounded w-1/2" />
+                    <div className="h-5 bg-slate-200 rounded w-1/3" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <StatCard
+                label="Imóveis cadastrados"
+                value={v(stats?.total_imoveis)}
+                icon={<Building2 className="w-5 h-5 text-blue-500" />}
+                color="blue"
+                href="/imoveis"
+              />
+              <StatCard
+                label="Imóveis disponíveis"
+                value={v(stats?.imoveis_disponiveis)}
+                icon={<CheckCircle2 className="w-5 h-5 text-emerald-500" />}
+                color="emerald"
+                href="/imoveis?disponibilidade=disponivel"
+              />
+              <StatCard
+                label="Clientes cadastrados"
+                value={v(stats?.total_clientes)}
+                icon={<Users className="w-5 h-5 text-violet-500" />}
+                color="violet"
+                href="/clientes"
+              />
+              <StatCard
+                label="Em negociação"
+                value={v(stats?.clientes_em_negociacao)}
+                icon={<TrendingUp className="w-5 h-5 text-amber-500" />}
+                color="amber"
+                href="/clientes?status=em_negociacao"
+              />
+            </div>
+
+            {/* Indicadores operacionais */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
+              <MiniCard
+                label="Sem foto"
+                value={v(stats?.imoveis_sem_foto)}
+                icon={<ImageOff className="w-4 h-4 text-rose-500" />}
+                tone={stats?.imoveis_sem_foto ? "alert" : "neutral"}
+                href="/imoveis"
+                hint="Imóveis publicados sem foto não convertem"
+              />
+              <MiniCard
+                label="Reservados"
+                value={v(stats?.imoveis_reservados)}
+                icon={<Lock className="w-4 h-4 text-amber-500" />}
+                tone="neutral"
+                href="/imoveis?disponibilidade=reservado"
+                hint="Imóveis em pipeline aguardando fechamento"
+              />
+              <MiniCard
+                label="Leads (7 dias)"
+                value={v(stats?.leads_ultimos_7_dias)}
+                icon={<CalendarPlus className="w-4 h-4 text-indigo-500" />}
+                tone="neutral"
+                href="/clientes"
+                hint="Clientes cadastrados na última semana"
+              />
+            </div>
+          </>
+        )}
 
         {oportunidades && oportunidades.total_oportunidades > 0 && (
           <Link

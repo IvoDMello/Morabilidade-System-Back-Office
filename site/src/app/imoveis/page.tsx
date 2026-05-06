@@ -3,7 +3,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { FiltrosBar } from "@/components/imoveis/FiltrosBar";
 import { ListagemContent } from "@/components/imoveis/ListagemContent";
-import { getImoveisDisponiveis } from "@/lib/api";
+import { getImoveisDisponiveis, getBairros } from "@/lib/api";
 
 const PAGE_SIZE = 12;
 
@@ -15,11 +15,14 @@ export default async function ImoveisPage({ searchParams }: Props) {
   const params = await searchParams;
   const page = Math.max(1, Number(params.page ?? "1"));
 
-  const { data: imoveis, total } = await getImoveisDisponiveis({
-    ...params,
-    page: String(page),
-    page_size: String(PAGE_SIZE),
-  }).catch(() => ({ data: [], total: 0 }));
+  const [{ data: imoveis, total }, bairros] = await Promise.all([
+    getImoveisDisponiveis({
+      ...params,
+      page: String(page),
+      page_size: String(PAGE_SIZE),
+    }).catch(() => ({ data: [], total: 0 })),
+    getBairros(),
+  ]);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
@@ -76,7 +79,7 @@ export default async function ImoveisPage({ searchParams }: Props) {
 
       {/* Filtros horizontais */}
       <Suspense>
-        <FiltrosBar total={total} />
+        <FiltrosBar total={total} bairros={bairros} />
       </Suspense>
 
       {/* Grid */}

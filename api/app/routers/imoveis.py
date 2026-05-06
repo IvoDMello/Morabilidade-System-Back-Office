@@ -141,6 +141,21 @@ def _buscar_imovel(imovel_id: str) -> dict:
 
 # ── Endpoints públicos (devem vir ANTES de /{imovel_id}) ─────────────────────
 
+@router.get("/publico/bairros", tags=["Site Público"])
+@limiter.limit("60/minute")
+def bairros_disponiveis_publico(request: Request):
+    """Bairros únicos dos imóveis disponíveis — usado para autocomplete no site."""
+    result = (
+        supabase_admin.table("imoveis")
+        .select("bairro")
+        .eq("disponibilidade", "disponivel")
+        .not_.is_("bairro", "null")
+        .execute()
+    )
+    bairros = sorted({row["bairro"] for row in (result.data or []) if row.get("bairro")})
+    return bairros
+
+
 @router.get("/publico/disponiveis", response_model=List[ImovelListOut], tags=["Site Público"])
 @limiter.limit("60/minute")
 def imoveis_disponiveis_publico(
@@ -155,6 +170,7 @@ def imoveis_disponiveis_publico(
     preco_max: Optional[float] = None,
     condicao: Optional[CondicaoImovel] = None,
     mobiliado: Optional[Mobiliado] = None,
+    ordenar: Optional[str] = Query(default=None, description="preco_asc | preco_desc | mais_antigo | mais_novo"),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
 ):
@@ -175,7 +191,18 @@ def imoveis_disponiveis_publico(
     query = _aplicar_filtros(
         supabase_admin.table("imoveis").select(_LIST_FIELDS), **filtros
     )
-    result = query.order("created_at", desc=True).range(offset, offset + page_size - 1).execute()
+
+    campo_preco = "valor_locacao" if _ev(tipo_negocio) == TipoNegocio.locacao.value else "valor_venda"
+    if ordenar == "preco_asc":
+        query = query.order(campo_preco, desc=False, nullsfirst=False)
+    elif ordenar == "preco_desc":
+        query = query.order(campo_preco, desc=True, nullsfirst=False)
+    elif ordenar == "mais_antigo":
+        query = query.order("created_at", desc=False)
+    else:
+        query = query.order("created_at", desc=True)
+
+    result = query.range(offset, offset + page_size - 1).execute()
     return [_transformar_lista(item) for item in result.data]
 
 

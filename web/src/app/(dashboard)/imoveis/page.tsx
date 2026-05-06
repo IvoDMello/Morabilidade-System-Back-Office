@@ -181,7 +181,11 @@ setLoading(true);
       await api.delete(`/imoveis/${deletando.id}`);
       toast.success("Imóvel excluído com sucesso.");
       setDeletando(null);
-      buscar(page, filtros);
+      if (imoveis.length === 1 && page > 1) {
+        setPage((p) => p - 1); // useEffect re-fetches página anterior
+      } else {
+        buscar(page, filtros);
+      }
     } catch {
       toast.error("Erro ao excluir imóvel.");
     } finally {
@@ -207,10 +211,10 @@ setLoading(true);
       className="flex overflow-hidden -m-4 md:-m-6"
       style={{ height: "calc(100vh - 64px)" }}
     >
-      {/* Backdrop mobile */}
+      {/* Backdrop mobile — começa abaixo do header (top-16 = 64px) */}
       {filtrosOpen && (
         <div
-          className="fixed inset-0 bg-black/40 z-20 md:hidden"
+          className="fixed top-16 inset-x-0 bottom-0 bg-black/40 z-20 md:hidden"
           onClick={() => setFiltrosOpen(false)}
         />
       )}
@@ -219,9 +223,9 @@ setLoading(true);
       <aside
         className={[
           "w-72 shrink-0 bg-white border-r border-slate-200 flex flex-col overflow-hidden",
-          "fixed inset-y-0 left-0 z-30 transition-transform duration-200",
+          "fixed top-16 left-0 bottom-0 z-30 transition-transform duration-200",
           filtrosOpen ? "translate-x-0" : "-translate-x-full",
-          "md:relative md:inset-auto md:z-auto md:translate-x-0",
+          "md:relative md:top-auto md:bottom-auto md:z-auto md:translate-x-0",
         ].join(" ")}
       >
         {/* Header mobile */}
@@ -438,9 +442,32 @@ setLoading(true);
         {/* Lista */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {loading ? (
-            <div className="flex items-center justify-center h-40 gap-2 text-slate-400 text-sm">
-              <div className="w-4 h-4 border-2 border-slate-200 border-t-[#585a4f] rounded-full animate-spin" />
-              Carregando imóveis...
+            <div className="space-y-3">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="bg-white rounded-lg border border-slate-200 overflow-hidden animate-pulse">
+                  <div className="h-8 bg-slate-100 border-b border-slate-50" />
+                  <div className="flex items-stretch px-4 py-4 gap-4">
+                    <div className="flex gap-3 shrink-0">
+                      <div className="w-1 rounded-full bg-slate-200" />
+                      <div className="w-28 h-24 sm:w-36 sm:h-28 md:w-44 md:h-32 rounded-lg bg-slate-200" />
+                    </div>
+                    <div className="flex-1 min-w-0 space-y-2 py-1">
+                      <div className="h-4 bg-slate-200 rounded w-3/4" />
+                      <div className="h-3 bg-slate-100 rounded w-1/2" />
+                      <div className="h-3 bg-slate-100 rounded w-1/3" />
+                      <div className="flex gap-3 mt-4">
+                        <div className="h-3 w-12 bg-slate-100 rounded" />
+                        <div className="h-3 w-12 bg-slate-100 rounded" />
+                        <div className="h-3 w-16 bg-slate-100 rounded" />
+                      </div>
+                    </div>
+                    <div className="shrink-0 w-24 space-y-1 py-1">
+                      <div className="h-3 bg-slate-100 rounded w-full" />
+                      <div className="h-5 bg-slate-200 rounded w-full" />
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : imoveis.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-48 gap-3">
@@ -503,7 +530,7 @@ setLoading(true);
                     {/* Barra de status + foto */}
                     <div className="flex gap-3 shrink-0">
                       <div className={`w-1 rounded-full self-stretch ${barColor}`} />
-                      <div className="relative w-24 h-20 sm:w-36 sm:h-28 md:w-44 md:h-32 rounded-lg overflow-hidden bg-slate-100 shrink-0">
+                      <div className="relative w-28 h-24 sm:w-36 sm:h-28 md:w-44 md:h-32 rounded-lg overflow-hidden bg-slate-100 shrink-0">
                         {imovel.foto_capa ? (
                           <img
                             src={imovel.foto_capa}

@@ -271,3 +271,141 @@ def test_destaque_ordem_invalido_retorna_400(client):
         )
     assert res.status_code == 400
     assert "1 e 5" in res.json()["detail"]
+
+
+# ── GET /imoveis/publico/bairros ──────────────────────────────────────────────
+
+def test_bairros_publico_retorna_lista_ordenada(anon_client):
+    rows = [{"bairro": "Pinheiros"}, {"bairro": "Jardins"}, {"bairro": "Moema"}]
+    db = make_db_mock(MagicMock(data=rows))
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = anon_client.get("/imoveis/publico/bairros")
+    assert res.status_code == 200
+    body = res.json()
+    assert body == sorted(body)
+    assert set(body) == {"Jardins", "Moema", "Pinheiros"}
+
+
+def test_bairros_publico_deduplica(anon_client):
+    rows = [{"bairro": "Pinheiros"}, {"bairro": "Pinheiros"}, {"bairro": "Jardins"}]
+    db = make_db_mock(MagicMock(data=rows))
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = anon_client.get("/imoveis/publico/bairros")
+    assert res.status_code == 200
+    assert res.json().count("Pinheiros") == 1
+
+
+def test_bairros_publico_exclui_nulos_e_vazios(anon_client):
+    rows = [{"bairro": "Pinheiros"}, {"bairro": None}, {"bairro": ""}]
+    db = make_db_mock(MagicMock(data=rows))
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = anon_client.get("/imoveis/publico/bairros")
+    assert res.status_code == 200
+    body = res.json()
+    assert None not in body
+    assert "" not in body
+    assert body == ["Pinheiros"]
+
+
+def test_bairros_publico_retorna_lista_vazia_sem_imoveis(anon_client):
+    db = make_db_mock(MagicMock(data=[]))
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = anon_client.get("/imoveis/publico/bairros")
+    assert res.status_code == 200
+    assert res.json() == []
+
+
+def test_bairros_publico_acessivel_sem_autenticacao(anon_client):
+    db = make_db_mock(MagicMock(data=[{"bairro": "Pinheiros"}]))
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = anon_client.get("/imoveis/publico/bairros")
+    assert res.status_code == 200
+
+
+def test_bairros_publico_rota_nao_conflita_com_codigo(anon_client):
+    """/publico/bairros não deve ser capturado como /publico/{codigo}."""
+    db = make_db_mock(MagicMock(data=[{"bairro": "Centro"}]))
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = anon_client.get("/imoveis/publico/bairros")
+    assert res.status_code == 200
+    assert isinstance(res.json(), list)
+
+
+# ── GET /imoveis/publico/disponiveis — parâmetro ordenar ─────────────────────
+
+def test_disponiveis_publico_ordenar_preco_asc_usa_campo_valor_venda(anon_client):
+    count_mock = MagicMock(count=1, data=[])
+    data_mock = MagicMock(count=1, data=[IMOVEL_DB])
+    db = make_db_mock(count_mock, data_mock)
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = anon_client.get("/imoveis/publico/disponiveis?ordenar=preco_asc")
+    assert res.status_code == 200
+    calls = [(c.args[0] if c.args else None, c.kwargs) for c in db.order.call_args_list]
+    assert ("valor_venda", {"desc": False, "nullsfirst": False}) in calls
+
+
+def test_disponiveis_publico_ordenar_preco_desc_usa_campo_valor_venda(anon_client):
+    count_mock = MagicMock(count=1, data=[])
+    data_mock = MagicMock(count=1, data=[IMOVEL_DB])
+    db = make_db_mock(count_mock, data_mock)
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = anon_client.get("/imoveis/publico/disponiveis?ordenar=preco_desc")
+    assert res.status_code == 200
+    calls = [(c.args[0] if c.args else None, c.kwargs) for c in db.order.call_args_list]
+    assert ("valor_venda", {"desc": True, "nullsfirst": False}) in calls
+
+
+def test_disponiveis_publico_ordenar_mais_antigo(anon_client):
+    count_mock = MagicMock(count=1, data=[])
+    data_mock = MagicMock(count=1, data=[IMOVEL_DB])
+    db = make_db_mock(count_mock, data_mock)
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = anon_client.get("/imoveis/publico/disponiveis?ordenar=mais_antigo")
+    assert res.status_code == 200
+    calls = [(c.args[0] if c.args else None, c.kwargs) for c in db.order.call_args_list]
+    assert any(campo == "created_at" and not kwargs.get("desc") for campo, kwargs in calls)
+
+
+def test_disponiveis_publico_ordenar_mais_novo_por_padrao(anon_client):
+    count_mock = MagicMock(count=1, data=[])
+    data_mock = MagicMock(count=1, data=[IMOVEL_DB])
+    db = make_db_mock(count_mock, data_mock)
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = anon_client.get("/imoveis/publico/disponiveis")
+    assert res.status_code == 200
+    calls = [(c.args[0] if c.args else None, c.kwargs) for c in db.order.call_args_list]
+    assert any(campo == "created_at" and kwargs.get("desc") is True for campo, kwargs in calls)
+
+
+def test_disponiveis_publico_ordenar_locacao_usa_valor_locacao(anon_client):
+    """Para tipo_negocio=locacao, o campo de ordenação por preço é valor_locacao."""
+    count_mock = MagicMock(count=1, data=[])
+    data_mock = MagicMock(count=1, data=[IMOVEL_DB])
+    db = make_db_mock(count_mock, data_mock)
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = anon_client.get("/imoveis/publico/disponiveis?tipo_negocio=locacao&ordenar=preco_asc")
+    assert res.status_code == 200
+    calls = [(c.args[0] if c.args else None, c.kwargs) for c in db.order.call_args_list]
+    assert ("valor_locacao", {"desc": False, "nullsfirst": False}) in calls
+
+
+def test_disponiveis_publico_ordenar_venda_usa_valor_venda(anon_client):
+    """Para tipo_negocio=venda, o campo de ordenação por preço é valor_venda."""
+    count_mock = MagicMock(count=1, data=[])
+    data_mock = MagicMock(count=1, data=[IMOVEL_DB])
+    db = make_db_mock(count_mock, data_mock)
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = anon_client.get("/imoveis/publico/disponiveis?tipo_negocio=venda&ordenar=preco_desc")
+    assert res.status_code == 200
+    calls = [(c.args[0] if c.args else None, c.kwargs) for c in db.order.call_args_list]
+    assert ("valor_venda", {"desc": True, "nullsfirst": False}) in calls
+
+
+def test_disponiveis_publico_acessivel_sem_autenticacao(anon_client):
+    count_mock = MagicMock(count=0, data=[])
+    data_mock = MagicMock(count=0, data=[])
+    db = make_db_mock(count_mock, data_mock)
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = anon_client.get("/imoveis/publico/disponiveis")
+    assert res.status_code == 200
+    assert res.json() == []

@@ -3,12 +3,13 @@
 import { use, useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Sparkles, SlidersHorizontal } from "lucide-react";
+import { ArrowLeft, Sparkles, SlidersHorizontal, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { ClienteForm, type ClienteFormData } from "@/components/clientes/cliente-form";
 import { PreferenciaForm } from "@/components/clientes/preferencia-form";
 import { MatchesCliente } from "@/components/clientes/matches-cliente";
+import { ClienteNotas } from "@/components/clientes/cliente-notas";
 import type { Cliente } from "@/types";
 
 export default function EditarClientePage({ params }: { params: Promise<{ id: string }> }) {
@@ -156,6 +157,18 @@ export default function EditarClientePage({ params }: { params: Promise<{ id: st
           clienteNome={cliente.nome_completo}
           clienteTelefone={cliente.telefone}
         />
+      </div>
+
+      {/* Notas / histórico de atividade */}
+      <div className="mt-4 bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
+        <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100">
+          <MessageSquare className="w-4 h-4 text-slate-400" />
+          <h2 className="text-sm font-semibold text-slate-700">Notas &amp; Atividade</h2>
+          <span className="text-xs text-slate-400">
+            · histórico de interações com este cliente
+          </span>
+        </div>
+        <ClienteNotas clienteId={cliente.id} />
       </div>
     </div>
   );

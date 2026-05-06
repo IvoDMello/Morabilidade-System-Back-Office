@@ -85,6 +85,7 @@ export interface FiltrosParams {
   preco_max?: string;
   condicao?: string;
   mobiliado?: string;
+  ordenar?: string;
   page?: string;
   page_size?: string;
 }

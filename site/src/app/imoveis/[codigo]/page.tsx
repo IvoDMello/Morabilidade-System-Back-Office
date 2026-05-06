@@ -148,7 +148,7 @@ export default async function DetalheImovelPage({ params }: Props) {
           <span className="text-slate-600 font-mono">{imovel.codigo}</span>
         </nav>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-[3fr_2fr] lg:grid-cols-3 gap-8">
 
           {/* ── Coluna principal ── */}
           <div className="lg:col-span-2 space-y-8">
@@ -268,13 +268,12 @@ export default async function DetalheImovelPage({ params }: Props) {
               <p className="text-sm text-slate-500 mb-4">{endereco}</p>
 
               {/* Google Maps embed */}
-              <div className="rounded-xl overflow-hidden border border-slate-100 shadow-sm mb-3">
+              <div className="relative rounded-xl overflow-hidden border border-slate-100 shadow-sm mb-3 aspect-video">
                 <iframe
                   title={`Mapa — ${endereco}`}
                   src={`https://maps.google.com/maps?q=${mapQuery}&output=embed&hl=pt-BR&z=15`}
-                  width="100%"
-                  height="300"
-                  style={{ border: 0, display: "block" }}
+                  className="absolute inset-0 w-full h-full"
+                  style={{ border: 0 }}
                   allowFullScreen
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
@@ -297,7 +296,7 @@ export default async function DetalheImovelPage({ params }: Props) {
           <div className="space-y-4">
 
             {/* Card de preço */}
-            <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-5 sticky top-20">
+            <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-5 md:sticky md:top-[76px]">
               <p className="text-xs text-slate-400 font-mono mb-1">{imovel.codigo}</p>
 
               {precoVenda && (

@@ -421,3 +421,57 @@ def atualizar_cliente(
 def deletar_cliente(cliente_id: str, current_user: dict = Depends(require_admin)):
     """Remove um cliente (idempotente: retorna 204 mesmo se já não existir)."""
     supabase_admin.table("clientes").delete().eq("id", cliente_id).execute()
+
+
+# ── Notas / histórico de atividade ──────────────────────────────────────────
+
+@router.get("/{cliente_id}/notas")
+def listar_notas(cliente_id: str, current_user: dict = Depends(get_current_user)):
+    result = (
+        supabase_admin.table("cliente_notas")
+        .select("id, conteudo, autor_nome, created_at")
+        .eq("cliente_id", cliente_id)
+        .order("created_at", desc=True)
+        .execute()
+    )
+    return result.data or []
+
+
+@router.post("/{cliente_id}/notas", status_code=status.HTTP_201_CREATED)
+def criar_nota(
+    cliente_id: str,
+    body: dict,
+    current_user: dict = Depends(get_current_user),
+):
+    conteudo = (body.get("conteudo") or "").strip()
+    if not conteudo:
+        raise HTTPException(status_code=422, detail="conteudo não pode ser vazio.")
+    record = {
+        "cliente_id": cliente_id,
+        "conteudo": conteudo,
+        "autor_id": current_user["id"],
+        "autor_nome": current_user.get("nome_completo") or current_user.get("email", ""),
+    }
+    result = supabase_admin.table("cliente_notas").insert(record).execute()
+    return result.data[0]
+
+
+@router.delete("/{cliente_id}/notas/{nota_id}", status_code=status.HTTP_204_NO_CONTENT)
+def deletar_nota(
+    cliente_id: str,
+    nota_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    nota = (
+        supabase_admin.table("cliente_notas")
+        .select("autor_id")
+        .eq("id", nota_id)
+        .eq("cliente_id", cliente_id)
+        .single()
+        .execute()
+    )
+    if not nota.data:
+        raise HTTPException(status_code=404, detail="Nota não encontrada.")
+    if nota.data["autor_id"] != current_user["id"] and current_user.get("perfil") != "admin":
+        raise HTTPException(status_code=403, detail="Sem permissão para remover esta nota.")
+    supabase_admin.table("cliente_notas").delete().eq("id", nota_id).execute()
