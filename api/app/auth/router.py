@@ -77,3 +77,7 @@ def forgot_password(request: Request, body: ForgotPasswordRequest):
         logger.info("[recuperar-senha] e-mail enviado via Resend para email=%s", body.email)
     except Exception:
         logger.exception("[recuperar-senha] falha ao enviar e-mail via Resend")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Falha ao enviar o e-mail de recuperação. Tente novamente em instantes.",
+        )

@@ -2,7 +2,8 @@
 Endpoints de preferências de cliente e cálculo de matches (oportunidades).
 
 Match = imóvel disponível que combina com a preferência ativa do cliente.
-A regra é simples e roda em Python (volume baixo: ~30 imóveis × ~50 clientes).
+O resumo de oportunidades roda inteiramente no Postgres via contar_oportunidades()
+(migration 012). Os matches individuais por cliente/imóvel são calculados em Python.
 """
 import unicodedata
 from typing import List
