@@ -98,13 +98,13 @@ AS $$
                   )
               )
 
-              -- Bairros: qualquer elemento do array jsonb que seja substring de bairro_norm
+              -- Bairros: qualquer elemento do array text[] que seja substring de bairro_norm
               AND (
                   cp.bairros IS NULL
-                  OR jsonb_array_length(cp.bairros) = 0
+                  OR cardinality(cp.bairros) = 0
                   OR EXISTS (
                       SELECT 1
-                      FROM jsonb_array_elements_text(cp.bairros) AS b(bairro)
+                      FROM unnest(cp.bairros) AS b(bairro)
                       WHERE trim(b.bairro) != ''
                         AND i.bairro_norm ILIKE '%' || unaccent_immutable(lower(trim(b.bairro))) || '%'
                   )
