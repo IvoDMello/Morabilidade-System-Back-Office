@@ -276,39 +276,14 @@ def resumo_oportunidades(current_user: dict = Depends(get_current_user)):
     """
     Resumo geral para o dashboard: quantas oportunidades existem hoje
     e qual o total de clientes com preferências ativas.
+    O cruzamento imóvel × preferência roda inteiramente no Postgres
+    via função contar_oportunidades() (migration 012).
     """
-    prefs_resp = (
-        supabase_admin.table("cliente_preferencias")
-        .select(
-            "id, cliente_id, tipo_negocio, tipo_imovel, cidade, bairros, "
-            "valor_min, valor_max, dormitorios_min, vagas_garagem_min"
-        )
-        .eq("ativa", True)
-        .execute()
-    )
-    prefs = prefs_resp.data or []
-
-    if not prefs:
-        return {"total_oportunidades": 0, "clientes_com_preferencia": 0}
-
-    imoveis_resp = (
-        supabase_admin.table("imoveis")
-        .select(
-            "id, tipo_negocio, tipo_imovel, cidade, bairro, "
-            "valor_venda, valor_locacao, dormitorios, vagas_garagem"
-        )
-        .eq("disponibilidade", "disponivel")
-        .execute()
-    )
-    imoveis = imoveis_resp.data or []
-
-    total = sum(
-        1
-        for pref in prefs
-        for imovel in imoveis
-        if _imovel_casa_preferencia(imovel, pref)
-    )
-    return {
-        "total_oportunidades": total,
-        "clientes_com_preferencia": len(prefs),
-    }
+    result = supabase_admin.rpc("contar_oportunidades").execute()
+    if result.data:
+        row = result.data[0]
+        return {
+            "total_oportunidades": row.get("total_oportunidades", 0),
+            "clientes_com_preferencia": row.get("clientes_com_preferencia", 0),
+        }
+    return {"total_oportunidades": 0, "clientes_com_preferencia": 0}
