@@ -402,13 +402,22 @@ async def importar_clientes_csv(
     mapa = _construir_mapa_colunas(headers)
     campos_mapeados = set(mapa.values())
 
-    if "nome_completo" not in campos_mapeados or "telefone" not in campos_mapeados:
+    if "nome_completo" not in campos_mapeados:
         raise HTTPException(
             status_code=400,
             detail=(
-                "CSV precisa ter colunas reconhecidas para Nome e Telefone. "
+                "CSV precisa ter uma coluna reconhecida para Nome. "
                 f"Colunas encontradas: {headers}. "
-                "Renomeie os cabeçalhos no arquivo (ex: Nome, Telefone) e tente de novo."
+                "Renomeie o cabeçalho no arquivo (ex: Nome) e tente de novo."
+            ),
+        )
+    if "telefone" not in campos_mapeados and "instagram" not in campos_mapeados:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "CSV precisa ter ao menos Telefone ou Instagram. "
+                f"Colunas encontradas: {headers}. "
+                "Adicione uma coluna Telefone ou Instagram e tente de novo."
             ),
         )
 
@@ -422,8 +431,11 @@ async def importar_clientes_csv(
             erros.append({"linha": i, "motivo": f"Erro ao processar linha: {e}"})
             continue
 
-        if not cliente.get("nome_completo") or not cliente.get("telefone"):
-            erros.append({"linha": i, "motivo": "Nome ou telefone vazios"})
+        if not cliente.get("nome_completo"):
+            erros.append({"linha": i, "motivo": "Nome vazio"})
+            continue
+        if not cliente.get("telefone") and not cliente.get("instagram"):
+            erros.append({"linha": i, "motivo": "Telefone e Instagram vazios — informe ao menos um"})
             continue
         para_inserir.append((i, (cliente, pref_data)))
 
