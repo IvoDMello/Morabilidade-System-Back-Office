@@ -10,9 +10,9 @@ export const metadata: Metadata = {
   title: "Morabilidade — Sistema de Gestão",
   description: "Painel administrativo interno da imobiliária Morabilidade.",
   icons: {
-    icon: "/favicon.png",
-    shortcut: "/favicon.png",
-    apple: "/favicon.png",
+    icon: "/favcon_Mora.png",
+    shortcut: "/favcon_Mora.png",
+    apple: "/favcon_Mora.png",
   },
 };
 

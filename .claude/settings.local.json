@@ -149,7 +149,8 @@
       "Bash(npx vitest *)",
       "Bash(.venv\\\\Scripts\\\\python.exe -m pytest tests/ -v)",
       "Bash(.venv\\\\Scripts\\\\python.exe -m pytest web/ --collect-only)",
-      "Bash(venv\\\\Scripts\\\\python -m pytest tests/ -v --tb=short)"
+      "Bash(venv\\\\Scripts\\\\python -m pytest tests/ -v --tb=short)",
+      "Bash(Copy-Item \"c:\\\\Users\\\\ivomp\\\\OneDrive\\\\Área de Trabalho\\\\Morabilidade-System-Back-Office\\\\site\\\\public\\\\favcon_Mora.png\" \"c:\\\\Users\\\\ivomp\\\\OneDrive\\\\Área de Trabalho\\\\Morabilidade-System-Back-Office\\\\web\\\\public\\\\favcon_Mora.png\")"
     ]
   }
 }
