@@ -208,8 +208,12 @@ def test_logout_falha_no_supabase_ainda_retorna_204(client):
 # ── POST /auth/recuperar-senha ────────────────────────────────────────────────
 
 def test_recuperar_senha_email_valido_retorna_204(anon_client):
-    supabase_mock = MagicMock()
-    with patch("app.auth.router.supabase", supabase_mock):
+    supabase_admin_mock = MagicMock()
+    supabase_admin_mock.auth.admin.generate_link.return_value = MagicMock(
+        properties=MagicMock(action_link="https://example.com/reset")
+    )
+    with patch("app.auth.router.supabase_admin", supabase_admin_mock), \
+         patch("app.auth.router.enviar_recuperacao_senha"):
         res = anon_client.post(
             "/auth/recuperar-senha",
             json={"email": "usuario@teste.com"},
@@ -219,10 +223,11 @@ def test_recuperar_senha_email_valido_retorna_204(anon_client):
 
 def test_recuperar_senha_email_inexistente_ainda_retorna_204(anon_client):
     """Não deve revelar se o e-mail existe ou não."""
-    supabase_mock = MagicMock()
-    supabase_mock.auth.reset_password_email.side_effect = Exception("user not found")
+    supabase_admin_mock = MagicMock()
+    supabase_admin_mock.auth.admin.generate_link.side_effect = Exception("user not found")
 
-    with patch("app.auth.router.supabase", supabase_mock):
+    with patch("app.auth.router.supabase_admin", supabase_admin_mock), \
+         patch("app.auth.router.enviar_recuperacao_senha"):
         res = anon_client.post(
             "/auth/recuperar-senha",
             json={"email": "naoexiste@teste.com"},

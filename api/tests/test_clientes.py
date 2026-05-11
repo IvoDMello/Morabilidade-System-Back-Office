@@ -308,7 +308,8 @@ def test_importar_csv_pula_linhas_invalidas(client):
     assert body["criadas"] == 1
     assert body["erros"] == 2
     motivos = [e["motivo"] for e in body["detalhes_erros"]]
-    assert all("Nome ou telefone vazios" in m for m in motivos)
+    assert any("Nome" in m and "vazio" in m.lower() for m in motivos)
+    assert any("Telefone" in m or "telefone" in m for m in motivos)
 
 
 def test_importar_csv_sem_colunas_minimas(client):

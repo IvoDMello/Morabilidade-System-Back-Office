@@ -25,7 +25,7 @@ export function Navbar() {
     <>
       <header
         className="sticky top-0 z-50"
-        style={{ backgroundColor: "#585a4f", height: "clamp(64px, 8vw, 76px)" }}
+        style={{ backgroundColor: "#585a4f", height: "clamp(64px, 10vw, 76px)" }}
       >
         <div
           className="flex items-center justify-between h-full"
@@ -38,7 +38,7 @@ export function Navbar() {
               alt="Morabilidade"
               width={220}
               height={64}
-              style={{ height: "clamp(50px, 6vw, 62px)", width: "auto", objectFit: "contain" }}
+              style={{ height: "clamp(44px, 9vw, 62px)", width: "auto", objectFit: "contain" }}
               priority
             />
           </Link>

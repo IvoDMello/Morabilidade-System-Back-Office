@@ -575,21 +575,9 @@ def test_resumo_sem_preferencias_ativas_retorna_zeros(client):
 
 
 def test_resumo_conta_pares_validos(client):
-    pref_mock = MagicMock(data=[PREF_ATIVA])
-    # Imóvel compatível (venda, tipo apartamento, SP, valor > 2M)
-    imoveis_mock = MagicMock(data=[
-        {
-            "id": "i1",
-            "tipo_negocio": "venda",
-            "tipo_imovel": "apartamento",
-            "cidade": "São Paulo",
-            "bairro": "Pinheiros",
-            "valor_venda": 3_000_000.0,
-            "valor_locacao": None,
-            "dormitorios": 3,
-        }
-    ])
-    db = make_db_mock(pref_mock, imoveis_mock)
+    # O endpoint chama apenas rpc("contar_oportunidades") — mock deve refletir o retorno do Postgres
+    rpc_result = MagicMock(data=[{"total_oportunidades": 1, "clientes_com_preferencia": 1}])
+    db = make_db_mock(rpc_result)
 
     with patch("app.routers.oportunidades.supabase_admin", db):
         res = client.get("/oportunidades/resumo")
