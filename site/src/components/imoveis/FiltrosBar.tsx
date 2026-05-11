@@ -104,7 +104,7 @@ export function FiltrosBar({ total, bairros = [] }: Props) {
 
   return (
     <div
-      className="bg-[#fcfcfc] sticky z-[90]"
+      className="bg-[#fcfcfc] md:sticky z-[40] md:z-[90]"
       style={{ top: 60, borderBottom: "1px solid #e4e1d6" }}
     >
       <div

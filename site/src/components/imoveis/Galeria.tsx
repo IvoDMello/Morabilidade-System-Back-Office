@@ -1,12 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight, ImageOff } from "lucide-react";
 import type { Foto } from "@/types";
 
 export function Galeria({ fotos }: { fotos: Foto[] }) {
   const [ativa, setAtiva] = useState(0);
+  const touchStartX = useRef<number | null>(null);
+  const touchDeltaX = useRef(0);
+
+  function onTouchStart(e: React.TouchEvent) {
+    touchStartX.current = e.touches[0].clientX;
+    touchDeltaX.current = 0;
+  }
+
+  function onTouchMove(e: React.TouchEvent) {
+    if (touchStartX.current === null) return;
+    touchDeltaX.current = e.touches[0].clientX - touchStartX.current;
+  }
+
+  function onTouchEnd() {
+    const threshold = 40;
+    if (touchDeltaX.current > threshold) anterior();
+    else if (touchDeltaX.current < -threshold) proxima();
+    touchStartX.current = null;
+    touchDeltaX.current = 0;
+  }
 
   if (fotos.length === 0) {
     return (
@@ -29,8 +49,11 @@ export function Galeria({ fotos }: { fotos: Foto[] }) {
     <div className="space-y-3">
       {/* Foto principal — vertical, com altura limitada pra não estourar a tela */}
       <div
-        className="relative w-full max-w-md mx-auto aspect-[3/4] rounded-xl overflow-hidden bg-slate-100 group"
-        style={{ maxHeight: "min(75vh, 700px)" }}
+        className="relative w-full max-w-md mx-auto aspect-[3/4] rounded-xl overflow-hidden bg-slate-100 group select-none"
+        style={{ maxHeight: "min(75vh, 700px)", touchAction: "pan-y" }}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
       >
         <Image
           key={fotos[ativa].url}
@@ -46,14 +69,14 @@ export function Galeria({ fotos }: { fotos: Foto[] }) {
           <>
             <button
               onClick={anterior}
-              className="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 text-white hover:bg-black/60 transition opacity-0 group-hover:opacity-100"
+              className="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 text-white hover:bg-black/60 transition opacity-100 md:opacity-0 md:group-hover:opacity-100"
               aria-label="Foto anterior"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
             <button
               onClick={proxima}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 text-white hover:bg-black/60 transition opacity-0 group-hover:opacity-100"
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 text-white hover:bg-black/60 transition opacity-100 md:opacity-0 md:group-hover:opacity-100"
               aria-label="Próxima foto"
             >
               <ChevronRight className="w-5 h-5" />
