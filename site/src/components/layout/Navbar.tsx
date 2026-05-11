@@ -24,8 +24,8 @@ export function Navbar() {
   return (
     <>
       <header
-        className="sticky top-0 z-50"
-        style={{ backgroundColor: "#585a4f", height: "clamp(64px, 10vw, 76px)" }}
+        className="hidden md:block sticky top-0 z-50"
+        style={{ backgroundColor: "#585a4f", height: "clamp(72px, 10vw, 76px)" }}
       >
         <div
           className="flex items-center justify-between h-full"
@@ -38,13 +38,13 @@ export function Navbar() {
               alt="Morabilidade"
               width={220}
               height={64}
-              style={{ height: "clamp(44px, 9vw, 62px)", width: "auto", objectFit: "contain" }}
+              style={{ height: "clamp(56px, 9vw, 62px)", width: "auto", objectFit: "contain" }}
               priority
             />
           </Link>
 
           {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-6">
+          <nav className="flex items-center gap-6">
             {links.map((link) => {
               const active = isActive(link.href);
               return (
@@ -96,23 +96,37 @@ export function Navbar() {
             </Link>
           </nav>
 
-          {/* Mobile hamburger */}
-          <button
-            className="md:hidden flex items-center justify-center"
-            style={{ background: "transparent", border: "none", color: "#fcfcfc", cursor: "pointer", padding: 4 }}
-            onClick={() => setOpen((v) => !v)}
-            aria-label={open ? "Fechar menu" : "Abrir menu"}
-          >
-            {open ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
         </div>
       </header>
+
+      {/* Mobile floating hamburger */}
+      <button
+        className="md:hidden fixed flex items-center justify-center"
+        style={{
+          top: 16,
+          right: 16,
+          zIndex: 60,
+          width: 48,
+          height: 48,
+          backgroundColor: "#d8cb6a",
+          border: "2px solid rgba(252,252,252,0.85)",
+          borderRadius: 12,
+          color: "#3e4037",
+          cursor: "pointer",
+          padding: 0,
+          boxShadow: "0 4px 16px rgba(0,0,0,0.35), 0 0 0 4px rgba(216,203,106,0.18)",
+        }}
+        onClick={() => setOpen((v) => !v)}
+        aria-label={open ? "Fechar menu" : "Abrir menu"}
+      >
+        {open ? <X className="w-6 h-6" strokeWidth={2.5} /> : <Menu className="w-6 h-6" strokeWidth={2.5} />}
+      </button>
 
       {/* Mobile menu — fullscreen overlay */}
       {open && (
         <div
-          className="md:hidden fixed inset-0 z-40 flex flex-col"
-          style={{ top: "clamp(64px, 8vw, 76px)", backgroundColor: "#3e4037", padding: "32px 28px" }}
+          className="md:hidden fixed inset-0 z-50 flex flex-col"
+          style={{ backgroundColor: "#3e4037", padding: "88px 28px 32px" }}
         >
           {links.map((link) => (
             <Link
