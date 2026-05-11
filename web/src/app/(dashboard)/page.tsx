@@ -14,12 +14,7 @@ import {
   ImageOff,
   CalendarPlus,
   Lock,
-  Sparkles,
 } from "lucide-react";
-import {
-  BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer,
-  XAxis, YAxis, Tooltip, Legend, CartesianGrid,
-} from "recharts";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
@@ -27,11 +22,6 @@ import { useAuthStore } from "@/lib/auth-store";
 interface ImovelMaisAntigo {
   codigo: string;
   created_at: string;
-}
-
-interface ResumoOportunidades {
-  total_oportunidades: number;
-  clientes_com_preferencia: number;
 }
 
 interface Stats {
@@ -42,32 +32,8 @@ interface Stats {
   total_clientes: number;
   clientes_em_negociacao: number;
   leads_ultimos_7_dias?: number;
-  clientes_por_status?: Record<string, number>;
-  clientes_por_origem?: Record<string, number>;
   imovel_mais_antigo?: ImovelMaisAntigo | null;
 }
-
-const STATUS_LABEL: Record<string, string> = {
-  ativo: "Ativo",
-  em_negociacao: "Em negociação",
-  inativo: "Inativo",
-  concluido: "Concluído",
-  indefinido: "Sem status",
-};
-
-const ORIGEM_LABEL: Record<string, string> = {
-  site: "Site",
-  indicacao: "Indicação",
-  ligacao: "Ligação",
-  whatsapp: "WhatsApp",
-  instagram: "Instagram",
-  facebook: "Facebook",
-  outro: "Outro",
-  indefinido: "Sem origem",
-};
-
-// Paleta alinhada com a marca olive/gold + tons complementares.
-const PALETA = ["#585a4f", "#d8cb6a", "#8b8a72", "#c2b96a", "#a8a78f", "#e3d895", "#6f7163", "#bcb592"];
 
 function saudacao(): string {
   const h = new Date().getHours();
@@ -88,19 +54,16 @@ function dataFormatada(): string {
 export default function DashboardHome() {
   const user = useAuthStore((s) => s.user);
   const [stats, setStats] = useState<Stats | null>(null);
-  const [oportunidades, setOportunidades] = useState<ResumoOportunidades | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
 
   useEffect(() => {
-    Promise.all([
-      api.get<Stats>("/stats").then((r) => setStats(r.data)).catch(() => {
+    api.get<Stats>("/stats")
+      .then((r) => setStats(r.data))
+      .catch(() => {
         setStats({} as Stats);
         toast.error("Não foi possível carregar as estatísticas.");
-      }),
-      api.get<ResumoOportunidades>("/oportunidades/resumo").then((r) => setOportunidades(r.data)).catch(() => {
-        setOportunidades({ total_oportunidades: 0, clientes_com_preferencia: 0 });
-      }),
-    ]).finally(() => setLoadingStats(false));
+      })
+      .finally(() => setLoadingStats(false));
   }, []);
 
   const v = (n: number | undefined) => String(n ?? 0);
@@ -234,25 +197,6 @@ export default function DashboardHome() {
           </>
         )}
 
-        {oportunidades && oportunidades.total_oportunidades > 0 && (
-          <Link
-            href="/clientes"
-            className="mt-3 flex items-center gap-3 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-lg hover:border-amber-300 transition group"
-            title="Ver clientes para acionar pelas preferências"
-          >
-            <Sparkles className="w-4 h-4 text-amber-500 flex-shrink-0" />
-            <p className="text-xs text-amber-800">
-              <strong className="font-semibold text-amber-900">
-                {oportunidades.total_oportunidades} oportunidade
-                {oportunidades.total_oportunidades !== 1 ? "s" : ""}
-              </strong>{" "}
-              de match — {oportunidades.clientes_com_preferencia} cliente
-              {oportunidades.clientes_com_preferencia !== 1 ? "s" : ""} com preferência ativa.
-              <span className="text-amber-600"> Veja na ficha de cada cliente.</span>
-            </p>
-          </Link>
-        )}
-
         {stats?.imovel_mais_antigo && (
           <Link
             href={`/imoveis?codigo=${encodeURIComponent(stats.imovel_mais_antigo.codigo)}`}
@@ -270,21 +214,6 @@ export default function DashboardHome() {
             </p>
           </Link>
         )}
-      </div>
-
-      {/* Gráficos */}
-      <div>
-        <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
-          Distribuição de clientes
-        </h2>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <ChartCard title="Origem dos leads">
-            <OrigemChart dados={stats?.clientes_por_origem} />
-          </ChartCard>
-          <ChartCard title="Clientes por status">
-            <StatusChart dados={stats?.clientes_por_status} />
-          </ChartCard>
-        </div>
       </div>
 
       {/* Ações rápidas */}
@@ -386,91 +315,6 @@ function MiniCard({
         </p>
       </div>
     </Link>
-  );
-}
-
-function ChartCard({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="bg-white rounded-xl border border-slate-200 p-5">
-      <h3 className="text-sm font-semibold text-slate-700 mb-3">{title}</h3>
-      <div className="h-64">{children}</div>
-    </div>
-  );
-}
-
-function vazio(dados?: Record<string, number>): boolean {
-  if (!dados) return true;
-  const valores = Object.values(dados);
-  return valores.length === 0 || valores.every((v) => v === 0);
-}
-
-function OrigemChart({ dados }: { dados?: Record<string, number> }) {
-  if (vazio(dados)) return <ChartEmpty />;
-  const data = Object.entries(dados!)
-    .map(([k, v]) => ({ nome: ORIGEM_LABEL[k] ?? k, valor: v }))
-    .sort((a, b) => b.valor - a.valor);
-
-  return (
-    <ResponsiveContainer width="100%" height="100%">
-      <PieChart>
-        <Pie
-          data={data}
-          dataKey="valor"
-          nameKey="nome"
-          cx="50%"
-          cy="50%"
-          innerRadius={45}
-          outerRadius={85}
-          paddingAngle={2}
-        >
-          {data.map((_, i) => (
-            <Cell key={i} fill={PALETA[i % PALETA.length]} />
-          ))}
-        </Pie>
-        <Tooltip
-          contentStyle={{ borderRadius: 8, border: "1px solid #e6e6dd", fontSize: 13 }}
-          formatter={(value) => {
-            const n = Number(value);
-            return [`${n} cliente${n !== 1 ? "s" : ""}`, ""];
-          }}
-        />
-        <Legend wrapperStyle={{ fontSize: 12 }} iconType="circle" />
-      </PieChart>
-    </ResponsiveContainer>
-  );
-}
-
-function StatusChart({ dados }: { dados?: Record<string, number> }) {
-  if (vazio(dados)) return <ChartEmpty />;
-  const data = Object.entries(dados!)
-    .map(([k, v]) => ({ nome: STATUS_LABEL[k] ?? k, valor: v }))
-    .sort((a, b) => b.valor - a.valor);
-
-  return (
-    <ResponsiveContainer width="100%" height="100%">
-      <BarChart data={data} margin={{ top: 12, right: 12, bottom: 0, left: -16 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0e8" vertical={false} />
-        <XAxis dataKey="nome" tick={{ fontSize: 11, fill: "#666" }} axisLine={false} tickLine={false} />
-        <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#666" }} axisLine={false} tickLine={false} />
-        <Tooltip
-          contentStyle={{ borderRadius: 8, border: "1px solid #e6e6dd", fontSize: 13 }}
-          cursor={{ fill: "#f5f5f0" }}
-          formatter={(value) => {
-            const n = Number(value);
-            return [`${n} cliente${n !== 1 ? "s" : ""}`, ""];
-          }}
-        />
-        <Bar dataKey="valor" fill="#585a4f" radius={[6, 6, 0, 0]} />
-      </BarChart>
-    </ResponsiveContainer>
-  );
-}
-
-function ChartEmpty() {
-  return (
-    <div className="h-full flex items-center justify-center text-sm text-slate-400">
-      Sem dados ainda
-    </div>
   );
 }
 
