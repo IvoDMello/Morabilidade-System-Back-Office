@@ -81,6 +81,7 @@ export interface FiltrosParams {
   bairro?: string;
   tipo_imovel?: string;
   dormitorios_min?: string;
+  andar_max?: string;
   preco_min?: string;
   preco_max?: string;
   condicao?: string;

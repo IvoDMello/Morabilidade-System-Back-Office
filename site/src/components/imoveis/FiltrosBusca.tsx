@@ -15,6 +15,7 @@ const VAZIOS: FiltrosParams = {
   bairro: "",
   tipo_imovel: "",
   dormitorios_min: "",
+  andar_max: "",
   preco_min: "",
   preco_max: "",
   condicao: "",
@@ -36,6 +37,7 @@ export function FiltrosBusca({ layout = "top" }: Props) {
     bairro: params.get("bairro") ?? "",
     tipo_imovel: params.get("tipo_imovel") ?? "",
     dormitorios_min: params.get("dormitorios_min") ?? "",
+    andar_max: params.get("andar_max") ?? "",
     preco_min: params.get("preco_min") ?? "",
     preco_max: params.get("preco_max") ?? "",
     condicao: params.get("condicao") ?? "",
@@ -87,12 +89,8 @@ export function FiltrosBusca({ layout = "top" }: Props) {
           <option value="">Todos os tipos</option>
           <option value="casa">Casa</option>
           <option value="apartamento">Apartamento</option>
-          <option value="terreno">Terreno</option>
-          <option value="sala">Sala comercial</option>
           <option value="galpao">Galpão</option>
-          <option value="loja">Loja</option>
           <option value="cobertura">Cobertura</option>
-          <option value="kitnet">Kitnet / Studio</option>
           <option value="outro">Outro</option>
         </select>
       </div>
@@ -111,6 +109,18 @@ export function FiltrosBusca({ layout = "top" }: Props) {
           <option value="4">4 ou mais</option>
         </select>
       </div>
+
+      <label className="flex items-center gap-2 cursor-pointer select-none text-sm text-slate-700">
+        <input
+          type="checkbox"
+          checked={filtros.andar_max === "1"}
+          onChange={(e) =>
+            setFiltros((f) => ({ ...f, andar_max: e.target.checked ? "1" : "" }))
+          }
+          className="w-4 h-4 rounded accent-[#585a4f]"
+        />
+        Apenas térreo <span className="text-slate-400">(1º andar)</span>
+      </label>
 
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -279,10 +289,7 @@ export function FiltrosBusca({ layout = "top" }: Props) {
                   <option value="">Todos</option>
                   <option value="casa">Casa</option>
                   <option value="apartamento">Apartamento</option>
-                  <option value="terreno">Terreno</option>
-                  <option value="sala">Sala comercial</option>
                   <option value="cobertura">Cobertura</option>
-                  <option value="kitnet">Kitnet</option>
                 </select>
               </div>
               <div>

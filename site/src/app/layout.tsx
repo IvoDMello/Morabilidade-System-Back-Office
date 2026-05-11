@@ -22,6 +22,11 @@ export const metadata: Metadata = {
   },
   description:
     "Encontre casas, apartamentos e imóveis disponíveis para venda e locação. A Morabilidade é sua imobiliária de confiança.",
+  icons: {
+    icon: "/favcon_Mora.png",
+    shortcut: "/favcon_Mora.png",
+    apple: "/favcon_Mora.png",
+  },
   openGraph: {
     siteName: "Morabilidade",
     locale: "pt_BR",

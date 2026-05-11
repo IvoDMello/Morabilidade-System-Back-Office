@@ -71,24 +71,6 @@ def get_stats(current_user: dict = Depends(get_current_user)):
     em_negociacao = (supabase_admin.table("clientes").select("id", count="exact")
                      .eq("status", "em_negociacao").execute().count or 0)
 
-    # Agregações para os gráficos do dashboard.
-    # Não há GROUP BY no PostgREST, então puxamos só os campos relevantes
-    # e contamos no Python — escala bem até alguns milhares de clientes.
-    clientes_raw = (
-        supabase_admin.table("clientes")
-        .select("status, origem_lead")
-        .execute()
-        .data
-        or []
-    )
-    por_status: dict = {}
-    por_origem: dict = {}
-    for c in clientes_raw:
-        s = c.get("status") or "indefinido"
-        o = c.get("origem_lead") or "indefinido"
-        por_status[s] = por_status.get(s, 0) + 1
-        por_origem[o] = por_origem.get(o, 0) + 1
-
     # Imóvel mais antigo AINDA NO PORTFÓLIO (disponível ou reservado).
     # Vendidos/locados ficam de fora — eles não são mais portfólio ativo.
     mais_antigo_resp = (
@@ -131,8 +113,6 @@ def get_stats(current_user: dict = Depends(get_current_user)):
         "total_clientes": total_clientes,
         "clientes_em_negociacao": em_negociacao,
         "leads_ultimos_7_dias": leads_7d,
-        "clientes_por_status": por_status,
-        "clientes_por_origem": por_origem,
         "imovel_mais_antigo": imovel_mais_antigo,
     }
 
@@ -196,19 +176,23 @@ def get_relatorios(current_user: dict = Depends(get_current_user)):
         if tipo_venda_n[t] > 0
     }
 
-    # Clientes cadastrados por mês
+    # Clientes cadastrados por mês + distribuição por status e origem
     clientes_raw = (
         supabase_admin.table("clientes")
-        .select("created_at")
+        .select("created_at, status, origem_lead")
         .execute()
         .data or []
     )
 
     clientes_por_mes: dict = {m: 0 for m in meses_labels}
+    clientes_por_status: dict = defaultdict(int)
+    clientes_por_origem: dict = defaultdict(int)
     for cl in clientes_raw:
         mes_str = (cl.get("created_at") or "")[:7]
         if mes_str in clientes_por_mes:
             clientes_por_mes[mes_str] += 1
+        clientes_por_status[cl.get("status") or "indefinido"] += 1
+        clientes_por_origem[cl.get("origem_lead") or "indefinido"] += 1
 
     return {
         "meses_labels": meses_labels,
@@ -219,4 +203,6 @@ def get_relatorios(current_user: dict = Depends(get_current_user)):
         "top_bairros": top_bairros,
         "preco_medio_por_tipo": preco_medio_por_tipo,
         "clientes_por_mes": clientes_por_mes,
+        "clientes_por_status": dict(clientes_por_status),
+        "clientes_por_origem": dict(clientes_por_origem),
     }

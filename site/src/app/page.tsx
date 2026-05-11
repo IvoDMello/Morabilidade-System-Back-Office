@@ -78,6 +78,52 @@ export default async function HomePage() {
           className="relative z-10 text-center w-full"
           style={{ padding: "0 clamp(20px,5vw,48px)", maxWidth: 780, margin: "0 auto" }}
         >
+<<<<<<< HEAD
+=======
+          {/* Logo grande (mobile only) */}
+          <div className="md:hidden flex justify-center mb-6">
+            <Image
+              src="/Logo_fundoTransparente.png"
+              alt="Morabilidade"
+              width={440}
+              height={128}
+              style={{
+                height: "clamp(96px, 28vw, 160px)",
+                width: "auto",
+                objectFit: "contain",
+                filter:
+                  "drop-shadow(0 2px 8px rgba(0,0,0,0.55)) drop-shadow(0 0 24px rgba(0,0,0,0.4))",
+              }}
+              priority
+            />
+          </div>
+
+          {/* Badge (desktop only) */}
+          <div
+            className="hidden md:inline-flex items-center gap-2 rounded-full mb-6"
+            style={{
+              background: "rgba(216,203,106,0.15)",
+              border: "1px solid rgba(216,203,106,0.35)",
+              padding: "5px 14px",
+            }}
+          >
+            <div
+              className="rounded-full"
+              style={{ width: 5, height: 5, backgroundColor: "#d8cb6a" }}
+            />
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                letterSpacing: "0.16em",
+                textTransform: "uppercase",
+                color: "#d8cb6a",
+              }}
+            >
+              Imobiliária de confiança
+            </span>
+          </div>
+>>>>>>> 894b7ae168040ccfecd79dcc4b77f5c8ffffe347
 
           <h1
             className="font-serif text-white mb-5"

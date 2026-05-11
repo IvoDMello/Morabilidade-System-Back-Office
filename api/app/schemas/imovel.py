@@ -66,6 +66,7 @@ class ImovelCreate(BaseModel):
     iptu_mensal: Optional[Decimal] = None
     condominio_mensal: Optional[Decimal] = None
     descricao: Optional[str] = None
+    observacoes_internas: Optional[str] = None  # restrito a admin (gate na rota)
     video_url: Optional[str] = None
     corretor_id: Optional[str] = None
     destaque_ordem: Optional[int] = None  # 1-5 ou None

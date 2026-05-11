@@ -9,10 +9,6 @@ const TIPOS_IMOVEL = [
   { value: "apartamento", label: "Apartamento" },
   { value: "casa", label: "Casa" },
   { value: "cobertura", label: "Cobertura" },
-  { value: "kitnet", label: "Kitnet" },
-  { value: "terreno", label: "Terreno" },
-  { value: "sala", label: "Sala comercial" },
-  { value: "loja", label: "Loja" },
 ];
 
 const ORDENAR_OPTIONS = [
@@ -64,6 +60,7 @@ export function FiltrosBar({ total, bairros = [] }: Props) {
   const [tipoImovel, setTipoImovel] = useState(params.get("tipo_imovel") ?? "");
   const [bairro, setBairro] = useState(params.get("bairro") ?? "");
   const [ordenar, setOrdenar] = useState(params.get("ordenar") ?? "");
+  const apenasTerreo = params.get("andar_max") === "1";
 
   function buildUrl(overrides: Record<string, string>) {
     const sp = new URLSearchParams(params.toString());
@@ -90,6 +87,10 @@ export function FiltrosBar({ total, bairros = [] }: Props) {
     router.push(buildUrl({ ordenar: v }));
   }
 
+  function handleTerreo() {
+    router.push(buildUrl({ andar_max: apenasTerreo ? "" : "1" }));
+  }
+
   function handleBairroSubmit() {
     router.push(buildUrl({ bairro }));
   }
@@ -104,7 +105,7 @@ export function FiltrosBar({ total, bairros = [] }: Props) {
 
   return (
     <div
-      className="bg-[#fcfcfc] sticky z-[90]"
+      className="bg-[#fcfcfc] md:sticky z-[40] md:z-[90]"
       style={{ top: 60, borderBottom: "1px solid #e4e1d6" }}
     >
       <div
@@ -163,6 +164,17 @@ export function FiltrosBar({ total, bairros = [] }: Props) {
             style={{ color: "#6e7063" }}
           />
         </div>
+
+        {/* Apenas térreo — pill toggle */}
+        <button
+          type="button"
+          onClick={handleTerreo}
+          className="flex-shrink-0 transition-all duration-150"
+          style={pillStyle(apenasTerreo)}
+          title="Apartamentos no primeiro andar"
+        >
+          Só térreo
+        </button>
 
         {/* Bairro com autocomplete */}
         <div className="relative flex-shrink-0">

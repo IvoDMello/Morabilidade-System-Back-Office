@@ -64,6 +64,7 @@ export interface Imovel {
   iptu_mensal?: number;
   condominio_mensal?: number;
   descricao?: string;
+  observacoes_internas?: string;
   video_url?: string;
   corretor_id?: string;
   destaque_ordem?: number | null;

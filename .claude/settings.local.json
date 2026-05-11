@@ -149,6 +149,7 @@
       "Bash(npx vitest *)",
       "Bash(.venv\\\\Scripts\\\\python.exe -m pytest tests/ -v)",
       "Bash(.venv\\\\Scripts\\\\python.exe -m pytest web/ --collect-only)",
+<<<<<<< HEAD
       "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\novopc2024\\\\Documents\\\\GitHub\\\\Morabilidade-System-Back-Office\" -Force | Select-Object Name, @{Name=\"Type\";Expression={if\\($_.PSIsContainer\\){\"DIR\"}else{\"FILE\"}}} | Format-Table -AutoSize)",
       "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\novopc2024\\\\Documents\\\\GitHub\\\\Morabilidade-System-Back-Office\\\\api\" -Force | Where-Object { $_.PSIsContainer } | Select-Object Name)",
       "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\novopc2024\\\\Documents\\\\GitHub\\\\Morabilidade-System-Back-Office\\\\web\" -Force | Where-Object { $_.PSIsContainer } | Select-Object Name)",
@@ -174,6 +175,10 @@
       "Bash(git -C \"c:/Users/novopc2024/Documents/GitHub/Morabilidade-System-Back-Office\" push origin main)",
       "Bash(git -C \"c:/Users/novopc2024/Documents/GitHub/Morabilidade-System-Back-Office\" add \"api/migrations/012_matching_sql_function.sql\")",
       "Bash(git -C c:/Users/novopc2024/Documents/GitHub/Morabilidade-System-Back-Office commit -m 'fix: corrige tipo de bairros em contar_oportunidades\\(\\) — text[] nao jsonb *)"
+=======
+      "Bash(venv\\\\Scripts\\\\python -m pytest tests/ -v --tb=short)",
+      "Bash(Copy-Item \"c:\\\\Users\\\\ivomp\\\\OneDrive\\\\Área de Trabalho\\\\Morabilidade-System-Back-Office\\\\site\\\\public\\\\favcon_Mora.png\" \"c:\\\\Users\\\\ivomp\\\\OneDrive\\\\Área de Trabalho\\\\Morabilidade-System-Back-Office\\\\web\\\\public\\\\favcon_Mora.png\")"
+>>>>>>> 894b7ae168040ccfecd79dcc4b77f5c8ffffe347
     ]
   }
 }

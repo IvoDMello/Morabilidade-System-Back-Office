@@ -64,13 +64,7 @@ const TIPO_NEGOCIO_LABEL: Record<string, string> = {
 const TIPO_IMOVEL_LABEL: Record<string, string> = {
   casa: "Casa",
   apartamento: "Apartamento",
-  terreno: "Terreno",
-  sala: "Sala",
-  galpao: "Galpão",
-  loja: "Loja",
   cobertura: "Cobertura",
-  kitnet: "Kitnet",
-  outro: "Outro",
 };
 
 const inputCls =
@@ -312,16 +306,10 @@ setLoading(true);
                 onChange={(e) => setFiltros((f) => ({ ...f, tipo_imovel: e.target.value }))}
                 className={inputCls}
               >
-                <option value="">Apartamento, casa, etc...</option>
+                <option value="">Todos os tipos</option>
                 <option value="casa">Casa</option>
                 <option value="apartamento">Apartamento</option>
-                <option value="terreno">Terreno</option>
-                <option value="sala">Sala comercial</option>
-                <option value="galpao">Galpão</option>
-                <option value="loja">Loja</option>
                 <option value="cobertura">Cobertura</option>
-                <option value="kitnet">Kitnet / Studio</option>
-                <option value="outro">Outro</option>
               </select>
             </div>
 

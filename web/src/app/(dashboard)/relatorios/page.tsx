@@ -12,7 +12,10 @@ import {
   YAxis,
   Tooltip,
   CartesianGrid,
+  Legend,
 } from "recharts";
+import { Sparkles } from "lucide-react";
+import Link from "next/link";
 import { api } from "@/lib/api";
 
 interface RelatoriosData {
@@ -24,6 +27,13 @@ interface RelatoriosData {
   top_bairros: Record<string, number>;
   preco_medio_por_tipo: Record<string, number>;
   clientes_por_mes: Record<string, number>;
+  clientes_por_status: Record<string, number>;
+  clientes_por_origem: Record<string, number>;
+}
+
+interface ResumoOportunidades {
+  total_oportunidades: number;
+  clientes_com_preferencia: number;
 }
 
 const PALETA = ["#585a4f", "#d8cb6a", "#8b8a72", "#c2b96a", "#a8a78f", "#e3d895", "#6f7163", "#bcb592"];
@@ -52,6 +62,25 @@ const DISPONIBILIDADE_LABEL: Record<string, string> = {
   reservado: "Reservado",
   vendido_locado: "Vendido/Locado",
   indefinido: "Indefinido",
+};
+
+const STATUS_LABEL: Record<string, string> = {
+  ativo: "Ativo",
+  em_negociacao: "Em negociação",
+  inativo: "Inativo",
+  concluido: "Concluído",
+  indefinido: "Sem status",
+};
+
+const ORIGEM_LABEL: Record<string, string> = {
+  site: "Site",
+  indicacao: "Indicação",
+  ligacao: "Ligação",
+  whatsapp: "WhatsApp",
+  instagram: "Instagram",
+  facebook: "Facebook",
+  outro: "Outro",
+  indefinido: "Sem origem",
 };
 
 const MESES_PT = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
@@ -285,14 +314,76 @@ function PrecoMedioChart({ dados }: { dados: Record<string, number> }) {
   );
 }
 
+function OrigemClientesChart({ dados }: { dados: Record<string, number> }) {
+  const data = Object.entries(dados)
+    .map(([k, v]) => ({ nome: ORIGEM_LABEL[k] ?? k, valor: v }))
+    .sort((a, b) => b.valor - a.valor);
+  if (data.length === 0 || data.every((d) => d.valor === 0)) return <ChartEmpty />;
+
+  return (
+    <ResponsiveContainer width="100%" height="100%">
+      <PieChart>
+        <Pie
+          data={data}
+          dataKey="valor"
+          nameKey="nome"
+          cx="50%"
+          cy="50%"
+          innerRadius={45}
+          outerRadius={80}
+          paddingAngle={2}
+        >
+          {data.map((_, i) => (
+            <Cell key={i} fill={PALETA[i % PALETA.length]} />
+          ))}
+        </Pie>
+        <Tooltip
+          contentStyle={{ borderRadius: 8, border: "1px solid #e6e6dd", fontSize: 13 }}
+          formatter={(v) => [`${v} cliente${Number(v) !== 1 ? "s" : ""}`, ""]}
+        />
+        <Legend wrapperStyle={{ fontSize: 12 }} iconType="circle" />
+      </PieChart>
+    </ResponsiveContainer>
+  );
+}
+
+function StatusClientesChart({ dados }: { dados: Record<string, number> }) {
+  const data = Object.entries(dados)
+    .map(([k, v]) => ({ nome: STATUS_LABEL[k] ?? k, valor: v }))
+    .sort((a, b) => b.valor - a.valor);
+  if (data.length === 0) return <ChartEmpty />;
+
+  return (
+    <ResponsiveContainer width="100%" height="100%">
+      <BarChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: -20 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0e8" vertical={false} />
+        <XAxis dataKey="nome" tick={{ fontSize: 11, fill: "#888" }} axisLine={false} tickLine={false} />
+        <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#888" }} axisLine={false} tickLine={false} />
+        <Tooltip
+          contentStyle={{ borderRadius: 8, border: "1px solid #e6e6dd", fontSize: 13 }}
+          cursor={{ fill: "#f5f5f0" }}
+          formatter={(v) => [`${v} cliente${Number(v) !== 1 ? "s" : ""}`, ""]}
+        />
+        <Bar dataKey="valor" fill="#585a4f" radius={[6, 6, 0, 0]} />
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}
+
 export default function RelatoriosPage() {
   const [dados, setDados] = useState<RelatoriosData | null>(null);
+  const [oportunidades, setOportunidades] = useState<ResumoOportunidades | null>(null);
   const [erro, setErro] = useState(false);
 
   useEffect(() => {
-    api.get<RelatoriosData>("/relatorios")
-      .then((r) => setDados(r.data))
-      .catch(() => setErro(true));
+    Promise.all([
+      api.get<RelatoriosData>("/relatorios")
+        .then((r) => setDados(r.data))
+        .catch(() => setErro(true)),
+      api.get<ResumoOportunidades>("/oportunidades/resumo")
+        .then((r) => setOportunidades(r.data))
+        .catch(() => {}),
+    ]);
   }, []);
 
   if (erro) {
@@ -408,6 +499,50 @@ export default function RelatoriosPage() {
             )}
           </div>
         </ChartCard>
+      </section>
+
+      {/* Seção: Distribuição de clientes */}
+      <section>
+        <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+          Distribuição de clientes
+        </h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <ChartCard title="Origem dos leads">
+            <div className="h-64">
+              {dados ? (
+                <OrigemClientesChart dados={dados.clientes_por_origem} />
+              ) : (
+                <ChartSkeleton />
+              )}
+            </div>
+          </ChartCard>
+          <ChartCard title="Clientes por status">
+            <div className="h-64">
+              {dados ? (
+                <StatusClientesChart dados={dados.clientes_por_status} />
+              ) : (
+                <ChartSkeleton />
+              )}
+            </div>
+          </ChartCard>
+        </div>
+        {oportunidades && oportunidades.total_oportunidades > 0 && (
+          <Link
+            href="/clientes"
+            className="mt-3 flex items-center gap-3 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-lg hover:border-amber-300 transition group"
+          >
+            <Sparkles className="w-4 h-4 text-amber-500 flex-shrink-0" />
+            <p className="text-xs text-amber-800">
+              <strong className="font-semibold text-amber-900">
+                {oportunidades.total_oportunidades} oportunidade
+                {oportunidades.total_oportunidades !== 1 ? "s" : ""}
+              </strong>{" "}
+              de match — {oportunidades.clientes_com_preferencia} cliente
+              {oportunidades.clientes_com_preferencia !== 1 ? "s" : ""} com preferência ativa.
+              <span className="text-amber-600"> Veja na ficha de cada cliente.</span>
+            </p>
+          </Link>
+        )}
       </section>
 
       {/* Seção: Análise de preços (condicional) */}
