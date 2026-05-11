@@ -248,6 +248,7 @@ export default function EditarImovelPage({
     iptu_mensal: imovel.iptu_mensal ?? null,
     condominio_mensal: imovel.condominio_mensal ?? null,
     descricao: imovel.descricao ?? "",
+    observacoes_internas: imovel.observacoes_internas ?? "",
     video_url: imovel.video_url ?? "",
     corretor_id: imovel.corretor_id ?? null,
     destaque_ordem: imovel.destaque_ordem ?? null,

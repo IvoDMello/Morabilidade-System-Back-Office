@@ -11,10 +11,6 @@ const TIPOS_IMOVEL = [
   { value: "apartamento", label: "Apartamento" },
   { value: "cobertura", label: "Cobertura" },
   { value: "casa", label: "Casa" },
-  { value: "kitnet", label: "Kitnet / Studio" },
-  { value: "terreno", label: "Terreno" },
-  { value: "sala", label: "Sala comercial" },
-  { value: "loja", label: "Loja" },
 ];
 
 export function HeroSearch() {
@@ -22,6 +18,7 @@ export function HeroSearch() {
   const [tipoNegocio, setTipoNegocio] = useState<TipoNegocio>("");
   const [tipoImovel, setTipoImovel] = useState("");
   const [bairro, setBairro] = useState("");
+  const [apenasTerreo, setApenasTerreo] = useState(false);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -29,6 +26,7 @@ export function HeroSearch() {
     if (tipoNegocio) params.set("tipo_negocio", tipoNegocio);
     if (tipoImovel) params.set("tipo_imovel", tipoImovel);
     if (bairro.trim()) params.set("bairro", bairro.trim());
+    if (apenasTerreo) params.set("andar_max", "1");
     const qs = params.toString();
     router.push(`/imoveis${qs ? `?${qs}` : ""}`);
   }
@@ -102,6 +100,21 @@ export function HeroSearch() {
           Buscar
         </button>
       </div>
+
+      {/* Toggle Apenas térreo — útil quando o cliente prefere primeiro andar */}
+      {(tipoImovel === "" || tipoImovel === "apartamento") && (
+        <div className="flex items-center justify-center mt-3">
+          <label className="inline-flex items-center gap-2 cursor-pointer select-none text-white/85 hover:text-white text-xs sm:text-sm">
+            <input
+              type="checkbox"
+              checked={apenasTerreo}
+              onChange={(e) => setApenasTerreo(e.target.checked)}
+              className="w-4 h-4 rounded accent-[#d8cb6a]"
+            />
+            Apenas térreo
+          </label>
+        </div>
+      )}
     </form>
   );
 }

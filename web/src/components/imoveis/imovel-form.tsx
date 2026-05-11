@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2 } from "lucide-react";
 import { api } from "@/lib/api";
+import { useAuthStore } from "@/lib/auth-store";
 import type { Tag, User } from "@/types";
 
 // ── Schema de validação ────────────────────────────────────────────────────────
@@ -50,6 +51,7 @@ const schema = z.object({
   iptu_mensal: optPositive,
   condominio_mensal: optPositive,
   descricao: z.string().optional(),
+  observacoes_internas: z.string().optional(),
   video_url: z.string().optional(),
   corretor_id: z.string().optional().nullable(),
   destaque_ordem: z.preprocess(
@@ -110,6 +112,7 @@ export function ImovelForm({
   isLoading = false,
   submitLabel = "Salvar imóvel",
 }: ImovelFormProps) {
+  const isAdmin = useAuthStore((s) => s.user?.perfil === "admin");
   const [tags, setTags] = useState<Tag[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [cepLoading, setCepLoading] = useState(false);
@@ -395,6 +398,9 @@ export function ImovelForm({
           <div>
             <Label>Andar</Label>
             <input type="number" min={0} {...register("andar")} className={inputClass} placeholder="—" />
+            <p className="mt-1 text-xs text-slate-400">
+              Térreo = <strong>1</strong> (usado pelo filtro &quot;Apenas térreo&quot; do site).
+            </p>
           </div>
 
           <div>
@@ -499,6 +505,21 @@ export function ImovelForm({
             <input {...register("video_url")} className={inputClass} placeholder="https://..." />
             <FieldError message={errors.video_url?.message} />
           </div>
+
+          {isAdmin && (
+            <div className="lg:col-span-2">
+              <Label>Observações internas (somente admin)</Label>
+              <textarea
+                {...register("observacoes_internas")}
+                rows={3}
+                className={inputClass + " resize-y"}
+                placeholder="Notas privadas — não aparecem para corretores nem no site."
+              />
+              <p className="mt-1 text-xs text-amber-600">
+                Visível apenas para administradores.
+              </p>
+            </div>
+          )}
 
           <div>
             <Label>Corretor responsável</Label>

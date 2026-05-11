@@ -59,7 +59,7 @@ def _gerar_codigo() -> str:
 
 def _aplicar_filtros(query, *, tipo_negocio, disponibilidade, cidade, bairro,
                      tipo_imovel, dormitorios_min, preco_min, preco_max,
-                     condicao, mobiliado, codigo):
+                     condicao, mobiliado, codigo, andar_max=None):
     if codigo:
         query = query.ilike("codigo", f"%{codigo}%")
     if tipo_negocio:
@@ -74,6 +74,8 @@ def _aplicar_filtros(query, *, tipo_negocio, disponibilidade, cidade, bairro,
         query = query.eq("tipo_imovel", _ev(tipo_imovel))
     if dormitorios_min is not None:
         query = query.gte("dormitorios", dormitorios_min)
+    if andar_max is not None:
+        query = query.lte("andar", andar_max)
     if condicao:
         query = query.eq("condicao", _ev(condicao))
     if mobiliado:
@@ -105,6 +107,13 @@ def _transformar_detalhe(raw: dict) -> dict:
     tags = [t["tags"] for t in tags_raw if t.get("tags")]
     tag_ids = [t["id"] for t in tags]
     return {**raw, "fotos": fotos, "tags": tags, "tag_ids": tag_ids}
+
+
+def _ocultar_internas(imovel: dict, current_user: Optional[dict]) -> dict:
+    """Remove observacoes_internas se o usuário não for admin (ou for público)."""
+    if not current_user or current_user.get("perfil") != "admin":
+        imovel.pop("observacoes_internas", None)
+    return imovel
 
 
 def _liberar_posicao_destaque(posicao: int, exceto_imovel_id: Optional[str] = None) -> None:
@@ -166,6 +175,7 @@ def imoveis_disponiveis_publico(
     bairro: Optional[str] = None,
     tipo_imovel: Optional[TipoImovel] = None,
     dormitorios_min: Optional[int] = None,
+    andar_max: Optional[int] = Query(default=None, ge=0, description="Filtro 'apenas térreo': andar_max=1"),
     preco_min: Optional[float] = None,
     preco_max: Optional[float] = None,
     condicao: Optional[CondicaoImovel] = None,
@@ -177,7 +187,8 @@ def imoveis_disponiveis_publico(
     filtros = dict(
         tipo_negocio=tipo_negocio, disponibilidade=Disponibilidade.disponivel,
         cidade=cidade, bairro=bairro, tipo_imovel=tipo_imovel,
-        dormitorios_min=dormitorios_min, preco_min=preco_min, preco_max=preco_max,
+        dormitorios_min=dormitorios_min, andar_max=andar_max,
+        preco_min=preco_min, preco_max=preco_max,
         condicao=condicao, mobiliado=mobiliado, codigo=None,
     )
     count_q = _aplicar_filtros(
@@ -237,7 +248,7 @@ def detalhe_imovel_publico(request: Request, codigo: str):
     )
     if not result.data:
         raise HTTPException(status_code=404, detail="Imóvel não encontrado.")
-    return _buscar_imovel(result.data["id"])
+    return _ocultar_internas(_buscar_imovel(result.data["id"]), None)
 
 
 # ── Endpoints autenticados ────────────────────────────────────────────────────
@@ -397,7 +408,7 @@ def criar_imovel(body: ImovelCreate, current_user: dict = Depends(require_admin)
 
 @router.get("/{imovel_id}", response_model=ImovelOut)
 def obter_imovel(imovel_id: str, current_user: dict = Depends(get_current_user)):
-    return _buscar_imovel(imovel_id)
+    return _ocultar_internas(_buscar_imovel(imovel_id), current_user)
 
 
 @router.put("/{imovel_id}", response_model=ImovelOut)
