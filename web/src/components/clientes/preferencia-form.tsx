@@ -126,15 +126,10 @@ export function PreferenciaForm({ clienteId, onSaved }: Props) {
             className={inputClass}
           >
             <option value="">— Qualquer —</option>
-            <option value="apartamento">Apartamento</option>
-            <option value="cobertura">Cobertura</option>
             <option value="casa">Casa</option>
-            <option value="kitnet">Kitnet</option>
-            <option value="terreno">Terreno</option>
-            <option value="sala">Sala comercial</option>
-            <option value="loja">Loja</option>
-            <option value="galpao">Galpão</option>
-            <option value="outro">Outro</option>
+            <option value="apartamento">Apartamento</option>
+            <option value="apartamento_terreo">Apartamento térreo</option>
+            <option value="cobertura">Cobertura</option>
           </select>
         </div>
 

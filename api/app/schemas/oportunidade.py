@@ -5,11 +5,31 @@ Match = imóvel disponível que casa com a preferência ativa de um cliente.
 A geração é sob demanda (não há tabela de matches): consulta-se a tabela
 de preferências e cruza-se com a de imóveis disponíveis.
 """
+from enum import Enum
 from typing import List, Optional
 
 from pydantic import BaseModel, Field, model_validator
 
-from app.schemas.imovel import Disponibilidade, TipoImovel, TipoNegocio
+from app.schemas.imovel import TipoNegocio
+
+
+class TipoImovelPreferencia(str, Enum):
+    """Tipos aceitos em cliente_preferencias.tipo_imovel.
+
+    Inclui os mesmos valores de TipoImovel mais 'apartamento_terreo', que
+    é uma variação de busca (apartamento no andar 1) introduzida pelo
+    HeroSearch do site público e não existe como tipo real de imóvel.
+    """
+    casa = "casa"
+    apartamento = "apartamento"
+    apartamento_terreo = "apartamento_terreo"
+    terreno = "terreno"
+    sala = "sala"
+    galpao = "galpao"
+    loja = "loja"
+    cobertura = "cobertura"
+    kitnet = "kitnet"
+    outro = "outro"
 
 # Deve ser igual ao VALOR_MINIMO_OPORTUNIDADE em routers/oportunidades.py.
 _VALOR_MIN_OPOR = 2_000_000.0
@@ -17,7 +37,7 @@ _VALOR_MIN_OPOR = 2_000_000.0
 
 class PreferenciaBase(BaseModel):
     tipo_negocio: Optional[TipoNegocio] = None
-    tipo_imovel: Optional[TipoImovel] = None
+    tipo_imovel: Optional[TipoImovelPreferencia] = None
     cidade: Optional[str] = None
     bairros: List[str] = []
     valor_min: Optional[float] = Field(default=None, ge=0)

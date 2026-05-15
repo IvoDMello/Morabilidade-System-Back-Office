@@ -55,7 +55,8 @@ def _score_imovel_preferencia(pref: dict) -> int:
 def _imovel_casa_preferencia(imovel: dict, pref: dict) -> bool:
     """Decide se um imóvel disponível atende à preferência. Critérios:
     - Tipo de negócio: se pref tem 'venda', imóvel precisa ser 'venda' ou 'ambos'.
-    - Tipo de imóvel: igual quando definido.
+    - Tipo de imóvel: igual quando definido. Caso especial 'apartamento_terreo':
+      casa com apartamentos no andar 1 (espelha o filtro do HeroSearch).
     - Cidade/bairro: accent- e case-insensitive substring (cobre erros de digitação leves).
     - Valor mínimo: imóveis de venda < R$ 2M são excluídos (ver VALOR_MINIMO_OPORTUNIDADE).
     - Valor: dentro da faixa quando definido (usa o valor compatível com o tipo de negócio).
@@ -68,7 +69,10 @@ def _imovel_casa_preferencia(imovel: dict, pref: dict) -> bool:
             return False
 
     pref_tipo = pref.get("tipo_imovel")
-    if pref_tipo and imovel.get("tipo_imovel") != pref_tipo:
+    if pref_tipo == "apartamento_terreo":
+        if imovel.get("tipo_imovel") != "apartamento" or imovel.get("andar") != 1:
+            return False
+    elif pref_tipo and imovel.get("tipo_imovel") != pref_tipo:
         return False
 
     pref_cidade = _norm((pref.get("cidade") or "").strip())
@@ -191,7 +195,7 @@ def matches_de_um_cliente(cliente_id: str, current_user: dict = Depends(get_curr
     imoveis_resp = (
         supabase_admin.table("imoveis")
         .select(
-            "id, codigo, cidade, bairro, tipo_imovel, tipo_negocio, "
+            "id, codigo, cidade, bairro, tipo_imovel, tipo_negocio, andar, "
             "valor_venda, valor_locacao, dormitorios, vagas_garagem, "
             "imovel_fotos(url, ordem)"
         )
@@ -229,7 +233,7 @@ def interessados_em_um_imovel(imovel_id: str, current_user: dict = Depends(get_c
     imovel_resp = (
         supabase_admin.table("imoveis")
         .select(
-            "id, tipo_negocio, tipo_imovel, cidade, bairro, "
+            "id, tipo_negocio, tipo_imovel, cidade, bairro, andar, "
             "valor_venda, valor_locacao, dormitorios, vagas_garagem"
         )
         .eq("id", imovel_id)

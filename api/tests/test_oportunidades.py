@@ -91,6 +91,30 @@ class TestFiltroTipoImovel:
             _pref(tipo_imovel="apartamento"),
         )
 
+    def test_apartamento_terreo_aceita_apartamento_no_andar_1(self):
+        assert _imovel_casa_preferencia(
+            _imovel(tipo_imovel="apartamento", andar=1),
+            _pref(tipo_imovel="apartamento_terreo"),
+        )
+
+    def test_apartamento_terreo_rejeita_apartamento_em_andar_superior(self):
+        assert not _imovel_casa_preferencia(
+            _imovel(tipo_imovel="apartamento", andar=3),
+            _pref(tipo_imovel="apartamento_terreo"),
+        )
+
+    def test_apartamento_terreo_rejeita_apartamento_sem_andar(self):
+        assert not _imovel_casa_preferencia(
+            _imovel(tipo_imovel="apartamento", andar=None),
+            _pref(tipo_imovel="apartamento_terreo"),
+        )
+
+    def test_apartamento_terreo_rejeita_casa(self):
+        assert not _imovel_casa_preferencia(
+            _imovel(tipo_imovel="casa", andar=1),
+            _pref(tipo_imovel="apartamento_terreo"),
+        )
+
 
 # ── _imovel_casa_preferencia: filtro de cidade ───────────────────────────────
 
