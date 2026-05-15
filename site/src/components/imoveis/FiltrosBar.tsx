@@ -95,8 +95,9 @@ export function FiltrosBar({ total, bairros = [] }: Props) {
     router.push(buildUrl({ ordenar: v }));
   }
 
-  function handleBairroSubmit() {
-    router.push(buildUrl({ bairro }));
+  function handleBairro(v: string) {
+    setBairro(v);
+    router.push(buildUrl({ bairro: v }));
   }
 
   const negPills = [
@@ -104,8 +105,6 @@ export function FiltrosBar({ total, bairros = [] }: Props) {
     { v: "venda", l: "Venda" },
     { v: "locacao", l: "Locação" },
   ];
-
-  const datalistId = "bairros-datalist";
 
   return (
     <div
@@ -169,37 +168,31 @@ export function FiltrosBar({ total, bairros = [] }: Props) {
           />
         </div>
 
-        {/* Bairro com autocomplete */}
-        <div className="relative flex-shrink-0">
-          <input
-            type="text"
-            list={datalistId}
-            value={bairro}
-            onChange={(e) => setBairro(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleBairroSubmit();
-            }}
-            onBlur={handleBairroSubmit}
-            placeholder="Bairro"
-            aria-label="Filtrar por bairro"
-            style={{
-              ...selectStyle,
-              padding: "7px 16px",
-              width: "auto",
-              minWidth: 110,
-              maxWidth: 160,
-            }}
-          />
-          {bairros.length > 0 && (
-            <datalist id={datalistId}>
-              {bairros.map((b) => (
-                <option key={b} value={b} />
-              ))}
-            </datalist>
-          )}
-        </div>
-
-        <div className="w-px h-5 flex-shrink-0" style={{ backgroundColor: "#e4e1d6" }} />
+        {/* Bairro — select com bairros que têm imóveis disponíveis */}
+        {bairros.length > 0 && (
+          <>
+            <div className="relative flex-shrink-0">
+              <select
+                value={bairro}
+                onChange={(e) => handleBairro(e.target.value)}
+                style={selectStyle}
+                aria-label="Filtrar por bairro"
+              >
+                <option value="">Todos os bairros</option>
+                {bairros.map((b) => (
+                  <option key={b} value={b}>
+                    {b}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown
+                className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none w-3.5 h-3.5"
+                style={{ color: "#6e7063" }}
+              />
+            </div>
+            <div className="w-px h-5 flex-shrink-0" style={{ backgroundColor: "#e4e1d6" }} />
+          </>
+        )}
 
         {/* Ordenar */}
         <div className="relative flex-shrink-0">
