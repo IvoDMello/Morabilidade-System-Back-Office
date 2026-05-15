@@ -135,7 +135,8 @@ function ImoveisPorMesChart({ meses, dados }: { meses: string[]; dados: Record<s
         <Tooltip
           contentStyle={{ borderRadius: 8, border: "1px solid #e6e6dd", fontSize: 13 }}
           cursor={{ fill: "#f5f5f0" }}
-          formatter={(v) => [`${v} imóvel${Number(v) !== 1 ? "is" : ""}`, ""]}
+          separator=""
+          formatter={(v) => [`${v} ${Number(v) === 1 ? "imóvel" : "imóveis"}`, ""]}
         />
         <Bar dataKey="total" fill="#585a4f" radius={[6, 6, 0, 0]} />
       </BarChart>
@@ -157,7 +158,8 @@ function ClientesPorMesChart({ meses, dados }: { meses: string[]; dados: Record<
         <Tooltip
           contentStyle={{ borderRadius: 8, border: "1px solid #e6e6dd", fontSize: 13 }}
           cursor={{ fill: "#f5f5f0" }}
-          formatter={(v) => [`${v} cliente${Number(v) !== 1 ? "s" : ""}`, ""]}
+          separator=""
+          formatter={(v) => [`${v} ${Number(v) === 1 ? "cliente" : "clientes"}`, ""]}
         />
         <Bar dataKey="total" fill="#d8cb6a" radius={[6, 6, 0, 0]} />
       </BarChart>
@@ -190,7 +192,10 @@ function TipoImovelChart({ dados }: { dados: Record<string, number> }) {
         </Pie>
         <Tooltip
           contentStyle={{ borderRadius: 8, border: "1px solid #e6e6dd", fontSize: 13 }}
-          formatter={(v) => [`${v} imóvel${Number(v) !== 1 ? "is" : ""}`, ""]}
+          formatter={(v, name) => [
+            `${v} ${Number(v) === 1 ? "imóvel" : "imóveis"}`,
+            String(name),
+          ]}
         />
       </PieChart>
     </ResponsiveContainer>
@@ -212,7 +217,8 @@ function TipoNegocioChart({ dados }: { dados: Record<string, number> }) {
         <Tooltip
           contentStyle={{ borderRadius: 8, border: "1px solid #e6e6dd", fontSize: 13 }}
           cursor={{ fill: "#f5f5f0" }}
-          formatter={(v) => [`${v} imóvel${Number(v) !== 1 ? "is" : ""}`, ""]}
+          separator=""
+          formatter={(v) => [`${v} ${Number(v) === 1 ? "imóvel" : "imóveis"}`, ""]}
         />
         <Bar dataKey="total" radius={[6, 6, 0, 0]}>
           {data.map((_, i) => (
@@ -239,7 +245,8 @@ function DisponibilidadeChart({ dados }: { dados: Record<string, number> }) {
         <Tooltip
           contentStyle={{ borderRadius: 8, border: "1px solid #e6e6dd", fontSize: 13 }}
           cursor={{ fill: "#f5f5f0" }}
-          formatter={(v) => [`${v} imóvel${Number(v) !== 1 ? "is" : ""}`, ""]}
+          separator=""
+          formatter={(v) => [`${v} ${Number(v) === 1 ? "imóvel" : "imóveis"}`, ""]}
         />
         <Bar dataKey="total" radius={[6, 6, 0, 0]}>
           {data.map((_, i) => (
@@ -277,7 +284,8 @@ function TopBairrosChart({ dados }: { dados: Record<string, number> }) {
         <Tooltip
           contentStyle={{ borderRadius: 8, border: "1px solid #e6e6dd", fontSize: 13 }}
           cursor={{ fill: "#f5f5f0" }}
-          formatter={(v) => [`${v} imóvel${Number(v) !== 1 ? "is" : ""}`, ""]}
+          separator=""
+          formatter={(v) => [`${v} ${Number(v) === 1 ? "imóvel" : "imóveis"}`, ""]}
         />
         <Bar dataKey="total" fill="#d8cb6a" radius={[0, 6, 6, 0]} />
       </BarChart>
@@ -339,7 +347,10 @@ function OrigemClientesChart({ dados }: { dados: Record<string, number> }) {
         </Pie>
         <Tooltip
           contentStyle={{ borderRadius: 8, border: "1px solid #e6e6dd", fontSize: 13 }}
-          formatter={(v) => [`${v} cliente${Number(v) !== 1 ? "s" : ""}`, ""]}
+          formatter={(v, name) => [
+            `${v} ${Number(v) === 1 ? "cliente" : "clientes"}`,
+            String(name),
+          ]}
         />
         <Legend wrapperStyle={{ fontSize: 12 }} iconType="circle" />
       </PieChart>
@@ -362,7 +373,8 @@ function StatusClientesChart({ dados }: { dados: Record<string, number> }) {
         <Tooltip
           contentStyle={{ borderRadius: 8, border: "1px solid #e6e6dd", fontSize: 13 }}
           cursor={{ fill: "#f5f5f0" }}
-          formatter={(v) => [`${v} cliente${Number(v) !== 1 ? "s" : ""}`, ""]}
+          separator=""
+          formatter={(v) => [`${v} ${Number(v) === 1 ? "cliente" : "clientes"}`, ""]}
         />
         <Bar dataKey="valor" fill="#585a4f" radius={[6, 6, 0, 0]} />
       </BarChart>
