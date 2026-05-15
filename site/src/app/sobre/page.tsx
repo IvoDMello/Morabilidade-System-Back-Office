@@ -40,7 +40,7 @@ const diferenciais = [
   {
     titulo: "Comunidade engajada",
     texto:
-      "Com mais de 80 mil seguidores no Instagram, somos referência em conteúdo imobiliário e alcançamos compradores e locatários ativos.",
+      "Com mais de 90 mil seguidores no Instagram, somos referência em conteúdo imobiliário e alcançamos compradores e locatários ativos.",
   },
 ];
 
@@ -106,7 +106,7 @@ const depoimentos = [
 
 const stats = [
   { n: "+10", d: "Anos de mercado" },
-  { n: "+80k", d: "Seguidores no Instagram" },
+  { n: "90K+", d: "Seguidores no Instagram" },
   { n: "100%", d: "Atendimento digital" },
   { n: "ZS", d: "Zona Sul · Rio de Janeiro" },
 ];
@@ -178,7 +178,7 @@ export default function SobrePage() {
               style={{ width: 1, height: 14, backgroundColor: "rgba(252,252,252,0.2)" }}
             />
             <span style={{ fontSize: 13, color: "#d8cb6a", fontWeight: 600 }}>
-              +80k seguidores
+              90K+ seguidores
             </span>
           </div>
         </div>
@@ -221,7 +221,7 @@ export default function SobrePage() {
             </p>
             <p style={{ fontSize: 15, color: "#7a7c72", lineHeight: 1.9, marginBottom: 18 }}>
               O que começou como uma nova forma de conectar compradores e locatários a imóveis
-              de qualidade tem hoje uma comunidade ativa de mais de 80 mil pessoas no Instagram,
+              de qualidade tem hoje uma comunidade ativa de mais de 90 mil pessoas no Instagram,
               que acompanham lançamentos, dicas de mercado e oportunidades exclusivas.
             </p>
             <p style={{ fontSize: 15, color: "#7a7c72", lineHeight: 1.9 }}>
