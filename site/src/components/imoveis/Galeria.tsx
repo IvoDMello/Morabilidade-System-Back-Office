@@ -15,6 +15,20 @@ export function Galeria({ fotos }: { fotos: Foto[] }) {
   const touchStartY = useRef<number | null>(null);
   const lockedAxis = useRef<"x" | "y" | null>(null);
   const trackRef = useRef<HTMLDivElement | null>(null);
+  const thumbsStripRef = useRef<HTMLDivElement | null>(null);
+  const thumbRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  useEffect(() => {
+    const strip = thumbsStripRef.current;
+    const thumb = thumbRefs.current[ativa];
+    if (!strip || !thumb) return;
+    const stripRect = strip.getBoundingClientRect();
+    const thumbRect = thumb.getBoundingClientRect();
+    const offset =
+      thumbRect.left + thumbRect.width / 2 - (stripRect.left + stripRect.width / 2);
+    if (Math.abs(offset) < 1) return;
+    strip.scrollBy({ left: offset, behavior: "smooth" });
+  }, [ativa]);
 
   function anterior() {
     setAtiva((i) => (i === 0 ? fotos.length - 1 : i - 1));
@@ -155,10 +169,17 @@ export function Galeria({ fotos }: { fotos: Foto[] }) {
 
       {/* Miniaturas */}
       {fotos.length > 1 && (
-        <div className="flex justify-center gap-2 overflow-x-auto pb-1">
+        <div
+          ref={thumbsStripRef}
+          className="flex gap-2 overflow-x-auto hide-scrollbar pb-1"
+          style={{ justifyContent: "safe center", scrollBehavior: "smooth" }}
+        >
           {fotos.map((foto, i) => (
             <button
               key={foto.id}
+              ref={(el) => {
+                thumbRefs.current[i] = el;
+              }}
               onClick={() => setAtiva(i)}
               className={`relative flex-shrink-0 w-12 h-16 rounded-lg overflow-hidden border-2 transition ${
                 i === ativa ? "opacity-100" : "border-transparent opacity-60 hover:opacity-90"

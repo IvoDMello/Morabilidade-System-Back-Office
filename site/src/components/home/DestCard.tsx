@@ -30,6 +30,7 @@ export function DestCard({ imovel }: { imovel: ImovelCard }) {
         border: "1px solid #e4e1d6",
         boxShadow: "0 2px 10px rgba(88,90,79,0.07)",
         textDecoration: "none",
+        scrollSnapAlign: "center",
       }}
     >
       {/* Image */}

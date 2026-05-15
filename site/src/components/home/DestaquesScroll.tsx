@@ -83,8 +83,11 @@ function DestaquesScrollInner({ imoveis }: { imoveis: ImovelCard[] }) {
   const scroll = (dir: "left" | "right") => {
     const el = scrollRef.current;
     if (!el) return;
-    const amount = el.clientWidth * 0.72;
-    el.scrollBy({ left: dir === "left" ? -amount : amount, behavior: "smooth" });
+    const firstCard = el.firstElementChild as HTMLElement | null;
+    const cardWidth = firstCard?.getBoundingClientRect().width ?? el.clientWidth * 0.72;
+    const gap = parseFloat(getComputedStyle(el).columnGap || "0") || 20;
+    const step = cardWidth + gap;
+    el.scrollBy({ left: dir === "left" ? -step : step, behavior: "smooth" });
   };
 
   return (
@@ -94,7 +97,12 @@ function DestaquesScrollInner({ imoveis }: { imoveis: ImovelCard[] }) {
       <div
         ref={scrollRef}
         className="flex gap-5 hide-scrollbar"
-        style={{ overflowX: "auto", paddingBottom: 4 }}
+        style={{
+          overflowX: "auto",
+          paddingBottom: 4,
+          scrollSnapType: "x mandatory",
+          scrollSnapStop: "always",
+        }}
       >
         {imoveis.map((im) => (
           <DestCard key={im.id} imovel={im} />
