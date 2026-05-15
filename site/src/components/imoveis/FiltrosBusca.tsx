@@ -219,7 +219,7 @@ export function FiltrosBusca({ layout = "top" }: Props) {
 
   if (layout === "sidebar") {
     return (
-      <div className="bg-white rounded-2xl border border-slate-200 p-5 sticky top-20">
+      <div className="bg-white rounded-2xl border border-slate-200 p-5 sticky top-[104px]">
         <div className="flex items-center justify-between mb-5">
           <h3 className="font-semibold text-slate-800 flex items-center gap-2 text-sm">
             <SlidersHorizontal className="w-4 h-4" style={{ color: "#585a4f" }} />

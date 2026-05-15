@@ -25,7 +25,7 @@ export function Navbar() {
     <>
       <header
         className="hidden md:block sticky top-0 z-50"
-        style={{ backgroundColor: "#585a4f", height: "clamp(84px, 11vw, 92px)" }}
+        style={{ backgroundColor: "#585a4f", height: "clamp(96px, 12vw, 104px)" }}
       >
         <div
           className="flex items-center justify-between h-full"

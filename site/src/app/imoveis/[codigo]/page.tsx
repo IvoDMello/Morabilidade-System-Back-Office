@@ -296,7 +296,7 @@ export default async function DetalheImovelPage({ params }: Props) {
           <div className="space-y-4">
 
             {/* Card de preço */}
-            <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-5 md:sticky md:top-[76px]">
+            <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-5 md:sticky md:top-[104px]">
               <p className="text-xs text-slate-400 font-mono mb-1">{imovel.codigo}</p>
 
               {precoVenda && (
