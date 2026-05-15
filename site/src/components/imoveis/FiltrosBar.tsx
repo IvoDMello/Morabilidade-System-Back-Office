@@ -7,6 +7,7 @@ import { SlidersHorizontal, ChevronDown } from "lucide-react";
 const TIPOS_IMOVEL = [
   { value: "", label: "Todos os tipos" },
   { value: "apartamento", label: "Apartamento" },
+  { value: "apartamento_terreo", label: "Apartamento térreo" },
   { value: "casa", label: "Casa" },
   { value: "cobertura", label: "Cobertura" },
 ];
@@ -57,10 +58,13 @@ export function FiltrosBar({ total, bairros = [] }: Props) {
   const params = useSearchParams();
 
   const [tipoNeg, setTipoNeg] = useState(params.get("tipo_negocio") ?? "todos");
-  const [tipoImovel, setTipoImovel] = useState(params.get("tipo_imovel") ?? "");
+  const tipoImovelUrl = params.get("tipo_imovel") ?? "";
+  const apenasTerreo = params.get("andar_max") === "1";
+  const tipoImovelInicial =
+    tipoImovelUrl === "apartamento" && apenasTerreo ? "apartamento_terreo" : tipoImovelUrl;
+  const [tipoImovel, setTipoImovel] = useState(tipoImovelInicial);
   const [bairro, setBairro] = useState(params.get("bairro") ?? "");
   const [ordenar, setOrdenar] = useState(params.get("ordenar") ?? "");
-  const apenasTerreo = params.get("andar_max") === "1";
 
   function buildUrl(overrides: Record<string, string>) {
     const sp = new URLSearchParams(params.toString());
@@ -79,16 +83,16 @@ export function FiltrosBar({ total, bairros = [] }: Props) {
 
   function handleTipo(v: string) {
     setTipoImovel(v);
-    router.push(buildUrl({ tipo_imovel: v }));
+    if (v === "apartamento_terreo") {
+      router.push(buildUrl({ tipo_imovel: "apartamento", andar_max: "1" }));
+    } else {
+      router.push(buildUrl({ tipo_imovel: v, andar_max: "" }));
+    }
   }
 
   function handleOrdenar(v: string) {
     setOrdenar(v);
     router.push(buildUrl({ ordenar: v }));
-  }
-
-  function handleTerreo() {
-    router.push(buildUrl({ andar_max: apenasTerreo ? "" : "1" }));
   }
 
   function handleBairroSubmit() {
@@ -164,17 +168,6 @@ export function FiltrosBar({ total, bairros = [] }: Props) {
             style={{ color: "#6e7063" }}
           />
         </div>
-
-        {/* Apenas térreo — pill toggle */}
-        <button
-          type="button"
-          onClick={handleTerreo}
-          className="flex-shrink-0 transition-all duration-150"
-          style={pillStyle(apenasTerreo)}
-          title="Apartamentos no primeiro andar"
-        >
-          Só térreo
-        </button>
 
         {/* Bairro com autocomplete */}
         <div className="relative flex-shrink-0">
