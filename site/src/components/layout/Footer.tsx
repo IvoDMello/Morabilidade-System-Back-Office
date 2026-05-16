@@ -7,7 +7,7 @@ export function Footer() {
 
   return (
     <footer
-      style={{ background: "linear-gradient(180deg, #3d3f36 0%, #2e302a 100%)" }}
+      style={{ backgroundColor: "#585a4f" }}
       className="text-white"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-14 pb-8">
@@ -23,7 +23,7 @@ export function Footer() {
               className="object-contain mb-5"
               style={{ height: "auto", width: "clamp(160px, 20vw, 260px)" }}
             />
-            <p className="text-white/50 text-sm leading-relaxed max-w-xs mb-6">
+            <p className="text-white/75 text-sm leading-relaxed max-w-xs mb-6">
               Simples, eficiente e humanizada. Conectando pessoas ao imóvel certo
               há mais de uma década na Zona Sul do Rio de Janeiro.
             </p>
@@ -32,15 +32,15 @@ export function Footer() {
             <div className="inline-flex items-center gap-3 mb-6">
               <div
                 className="flex flex-col items-center justify-center w-14 h-14 rounded-xl"
-                style={{ backgroundColor: "rgba(216,203,106,0.12)", border: "1px solid rgba(216,203,106,0.25)" }}
+                style={{ backgroundColor: "rgba(216,203,106,0.18)", border: "1px solid rgba(216,203,106,0.45)" }}
               >
                 <span className="text-2xl font-bold leading-none" style={{ color: "#d8cb6a" }}>
                   {anosDeMarket}
                 </span>
               </div>
               <div>
-                <p className="text-xs font-semibold text-white/80">Anos de Mercado</p>
-                <p className="text-xs text-white/40">Zona Sul · Rio de Janeiro</p>
+                <p className="text-xs font-semibold text-white/90">Anos de Mercado</p>
+                <p className="text-xs text-white/60">Zona Sul · Rio de Janeiro</p>
               </div>
             </div>
 
@@ -51,7 +51,7 @@ export function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Instagram @morabilidade"
-                className="w-9 h-9 rounded-xl flex items-center justify-center border border-white/10 text-white/40 hover:text-white hover:border-white/30 transition"
+                className="w-9 h-9 rounded-xl flex items-center justify-center border border-white/25 text-white/70 hover:text-white hover:border-white/50 transition"
               >
                 <Instagram className="w-4 h-4" />
               </a>
@@ -60,7 +60,7 @@ export function Footer() {
 
           {/* Navegação */}
           <div className="md:col-span-3 md:col-start-7">
-            <h4 className="font-semibold mb-5 text-xs text-white/50 uppercase tracking-widest">
+            <h4 className="font-semibold mb-5 text-xs text-white/70 uppercase tracking-widest">
               Páginas
             </h4>
             <ul className="space-y-3">
@@ -73,7 +73,7 @@ export function Footer() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-sm text-white/50 hover:text-white transition flex items-center gap-1.5 group"
+                    className="text-sm text-white/75 hover:text-white transition flex items-center gap-1.5 group"
                   >
                     <span
                       className="w-1 h-1 rounded-full opacity-0 group-hover:opacity-100 transition"
@@ -88,7 +88,7 @@ export function Footer() {
 
           {/* Portfólio */}
           <div className="md:col-span-3 md:col-start-10">
-            <h4 className="font-semibold mb-5 text-xs text-white/50 uppercase tracking-widest">
+            <h4 className="font-semibold mb-5 text-xs text-white/70 uppercase tracking-widest">
               Portfólio
             </h4>
             <ul className="space-y-3">
@@ -101,7 +101,7 @@ export function Footer() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-sm text-white/50 hover:text-white transition flex items-center gap-1.5 group"
+                    className="text-sm text-white/75 hover:text-white transition flex items-center gap-1.5 group"
                   >
                     <span
                       className="w-1 h-1 rounded-full opacity-0 group-hover:opacity-100 transition"
@@ -116,14 +116,14 @@ export function Footer() {
         </div>
 
         {/* Bottom bar */}
-        <div className="pt-6 border-t border-white/[0.07] flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-xs text-white/25">
+        <div className="pt-6 border-t border-white/20 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-xs text-white/60">
             © {new Date().getFullYear()} Morabilidade. Todos os direitos reservados.
           </p>
-          <p className="text-xs text-white/20 tracking-widest uppercase">
+          <p className="text-xs text-white/55 tracking-widest uppercase">
             Simples · Eficiente · Humanizada
           </p>
-          <p className="text-xs text-white/20">CRECI-RJ nº 70411</p>
+          <p className="text-xs text-white/55">CRECI-RJ nº 70411</p>
         </div>
       </div>
     </footer>
