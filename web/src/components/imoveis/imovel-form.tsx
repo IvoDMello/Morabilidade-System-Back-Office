@@ -34,7 +34,7 @@ const schema = z.object({
   complemento: z.string().optional(),
   bairro: z.string().min(1, "Bairro obrigatório"),
   cidade: z.string().min(1, "Cidade obrigatória"),
-  tipo_imovel: z.enum(["casa", "apartamento", "terreno", "sala", "galpao", "loja", "cobertura", "kitnet", "outro"]),
+  tipo_imovel: z.enum(["casa", "casa_vila", "casa_condominio", "apartamento", "terreno", "sala", "galpao", "loja", "cobertura", "kitnet", "outro"]),
   dormitorios: optInt,
   suites: optInt,
   banheiros: optInt,
@@ -353,6 +353,8 @@ export function ImovelForm({
             <Label required>Tipo de imóvel</Label>
             <select {...register("tipo_imovel")} className={selectClass}>
               <option value="casa">Casa</option>
+              <option value="casa_vila">Casa de vila</option>
+              <option value="casa_condominio">Casa de condomínio</option>
               <option value="apartamento">Apartamento</option>
               <option value="terreno">Terreno</option>
               <option value="sala">Sala comercial</option>

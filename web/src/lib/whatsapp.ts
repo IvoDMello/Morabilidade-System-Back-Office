@@ -13,6 +13,8 @@ const TIPO_LABEL: Record<string, string> = {
   apartamento: "Apartamento",
   cobertura: "Cobertura",
   casa: "Casa",
+  casa_vila: "Casa de vila",
+  casa_condominio: "Casa de condomínio",
   kitnet: "Kitnet",
   terreno: "Terreno",
   sala: "Sala",

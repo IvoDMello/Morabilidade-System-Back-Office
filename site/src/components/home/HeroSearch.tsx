@@ -12,6 +12,8 @@ const TIPOS_IMOVEL = [
   { value: "apartamento_terreo", label: "Apartamento térreo" },
   { value: "cobertura", label: "Cobertura" },
   { value: "casa", label: "Casa" },
+  { value: "casa_vila", label: "Casa de vila" },
+  { value: "casa_condominio", label: "Casa de condomínio" },
 ];
 
 export function HeroSearch() {

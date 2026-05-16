@@ -20,7 +20,8 @@ export interface User {
 export type TipoNegocio = "venda" | "locacao" | "ambos";
 export type Disponibilidade = "disponivel" | "reservado" | "vendido_locado";
 export type TipoImovel =
-  | "casa" | "apartamento" | "terreno" | "sala"
+  | "casa" | "casa_vila" | "casa_condominio"
+  | "apartamento" | "terreno" | "sala"
   | "galpao" | "loja" | "cobertura" | "kitnet" | "outro";
 export type Mobiliado = "sim" | "nao" | "semi-mobiliado";
 export type CondicaoImovel = "em_construcao" | "na_planta" | "novo" | "usado";

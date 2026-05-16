@@ -17,6 +17,8 @@ export function formatarMoeda(valor: number): string {
 export function labelTipoImovel(tipo: string): string {
   const labels: Record<string, string> = {
     casa: "Casa",
+    casa_vila: "Casa de vila",
+    casa_condominio: "Casa de condomínio",
     apartamento: "Apartamento",
     terreno: "Terreno",
     sala: "Sala comercial",

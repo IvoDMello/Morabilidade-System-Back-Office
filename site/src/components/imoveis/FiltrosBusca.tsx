@@ -88,6 +88,8 @@ export function FiltrosBusca({ layout = "top" }: Props) {
         >
           <option value="">Todos os tipos</option>
           <option value="casa">Casa</option>
+          <option value="casa_vila">Casa de vila</option>
+          <option value="casa_condominio">Casa de condomínio</option>
           <option value="apartamento">Apartamento</option>
           <option value="galpao">Galpão</option>
           <option value="cobertura">Cobertura</option>
@@ -288,6 +290,8 @@ export function FiltrosBusca({ layout = "top" }: Props) {
                 >
                   <option value="">Todos</option>
                   <option value="casa">Casa</option>
+                  <option value="casa_vila">Casa de vila</option>
+                  <option value="casa_condominio">Casa de condomínio</option>
                   <option value="apartamento">Apartamento</option>
                   <option value="cobertura">Cobertura</option>
                 </select>

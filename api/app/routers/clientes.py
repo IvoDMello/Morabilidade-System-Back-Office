@@ -34,7 +34,8 @@ _ORIGENS_VALIDAS = {
 }
 _TIPOS_NEGOCIO_VALIDOS = {"venda", "locacao", "ambos"}
 _TIPOS_IMOVEL_VALIDOS = {
-    "casa", "apartamento", "terreno", "sala", "galpao", "loja", "cobertura", "kitnet", "outro",
+    "casa", "casa_vila", "casa_condominio", "apartamento", "terreno",
+    "sala", "galpao", "loja", "cobertura", "kitnet", "outro",
 }
 
 # Aliases (sem acento, minúsculas, separadores normalizados) → campo do banco.

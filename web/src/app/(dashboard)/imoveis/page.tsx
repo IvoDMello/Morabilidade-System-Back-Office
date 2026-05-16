@@ -63,6 +63,8 @@ const TIPO_NEGOCIO_LABEL: Record<string, string> = {
 
 const TIPO_IMOVEL_LABEL: Record<string, string> = {
   casa: "Casa",
+  casa_vila: "Casa de vila",
+  casa_condominio: "Casa de condomínio",
   apartamento: "Apartamento",
   cobertura: "Cobertura",
 };
@@ -308,6 +310,8 @@ setLoading(true);
               >
                 <option value="">Todos os tipos</option>
                 <option value="casa">Casa</option>
+                <option value="casa_vila">Casa de vila</option>
+                <option value="casa_condominio">Casa de condomínio</option>
                 <option value="apartamento">Apartamento</option>
                 <option value="cobertura">Cobertura</option>
               </select>

@@ -127,6 +127,8 @@ export function PreferenciaForm({ clienteId, onSaved }: Props) {
           >
             <option value="">— Qualquer —</option>
             <option value="casa">Casa</option>
+            <option value="casa_vila">Casa de vila</option>
+            <option value="casa_condominio">Casa de condomínio</option>
             <option value="apartamento">Apartamento</option>
             <option value="apartamento_terreo">Apartamento térreo</option>
             <option value="cobertura">Cobertura</option>

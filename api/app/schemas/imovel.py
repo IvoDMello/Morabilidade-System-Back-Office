@@ -18,6 +18,8 @@ class Disponibilidade(str, Enum):
 
 class TipoImovel(str, Enum):
     casa = "casa"
+    casa_vila = "casa_vila"
+    casa_condominio = "casa_condominio"
     apartamento = "apartamento"
     terreno = "terreno"
     sala = "sala"

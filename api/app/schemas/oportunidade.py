@@ -21,6 +21,8 @@ class TipoImovelPreferencia(str, Enum):
     HeroSearch do site público e não existe como tipo real de imóvel.
     """
     casa = "casa"
+    casa_vila = "casa_vila"
+    casa_condominio = "casa_condominio"
     apartamento = "apartamento"
     apartamento_terreo = "apartamento_terreo"
     terreno = "terreno"

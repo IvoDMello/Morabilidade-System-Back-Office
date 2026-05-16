@@ -9,6 +9,8 @@ const TIPOS_IMOVEL = [
   { value: "apartamento", label: "Apartamento" },
   { value: "apartamento_terreo", label: "Apartamento térreo" },
   { value: "casa", label: "Casa" },
+  { value: "casa_vila", label: "Casa de vila" },
+  { value: "casa_condominio", label: "Casa de condomínio" },
   { value: "cobertura", label: "Cobertura" },
 ];
 

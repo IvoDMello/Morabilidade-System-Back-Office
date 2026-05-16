@@ -40,6 +40,8 @@ const PALETA = ["#585a4f", "#d8cb6a", "#8b8a72", "#c2b96a", "#a8a78f", "#e3d895"
 
 const TIPO_IMOVEL_LABEL: Record<string, string> = {
   casa: "Casa",
+  casa_vila: "Casa de vila",
+  casa_condominio: "Casa de condomínio",
   apartamento: "Apartamento",
   terreno: "Terreno",
   sala: "Sala Comercial",
