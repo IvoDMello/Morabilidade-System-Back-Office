@@ -184,10 +184,10 @@ export function ImovelForm({
     if (!isNaN(num) && num > 0) {
       const converted =
         periodo === "anual"
-          ? parseFloat((num * 12).toFixed(2))
-          : parseFloat((num / 12).toFixed(2));
+          ? parseFloat((num * 10).toFixed(2))
+          : parseFloat((num / 10).toFixed(2));
       setIptuDisplay(String(converted));
-      setValue("iptu_mensal", periodo === "anual" ? parseFloat((converted / 12).toFixed(2)) : converted);
+      setValue("iptu_mensal", periodo === "anual" ? parseFloat((converted / 10).toFixed(2)) : converted);
     }
     setIptuPeriodo(periodo);
   }
@@ -198,7 +198,7 @@ export function ImovelForm({
     if (isNaN(num) || value === "") {
       setValue("iptu_mensal", null);
     } else {
-      setValue("iptu_mensal", iptuPeriodo === "anual" ? parseFloat((num / 12).toFixed(2)) : num);
+      setValue("iptu_mensal", iptuPeriodo === "anual" ? parseFloat((num / 10).toFixed(2)) : num);
     }
   }
 
@@ -466,7 +466,7 @@ export function ImovelForm({
             {iptuPeriodo === "anual" && parseFloat(iptuDisplay) > 0 && (
               <p className="mt-1 text-xs text-slate-400">
                 ≈ R${" "}
-                {(parseFloat(iptuDisplay) / 12).toLocaleString("pt-BR", {
+                {(parseFloat(iptuDisplay) / 10).toLocaleString("pt-BR", {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
                 })}{" "}
