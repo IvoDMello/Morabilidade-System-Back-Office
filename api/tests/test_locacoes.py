@@ -171,8 +171,9 @@ def test_obter_contrato_nao_encontrado(client):
 # ── POST /locacoes/ ──────────────────────────────────────────────────────────
 
 def test_criar_contrato(client):
-    # 2 executes: insert + _buscar_contrato
+    # 3 executes: checagem de duplicidade (vazio) + insert + _buscar_contrato
     db = make_db_mock(
+        MagicMock(data=[]),
         MagicMock(data=[CONTRATO_DB]),
         MagicMock(data=CONTRATO_DB),
     )
@@ -219,6 +220,14 @@ def test_criar_contrato_aluguel_negativo(client):
 def test_criar_contrato_exige_admin(corretor_client):
     res = corretor_client.post("/locacoes/", json=CONTRATO_PAYLOAD)
     assert res.status_code == 403
+
+
+def test_criar_contrato_bloqueia_duplicidade_quando_imovel_ja_tem_ativo(client):
+    db = make_db_mock(MagicMock(data=[{"id": "outro-contrato"}]))
+    with patch("app.routers.locacoes.supabase_admin", db):
+        res = client.post("/locacoes/", json=CONTRATO_PAYLOAD)
+    assert res.status_code == 409
+    assert "ativo" in res.json()["detail"].lower()
 
 
 # ── PATCH /locacoes/{id} ─────────────────────────────────────────────────────

@@ -683,6 +683,20 @@ def gerar_demonstrativo_individual(
 
 @router.post("/", response_model=ContratoLocacaoOut, status_code=status.HTTP_201_CREATED)
 def criar_contrato(body: ContratoLocacaoCreate, current_user: dict = Depends(require_admin)):
+    existente = (
+        supabase_admin.table("contratos_locacao")
+        .select("id")
+        .eq("imovel_id", body.imovel_id)
+        .eq("status", "ativo")
+        .limit(1)
+        .execute()
+    )
+    if existente.data:
+        raise HTTPException(
+            status_code=409,
+            detail="Este imóvel já possui um contrato ativo. Encerre ou rescinda o contrato atual antes de criar outro.",
+        )
+
     data = _serializar_para_banco(body.model_dump())
     try:
         result = supabase_admin.table("contratos_locacao").insert(data).execute()
