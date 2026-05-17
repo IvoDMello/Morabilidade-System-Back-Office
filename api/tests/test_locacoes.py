@@ -235,6 +235,7 @@ def test_criar_contrato_bloqueia_duplicidade_quando_imovel_ja_tem_ativo(client):
 def test_atualizar_contrato(client):
     atualizado = {**CONTRATO_DB, "aluguel_mensal": "9000.00"}
     db = make_db_mock(
+        MagicMock(data=CONTRATO_DB),
         MagicMock(data=[atualizado]),
         MagicMock(data=atualizado),
     )
@@ -251,7 +252,7 @@ def test_atualizar_contrato(client):
 
 
 def test_atualizar_contrato_nao_encontrado(client):
-    db = make_db_mock(MagicMock(data=[]))
+    db = make_db_mock(MagicMock(data=None), MagicMock(data=[]))
 
     with patch("app.routers.locacoes.supabase_admin", db):
         res = client.patch("/locacoes/nao-existe", json={"aluguel_mensal": "9000.00"})
@@ -421,7 +422,7 @@ def test_criar_pagamento_duplicado_retorna_409(client):
 def test_marcar_pagamento_como_pago_preenche_data_automaticamente(client):
     """PATCH com status=pago e sem data_pagamento → backend usa hoje."""
     pago = {**PAGAMENTO_DB, "status": "pago", "data_pagamento": "2026-05-15"}
-    db = make_db_mock(MagicMock(data=[pago]))
+    db = make_db_mock(MagicMock(data=PAGAMENTO_DB), MagicMock(data=[pago]))
 
     with patch("app.routers.locacoes.supabase_admin", db):
         res = client.patch(

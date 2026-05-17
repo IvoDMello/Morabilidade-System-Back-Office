@@ -155,6 +155,7 @@ def test_atualizar_contrato_data_fim_anterior_ao_inicio_no_patch(client):
 def test_atualizar_contrato_so_uma_data_no_patch_passa(client):
     """Se vier só uma das datas, não dá pra cruzar — segue para o banco."""
     db = make_db_mock(
+        MagicMock(data=CONTRATO_DB),
         MagicMock(data=[CONTRATO_DB]),
         MagicMock(data=CONTRATO_DB),
     )
@@ -169,6 +170,7 @@ def test_atualizar_contrato_so_uma_data_no_patch_passa(client):
 def test_atualizar_contrato_status_no_patch_e_ignorado(client):
     """Fix 7: PATCH não deve trocar status diretamente — use /rescindir."""
     db = make_db_mock(
+        MagicMock(data=CONTRATO_DB),
         MagicMock(data=[CONTRATO_DB]),
         MagicMock(data=CONTRATO_DB),
     )
@@ -256,6 +258,7 @@ def test_atualizar_contrato_ignora_campos_imutaveis(client):
     ignora extras por padrão (model_config sem extra='forbid'). Garante que o
     PATCH não acidentalmente troca uma das partes do contrato."""
     db = make_db_mock(
+        MagicMock(data=CONTRATO_DB),
         MagicMock(data=[CONTRATO_DB]),
         MagicMock(data=CONTRATO_DB),
     )

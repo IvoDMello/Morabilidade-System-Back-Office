@@ -35,6 +35,7 @@ from app.services.demonstrativo_pdf import (
     calcular_total_demonstrativo,
     gerar_demonstrativo_pdf,
 )
+from app.services.audit_log import registrar_audit_locacao
 from app.services.email import enviar_demonstrativo_locacao
 from app.services.storage import (
     deletar_documento,
@@ -706,6 +707,14 @@ def criar_contrato(body: ContratoLocacaoCreate, current_user: dict = Depends(req
         raise HTTPException(status_code=400, detail=f"Erro ao criar contrato: {e}")
 
     novo = result.data[0]
+    registrar_audit_locacao(
+        user=current_user,
+        acao="insert",
+        entidade="contrato",
+        entidade_id=novo["id"],
+        contrato_id=novo["id"],
+        payload_depois=novo,
+    )
     return _buscar_contrato(novo["id"])
 
 
@@ -724,6 +733,14 @@ def atualizar_contrato(
     if not updates:
         return _buscar_contrato(contrato_id)
 
+    antes = (
+        supabase_admin.table("contratos_locacao")
+        .select("*")
+        .eq("id", contrato_id)
+        .maybe_single()
+        .execute()
+        .data
+    )
     result = (
         supabase_admin.table("contratos_locacao")
         .update(updates)
@@ -732,6 +749,15 @@ def atualizar_contrato(
     )
     if not result.data:
         raise HTTPException(status_code=404, detail="Contrato não encontrado.")
+    registrar_audit_locacao(
+        user=current_user,
+        acao="update",
+        entidade="contrato",
+        entidade_id=contrato_id,
+        contrato_id=contrato_id,
+        payload_antes=antes,
+        payload_depois=updates,
+    )
     return _buscar_contrato(contrato_id)
 
 
@@ -756,6 +782,14 @@ def rescindir_contrato(
     )
     if not result.data:
         raise HTTPException(status_code=404, detail="Contrato não encontrado.")
+    registrar_audit_locacao(
+        user=current_user,
+        acao="update",
+        entidade="contrato",
+        entidade_id=contrato_id,
+        contrato_id=contrato_id,
+        payload_depois={"rescisao": updates},
+    )
     return _buscar_contrato(contrato_id)
 
 
@@ -771,6 +805,14 @@ def encerrar_contrato(contrato_id: str, current_user: dict = Depends(require_adm
     )
     if not result.data:
         raise HTTPException(status_code=404, detail="Contrato não encontrado.")
+    registrar_audit_locacao(
+        user=current_user,
+        acao="delete",
+        entidade="contrato",
+        entidade_id=contrato_id,
+        contrato_id=contrato_id,
+        payload_antes={"status_anterior": "ativo"},
+    )
 
 
 # ── Pagamentos ──────────────────────────────────────────────────────────────
@@ -817,7 +859,16 @@ def criar_pagamento(
                 detail="Já existe pagamento registrado para este mês.",
             )
         raise HTTPException(status_code=400, detail=f"Erro ao criar pagamento: {e}")
-    return result.data[0]
+    novo = result.data[0]
+    registrar_audit_locacao(
+        user=current_user,
+        acao="insert",
+        entidade="pagamento",
+        entidade_id=novo["id"],
+        contrato_id=contrato_id,
+        payload_depois=novo,
+    )
+    return novo
 
 
 @router.patch("/pagamentos/{pagamento_id}", response_model=PagamentoOut)
@@ -836,6 +887,14 @@ def atualizar_pagamento(
     if not updates:
         raise HTTPException(status_code=400, detail="Nenhum campo para atualizar.")
 
+    antes = (
+        supabase_admin.table("locacao_pagamentos")
+        .select("*")
+        .eq("id", pagamento_id)
+        .maybe_single()
+        .execute()
+        .data
+    )
     result = (
         supabase_admin.table("locacao_pagamentos")
         .update(updates)
@@ -844,7 +903,17 @@ def atualizar_pagamento(
     )
     if not result.data:
         raise HTTPException(status_code=404, detail="Pagamento não encontrado.")
-    return result.data[0]
+    depois = result.data[0] if isinstance(result.data, list) else result.data
+    registrar_audit_locacao(
+        user=current_user,
+        acao="update",
+        entidade="pagamento",
+        entidade_id=pagamento_id,
+        contrato_id=(antes or {}).get("contrato_id"),
+        payload_antes=antes,
+        payload_depois=updates,
+    )
+    return depois
 
 
 @router.delete("/pagamentos/{pagamento_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -852,7 +921,24 @@ def deletar_pagamento(
     pagamento_id: str,
     current_user: dict = Depends(require_admin),
 ):
+    antes = (
+        supabase_admin.table("locacao_pagamentos")
+        .select("*")
+        .eq("id", pagamento_id)
+        .maybe_single()
+        .execute()
+        .data
+    )
     supabase_admin.table("locacao_pagamentos").delete().eq("id", pagamento_id).execute()
+    if antes:
+        registrar_audit_locacao(
+            user=current_user,
+            acao="delete",
+            entidade="pagamento",
+            entidade_id=pagamento_id,
+            contrato_id=antes.get("contrato_id"),
+            payload_antes=antes,
+        )
 
 
 # ── Reajustes (Fase 5) ──────────────────────────────────────────────────────
@@ -912,7 +998,17 @@ def aplicar_reajuste(
         {"aluguel_mensal": float(novo)}
     ).eq("id", contrato_id).execute()
 
-    return result.data[0]
+    reajuste = result.data[0]
+    registrar_audit_locacao(
+        user=current_user,
+        acao="insert",
+        entidade="reajuste",
+        entidade_id=reajuste["id"],
+        contrato_id=contrato_id,
+        payload_antes={"aluguel_mensal": float(anterior)},
+        payload_depois={**reajuste, "aluguel_mensal_novo": float(novo)},
+    )
+    return reajuste
 
 
 # ── Anexos do contrato ──────────────────────────────────────────────────────
@@ -972,7 +1068,16 @@ async def upload_anexo(
         deletar_documento(storage_path)
         raise HTTPException(status_code=500, detail=f"Erro ao registrar anexo: {e}")
 
-    return _hidratar_anexo(result.data[0])
+    novo = result.data[0]
+    registrar_audit_locacao(
+        user=current_user,
+        acao="insert",
+        entidade="anexo",
+        entidade_id=novo["id"],
+        contrato_id=contrato_id,
+        payload_depois=novo,
+    )
+    return _hidratar_anexo(novo)
 
 
 @router.delete("/anexos/{anexo_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -981,7 +1086,7 @@ def deletar_anexo(anexo_id: str, current_user: dict = Depends(require_admin)):
     se o anexo não existir, retorna 204 sem alarde."""
     existente = (
         supabase_admin.table("locacao_anexos")
-        .select("firebase_path")
+        .select("*")
         .eq("id", anexo_id)
         .execute()
         .data
@@ -989,5 +1094,14 @@ def deletar_anexo(anexo_id: str, current_user: dict = Depends(require_admin)):
     )
     if not existente:
         return
-    deletar_documento(existente[0]["firebase_path"])
+    antes = existente[0]
+    deletar_documento(antes["firebase_path"])
     supabase_admin.table("locacao_anexos").delete().eq("id", anexo_id).execute()
+    registrar_audit_locacao(
+        user=current_user,
+        acao="delete",
+        entidade="anexo",
+        entidade_id=anexo_id,
+        contrato_id=antes.get("contrato_id"),
+        payload_antes=antes,
+    )
