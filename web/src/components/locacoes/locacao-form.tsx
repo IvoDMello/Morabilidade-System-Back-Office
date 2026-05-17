@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -68,6 +68,11 @@ const inputClass =
 const selectClass = inputClass;
 const labelClass = "block text-xs font-medium text-slate-600 mb-1";
 
+// Evita que a roda do mouse altere acidentalmente inputs numéricos
+// (ex.: 100 → 99,99 com um scroll por cima do campo focado).
+const bloquearScroll = (e: React.WheelEvent<HTMLInputElement>) =>
+  e.currentTarget.blur();
+
 function Field({
   label,
   error,
@@ -114,6 +119,7 @@ export function LocacaoForm({
     register,
     handleSubmit,
     watch,
+    reset,
     formState: { errors },
   } = useForm<LocacaoFormData>({
     resolver: zodResolver(schema),
@@ -145,6 +151,23 @@ export function LocacaoForm({
       .catch(() => {})
       .finally(() => setLoadingListas(false));
   }, []);
+
+  // Quando as listas chegam (modo edição), os <select> já montaram sem opções
+  // e perderam o defaultValue. Re-sincroniza o form uma única vez.
+  const jaResetou = useRef(false);
+  useEffect(() => {
+    if (!loadingListas && defaultValues && !jaResetou.current) {
+      reset({
+        dia_vencimento: 5,
+        incluir_condominio_cobranca: true,
+        incluir_fundo_obra_cobranca: false,
+        incluir_iptu_cobranca: false,
+        incluir_seguro_incendio_cobranca: false,
+        ...defaultValues,
+      });
+      jaResetou.current = true;
+    }
+  }, [loadingListas, defaultValues, reset]);
 
   // Cálculo do total ao vivo — replica a regra do PDF:
   //   Aluguel + (Condomínio) + (Fundo de obra) + (IPTU/10) + (Seguro/12) − Fundo de reserva
@@ -265,6 +288,7 @@ export function LocacaoForm({
               max={31}
               {...register("dia_vencimento")}
               className={inputClass}
+              onWheel={bloquearScroll}
             />
           </Field>
         </div>
@@ -282,6 +306,7 @@ export function LocacaoForm({
               min={0}
               {...register("aluguel_mensal")}
               className={inputClass}
+              onWheel={bloquearScroll}
             />
           </Field>
 
@@ -292,6 +317,7 @@ export function LocacaoForm({
               min={0}
               {...register("condominio_mensal")}
               className={inputClass}
+              onWheel={bloquearScroll}
             />
             <label className="flex items-center gap-2 mt-2 text-xs text-slate-600">
               <input
@@ -314,6 +340,7 @@ export function LocacaoForm({
               min={0}
               {...register("fundo_reserva")}
               className={inputClass}
+              onWheel={bloquearScroll}
             />
           </Field>
 
@@ -324,6 +351,7 @@ export function LocacaoForm({
               min={0}
               {...register("fundo_obra")}
               className={inputClass}
+              onWheel={bloquearScroll}
             />
             <label className="flex items-center gap-2 mt-2 text-xs text-slate-600">
               <input
@@ -346,6 +374,7 @@ export function LocacaoForm({
               min={0}
               {...register("iptu_anual")}
               className={inputClass}
+              onWheel={bloquearScroll}
             />
             <label className="flex items-center gap-2 mt-2 text-xs text-slate-600">
               <input
@@ -368,6 +397,7 @@ export function LocacaoForm({
               min={0}
               {...register("seguro_incendio_anual")}
               className={inputClass}
+              onWheel={bloquearScroll}
             />
             <label className="flex items-center gap-2 mt-2 text-xs text-slate-600">
               <input
@@ -401,6 +431,7 @@ export function LocacaoForm({
               {...register("taxa_administracao_pct")}
               className={inputClass}
               placeholder="0"
+              onWheel={bloquearScroll}
             />
           </Field>
         </div>
