@@ -113,8 +113,9 @@ export function PagamentosLocacao({
     try {
       await api.patch(`/locacoes/pagamentos/${p.id}`, {
         status: novo,
-        valor_pago: novo === "pago" ? p.valor_devido : p.valor_pago,
+        valor_pago: novo === "pago" ? p.valor_devido : null,
       });
+      toast.success(novo === "pago" ? "Marcado como pago." : "Revertido para pendente.");
       buscar();
     } catch {
       toast.error("Erro ao atualizar pagamento.");
