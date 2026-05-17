@@ -1,0 +1,10 @@
+-- tudo de um contrato em ordem cronológica
+SELECT * FROM locacao_audit_log
+WHERE contrato_id = '...' ORDER BY created_at DESC;
+
+-- o que o usuário X fez no mês
+SELECT * FROM locacao_audit_log
+WHERE user_email = 'ivo@…' AND created_at >= '2026-05-01';
+
+-- todos os deletes
+SELECT * FROM locacao_audit_log WHERE acao = 'delete';
