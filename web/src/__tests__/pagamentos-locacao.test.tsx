@@ -116,9 +116,8 @@ describe("PagamentosLocacao", () => {
   });
 
   it("gera próximo mês com dia de vencimento correto", async () => {
-    apiGet.mockResolvedValueOnce({ data: [] });
+    apiGet.mockResolvedValue({ data: [] });
     apiPost.mockResolvedValue({});
-    apiGet.mockResolvedValueOnce({ data: [] });
 
     render(
       <PagamentosLocacao contratoId="c1" valorSugerido={1234.56} diaVencimentoPadrao={5} />

@@ -71,8 +71,14 @@ export function PagamentosLocacao({
   async function handleAdicionarProximoMes() {
     setCriando(true);
     try {
-      // Próximo mês ainda sem registro — começa pelo mês corrente.
-      const ja = new Set(pagamentos.map((p) => p.mes_referencia));
+      // Busca lista fresca: a aba Demonstrativo (componente irmão) pode ter
+      // criado o pagamento do mês corrente sem que este componente saiba.
+      const atualizados = (
+        await api.get<PagamentoLocacao[]>(`/locacoes/${contratoId}/pagamentos`)
+      ).data;
+      setPagamentos(atualizados);
+
+      const ja = new Set(atualizados.map((p) => p.mes_referencia));
       const hoje = new Date();
       let candidato = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
       while (ja.has(candidato.toISOString().slice(0, 10))) {
@@ -97,6 +103,7 @@ export function PagamentosLocacao({
         (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
         "Erro ao criar pagamento.";
       toast.error(msg);
+      buscar();
     } finally {
       setCriando(false);
     }
