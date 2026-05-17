@@ -16,6 +16,7 @@ import {
   FileDown,
   Loader2,
   Package,
+  Wallet,
 } from "lucide-react";
 import {
   BarChart,
@@ -38,10 +39,11 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import type {
   AnaliseLocacao,
   ContratoLocacaoListItem,
+  RepasseResumo,
   StatusLocacao,
 } from "@/types";
 
-type Tab = "contratos" | "analises" | "demonstrativos";
+type Tab = "contratos" | "analises" | "demonstrativos" | "repasses";
 
 const STATUS_LABEL: Record<StatusLocacao, { label: string; class: string }> = {
   ativo: { label: "Ativo", class: "bg-emerald-50 text-emerald-700 ring-emerald-200" },
@@ -82,12 +84,19 @@ export default function LocacoesPage() {
           >
             <Package className="w-4 h-4" /> Demonstrativos
           </TabButton>
+          <TabButton
+            active={tab === "repasses"}
+            onClick={() => setTab("repasses")}
+          >
+            <Wallet className="w-4 h-4" /> Repasses
+          </TabButton>
         </nav>
       </div>
 
       {tab === "contratos" && <AbaContratos />}
       {tab === "analises" && <AbaAnalises />}
       {tab === "demonstrativos" && <AbaDemonstrativos />}
+      {tab === "repasses" && <AbaRepasses />}
     </div>
   );
 }
@@ -587,6 +596,130 @@ function AbaDemonstrativos() {
           </p>
         </div>
       )}
+    </div>
+  );
+}
+
+// ── Aba Repasses ────────────────────────────────────────────────────────────
+
+function AbaRepasses() {
+  const [mes, setMes] = useState(new Date().toISOString().slice(0, 7));
+  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState<RepasseResumo | null>(null);
+
+  const buscar = useCallback(async (mesRef: string) => {
+    setLoading(true);
+    try {
+      const res = await api.get<RepasseResumo>("/locacoes/repasses", {
+        params: { mes: mesRef },
+      });
+      setData(res.data);
+    } catch {
+      toast.error("Erro ao carregar repasses.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    buscar(mes);
+  }, [mes, buscar]);
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white rounded-xl border border-slate-200 p-5 flex items-end gap-3 flex-wrap">
+        <div>
+          <label className="block text-xs font-medium text-slate-600 mb-1">
+            Mês de competência
+          </label>
+          <input
+            type="month"
+            value={mes}
+            onChange={(e) => setMes(e.target.value)}
+            className="px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white"
+          />
+        </div>
+        {data && (
+          <div className="flex-1 grid grid-cols-3 gap-3">
+            <ResumoCard label="Recebido" valor={Number(data.total_recebido)} cor="#585a4f" />
+            <ResumoCard label="Taxa adm." valor={Number(data.total_taxa)} cor="#d8cb6a" />
+            <ResumoCard label="A repassar" valor={Number(data.total_repasse)} cor="#16a34a" />
+          </div>
+        )}
+      </div>
+
+      {loading ? (
+        <div className="p-12 text-center text-slate-400 text-sm">Carregando...</div>
+      ) : !data || data.proprietarios.length === 0 ? (
+        <div className="bg-white rounded-xl border border-slate-200 p-12 text-center text-slate-400 text-sm">
+          Nenhum pagamento liquidado no mês.
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {data.proprietarios.map((prop) => (
+            <div key={prop.proprietario_id} className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+              <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between flex-wrap gap-2">
+                <div>
+                  <p className="text-sm font-semibold text-slate-800">{prop.nome}</p>
+                  {prop.email && (
+                    <p className="text-xs text-slate-400">{prop.email}</p>
+                  )}
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-slate-400 uppercase tracking-wider">A repassar</p>
+                  <p className="text-lg font-bold" style={{ color: "#16a34a" }}>
+                    {formatarMoeda(Number(prop.total_repasse))}
+                  </p>
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-100 bg-slate-50">
+                      <th className="text-left px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">Imóvel</th>
+                      <th className="text-right px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">Pago</th>
+                      <th className="text-right px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">Taxa</th>
+                      <th className="text-right px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">Repasse</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {prop.itens.map((item) => (
+                      <tr key={item.pagamento_id}>
+                        <td className="px-4 py-2.5">
+                          <p className="font-medium text-slate-700">{item.imovel_codigo ?? "—"}</p>
+                          <p className="text-xs text-slate-400 truncate max-w-[300px]">
+                            {item.imovel_endereco ?? "—"}
+                          </p>
+                        </td>
+                        <td className="px-4 py-2.5 text-right font-mono text-xs text-slate-700">
+                          {formatarMoeda(Number(item.valor_pago))}
+                        </td>
+                        <td className="px-4 py-2.5 text-right font-mono text-xs text-slate-500">
+                          −{formatarMoeda(Number(item.valor_taxa))} ({Number(item.taxa_administracao_pct).toFixed(1)}%)
+                        </td>
+                        <td className="px-4 py-2.5 text-right font-mono text-xs font-semibold" style={{ color: "#16a34a" }}>
+                          {formatarMoeda(Number(item.valor_repasse))}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ResumoCard({ label, valor, cor }: { label: string; valor: number; cor: string }) {
+  return (
+    <div className="border border-slate-200 rounded-lg p-3">
+      <p className="text-xs text-slate-500 uppercase tracking-wider">{label}</p>
+      <p className="text-lg font-bold mt-0.5" style={{ color: cor }}>
+        {formatarMoeda(valor)}
+      </p>
     </div>
   );
 }

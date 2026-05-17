@@ -1,16 +1,18 @@
 import io
 import re
+import uuid
 import zipfile
 from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Response, UploadFile, status
 
 from app.auth.dependencies import get_current_user, require_admin
 from app.database import supabase_admin
 from app.schemas.locacao import (
+    AnexoOut,
     ContratoLocacaoCreate,
     ContratoLocacaoListItem,
     ContratoLocacaoOut,
@@ -18,14 +20,39 @@ from app.schemas.locacao import (
     PagamentoCreate,
     PagamentoOut,
     PagamentoUpdate,
+    ReajusteCreate,
+    ReajusteOut,
+    RepasseItem,
+    RepasseProprietario,
+    RepasseResumo,
     RescindirContrato,
     StatusLocacao,
     StatusPagamento,
+    TipoAnexo,
 )
 from app.services.demonstrativo_pdf import (
     calcular_total_demonstrativo,
     gerar_demonstrativo_pdf,
 )
+from app.services.email import enviar_demonstrativo_locacao
+from app.services.storage import (
+    deletar_documento,
+    upload_documento,
+    url_publica_documento,
+)
+
+
+_MESES_LABEL = [
+    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+]
+
+
+def _formatar_brl(valor) -> str:
+    """R$ 1.234,56 — padrão BR. Aceita Decimal/float/int."""
+    v = float(valor)
+    s = f"{v:,.2f}"
+    return "R$ " + s.replace(",", "X").replace(".", ",").replace("X", ".")
 
 router = APIRouter()
 
@@ -35,10 +62,12 @@ router = APIRouter()
 _SELECT_FULL = (
     "*,"
     "imovel:imoveis(id, codigo, endereco, bairro),"
-    "proprietario:clientes!contratos_locacao_proprietario_id_fkey("
+    # Sintaxe curta `!coluna` — não depende do nome gerado pela FK no banco,
+    # que pode variar (contratos_locacao_proprietario_id_fkey vs custom).
+    "proprietario:clientes!proprietario_id("
     "    id, nome_completo, email, telefone"
     "),"
-    "locatario:clientes!contratos_locacao_locatario_id_fkey("
+    "locatario:clientes!locatario_id("
     "    id, nome_completo, email, telefone"
     ")"
 )
@@ -140,12 +169,8 @@ def listar_contratos(
                 "id, status, data_inicio, data_fim, dia_vencimento, aluguel_mensal,"
                 " created_at,"
                 " imovel:imoveis(id, codigo, endereco, bairro),"
-                " proprietario:clientes!contratos_locacao_proprietario_id_fkey("
-                "    id, nome_completo"
-                " ),"
-                " locatario:clientes!contratos_locacao_locatario_id_fkey("
-                "    id, nome_completo"
-                " )"
+                " proprietario:clientes!proprietario_id(id, nome_completo),"
+                " locatario:clientes!locatario_id(id, nome_completo)"
             )
         )
         .order("created_at", desc=True)
@@ -153,6 +178,29 @@ def listar_contratos(
         .execute()
     )
     return [_achatar_partes(c) for c in (result.data or [])]
+
+
+def _marcar_atrasados(contrato_id: Optional[str] = None) -> None:
+    """Marca como 'atrasado' todo pagamento pendente cuja data_vencimento
+    já passou. Idempotente — pode ser chamado a cada request relevante.
+
+    Sem cron: a operadora é pequena (~30 contratos), o overhead é
+    desprezível e evita depender de scheduler externo.
+    """
+    q = (
+        supabase_admin.table("locacao_pagamentos")
+        .update({"status": "atrasado"})
+        .eq("status", "pendente")
+        .lt("data_vencimento", date.today().isoformat())
+    )
+    if contrato_id:
+        q = q.eq("contrato_id", contrato_id)
+    try:
+        q.execute()
+    except Exception:
+        # Não queremos que falha de marcação derrube o endpoint chamador.
+        # Pior caso: KPIs ficam um request desatualizados.
+        pass
 
 
 # IMPORTANTE: /analises precisa vir ANTES de /{contrato_id}, senão o roteador
@@ -165,6 +213,7 @@ def analises_locacao(
 ):
     """KPIs e séries para a aba Análises.
     Uma chamada só — evita N requests em paralelo do front."""
+    _marcar_atrasados()  # garante que KPI de inadimplência reflete o dia
     ano = ano or datetime.now(timezone.utc).year
     hoje = date.today()
     em_60_dias = hoje + timedelta(days=60)
@@ -391,6 +440,194 @@ def gerar_demonstrativos_em_lote(
     )
 
 
+@router.get("/repasses", response_model=RepasseResumo)
+def relatorio_repasses(
+    mes: str = Query(..., description="Mês de competência no formato YYYY-MM"),
+    current_user: dict = Depends(get_current_user),
+):
+    """Relatório de repasse ao proprietário do mês informado.
+
+    Considera pagamentos com status 'pago' ou 'parcial' cuja
+    mes_referencia bate. Para cada um, aplica a taxa de administração
+    do contrato e agrupa por proprietário.
+    """
+    mes_ref = _parse_mes(mes)
+
+    pagamentos = (
+        supabase_admin.table("locacao_pagamentos")
+        .select("id, contrato_id, valor_devido, valor_pago, status")
+        .eq("mes_referencia", mes_ref.isoformat())
+        .in_("status", ["pago", "parcial"])
+        .execute()
+        .data
+        or []
+    )
+
+    if not pagamentos:
+        return RepasseResumo(
+            mes=mes,
+            proprietarios=[],
+            total_recebido=Decimal("0"),
+            total_taxa=Decimal("0"),
+            total_repasse=Decimal("0"),
+        )
+
+    # Busca os contratos referenciados em uma query só.
+    contrato_ids = list({p["contrato_id"] for p in pagamentos})
+    contratos_raw = (
+        supabase_admin.table("contratos_locacao")
+        .select(
+            "id, taxa_administracao_pct, proprietario_id,"
+            " imovel:imoveis(codigo, endereco, bairro),"
+            " proprietario:clientes!proprietario_id(id, nome_completo, email)"
+        )
+        .in_("id", contrato_ids)
+        .execute()
+        .data
+        or []
+    )
+    contratos_map = {c["id"]: c for c in contratos_raw}
+
+    # Agrega por proprietário.
+    por_prop: dict[str, RepasseProprietario] = {}
+    total_recebido = Decimal("0")
+    total_taxa = Decimal("0")
+    total_repasse = Decimal("0")
+
+    for p in pagamentos:
+        c = contratos_map.get(p["contrato_id"])
+        if not c:
+            continue
+        valor_pago = Decimal(str(p["valor_pago"] or p["valor_devido"] or 0))
+        taxa_pct = Decimal(str(c.get("taxa_administracao_pct") or 0))
+        valor_taxa = (valor_pago * taxa_pct / Decimal("100")).quantize(Decimal("0.01"))
+        valor_repasse = (valor_pago - valor_taxa).quantize(Decimal("0.01"))
+
+        prop = c.get("proprietario") or {}
+        prop_id = c["proprietario_id"]
+        if prop_id not in por_prop:
+            por_prop[prop_id] = RepasseProprietario(
+                proprietario_id=prop_id,
+                nome=prop.get("nome_completo") or "—",
+                email=prop.get("email"),
+                total_recebido=Decimal("0"),
+                total_taxa=Decimal("0"),
+                total_repasse=Decimal("0"),
+                itens=[],
+            )
+
+        imv = c.get("imovel") or {}
+        item = RepasseItem(
+            contrato_id=c["id"],
+            imovel_codigo=imv.get("codigo"),
+            imovel_endereco=", ".join(
+                p for p in [imv.get("endereco"), imv.get("bairro")] if p
+            ) or None,
+            pagamento_id=p["id"],
+            valor_pago=valor_pago,
+            taxa_administracao_pct=taxa_pct,
+            valor_taxa=valor_taxa,
+            valor_repasse=valor_repasse,
+        )
+        bloco = por_prop[prop_id]
+        bloco.itens.append(item)
+        bloco.total_recebido += valor_pago
+        bloco.total_taxa += valor_taxa
+        bloco.total_repasse += valor_repasse
+
+        total_recebido += valor_pago
+        total_taxa += valor_taxa
+        total_repasse += valor_repasse
+
+    # Quantiza os totais por proprietário (serialização JSON consistente).
+    for bloco in por_prop.values():
+        bloco.total_recebido = bloco.total_recebido.quantize(Decimal("0.01"))
+        bloco.total_taxa = bloco.total_taxa.quantize(Decimal("0.01"))
+        bloco.total_repasse = bloco.total_repasse.quantize(Decimal("0.01"))
+
+    proprietarios = sorted(
+        por_prop.values(), key=lambda r: r.nome.lower()
+    )
+
+    return RepasseResumo(
+        mes=mes,
+        proprietarios=proprietarios,
+        total_recebido=total_recebido.quantize(Decimal("0.01")),
+        total_taxa=total_taxa.quantize(Decimal("0.01")),
+        total_repasse=total_repasse.quantize(Decimal("0.01")),
+    )
+
+
+@router.post("/{contrato_id}/demonstrativo/enviar")
+def enviar_demonstrativo(
+    contrato_id: str,
+    mes: str = Query(..., description="Mês de competência no formato YYYY-MM"),
+    para: Optional[str] = Query(
+        default=None,
+        description="E-mail destinatário (default: e-mail cadastrado do locatário)",
+    ),
+    current_user: dict = Depends(require_admin),
+):
+    """Gera o PDF do demonstrativo do mês e envia por e-mail (Resend),
+    anexando o PDF. Também atualiza o snapshot do pagamento (mesma regra
+    de não sobrescrever pago/parcial).
+    """
+    mes_ref = _parse_mes(mes)
+    contrato = _buscar_contrato(contrato_id)
+
+    destinatario = (para or "").strip() or (contrato.get("locatario") or {}).get("nome")
+    # ParteResumo não traz email; buscamos no banco para evitar mandar para nome.
+    if not para:
+        cli = (
+            supabase_admin.table("clientes")
+            .select("email, nome_completo")
+            .eq("id", contrato["locatario_id"])
+            .single()
+            .execute()
+            .data
+            or {}
+        )
+        destinatario = (cli.get("email") or "").strip()
+        nome_locatario = cli.get("nome_completo") or ""
+    else:
+        destinatario = para.strip()
+        nome_locatario = (contrato.get("locatario") or {}).get("nome") or ""
+
+    if not destinatario or "@" not in destinatario:
+        raise HTTPException(
+            status_code=422,
+            detail="Locatário sem e-mail cadastrado. Informe 'para' ou cadastre o e-mail.",
+        )
+
+    total = calcular_total_demonstrativo(contrato)
+    _upsert_snapshot_pagamento(
+        contrato_id, mes_ref, total, contrato["dia_vencimento"],
+    )
+    pdf_bytes = gerar_demonstrativo_pdf(contrato, mes_ref)
+    venc_dia = min(contrato["dia_vencimento"], _ultimo_dia_do_mes(mes_ref))
+    vencimento = date(mes_ref.year, mes_ref.month, venc_dia)
+
+    endereco = (contrato.get("imovel") or {}).get("endereco") or ""
+    nome_arquivo = _nome_arquivo_pdf(contrato, mes_ref)
+    mes_label = f"{_MESES_LABEL[mes_ref.month - 1]}/{mes_ref.year}"
+
+    try:
+        enviar_demonstrativo_locacao(
+            para=destinatario,
+            nome_locatario=nome_locatario,
+            mes_label=mes_label,
+            endereco_imovel=endereco,
+            total_brl=_formatar_brl(total),
+            vencimento_brl=vencimento.strftime("%d/%m/%Y"),
+            pdf_bytes=pdf_bytes,
+            nome_arquivo=nome_arquivo,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Falha ao enviar e-mail: {e}")
+
+    return {"enviado_para": destinatario, "mes": mes, "total": str(total)}
+
+
 @router.post("/{contrato_id}/demonstrativo")
 def gerar_demonstrativo_individual(
     contrato_id: str,
@@ -503,6 +740,7 @@ def listar_pagamentos(
     ano: Optional[int] = Query(default=None, ge=2000, le=2100),
     current_user: dict = Depends(get_current_user),
 ):
+    _marcar_atrasados(contrato_id)
     q = (
         supabase_admin.table("locacao_pagamentos")
         .select("*")
@@ -574,3 +812,136 @@ def deletar_pagamento(
     current_user: dict = Depends(require_admin),
 ):
     supabase_admin.table("locacao_pagamentos").delete().eq("id", pagamento_id).execute()
+
+
+# ── Reajustes (Fase 5) ──────────────────────────────────────────────────────
+
+@router.get("/{contrato_id}/reajustes", response_model=List[ReajusteOut])
+def listar_reajustes(contrato_id: str, current_user: dict = Depends(get_current_user)):
+    result = (
+        supabase_admin.table("locacao_reajustes")
+        .select("*")
+        .eq("contrato_id", contrato_id)
+        .order("data_aplicacao", desc=True)
+        .execute()
+    )
+    return result.data or []
+
+
+@router.post(
+    "/{contrato_id}/reajustar",
+    response_model=ReajusteOut,
+    status_code=status.HTTP_201_CREATED,
+)
+def aplicar_reajuste(
+    contrato_id: str,
+    body: ReajusteCreate,
+    current_user: dict = Depends(require_admin),
+):
+    """Aplica um reajuste: registra o histórico e atualiza o aluguel
+    do contrato. Não recalcula pagamentos já gerados/pagos — só afeta
+    geração futura (snapshots passados ficam intactos)."""
+    contrato = _buscar_contrato(contrato_id)
+    anterior = Decimal(str(contrato["aluguel_mensal"]))
+    pct = Decimal(str(body.percentual))
+    novo = (anterior * (Decimal("1") + pct / Decimal("100"))).quantize(Decimal("0.01"))
+
+    registro = _serializar_para_banco({
+        "contrato_id": contrato_id,
+        "data_aplicacao": body.data_aplicacao,
+        "percentual": pct,
+        "aluguel_anterior": anterior,
+        "aluguel_novo": novo,
+        "indice_referencia": body.indice_referencia,
+        "observacoes": body.observacoes,
+        "applied_by": current_user["id"],
+    })
+    try:
+        result = supabase_admin.table("locacao_reajustes").insert(registro).execute()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Erro ao registrar reajuste: {e}")
+
+    # Atualiza o aluguel do contrato — geração futura usa o valor novo.
+    supabase_admin.table("contratos_locacao").update(
+        {"aluguel_mensal": float(novo)}
+    ).eq("id", contrato_id).execute()
+
+    return result.data[0]
+
+
+# ── Anexos do contrato ──────────────────────────────────────────────────────
+
+def _hidratar_anexo(raw: dict) -> dict:
+    """Adiciona url pública ao registro do banco antes de devolver."""
+    return {**raw, "url": url_publica_documento(raw["firebase_path"])}
+
+
+@router.get("/{contrato_id}/anexos", response_model=List[AnexoOut])
+def listar_anexos(contrato_id: str, current_user: dict = Depends(get_current_user)):
+    result = (
+        supabase_admin.table("locacao_anexos")
+        .select("*")
+        .eq("contrato_id", contrato_id)
+        .order("created_at", desc=True)
+        .execute()
+    )
+    return [_hidratar_anexo(a) for a in (result.data or [])]
+
+
+@router.post(
+    "/{contrato_id}/anexos",
+    response_model=AnexoOut,
+    status_code=status.HTTP_201_CREATED,
+)
+async def upload_anexo(
+    contrato_id: str,
+    file: UploadFile = File(...),
+    tipo: TipoAnexo = Form(default=TipoAnexo.contrato),
+    current_user: dict = Depends(require_admin),
+):
+    """Faz upload de um documento ao Supabase Storage e registra em
+    locacao_anexos. Path inclui UUID para evitar colisão de nomes."""
+    _buscar_contrato(contrato_id)  # 404 explícito se contrato não existir
+
+    nome_original = file.filename or "documento"
+    # Path: locacoes/{contrato_id}/{uuid}-{nome-sanitizado}
+    nome_seguro = re.sub(r"[^a-zA-Z0-9._-]+", "_", nome_original)[:80] or "documento"
+    storage_path = f"locacoes/{contrato_id}/{uuid.uuid4().hex[:12]}-{nome_seguro}"
+
+    info = await upload_documento(file, storage_path)
+
+    registro = {
+        "contrato_id": contrato_id,
+        "tipo": tipo.value,
+        "nome_arquivo": nome_original,
+        "firebase_path": info["firebase_path"],
+        "mime_type": info["mime_type"],
+        "tamanho_bytes": info["tamanho_bytes"],
+        "uploaded_by": current_user["id"],
+    }
+    try:
+        result = supabase_admin.table("locacao_anexos").insert(registro).execute()
+    except Exception as e:
+        # Reverte o upload se o INSERT falhou — evita órfão no storage.
+        deletar_documento(storage_path)
+        raise HTTPException(status_code=500, detail=f"Erro ao registrar anexo: {e}")
+
+    return _hidratar_anexo(result.data[0])
+
+
+@router.delete("/anexos/{anexo_id}", status_code=status.HTTP_204_NO_CONTENT)
+def deletar_anexo(anexo_id: str, current_user: dict = Depends(require_admin)):
+    """Remove o arquivo do storage e o registro do banco. Idempotente:
+    se o anexo não existir, retorna 204 sem alarde."""
+    existente = (
+        supabase_admin.table("locacao_anexos")
+        .select("firebase_path")
+        .eq("id", anexo_id)
+        .execute()
+        .data
+        or []
+    )
+    if not existente:
+        return
+    deletar_documento(existente[0]["firebase_path"])
+    supabase_admin.table("locacao_anexos").delete().eq("id", anexo_id).execute()

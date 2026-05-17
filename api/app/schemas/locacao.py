@@ -56,6 +56,12 @@ class ContratoLocacaoBase(BaseModel):
     dados_cobranca_pix: Optional[str] = None
     observacoes_demonstrativo: Optional[str] = None
 
+    # Repasse ao proprietário (Fase 5) — percentual retido pela imobiliária
+    # sobre o aluguel pago, antes do repasse mensal.
+    taxa_administracao_pct: Decimal = Field(
+        default=Decimal("0"), ge=0, le=100,
+    )
+
     @model_validator(mode="after")
     def vigencia_valida(self) -> "ContratoLocacaoBase":
         if self.data_fim <= self.data_inicio:
@@ -91,6 +97,8 @@ class ContratoLocacaoUpdate(BaseModel):
     numero_iptu: Optional[str] = None
     dados_cobranca_pix: Optional[str] = None
     observacoes_demonstrativo: Optional[str] = None
+
+    taxa_administracao_pct: Optional[Decimal] = Field(default=None, ge=0, le=100)
 
     status: Optional[StatusLocacao] = None
     motivo_rescisao: Optional[str] = None
@@ -182,4 +190,58 @@ class AnexoOut(BaseModel):
     tamanho_bytes: Optional[int] = None
     mime_type: Optional[str] = None
     uploaded_by: Optional[str] = None
+    url: Optional[str] = None  # Resolvida na hora — não persistida no banco.
+
+
+# ── Reajuste (Fase 5) ───────────────────────────────────────────────────────
+
+class ReajusteCreate(BaseModel):
+    data_aplicacao: date
+    percentual: Decimal = Field(description="Ex: 4.25 = +4,25%; aceita negativo")
+    indice_referencia: Optional[str] = None  # IGPM, IPCA, etc.
+    observacoes: Optional[str] = None
+
+
+class ReajusteOut(BaseModel):
+    id: str
+    contrato_id: str
+    data_aplicacao: date
+    percentual: Decimal
+    aluguel_anterior: Decimal
+    aluguel_novo: Decimal
+    indice_referencia: Optional[str] = None
+    observacoes: Optional[str] = None
+    applied_by: Optional[str] = None
     created_at: str
+
+
+# ── Repasse ao proprietário (Fase 5) ────────────────────────────────────────
+
+class RepasseItem(BaseModel):
+    """Uma linha do relatório de repasses do mês: um contrato pago."""
+    contrato_id: str
+    imovel_codigo: Optional[str] = None
+    imovel_endereco: Optional[str] = None
+    pagamento_id: str
+    valor_pago: Decimal
+    taxa_administracao_pct: Decimal
+    valor_taxa: Decimal
+    valor_repasse: Decimal
+
+
+class RepasseProprietario(BaseModel):
+    proprietario_id: str
+    nome: str
+    email: Optional[str] = None
+    total_recebido: Decimal
+    total_taxa: Decimal
+    total_repasse: Decimal
+    itens: list[RepasseItem]
+
+
+class RepasseResumo(BaseModel):
+    mes: str
+    proprietarios: list[RepasseProprietario]
+    total_recebido: Decimal
+    total_taxa: Decimal
+    total_repasse: Decimal

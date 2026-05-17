@@ -7,7 +7,6 @@ def _make_stats_db(
     disponiveis=3,
     total_clientes=10,
     em_negociacao=2,
-    clientes_raw=None,
     mais_antigo=None,
     reservados=1,
     todos_ids=None,
@@ -17,21 +16,20 @@ def _make_stats_db(
     """
     Monta um mock do supabase_admin para o endpoint /stats.
 
-    O endpoint faz exatamente 10 chamadas .execute() em sequência:
+    Faz 9 chamadas .execute() em sequência (a agregação de clientes por
+    status/origem foi movida para /relatorios no commit 59daf8b por
+    performance — economiza uma query por carga do dashboard):
+
     1. count total imoveis
     2. count imoveis disponíveis
     3. count total clientes
     4. count clientes em negociação
-    5. data clientes (status + origem_lead)
-    6. data imovel mais antigo
-    7. count imoveis reservados
-    8. data todos ids imoveis
-    9. data ids imoveis com foto
-    10. count leads últimos 7 dias
+    5. data imovel mais antigo
+    6. count imoveis reservados
+    7. data todos ids imoveis
+    8. data ids imoveis com foto
+    9. count leads últimos 7 dias
     """
-    if clientes_raw is None:
-        clientes_raw = [{"status": "ativo", "origem_lead": "whatsapp"}] * total_clientes
-
     if todos_ids is None:
         todos_ids = [{"id": f"imovel-{i}"} for i in range(total_imoveis)]
 
@@ -43,7 +41,6 @@ def _make_stats_db(
         MagicMock(count=disponiveis, data=[]),
         MagicMock(count=total_clientes, data=[]),
         MagicMock(count=em_negociacao, data=[]),
-        MagicMock(count=None, data=clientes_raw),
         MagicMock(count=None, data=[mais_antigo] if mais_antigo else []),
         MagicMock(count=reservados, data=[]),
         MagicMock(count=None, data=todos_ids),
@@ -76,7 +73,7 @@ def test_stats_retorna_estrutura_correta(client):
     campos = [
         "total_imoveis", "imoveis_disponiveis", "imoveis_reservados", "imoveis_sem_foto",
         "total_clientes", "clientes_em_negociacao", "leads_ultimos_7_dias",
-        "clientes_por_status", "clientes_por_origem", "imovel_mais_antigo",
+        "imovel_mais_antigo",
     ]
     for campo in campos:
         assert campo in body, f"Campo '{campo}' ausente no /stats"
@@ -101,36 +98,6 @@ def test_stats_valores_numericos(client):
     assert body["clientes_em_negociacao"] == 3
     assert body["imoveis_reservados"] == 2
     assert body["leads_ultimos_7_dias"] == 6
-
-
-def test_stats_agrega_clientes_por_status(client):
-    clientes_raw = [
-        {"status": "ativo", "origem_lead": "whatsapp"},
-        {"status": "ativo", "origem_lead": "instagram"},
-        {"status": "em_negociacao", "origem_lead": "indicacao"},
-    ]
-    db = _make_stats_db(clientes_raw=clientes_raw, total_clientes=3)
-    with patch("app.main.supabase_admin", db):
-        res = client.get("/stats")
-
-    body = res.json()
-    assert body["clientes_por_status"]["ativo"] == 2
-    assert body["clientes_por_status"]["em_negociacao"] == 1
-
-
-def test_stats_agrega_clientes_por_origem(client):
-    clientes_raw = [
-        {"status": "ativo", "origem_lead": "whatsapp"},
-        {"status": "ativo", "origem_lead": "whatsapp"},
-        {"status": "ativo", "origem_lead": "indicacao"},
-    ]
-    db = _make_stats_db(clientes_raw=clientes_raw, total_clientes=3)
-    with patch("app.main.supabase_admin", db):
-        res = client.get("/stats")
-
-    body = res.json()
-    assert body["clientes_por_origem"]["whatsapp"] == 2
-    assert body["clientes_por_origem"]["indicacao"] == 1
 
 
 def test_stats_imoveis_sem_foto_calculado_corretamente(client):
@@ -265,6 +232,37 @@ def test_relatorios_preco_medio_por_tipo(client):
         res = client.get("/relatorios")
 
     assert res.json()["preco_medio_por_tipo"]["apartamento"] == 2_000_000
+
+
+def test_relatorios_agrega_clientes_por_status(client):
+    """Agregação migrada de /stats para cá no commit 59daf8b (perf)."""
+    clientes = [
+        {"created_at": "2025-01-01", "status": "ativo", "origem_lead": "whatsapp"},
+        {"created_at": "2025-01-01", "status": "ativo", "origem_lead": "instagram"},
+        {"created_at": "2025-01-01", "status": "em_negociacao", "origem_lead": "indicacao"},
+    ]
+    db = _make_relatorios_db(clientes_raw=clientes)
+    with patch("app.main.supabase_admin", db):
+        res = client.get("/relatorios")
+
+    body = res.json()
+    assert body["clientes_por_status"]["ativo"] == 2
+    assert body["clientes_por_status"]["em_negociacao"] == 1
+
+
+def test_relatorios_agrega_clientes_por_origem(client):
+    clientes = [
+        {"created_at": "2025-01-01", "status": "ativo", "origem_lead": "whatsapp"},
+        {"created_at": "2025-01-01", "status": "ativo", "origem_lead": "whatsapp"},
+        {"created_at": "2025-01-01", "status": "ativo", "origem_lead": "indicacao"},
+    ]
+    db = _make_relatorios_db(clientes_raw=clientes)
+    with patch("app.main.supabase_admin", db):
+        res = client.get("/relatorios")
+
+    body = res.json()
+    assert body["clientes_por_origem"]["whatsapp"] == 2
+    assert body["clientes_por_origem"]["indicacao"] == 1
 
 
 def test_relatorios_sem_dados_retorna_zeros(client):

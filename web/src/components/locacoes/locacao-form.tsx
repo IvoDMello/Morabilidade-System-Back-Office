@@ -34,6 +34,8 @@ const schema = z
     numero_iptu: z.string().optional().or(z.literal("")),
     dados_cobranca_pix: z.string().optional().or(z.literal("")),
     observacoes_demonstrativo: z.string().optional().or(z.literal("")),
+
+    taxa_administracao_pct: z.coerce.number().min(0).max(100).default(0),
   })
   .refine((d) => new Date(d.data_fim) > new Date(d.data_inicio), {
     message: "Fim deve ser depois do início",
@@ -110,6 +112,7 @@ export function LocacaoForm({
       incluir_fundo_obra_cobranca: false,
       iptu_anual: 0,
       incluir_iptu_cobranca: false,
+      taxa_administracao_pct: 0,
       ...defaultValues,
     },
   });
@@ -346,6 +349,22 @@ export function LocacaoForm({
               {...register("numero_iptu")}
               className={inputClass}
               placeholder="Ex: 1.234.567-8"
+            />
+          </Field>
+
+          <Field
+            label="Taxa de administração (%)"
+            hint="Percentual retido pela imobiliária sobre o aluguel pago antes do repasse"
+            error={errors.taxa_administracao_pct?.message}
+          >
+            <input
+              type="number"
+              step="0.01"
+              min={0}
+              max={100}
+              {...register("taxa_administracao_pct")}
+              className={inputClass}
+              placeholder="0"
             />
           </Field>
         </div>

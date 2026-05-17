@@ -3,7 +3,7 @@
 import { use, useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, XCircle, FileDown, Loader2 } from "lucide-react";
+import { ArrowLeft, XCircle, FileDown, Loader2, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
@@ -12,6 +12,8 @@ import {
   type LocacaoFormData,
 } from "@/components/locacoes/locacao-form";
 import { PagamentosLocacao } from "@/components/locacoes/pagamentos-locacao";
+import { AnexosLocacao } from "@/components/locacoes/anexos-locacao";
+import { ReajustesLocacao } from "@/components/locacoes/reajustes-locacao";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import type { ContratoLocacao } from "@/types";
 
@@ -36,6 +38,7 @@ export default function EditarContratoPage({
     new Date().toISOString().slice(0, 7)
   );
   const [gerandoPdf, setGerandoPdf] = useState(false);
+  const [enviandoEmail, setEnviandoEmail] = useState(false);
 
   const carregar = useCallback(async () => {
     try {
@@ -112,6 +115,25 @@ export default function EditarContratoPage({
     }
   }
 
+  async function handleEnviarEmail() {
+    setEnviandoEmail(true);
+    try {
+      const res = await api.post(
+        `/locacoes/${id}/demonstrativo/enviar`,
+        null,
+        { params: { mes: mesDemonstrativo } }
+      );
+      toast.success(`Enviado para ${res.data.enviado_para}`);
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
+        "Erro ao enviar e-mail.";
+      toast.error(msg);
+    } finally {
+      setEnviandoEmail(false);
+    }
+  }
+
   async function handleRescindir() {
     if (!motivoRescisao.trim()) {
       toast.error("Informe o motivo da rescisão.");
@@ -163,6 +185,7 @@ export default function EditarContratoPage({
     numero_iptu: contrato.numero_iptu ?? "",
     dados_cobranca_pix: contrato.dados_cobranca_pix ?? "",
     observacoes_demonstrativo: contrato.observacoes_demonstrativo ?? "",
+    taxa_administracao_pct: Number(contrato.taxa_administracao_pct ?? 0),
   };
 
   // Valor sugerido para próximo pagamento — replica regra do form.
@@ -230,7 +253,7 @@ export default function EditarContratoPage({
               Gera o PDF do mês para envio ao locatário. Cria/atualiza o snapshot do pagamento.
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <input
               type="month"
               value={mesDemonstrativo}
@@ -250,6 +273,20 @@ export default function EditarContratoPage({
               )}
               {gerandoPdf ? "Gerando..." : "Gerar PDF"}
             </button>
+            <button
+              onClick={handleEnviarEmail}
+              disabled={enviandoEmail || !mesDemonstrativo}
+              className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg border transition disabled:opacity-60"
+              style={{ borderColor: "#585a4f", color: "#585a4f" }}
+              title="Envia o PDF para o e-mail cadastrado do locatário"
+            >
+              {enviandoEmail ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Mail className="w-4 h-4" />
+              )}
+              {enviandoEmail ? "Enviando..." : "Enviar por e-mail"}
+            </button>
           </div>
         </div>
       )}
@@ -259,6 +296,18 @@ export default function EditarContratoPage({
         valorSugerido={Math.max(0, valorSugerido)}
         diaVencimentoPadrao={contrato.dia_vencimento}
       />
+
+      <div className="mt-6">
+        <ReajustesLocacao
+          contratoId={contrato.id}
+          aluguelAtual={Number(contrato.aluguel_mensal)}
+          onAplicado={carregar}
+        />
+      </div>
+
+      <div className="mt-6">
+        <AnexosLocacao contratoId={contrato.id} />
+      </div>
 
       <div className="mt-8">
         <h2 className="text-sm font-semibold text-slate-700 mb-3">Dados do contrato</h2>

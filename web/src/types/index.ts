@@ -167,6 +167,7 @@ export interface ContratoLocacao {
   numero_iptu?: string;
   dados_cobranca_pix?: string;
   observacoes_demonstrativo?: string;
+  taxa_administracao_pct: number;
   status: StatusLocacao;
   motivo_rescisao?: string;
   data_rescisao?: string;
@@ -175,6 +176,48 @@ export interface ContratoLocacao {
   imovel?: ParteResumo;
   proprietario?: ParteResumo;
   locatario?: ParteResumo;
+}
+
+export interface ReajusteLocacao {
+  id: string;
+  contrato_id: string;
+  data_aplicacao: string;
+  percentual: number;
+  aluguel_anterior: number;
+  aluguel_novo: number;
+  indice_referencia?: string;
+  observacoes?: string;
+  applied_by?: string;
+  created_at: string;
+}
+
+export interface RepasseItem {
+  contrato_id: string;
+  imovel_codigo?: string;
+  imovel_endereco?: string;
+  pagamento_id: string;
+  valor_pago: number;
+  taxa_administracao_pct: number;
+  valor_taxa: number;
+  valor_repasse: number;
+}
+
+export interface RepasseProprietario {
+  proprietario_id: string;
+  nome: string;
+  email?: string;
+  total_recebido: number;
+  total_taxa: number;
+  total_repasse: number;
+  itens: RepasseItem[];
+}
+
+export interface RepasseResumo {
+  mes: string;
+  proprietarios: RepasseProprietario[];
+  total_recebido: number;
+  total_taxa: number;
+  total_repasse: number;
 }
 
 export interface ContratoLocacaoListItem {
@@ -216,4 +259,19 @@ export interface AnaliseLocacao {
   receita_prevista_por_mes: Record<string, number>;
   receita_realizada_por_mes: Record<string, number>;
   contratos_ativos_por_bairro: Record<string, number>;
+}
+
+export type TipoAnexoLocacao = "contrato" | "aditivo" | "vistoria" | "outro";
+
+export interface AnexoLocacao {
+  id: string;
+  contrato_id: string;
+  tipo: TipoAnexoLocacao;
+  nome_arquivo: string;
+  firebase_path: string;
+  tamanho_bytes?: number;
+  mime_type?: string;
+  uploaded_by?: string;
+  url?: string;
+  created_at: string;
 }
