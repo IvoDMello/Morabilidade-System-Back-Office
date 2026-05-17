@@ -10,6 +10,17 @@ import { formatarMoeda } from "@/lib/utils";
 import type { Cliente, ImovelListOut } from "@/types";
 
 // Decimal vindo de input é string; convertemos no submit.
+// Trata "" / null como 0 para que o input possa renderizar vazio (sem o
+// "0" preenchido que o usuário precisa apagar antes de digitar).
+const valorOpcional = z.preprocess(
+  (v) => (v === "" || v == null ? 0 : v),
+  z.coerce.number().min(0, "Valor inválido"),
+);
+const valorPercentual = z.preprocess(
+  (v) => (v === "" || v == null ? 0 : v),
+  z.coerce.number().min(0).max(100),
+);
+
 const schema = z
   .object({
     imovel_id: z.string().min(1, "Selecione o imóvel"),
@@ -21,24 +32,24 @@ const schema = z
     dia_vencimento: z.coerce.number().int().min(1).max(31),
 
     aluguel_mensal: z.coerce.number().min(0, "Valor inválido"),
-    condominio_mensal: z.coerce.number().min(0).default(0),
+    condominio_mensal: valorOpcional,
     incluir_condominio_cobranca: z.boolean().default(true),
 
-    fundo_reserva: z.coerce.number().min(0).default(0),
-    fundo_obra: z.coerce.number().min(0).default(0),
+    fundo_reserva: valorOpcional,
+    fundo_obra: valorOpcional,
     incluir_fundo_obra_cobranca: z.boolean().default(false),
 
-    iptu_anual: z.coerce.number().min(0).default(0),
+    iptu_anual: valorOpcional,
     incluir_iptu_cobranca: z.boolean().default(false),
 
-    seguro_incendio_anual: z.coerce.number().min(0).default(0),
+    seguro_incendio_anual: valorOpcional,
     incluir_seguro_incendio_cobranca: z.boolean().default(false),
 
     numero_iptu: z.string().optional().or(z.literal("")),
     dados_cobranca_pix: z.string().optional().or(z.literal("")),
     observacoes_demonstrativo: z.string().optional().or(z.literal("")),
 
-    taxa_administracao_pct: z.coerce.number().min(0).max(100).default(0),
+    taxa_administracao_pct: valorPercentual,
   })
   .refine((d) => new Date(d.data_fim) > new Date(d.data_inicio), {
     message: "Fim deve ser depois do início",
@@ -108,16 +119,10 @@ export function LocacaoForm({
     resolver: zodResolver(schema),
     defaultValues: {
       dia_vencimento: 5,
-      condominio_mensal: 0,
       incluir_condominio_cobranca: true,
-      fundo_reserva: 0,
-      fundo_obra: 0,
       incluir_fundo_obra_cobranca: false,
-      iptu_anual: 0,
       incluir_iptu_cobranca: false,
-      seguro_incendio_anual: 0,
       incluir_seguro_incendio_cobranca: false,
-      taxa_administracao_pct: 0,
       ...defaultValues,
     },
   });

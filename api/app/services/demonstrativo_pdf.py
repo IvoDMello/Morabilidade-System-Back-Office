@@ -127,8 +127,8 @@ def gerar_demonstrativo_pdf(contrato: dict, mes_referencia: date) -> bytes:
         try:
             c.drawImage(
                 _LOGO_PATH,
-                15 * mm, altura - header_h + 4 * mm,
-                width=40 * mm, height=20 * mm,
+                15 * mm, altura - header_h + 2 * mm,
+                width=52 * mm, height=24 * mm,
                 preserveAspectRatio=True, mask="auto",
             )
         except Exception:
@@ -265,14 +265,14 @@ def gerar_demonstrativo_pdf(contrato: dict, mes_referencia: date) -> bytes:
 
     # ── Texto legal fixo ───────────────────────────────────────────────────
     c.setFillColor(TEXTO_CLARO)
-    c.setFont("Helvetica-Oblique", 8)
+    c.setFont("Helvetica-Oblique", 10)
     legal = (
         "Em caso de inadimplemento (Cláusula 4.3 do contrato de locação): multa "
         "moratória de 10% do total devido + juros de 1% ao mês."
     )
-    for linha in _quebrar_em_linhas(legal, 105):
+    for linha in _quebrar_em_linhas(legal, 85):
         c.drawString(15 * mm, y, linha)
-        y -= 4 * mm
+        y -= 5 * mm
 
     # ── Footer olive ───────────────────────────────────────────────────────
     footer_h = 12 * mm
