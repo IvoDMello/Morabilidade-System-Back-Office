@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { SlidersHorizontal, ChevronDown } from "lucide-react";
+import { SlidersHorizontal, ChevronDown, X } from "lucide-react";
 
 const TIPOS_IMOVEL = [
   { value: "", label: "Todos os tipos" },
@@ -100,6 +100,20 @@ export function FiltrosBar({ total, bairros = [] }: Props) {
   function handleBairro(v: string) {
     setBairro(v);
     router.push(buildUrl({ bairro: v }));
+  }
+
+  const hasFilters =
+    (tipoNeg && tipoNeg !== "todos") ||
+    !!tipoImovel ||
+    !!bairro ||
+    !!ordenar;
+
+  function handleLimpar() {
+    setTipoNeg("todos");
+    setTipoImovel("");
+    setBairro("");
+    setOrdenar("");
+    router.push("/imoveis?page=1");
   }
 
   const negPills = [
@@ -216,9 +230,32 @@ export function FiltrosBar({ total, bairros = [] }: Props) {
           />
         </div>
 
+        {/* Limpar filtros — só aparece quando há filtros aplicados */}
+        {hasFilters && (
+          <button
+            onClick={handleLimpar}
+            className="ml-auto flex items-center gap-1 flex-shrink-0 transition-colors"
+            style={{
+              padding: "7px 14px",
+              borderRadius: 100,
+              fontSize: 13,
+              fontFamily: "inherit",
+              backgroundColor: "transparent",
+              color: "#585a4f",
+              border: "1.5px solid #e4e1d6",
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+            }}
+            aria-label="Limpar filtros"
+          >
+            <X className="w-3.5 h-3.5" />
+            Limpar filtros
+          </button>
+        )}
+
         {/* Contador */}
         <div
-          className="ml-auto flex-shrink-0 text-xs italic"
+          className={`${hasFilters ? "" : "ml-auto"} flex-shrink-0 text-xs italic`}
           style={{ color: "#7a7c72", whiteSpace: "nowrap" }}
         >
           {total} {total === 1 ? "imóvel" : "imóveis"}
