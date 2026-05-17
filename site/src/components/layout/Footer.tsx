@@ -11,17 +11,41 @@ export function Footer() {
       className="text-white"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-14 pb-8">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-10 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-8 mb-12 items-start">
 
-          {/* Marca */}
-          <div className="md:col-span-5">
+          {/* Páginas — esquerda */}
+          <div className="text-center md:text-right order-2 md:order-1">
+            <h4 className="font-semibold mb-5 text-xs uppercase tracking-widest" style={{ color: "#d8cb6a" }}>
+              Páginas
+            </h4>
+            <ul className="space-y-3">
+              {[
+                { href: "/", label: "Início" },
+                { href: "/imoveis", label: "Imóveis" },
+                { href: "/sobre", label: "Sobre nós" },
+                { href: "/contato", label: "Contato" },
+              ].map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className="text-sm text-white/75 hover:text-white transition"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Marca — centro */}
+          <div className="flex flex-col items-center text-center order-1 md:order-2">
             <Image
               src="/logo.jpeg"
               alt="Morabilidade"
-              width={260}
-              height={72}
+              width={360}
+              height={100}
               className="object-contain mb-5"
-              style={{ height: "auto", width: "clamp(160px, 20vw, 260px)" }}
+              style={{ height: "auto", width: "clamp(200px, 26vw, 320px)" }}
             />
             <p className="text-white/75 text-sm leading-relaxed max-w-xs mb-6">
               Simples, eficiente e humanizada. Conectando pessoas ao imóvel certo
@@ -38,57 +62,27 @@ export function Footer() {
                   {anosDeMarket}
                 </span>
               </div>
-              <div>
+              <div className="text-left">
                 <p className="text-xs font-semibold text-white/90">Anos de Mercado</p>
                 <p className="text-xs text-white/60">Zona Sul · Rio de Janeiro</p>
               </div>
             </div>
 
             {/* Social */}
-            <div className="flex items-center gap-3">
-              <a
-                href="https://www.instagram.com/morabilidade"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Instagram @morabilidade"
-                className="w-9 h-9 rounded-xl flex items-center justify-center border border-white/25 text-white/70 hover:text-white hover:border-white/50 transition"
-              >
-                <Instagram className="w-4 h-4" />
-              </a>
-            </div>
+            <a
+              href="https://www.instagram.com/morabilidade"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Instagram @morabilidade"
+              className="w-9 h-9 rounded-xl flex items-center justify-center border border-white/25 text-white/70 hover:text-white hover:border-white/50 transition"
+            >
+              <Instagram className="w-4 h-4" />
+            </a>
           </div>
 
-          {/* Navegação */}
-          <div className="md:col-span-3 md:col-start-7">
-            <h4 className="font-semibold mb-5 text-xs text-white/70 uppercase tracking-widest">
-              Páginas
-            </h4>
-            <ul className="space-y-3">
-              {[
-                { href: "/", label: "Início" },
-                { href: "/imoveis", label: "Imóveis" },
-                { href: "/sobre", label: "Sobre nós" },
-                { href: "/contato", label: "Contato" },
-              ].map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-white/75 hover:text-white transition flex items-center gap-1.5 group"
-                  >
-                    <span
-                      className="w-1 h-1 rounded-full opacity-0 group-hover:opacity-100 transition"
-                      style={{ backgroundColor: "#d8cb6a" }}
-                    />
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Portfólio */}
-          <div className="md:col-span-3 md:col-start-10">
-            <h4 className="font-semibold mb-5 text-xs text-white/70 uppercase tracking-widest">
+          {/* Portfólio — direita */}
+          <div className="text-center md:text-left order-3">
+            <h4 className="font-semibold mb-5 text-xs uppercase tracking-widest" style={{ color: "#d8cb6a" }}>
               Portfólio
             </h4>
             <ul className="space-y-3">
@@ -101,12 +95,8 @@ export function Footer() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-sm text-white/75 hover:text-white transition flex items-center gap-1.5 group"
+                    className="text-sm text-white/75 hover:text-white transition"
                   >
-                    <span
-                      className="w-1 h-1 rounded-full opacity-0 group-hover:opacity-100 transition"
-                      style={{ backgroundColor: "#d8cb6a" }}
-                    />
                     {link.label}
                   </Link>
                 </li>
