@@ -117,7 +117,7 @@ def gerar_demonstrativo_pdf(contrato: dict, mes_referencia: date) -> bytes:
     largura, altura = A4
 
     # ── Header olive (logo + tagline) ──────────────────────────────────────
-    header_h = 28 * mm
+    header_h = 36 * mm
     c.setFillColor(OLIVE)
     c.rect(0, altura - header_h, largura, header_h, fill=1, stroke=0)
 
@@ -127,8 +127,8 @@ def gerar_demonstrativo_pdf(contrato: dict, mes_referencia: date) -> bytes:
         try:
             c.drawImage(
                 _LOGO_PATH,
-                15 * mm, altura - header_h + 2 * mm,
-                width=52 * mm, height=24 * mm,
+                15 * mm, altura - header_h + 4 * mm,
+                width=64 * mm, height=28 * mm,
                 preserveAspectRatio=True, mask="auto",
             )
         except Exception:
@@ -137,26 +137,26 @@ def gerar_demonstrativo_pdf(contrato: dict, mes_referencia: date) -> bytes:
 
     # Tagline à direita
     c.setFillColor(DOURADO)
-    c.setFont("Helvetica-Bold", 12)
+    c.setFont("Helvetica-Bold", 14)
     c.drawRightString(largura - 15 * mm, altura - header_h / 2 - 1 * mm,
                       "SIMPLES, EFICIENTE E HUMANIZADA")
 
     # ── Conteúdo ────────────────────────────────────────────────────────────
-    y = altura - header_h - 14 * mm
+    y = altura - header_h - 18 * mm
 
     imovel = contrato.get("imovel") or {}
     titulo = f"Demonstrativo Mensal — {_endereco_curto(imovel)}"
 
     c.setFillColor(TEXTO_ESCURO)
-    c.setFont("Helvetica-Bold", 15)
+    c.setFont("Helvetica-Bold", 18)
     c.drawString(15 * mm, y, titulo)
-    y -= 6 * mm
+    y -= 8 * mm
 
     c.setFillColor(TEXTO_CLARO)
-    c.setFont("Helvetica", 10)
+    c.setFont("Helvetica", 12)
     c.drawString(15 * mm, y,
                  f"Competência: {MESES_PT[mes_referencia.month - 1]} de {mes_referencia.year}")
-    y -= 12 * mm
+    y -= 16 * mm
 
     # ── Tabela de itens ────────────────────────────────────────────────────
     incluir_cond = bool(contrato.get("incluir_condominio_cobranca"))
@@ -182,7 +182,7 @@ def gerar_demonstrativo_pdf(contrato: dict, mes_referencia: date) -> bytes:
 
     tabela_x = 15 * mm
     tabela_w = largura - 30 * mm
-    linha_h = 8 * mm
+    linha_h = 11 * mm
 
     # Borda externa
     altura_tabela = linha_h * (len(linhas) + 2)  # cabeçalho + linhas + total
@@ -194,19 +194,19 @@ def gerar_demonstrativo_pdf(contrato: dict, mes_referencia: date) -> bytes:
     c.setFillColor(colors.HexColor("#f8fafc"))
     c.rect(tabela_x, y - linha_h, tabela_w, linha_h, fill=1, stroke=0)
     c.setFillColor(TEXTO_CLARO)
-    c.setFont("Helvetica-Bold", 9)
-    c.drawString(tabela_x + 4 * mm, y - linha_h + 2.5 * mm, "ITEM")
-    c.drawRightString(tabela_x + tabela_w - 4 * mm, y - linha_h + 2.5 * mm, "VALOR")
+    c.setFont("Helvetica-Bold", 11)
+    c.drawString(tabela_x + 5 * mm, y - linha_h + 4 * mm, "ITEM")
+    c.drawRightString(tabela_x + tabela_w - 5 * mm, y - linha_h + 4 * mm, "VALOR")
     y -= linha_h
 
     # Linhas
-    c.setFont("Helvetica", 10)
+    c.setFont("Helvetica", 12)
     for label, valor, deducao in linhas:
         c.setFillColor(TEXTO_ESCURO)
-        c.drawString(tabela_x + 4 * mm, y - linha_h + 2.5 * mm, label)
+        c.drawString(tabela_x + 5 * mm, y - linha_h + 4 * mm, label)
         c.setFillColor(colors.HexColor("#dc2626") if deducao else TEXTO_ESCURO)
         prefixo = "− " if deducao else ""
-        c.drawRightString(tabela_x + tabela_w - 4 * mm, y - linha_h + 2.5 * mm,
+        c.drawRightString(tabela_x + tabela_w - 5 * mm, y - linha_h + 4 * mm,
                           prefixo + _fmt_brl(valor))
         # Linha divisória
         c.setStrokeColor(LINHA)
@@ -218,10 +218,10 @@ def gerar_demonstrativo_pdf(contrato: dict, mes_referencia: date) -> bytes:
     c.setFillColor(DOURADO_CLARO)
     c.rect(tabela_x, y - linha_h, tabela_w, linha_h, fill=1, stroke=0)
     c.setFillColor(OLIVE)
-    c.setFont("Helvetica-Bold", 11)
-    c.drawString(tabela_x + 4 * mm, y - linha_h + 2.5 * mm, "TOTAL A PAGAR")
-    c.drawRightString(tabela_x + tabela_w - 4 * mm, y - linha_h + 2.5 * mm, _fmt_brl(total))
-    y -= linha_h + 8 * mm
+    c.setFont("Helvetica-Bold", 13)
+    c.drawString(tabela_x + 5 * mm, y - linha_h + 4 * mm, "TOTAL A PAGAR")
+    c.drawRightString(tabela_x + tabela_w - 5 * mm, y - linha_h + 4 * mm, _fmt_brl(total))
+    y -= linha_h + 14 * mm
 
     # ── Vencimento + PIX ───────────────────────────────────────────────────
     dia = min(int(contrato.get("dia_vencimento") or 5),
@@ -229,60 +229,59 @@ def gerar_demonstrativo_pdf(contrato: dict, mes_referencia: date) -> bytes:
     vencimento = date(mes_referencia.year, mes_referencia.month, dia)
 
     c.setFillColor(TEXTO_ESCURO)
-    c.setFont("Helvetica-Bold", 11)
+    c.setFont("Helvetica-Bold", 13)
     c.drawString(15 * mm, y, f"Vencimento: {_fmt_data(vencimento)}")
-    y -= 6 * mm
+    y -= 9 * mm
 
     pix = contrato.get("dados_cobranca_pix") or ""
     if pix:
         c.setFillColor(TEXTO_CLARO)
-        c.setFont("Helvetica", 10)
+        c.setFont("Helvetica", 12)
         c.drawString(15 * mm, y, "Pagamento via PIX:")
         c.setFillColor(OLIVE)
-        c.setFont("Helvetica-Bold", 10)
-        c.drawString(15 * mm + 36 * mm, y, pix)
-        y -= 10 * mm
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(15 * mm + 42 * mm, y, pix)
+        y -= 14 * mm
     else:
-        y -= 4 * mm
+        y -= 6 * mm
 
     # ── Observações do contrato ────────────────────────────────────────────
     obs = (contrato.get("observacoes_demonstrativo") or "").strip()
     if obs:
         c.setStrokeColor(LINHA)
         c.line(15 * mm, y, largura - 15 * mm, y)
-        y -= 6 * mm
+        y -= 8 * mm
         c.setFillColor(TEXTO_CLARO)
-        c.setFont("Helvetica-Bold", 9)
+        c.setFont("Helvetica-Bold", 11)
         c.drawString(15 * mm, y, "OBSERVAÇÕES")
-        y -= 5 * mm
+        y -= 7 * mm
         c.setFillColor(TEXTO_ESCURO)
-        c.setFont("Helvetica", 10)
-        # Quebra em linhas de até 100 caracteres (texto curto)
-        for linha in _quebrar_em_linhas(obs, 95):
+        c.setFont("Helvetica", 12)
+        for linha in _quebrar_em_linhas(obs, 80):
             c.drawString(15 * mm, y, linha)
-            y -= 4.5 * mm
-        y -= 4 * mm
+            y -= 6 * mm
+        y -= 6 * mm
 
     # ── Texto legal fixo ───────────────────────────────────────────────────
     c.setFillColor(TEXTO_CLARO)
-    c.setFont("Helvetica-Oblique", 10)
+    c.setFont("Helvetica-Oblique", 11)
     legal = (
         "Em caso de inadimplemento (Cláusula 4.3 do contrato de locação): multa "
         "moratória de 10% do total devido + juros de 1% ao mês."
     )
-    for linha in _quebrar_em_linhas(legal, 85):
+    for linha in _quebrar_em_linhas(legal, 80):
         c.drawString(15 * mm, y, linha)
-        y -= 5 * mm
+        y -= 6 * mm
 
     # ── Footer olive ───────────────────────────────────────────────────────
-    footer_h = 12 * mm
+    footer_h = 16 * mm
     c.setFillColor(OLIVE)
     c.rect(0, 0, largura, footer_h, fill=1, stroke=0)
     c.setFillColor(colors.white)
-    c.setFont("Helvetica", 9)
-    c.drawString(15 * mm, footer_h / 2 - 1.5 * mm, "CRECI 074155")
-    c.drawCentredString(largura / 2, footer_h / 2 - 1.5 * mm, "www.morabilidade.com")
-    c.drawRightString(largura - 15 * mm, footer_h / 2 - 1.5 * mm, "(21) 99772-9990")
+    c.setFont("Helvetica", 11)
+    c.drawString(15 * mm, footer_h / 2 - 2 * mm, "CRECI 074155")
+    c.drawCentredString(largura / 2, footer_h / 2 - 2 * mm, "www.morabilidade.com")
+    c.drawRightString(largura - 15 * mm, footer_h / 2 - 2 * mm, "(21) 99772-9990")
 
     c.showPage()
     c.save()
