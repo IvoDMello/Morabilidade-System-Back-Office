@@ -135,3 +135,85 @@ export interface Cliente {
   created_at: string;
   updated_at: string;
 }
+
+// ── Locações ──────────────────────────────────────────────────────────────────
+
+export type StatusLocacao = "ativo" | "em_encerramento" | "rescindido" | "encerrado";
+export type StatusPagamento = "pendente" | "pago" | "atrasado" | "parcial";
+
+export interface ParteResumo {
+  id: string;
+  nome?: string;
+  codigo?: string;
+  endereco?: string;
+}
+
+export interface ContratoLocacao {
+  id: string;
+  imovel_id: string;
+  proprietario_id: string;
+  locatario_id: string;
+  data_inicio: string;
+  data_fim: string;
+  dia_vencimento: number;
+  aluguel_mensal: number;
+  condominio_mensal: number;
+  incluir_condominio_cobranca: boolean;
+  fundo_reserva: number;
+  fundo_obra: number;
+  incluir_fundo_obra_cobranca: boolean;
+  iptu_anual: number;
+  incluir_iptu_cobranca: boolean;
+  numero_iptu?: string;
+  dados_cobranca_pix?: string;
+  observacoes_demonstrativo?: string;
+  status: StatusLocacao;
+  motivo_rescisao?: string;
+  data_rescisao?: string;
+  created_at: string;
+  updated_at: string;
+  imovel?: ParteResumo;
+  proprietario?: ParteResumo;
+  locatario?: ParteResumo;
+}
+
+export interface ContratoLocacaoListItem {
+  id: string;
+  status: StatusLocacao;
+  data_inicio: string;
+  data_fim: string;
+  dia_vencimento: number;
+  aluguel_mensal: number;
+  imovel?: ParteResumo;
+  proprietario?: ParteResumo;
+  locatario?: ParteResumo;
+  created_at: string;
+}
+
+export interface PagamentoLocacao {
+  id: string;
+  contrato_id: string;
+  mes_referencia: string;
+  valor_devido: number;
+  valor_pago?: number;
+  data_vencimento: string;
+  data_pagamento?: string;
+  status: StatusPagamento;
+  observacoes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AnaliseLocacao {
+  kpis: {
+    contratos_ativos: number;
+    em_encerramento: number;
+    rescindidos_no_ano: number;
+    inadimplencia_pct: number;
+    valor_em_aberto: number;
+  };
+  ano: number;
+  receita_prevista_por_mes: Record<string, number>;
+  receita_realizada_por_mes: Record<string, number>;
+  contratos_ativos_por_bairro: Record<string, number>;
+}

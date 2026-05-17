@@ -20,7 +20,7 @@ if settings.sentry_dsn:
         ],
     )
 from app.limiter import limiter
-from app.routers import clientes, contato, imoveis, oportunidades, tags, users
+from app.routers import clientes, contato, imoveis, locacoes, oportunidades, tags, users
 from app.auth.router import router as auth_router
 from app.auth.dependencies import get_current_user
 from app.database import supabase_admin
@@ -55,6 +55,7 @@ app.include_router(clientes.router, prefix="/clientes", tags=["Clientes"])
 app.include_router(tags.router, prefix="/tags", tags=["Tags"])
 app.include_router(contato.router, prefix="/contato", tags=["Site Público"])
 app.include_router(oportunidades.router, tags=["Oportunidades"])
+app.include_router(locacoes.router, prefix="/locacoes", tags=["Locações"])
 
 
 @app.get("/", tags=["Health"])
