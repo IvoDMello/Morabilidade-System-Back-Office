@@ -40,6 +40,7 @@ export function AnexosLocacao({ contratoId }: Props) {
   const inputFileRef = useRef<HTMLInputElement>(null);
   const [deletando, setDeletando] = useState<AnexoLocacao | null>(null);
   const [deletandoLoading, setDeletandoLoading] = useState(false);
+  const [arrastando, setArrastando] = useState(false);
 
   const buscar = useCallback(async () => {
     setLoading(true);
@@ -57,9 +58,24 @@ export function AnexosLocacao({ contratoId }: Props) {
     buscar();
   }, [buscar]);
 
-  async function handleSelecionarArquivo(e: React.ChangeEvent<HTMLInputElement>) {
-    const arquivo = e.target.files?.[0];
-    if (!arquivo) return;
+  const TIPOS_ACEITOS = [
+    "application/pdf",
+    "image/jpeg",
+    "image/png",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ];
+  const TAMANHO_MAX = 10 * 1024 * 1024;
+
+  async function enviarArquivo(arquivo: File) {
+    if (arquivo.size > TAMANHO_MAX) {
+      toast.error("Arquivo excede 10 MB.");
+      return;
+    }
+    if (arquivo.type && !TIPOS_ACEITOS.includes(arquivo.type)) {
+      toast.error("Tipo de arquivo não permitido. Use PDF, JPG, PNG, DOC ou DOCX.");
+      return;
+    }
     setEnviando(true);
     try {
       const form = new FormData();
@@ -79,6 +95,20 @@ export function AnexosLocacao({ contratoId }: Props) {
       setEnviando(false);
       if (inputFileRef.current) inputFileRef.current.value = "";
     }
+  }
+
+  async function handleSelecionarArquivo(e: React.ChangeEvent<HTMLInputElement>) {
+    const arquivo = e.target.files?.[0];
+    if (!arquivo) return;
+    await enviarArquivo(arquivo);
+  }
+
+  function handleDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setArrastando(false);
+    if (!isAdmin || enviando) return;
+    const arquivo = e.dataTransfer.files?.[0];
+    if (arquivo) enviarArquivo(arquivo);
   }
 
   async function handleDeletar() {
@@ -140,6 +170,28 @@ export function AnexosLocacao({ contratoId }: Props) {
           </div>
         )}
       </div>
+
+      {isAdmin && (
+        <div
+          onDragOver={(e) => {
+            e.preventDefault();
+            if (!enviando) setArrastando(true);
+          }}
+          onDragLeave={() => setArrastando(false)}
+          onDrop={handleDrop}
+          onClick={() => !enviando && inputFileRef.current?.click()}
+          className={`mx-5 my-4 px-4 py-6 border-2 border-dashed rounded-lg text-center text-xs transition cursor-pointer ${
+            arrastando
+              ? "border-[#585a4f] bg-[#585a4f]/5 text-[#585a4f]"
+              : "border-slate-200 text-slate-400 hover:border-slate-300 hover:bg-slate-50/60"
+          } ${enviando ? "opacity-60 pointer-events-none" : ""}`}
+        >
+          <Upload className="w-5 h-5 mx-auto mb-1.5" />
+          {arrastando
+            ? "Solte para enviar"
+            : "Arraste um arquivo aqui ou clique para selecionar"}
+        </div>
+      )}
 
       {loading ? (
         <div className="p-8 text-center text-slate-400 text-sm">Carregando anexos...</div>
