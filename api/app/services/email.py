@@ -97,16 +97,35 @@ def _render_template(*, titulo: str, preheader: str, conteudo_html: str) -> str:
 </html>"""
 
 
-def enviar_email(to: str, subject: str, html: str) -> None:
-    """Envia um e-mail transacional via Resend."""
-    resend.Emails.send(
-        {
-            "from": settings.email_from,
-            "to": to,
-            "subject": subject,
-            "html": html,
-        }
-    )
+def enviar_email(
+    to: str,
+    subject: str,
+    html: str,
+    attachments: list | None = None,
+) -> None:
+    """Envia um e-mail transacional via Resend.
+
+    attachments (opcional) — lista de dicts no formato do Resend:
+        [{"filename": "demonstrativo.pdf", "content": <bytes>}]
+    Bytes são convertidos para a representação aceita pelo SDK.
+    """
+    payload: dict = {
+        "from": settings.email_from,
+        "to": to,
+        "subject": subject,
+        "html": html,
+    }
+    if attachments:
+        # Resend espera list[int] (bytes) ou string base64 em `content`.
+        # O SDK Python aceita bytes diretamente desde 2.x.
+        payload["attachments"] = [
+            {
+                "filename": a["filename"],
+                "content": list(a["content"]) if isinstance(a["content"], (bytes, bytearray)) else a["content"],
+            }
+            for a in attachments
+        ]
+    resend.Emails.send(payload)
 
 
 # ── Templates específicos ────────────────────────────────────────────────────
@@ -219,6 +238,62 @@ def enviar_recuperacao_senha(email: str, link: str) -> None:
         conteudo_html=conteudo,
     )
     enviar_email(email, "Redefinição de senha — Morabilidade", html)
+
+
+def enviar_demonstrativo_locacao(
+    *,
+    para: str,
+    nome_locatario: str,
+    mes_label: str,
+    endereco_imovel: str,
+    total_brl: str,
+    vencimento_brl: str,
+    pdf_bytes: bytes,
+    nome_arquivo: str,
+) -> None:
+    """Envia o demonstrativo mensal ao locatário, com o PDF em anexo."""
+    nome_safe = html_lib.escape(nome_locatario.split()[0] if nome_locatario else "")
+    mes_safe = html_lib.escape(mes_label)
+    end_safe = html_lib.escape(endereco_imovel or "")
+    conteudo = f"""
+      <h1 style="margin:0 0 12px;font-size:22px;color:{_OLIVE};font-weight:600;">
+        Demonstrativo de {mes_safe}
+      </h1>
+      <p style="margin:0 0 16px;">
+        Olá, {nome_safe}! Segue em anexo o demonstrativo da locação referente a
+        <strong>{mes_safe}</strong>.
+      </p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+             style="border-collapse:separate;border-spacing:0;border:1px solid #e6e6dd;border-radius:8px;overflow:hidden;font-size:14px;">
+        <tr>
+          <td style="padding:10px 14px;background:#fafaf6;color:#666;width:140px;font-weight:600;">Imóvel</td>
+          <td style="padding:10px 14px;">{end_safe}</td>
+        </tr>
+        <tr>
+          <td style="padding:10px 14px;background:#fafaf6;color:#666;font-weight:600;border-top:1px solid #e6e6dd;">Total a pagar</td>
+          <td style="padding:10px 14px;border-top:1px solid #e6e6dd;color:{_OLIVE};font-weight:700;">{total_brl}</td>
+        </tr>
+        <tr>
+          <td style="padding:10px 14px;background:#fafaf6;color:#666;font-weight:600;border-top:1px solid #e6e6dd;">Vencimento</td>
+          <td style="padding:10px 14px;border-top:1px solid #e6e6dd;">{vencimento_brl}</td>
+        </tr>
+      </table>
+      <p style="margin:24px 0 0;color:#777;font-size:13px;">
+        O detalhamento completo está no PDF anexo. Em caso de dúvidas,
+        responda este e-mail ou nos chame no WhatsApp.
+      </p>
+    """
+    html = _render_template(
+        titulo=f"Demonstrativo {mes_label} — Morabilidade",
+        preheader=f"Total a pagar {total_brl} · vencimento {vencimento_brl}.",
+        conteudo_html=conteudo,
+    )
+    enviar_email(
+        para,
+        f"Demonstrativo {mes_label} — Morabilidade",
+        html,
+        attachments=[{"filename": nome_arquivo, "content": pdf_bytes}],
+    )
 
 
 def enviar_notificacao_lead(

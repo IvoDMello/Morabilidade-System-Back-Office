@@ -7,7 +7,7 @@ interface ConfirmDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
-  description: string;
+  description: React.ReactNode;
   confirmLabel?: string;
   loading?: boolean;
   onConfirm: () => void;
@@ -35,8 +35,8 @@ export function ConfirmDialog({
               <Dialog.Title className="text-base font-semibold text-slate-900">
                 {title}
               </Dialog.Title>
-              <Dialog.Description className="mt-1 text-sm text-slate-500">
-                {description}
+              <Dialog.Description asChild>
+                <div className="mt-1 text-sm text-slate-500">{description}</div>
               </Dialog.Description>
             </div>
           </div>

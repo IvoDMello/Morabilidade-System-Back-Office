@@ -19,6 +19,9 @@ httpx>=0.26,<0.28
 pillow==11.0.0
 python-slugify==8.0.4
 
+# Geração de PDF (demonstrativos mensais de locação) — pure-Python, sem deps nativas.
+reportlab==4.2.5
+
 # Rate limiting
 slowapi==0.1.9
 
