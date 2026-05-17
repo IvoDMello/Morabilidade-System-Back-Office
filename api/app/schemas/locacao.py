@@ -108,9 +108,20 @@ class ContratoLocacaoUpdate(BaseModel):
 
     taxa_administracao_pct: Optional[Decimal] = Field(default=None, ge=0, le=100)
 
-    status: Optional[StatusLocacao] = None
     motivo_rescisao: Optional[str] = None
     data_rescisao: Optional[date] = None
+
+    @model_validator(mode="after")
+    def vigencia_e_status_validos(self) -> "ContratoLocacaoUpdate":
+        # Se ambas as datas vieram no PATCH, valida a coerência.
+        # (Se vier só uma, o banco mantém a outra — não dá pra cruzar aqui.)
+        if (
+            self.data_inicio is not None
+            and self.data_fim is not None
+            and self.data_fim <= self.data_inicio
+        ):
+            raise ValueError("data_fim deve ser posterior a data_inicio.")
+        return self
 
 
 class ParteResumo(BaseModel):

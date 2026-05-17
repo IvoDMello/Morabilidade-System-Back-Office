@@ -36,8 +36,11 @@ def test_enviar_demonstrativo_usa_email_do_locatario_por_padrao(client):
 
 
 def test_enviar_demonstrativo_com_email_explicito(client):
+    # Sequência: _buscar + clientes (sempre consultado, mesmo com 'para') +
+    # select snapshot + insert snapshot.
     db = make_db_mock(
         MagicMock(data=CONTRATO_DB),
+        MagicMock(data={"email": "loc@email.com", "nome_completo": "Maria"}),
         MagicMock(data=[]),
         MagicMock(data=[{}]),
     )

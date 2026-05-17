@@ -300,7 +300,7 @@ def test_rescindir_contrato_nao_encontrado(client):
 
 def test_deletar_contrato_e_soft_delete(client):
     """DELETE marca como 'encerrado' em vez de remover (preserva histórico)."""
-    db = make_db_mock(MagicMock(data=[]))
+    db = make_db_mock(MagicMock(data=[{"id": CONTRATO_DB["id"]}]))
 
     with patch("app.routers.locacoes.supabase_admin", db):
         res = client.delete(f"/locacoes/{CONTRATO_DB['id']}")

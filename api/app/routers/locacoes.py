@@ -1,4 +1,5 @@
 import io
+import logging
 import re
 import uuid
 import zipfile
@@ -53,6 +54,8 @@ def _formatar_brl(valor) -> str:
     v = float(valor)
     s = f"{v:,.2f}"
     return "R$ " + s.replace(",", "X").replace(".", ",").replace("X", ".")
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -209,8 +212,9 @@ def _marcar_atrasados(contrato_id: Optional[str] = None) -> None:
         q.execute()
     except Exception:
         # Não queremos que falha de marcação derrube o endpoint chamador.
-        # Pior caso: KPIs ficam um request desatualizados.
-        pass
+        # Pior caso: KPIs ficam um request desatualizados — mas logamos para
+        # não mascarar bugs de banco silenciosamente.
+        logger.exception("Falha ao marcar pagamentos atrasados (contrato_id=%s)", contrato_id)
 
 
 # IMPORTANTE: /analises precisa vir ANTES de /{contrato_id}, senão o roteador
@@ -589,23 +593,27 @@ def enviar_demonstrativo(
     mes_ref = _parse_mes(mes)
     contrato = _buscar_contrato(contrato_id)
 
-    destinatario = (para or "").strip() or (contrato.get("locatario") or {}).get("nome")
-    # ParteResumo não traz email; buscamos no banco para evitar mandar para nome.
-    if not para:
-        cli = (
-            supabase_admin.table("clientes")
-            .select("email, nome_completo")
-            .eq("id", contrato["locatario_id"])
-            .single()
-            .execute()
-            .data
-            or {}
-        )
-        destinatario = (cli.get("email") or "").strip()
-        nome_locatario = cli.get("nome_completo") or ""
-    else:
+    # Sempre busca os dados do locatário no banco: precisamos do nome_completo
+    # de forma confiável (o join _SELECT_FULL pode vir vazio) e do email quando
+    # 'para' não foi informado.
+    cli = (
+        supabase_admin.table("clientes")
+        .select("email, nome_completo")
+        .eq("id", contrato["locatario_id"])
+        .single()
+        .execute()
+        .data
+        or {}
+    )
+    nome_locatario = (
+        cli.get("nome_completo")
+        or (contrato.get("locatario") or {}).get("nome")
+        or ""
+    )
+    if para:
         destinatario = para.strip()
-        nome_locatario = (contrato.get("locatario") or {}).get("nome") or ""
+    else:
+        destinatario = (cli.get("email") or "").strip()
 
     if not destinatario or "@" not in destinatario:
         raise HTTPException(
@@ -741,9 +749,14 @@ def rescindir_contrato(
 def encerrar_contrato(contrato_id: str, current_user: dict = Depends(require_admin)):
     """Soft-delete: marca como 'encerrado' em vez de apagar — preserva
     histórico de pagamentos e anexos para auditoria."""
-    supabase_admin.table("contratos_locacao").update(
-        {"status": StatusLocacao.encerrado.value}
-    ).eq("id", contrato_id).execute()
+    result = (
+        supabase_admin.table("contratos_locacao")
+        .update({"status": StatusLocacao.encerrado.value})
+        .eq("id", contrato_id)
+        .execute()
+    )
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Contrato não encontrado.")
 
 
 # ── Pagamentos ──────────────────────────────────────────────────────────────
@@ -859,6 +872,11 @@ def aplicar_reajuste(
     anterior = Decimal(str(contrato["aluguel_mensal"]))
     pct = Decimal(str(body.percentual))
     novo = (anterior * (Decimal("1") + pct / Decimal("100"))).quantize(Decimal("0.01"))
+    if novo <= 0:
+        raise HTTPException(
+            status_code=422,
+            detail="Reajuste resultaria em aluguel zero ou negativo — revise o percentual.",
+        )
 
     registro = _serializar_para_banco({
         "contrato_id": contrato_id,
