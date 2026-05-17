@@ -61,7 +61,7 @@ router = APIRouter()
 
 _SELECT_FULL = (
     "*,"
-    "imovel:imoveis(id, codigo, endereco, bairro),"
+    "imovel:imoveis(id, codigo, logradouro, numero, complemento, bairro),"
     # Sintaxe curta `!coluna` — não depende do nome gerado pela FK no banco,
     # que pode variar (contratos_locacao_proprietario_id_fkey vs custom).
     "proprietario:clientes!proprietario_id("
@@ -81,10 +81,20 @@ def _achatar_partes(raw: dict) -> dict:
 
     imv = out.get("imovel")
     if imv:
+        # A tabela imoveis usa logradouro/numero/complemento/bairro — não há
+        # coluna endereco. Aceita endereco como fallback p/ compat com mocks
+        # de teste antigos.
+        endereco = imv.get("endereco") or imv.get("logradouro")
+        partes = [p for p in [
+            endereco,
+            imv.get("numero"),
+            imv.get("complemento"),
+            imv.get("bairro"),
+        ] if p]
         out["imovel"] = {
             "id": imv.get("id"),
             "codigo": imv.get("codigo"),
-            "endereco": ", ".join(p for p in [imv.get("endereco"), imv.get("bairro")] if p),
+            "endereco": ", ".join(partes),
         }
 
     prop = out.get("proprietario")
@@ -168,7 +178,7 @@ def listar_contratos(
             supabase_admin.table("contratos_locacao").select(
                 "id, status, data_inicio, data_fim, dia_vencimento, aluguel_mensal,"
                 " created_at,"
-                " imovel:imoveis(id, codigo, endereco, bairro),"
+                " imovel:imoveis(id, codigo, logradouro, numero, complemento, bairro),"
                 " proprietario:clientes!proprietario_id(id, nome_completo),"
                 " locatario:clientes!locatario_id(id, nome_completo)"
             )
@@ -478,7 +488,7 @@ def relatorio_repasses(
         supabase_admin.table("contratos_locacao")
         .select(
             "id, taxa_administracao_pct, proprietario_id,"
-            " imovel:imoveis(codigo, endereco, bairro),"
+            " imovel:imoveis(codigo, logradouro, numero, complemento, bairro),"
             " proprietario:clientes!proprietario_id(id, nome_completo, email)"
         )
         .in_("id", contrato_ids)
@@ -517,12 +527,16 @@ def relatorio_repasses(
             )
 
         imv = c.get("imovel") or {}
+        endereco_parts = [
+            imv.get("endereco") or imv.get("logradouro"),
+            imv.get("numero"),
+            imv.get("complemento"),
+            imv.get("bairro"),
+        ]
         item = RepasseItem(
             contrato_id=c["id"],
             imovel_codigo=imv.get("codigo"),
-            imovel_endereco=", ".join(
-                p for p in [imv.get("endereco"), imv.get("bairro")] if p
-            ) or None,
+            imovel_endereco=", ".join(p for p in endereco_parts if p) or None,
             pagamento_id=p["id"],
             valor_pago=valor_pago,
             taxa_administracao_pct=taxa_pct,

@@ -27,8 +27,10 @@ CONTRATO_DB = {
     "incluir_fundo_obra_cobranca": False,
     "iptu_anual": "0",
     "incluir_iptu_cobranca": False,
+    "seguro_incendio_anual": "0",
+    "incluir_seguro_incendio_cobranca": False,
     "numero_iptu": None,
-    "dados_cobranca_pix": "pedro.bassan.jr@gmail.com",
+    "dados_cobranca_pix": "exemplo@email.com",
     "observacoes_demonstrativo": None,
     "status": "ativo",
     "motivo_rescisao": None,
@@ -39,7 +41,9 @@ CONTRATO_DB = {
     "imovel": {
         "id": "imovel-uuid-1",
         "codigo": "IMO-00042",
-        "endereco": "Artur Araripe, 82",
+        "logradouro": "Rua Artur Araripe",
+        "numero": "82",
+        "complemento": None,
         "bairro": "Gávea",
     },
     "proprietario": {
@@ -68,7 +72,7 @@ CONTRATO_PAYLOAD = {
     "condominio_mensal": "2916.25",
     "incluir_condominio_cobranca": True,
     "fundo_reserva": "145.81",
-    "dados_cobranca_pix": "pedro.bassan.jr@gmail.com",
+    "dados_cobranca_pix": "exemplo@email.com",
 }
 
 
@@ -150,7 +154,7 @@ def test_obter_contrato_existente(client):
     body = res.json()
     assert body["id"] == CONTRATO_DB["id"]
     # Achatamento: imovel vira ParteResumo com endereco concatenado
-    assert body["imovel"]["endereco"] == "Artur Araripe, 82, Gávea"
+    assert body["imovel"]["endereco"] == "Rua Artur Araripe, 82, Gávea"
     assert body["proprietario"]["nome"] == "Pedro Bassan Jr"
     assert body["locatario"]["nome"] == "Maria Locatária"
 

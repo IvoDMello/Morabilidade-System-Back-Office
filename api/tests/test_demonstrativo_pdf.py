@@ -81,6 +81,40 @@ def test_total_com_fundo_obra_e_iptu():
     assert calcular_total_demonstrativo(contrato) == Decimal("6520.00")
 
 
+def test_total_com_seguro_incendio_dividido_em_doze():
+    """Seguro incêndio anual de 1200 → 100/mês quando incluído."""
+    contrato = {
+        "aluguel_mensal": "4000",
+        "condominio_mensal": "0",
+        "incluir_condominio_cobranca": False,
+        "fundo_reserva": "0",
+        "fundo_obra": "0",
+        "incluir_fundo_obra_cobranca": False,
+        "iptu_anual": "0",
+        "incluir_iptu_cobranca": False,
+        "seguro_incendio_anual": "1200",
+        "incluir_seguro_incendio_cobranca": True,
+    }
+    assert calcular_total_demonstrativo(contrato) == Decimal("4100.00")
+
+
+def test_total_seguro_nao_incluso_nao_soma():
+    """Mesmo com seguro_incendio_anual setado, se a flag está False, não entra."""
+    contrato = {
+        "aluguel_mensal": "4000",
+        "condominio_mensal": "0",
+        "incluir_condominio_cobranca": False,
+        "fundo_reserva": "0",
+        "fundo_obra": "0",
+        "incluir_fundo_obra_cobranca": False,
+        "iptu_anual": "0",
+        "incluir_iptu_cobranca": False,
+        "seguro_incendio_anual": "1200",
+        "incluir_seguro_incendio_cobranca": False,
+    }
+    assert calcular_total_demonstrativo(contrato) == Decimal("4000.00")
+
+
 def test_total_aceita_none_e_decimal_misturados():
     contrato = {
         "aluguel_mensal": Decimal("5000"),
