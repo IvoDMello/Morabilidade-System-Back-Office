@@ -106,14 +106,14 @@ export function Footer() {
         </div>
 
         {/* Bottom bar */}
-        <div className="pt-6 border-t border-white/20 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-xs text-white/60">
+        <div className="pt-6 border-t border-white/20 relative flex flex-col sm:grid sm:grid-cols-3 items-center gap-3">
+          <p className="text-xs text-white/60 sm:justify-self-start text-center sm:text-left">
             © {new Date().getFullYear()} Morabilidade. Todos os direitos reservados.
           </p>
-          <p className="text-xs text-white/55 tracking-widest uppercase">
+          <p className="text-xs text-white/55 tracking-widest uppercase sm:justify-self-center text-center">
             Simples · Eficiente · Humanizada
           </p>
-          <p className="text-xs text-white/55">CRECI-RJ nº 70411</p>
+          <p className="text-xs text-white/55 sm:justify-self-end text-center sm:text-right">CRECI-RJ nº 70411</p>
         </div>
       </div>
     </footer>
