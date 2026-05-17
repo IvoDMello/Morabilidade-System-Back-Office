@@ -11,7 +11,7 @@ export function Footer() {
       className="text-white"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-14 pb-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-8 mb-12 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_minmax(360px,1.4fr)_1fr] gap-10 md:gap-16 mb-12 md:items-center">
 
           {/* Páginas — esquerda */}
           <div className="text-center md:text-right order-2 md:order-1">
