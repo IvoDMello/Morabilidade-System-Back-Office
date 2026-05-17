@@ -2,11 +2,13 @@
 
 Reproduz a regra de cobrança do exemplo "Artur Araripe" (referência do projeto):
     Total = Aluguel
-          + Condomínio        (se incluir_condominio_cobranca)
-          + Fundo de obra     (se incluir_fundo_obra_cobranca)
-          + IPTU / 10         (se incluir_iptu_cobranca; IPTU é anual,
-                               cobrado em 10 parcelas — padrão municipal RJ)
-          - Fundo de reserva  (sempre deduz — responsabilidade do proprietário)
+          + Condomínio          (se incluir_condominio_cobranca)
+          + Fundo de obra       (se incluir_fundo_obra_cobranca)
+          + IPTU / 10           (se incluir_iptu_cobranca; IPTU é anual,
+                                 cobrado em 10 parcelas — padrão municipal RJ)
+          + Seguro incêndio/12  (se incluir_seguro_incendio_cobranca;
+                                 apólice anual diluída em 12 meses)
+          - Fundo de reserva    (sempre deduz — responsabilidade do proprietário)
 
 Stack: ReportLab (pure-Python). Escolhido em vez de WeasyPrint porque não tem
 dependências nativas (Cairo/Pango), o que evita atrito tanto no Windows
@@ -65,6 +67,10 @@ def calcular_total_demonstrativo(contrato: dict) -> Decimal:
     if contrato.get("incluir_iptu_cobranca"):
         # IPTU anual dividido em 10 parcelas mensais (regra municipal RJ).
         total += _dec(contrato.get("iptu_anual")) / Decimal("10")
+
+    if contrato.get("incluir_seguro_incendio_cobranca"):
+        # Seguro incêndio: apólice anual diluída em 12 parcelas.
+        total += _dec(contrato.get("seguro_incendio_anual")) / Decimal("12")
 
     total -= _dec(contrato.get("fundo_reserva"))
     return total.quantize(Decimal("0.01"))
@@ -156,6 +162,7 @@ def gerar_demonstrativo_pdf(contrato: dict, mes_referencia: date) -> bytes:
     incluir_cond = bool(contrato.get("incluir_condominio_cobranca"))
     incluir_fobra = bool(contrato.get("incluir_fundo_obra_cobranca"))
     incluir_iptu = bool(contrato.get("incluir_iptu_cobranca"))
+    incluir_seguro = bool(contrato.get("incluir_seguro_incendio_cobranca"))
     fres = _dec(contrato.get("fundo_reserva"))
 
     linhas: list[tuple[str, Decimal, bool]] = []  # (label, valor, é_deducao)
@@ -167,6 +174,9 @@ def gerar_demonstrativo_pdf(contrato: dict, mes_referencia: date) -> bytes:
     if incluir_iptu:
         iptu_mes = _dec(contrato.get("iptu_anual")) / Decimal("10")
         linhas.append(("IPTU (1/10 do anual)", iptu_mes, False))
+    if incluir_seguro:
+        seg_mes = _dec(contrato.get("seguro_incendio_anual")) / Decimal("12")
+        linhas.append(("Seguro incêndio (1/12 do anual)", seg_mes, False))
     if fres > 0:
         linhas.append(("Fundo de reserva (dedução)", fres, True))
 

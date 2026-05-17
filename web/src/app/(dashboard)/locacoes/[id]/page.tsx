@@ -182,6 +182,9 @@ export default function EditarContratoPage({
     incluir_fundo_obra_cobranca: contrato.incluir_fundo_obra_cobranca,
     iptu_anual: Number(contrato.iptu_anual),
     incluir_iptu_cobranca: contrato.incluir_iptu_cobranca,
+    seguro_incendio_anual: Number(contrato.seguro_incendio_anual ?? 0),
+    incluir_seguro_incendio_cobranca:
+      contrato.incluir_seguro_incendio_cobranca ?? false,
     numero_iptu: contrato.numero_iptu ?? "",
     dados_cobranca_pix: contrato.dados_cobranca_pix ?? "",
     observacoes_demonstrativo: contrato.observacoes_demonstrativo ?? "",
@@ -193,7 +196,10 @@ export default function EditarContratoPage({
     Number(contrato.aluguel_mensal) +
     (contrato.incluir_condominio_cobranca ? Number(contrato.condominio_mensal) : 0) +
     (contrato.incluir_fundo_obra_cobranca ? Number(contrato.fundo_obra) : 0) +
-    (contrato.incluir_iptu_cobranca ? Number(contrato.iptu_anual) / 10 : 0) -
+    (contrato.incluir_iptu_cobranca ? Number(contrato.iptu_anual) / 10 : 0) +
+    (contrato.incluir_seguro_incendio_cobranca
+      ? Number(contrato.seguro_incendio_anual ?? 0) / 12
+      : 0) -
     Number(contrato.fundo_reserva);
 
   const podeRescindir =

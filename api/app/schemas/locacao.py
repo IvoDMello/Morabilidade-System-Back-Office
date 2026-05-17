@@ -52,6 +52,11 @@ class ContratoLocacaoBase(BaseModel):
     iptu_anual: Decimal = Field(default=Decimal("0"), ge=0)
     incluir_iptu_cobranca: bool = False
 
+    # Seguro incêndio anual — quando incluído, divide por 12 meses (padrão
+    # de mercado, distinto do IPTU que segue 10 parcelas no RJ).
+    seguro_incendio_anual: Decimal = Field(default=Decimal("0"), ge=0)
+    incluir_seguro_incendio_cobranca: bool = False
+
     numero_iptu: Optional[str] = None
     dados_cobranca_pix: Optional[str] = None
     observacoes_demonstrativo: Optional[str] = None
@@ -93,6 +98,9 @@ class ContratoLocacaoUpdate(BaseModel):
 
     iptu_anual: Optional[Decimal] = Field(default=None, ge=0)
     incluir_iptu_cobranca: Optional[bool] = None
+
+    seguro_incendio_anual: Optional[Decimal] = Field(default=None, ge=0)
+    incluir_seguro_incendio_cobranca: Optional[bool] = None
 
     numero_iptu: Optional[str] = None
     dados_cobranca_pix: Optional[str] = None

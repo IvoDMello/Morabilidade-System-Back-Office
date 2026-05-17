@@ -164,6 +164,8 @@ export interface ContratoLocacao {
   incluir_fundo_obra_cobranca: boolean;
   iptu_anual: number;
   incluir_iptu_cobranca: boolean;
+  seguro_incendio_anual: number;
+  incluir_seguro_incendio_cobranca: boolean;
   numero_iptu?: string;
   dados_cobranca_pix?: string;
   observacoes_demonstrativo?: string;

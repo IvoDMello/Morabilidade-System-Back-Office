@@ -31,6 +31,9 @@ const schema = z
     iptu_anual: z.coerce.number().min(0).default(0),
     incluir_iptu_cobranca: z.boolean().default(false),
 
+    seguro_incendio_anual: z.coerce.number().min(0).default(0),
+    incluir_seguro_incendio_cobranca: z.boolean().default(false),
+
     numero_iptu: z.string().optional().or(z.literal("")),
     dados_cobranca_pix: z.string().optional().or(z.literal("")),
     observacoes_demonstrativo: z.string().optional().or(z.literal("")),
@@ -112,6 +115,8 @@ export function LocacaoForm({
       incluir_fundo_obra_cobranca: false,
       iptu_anual: 0,
       incluir_iptu_cobranca: false,
+      seguro_incendio_anual: 0,
+      incluir_seguro_incendio_cobranca: false,
       taxa_administracao_pct: 0,
       ...defaultValues,
     },
@@ -136,26 +141,30 @@ export function LocacaoForm({
       .finally(() => setLoadingListas(false));
   }, []);
 
-  // Cálculo do total ao vivo — replica a regra do PDF Artur Araripe:
-  //   Aluguel + (Condomínio se incluir) + (IPTU/10 se incluir)
-  //              + (Fundo de obra se incluir) − Fundo de reserva
+  // Cálculo do total ao vivo — replica a regra do PDF:
+  //   Aluguel + (Condomínio) + (Fundo de obra) + (IPTU/10) + (Seguro/12) − Fundo de reserva
   const w = watch();
   const total = useMemo(() => {
     const aluguel = Number(w.aluguel_mensal) || 0;
     const cond = w.incluir_condominio_cobranca ? Number(w.condominio_mensal) || 0 : 0;
     const fobra = w.incluir_fundo_obra_cobranca ? Number(w.fundo_obra) || 0 : 0;
     const iptu = w.incluir_iptu_cobranca ? (Number(w.iptu_anual) || 0) / 10 : 0;
+    const seguro = w.incluir_seguro_incendio_cobranca
+      ? (Number(w.seguro_incendio_anual) || 0) / 12
+      : 0;
     const fres = Number(w.fundo_reserva) || 0;
-    return aluguel + cond + fobra + iptu - fres;
+    return aluguel + cond + fobra + iptu + seguro - fres;
   }, [
     w.aluguel_mensal,
     w.condominio_mensal,
     w.fundo_obra,
     w.iptu_anual,
+    w.seguro_incendio_anual,
     w.fundo_reserva,
     w.incluir_condominio_cobranca,
     w.incluir_fundo_obra_cobranca,
     w.incluir_iptu_cobranca,
+    w.incluir_seguro_incendio_cobranca,
   ]);
 
   const submitButton = (
@@ -343,6 +352,28 @@ export function LocacaoForm({
             </label>
           </Field>
 
+          <Field
+            label="Seguro incêndio anual (R$)"
+            hint="Quando incluído, é dividido em 12 parcelas mensais"
+            error={errors.seguro_incendio_anual?.message}
+          >
+            <input
+              type="number"
+              step="0.01"
+              min={0}
+              {...register("seguro_incendio_anual")}
+              className={inputClass}
+            />
+            <label className="flex items-center gap-2 mt-2 text-xs text-slate-600">
+              <input
+                type="checkbox"
+                {...register("incluir_seguro_incendio_cobranca")}
+                className="rounded border-slate-300 text-[#585a4f] focus:ring-[#585a4f]/30"
+              />
+              Incluir seguro incêndio na cobrança (parcelado em 12x)
+            </label>
+          </Field>
+
           <Field label="Número de inscrição do IPTU">
             <input
               type="text"
@@ -392,6 +423,12 @@ export function LocacaoForm({
               valor={(Number(w.iptu_anual) || 0) / 10}
             />
           )}
+          {w.incluir_seguro_incendio_cobranca && (
+            <Linha
+              label="+ Seguro incêndio (1/12)"
+              valor={(Number(w.seguro_incendio_anual) || 0) / 12}
+            />
+          )}
           {Number(w.fundo_reserva) > 0 && (
             <Linha
               label="− Fundo de reserva"
@@ -418,7 +455,7 @@ export function LocacaoForm({
                 type="text"
                 {...register("dados_cobranca_pix")}
                 className={inputClass}
-                placeholder="Ex: pedro.bassan.jr@gmail.com"
+                placeholder="E-mail, CPF, CNPJ, telefone ou chave aleatória"
               />
             </Field>
           </div>
