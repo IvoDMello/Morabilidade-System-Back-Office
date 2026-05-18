@@ -4,6 +4,20 @@ import { cookies } from "next/headers";
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const HOP_BY_HOP = new Set(["content-encoding", "transfer-encoding", "connection", "keep-alive"]);
 
+// Hosts permitidos para receber o Authorization header em redirects.
+// Sempre inclui o API_URL; também aceita o swap http<->https para o caso
+// do Railway responder com 308 promovendo http://api.host → https://api.host.
+function isRedirectAllowed(location: string): boolean {
+  try {
+    const target = new URL(location);
+    const api = new URL(API_URL);
+    if (target.hostname !== api.hostname) return false;
+    return target.protocol === "http:" || target.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 async function handler(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
@@ -68,12 +82,20 @@ async function handler(
       redirect: "manual",
     });
 
-    // Follow redirects manually so Authorization header survives (e.g. Railway HTTP→HTTPS)
+    // Follow redirects manually so Authorization header survives (e.g. Railway HTTP→HTTPS).
+    // O Location é validado contra o hostname da API para nunca vazar o Bearer
+    // para terceiros caso a API responda com um redirect cross-origin.
     let hops = 0;
     while (res.status >= 301 && res.status <= 308 && hops < 5) {
       const location = res.headers.get("location");
       if (!location) break;
-const redirectMethod = res.status === 303 ? "GET" : request.method;
+      if (!isRedirectAllowed(location)) {
+        return NextResponse.json(
+          { detail: "Redirect bloqueado por política de segurança." },
+          { status: 502 }
+        );
+      }
+      const redirectMethod = res.status === 303 ? "GET" : request.method;
       const redirectBody = res.status === 303 ? undefined : body;
       res = await fetch(location, {
         method: redirectMethod,

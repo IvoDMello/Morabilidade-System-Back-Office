@@ -26,6 +26,19 @@ _CAMPOS_EXPORT = [
     "iptu_mensal", "condominio_mensal", "video_url", "descricao", "created_at",
 ]
 
+# Caracteres que o Excel/LibreOffice interpretam como início de fórmula. Se um
+# valor começar com qualquer um deles, prefixamos com apóstrofo (CSV Injection).
+_CSV_FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
+
+
+def _csv_safe(valor) -> str:
+    if valor is None:
+        return ""
+    s = str(valor)
+    if s and s[0] in _CSV_FORMULA_PREFIXES:
+        return "'" + s
+    return s
+
 
 def _ev(v):
     """Extrai o valor string de um enum, ou retorna o valor original."""
@@ -301,7 +314,7 @@ def exportar_imoveis_csv(
     )
     writer.writeheader()
     for row in todos:
-        writer.writerow({c: ("" if row.get(c) is None else row.get(c)) for c in _CAMPOS_EXPORT})
+        writer.writerow({c: _csv_safe(row.get(c)) for c in _CAMPOS_EXPORT})
 
     nome_arquivo = f"imoveis-{date.today().isoformat()}.csv"
     return Response(

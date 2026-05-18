@@ -1,5 +1,5 @@
 import logging
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from app.limiter import limiter
 from app.auth.schemas import LoginRequest, LoginResponse, ForgotPasswordRequest
 from app.auth.dependencies import get_current_user
@@ -10,11 +10,22 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
+def _mask_email(email: str) -> str:
+    """Mascara para log: usuario@dominio.com -> u***@dominio.com.
+    Evita salvar PII bruta nos logs (LGPD) sem perder rastreabilidade."""
+    if not email or "@" not in email:
+        return "***"
+    local, _, dominio = email.partition("@")
+    if len(local) <= 1:
+        return f"*@{dominio}"
+    return f"{local[0]}***@{dominio}"
+
+
 @router.post("/login", response_model=LoginResponse)
 @limiter.limit("10/minute")
 def login(request: Request, body: LoginRequest):
     """Autentica um usuário interno via e-mail e senha."""
-    logger.info("[login] tentativa para email=%s", body.email)
+    logger.info("[login] tentativa para email=%s", _mask_email(body.email))
     try:
         response = supabase.auth.sign_in_with_password(
             {"email": body.email, "password": body.senha}
@@ -28,13 +39,13 @@ def login(request: Request, body: LoginRequest):
 
     session = response.session
     if not session:
-        logger.warning("[login] Supabase respondeu sem session para email=%s", body.email)
+        logger.warning("[login] Supabase respondeu sem session para email=%s", _mask_email(body.email))
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Falha na autenticação.",
         )
 
-    logger.info("[login] sucesso para email=%s", body.email)
+    logger.info("[login] sucesso para email=%s", _mask_email(body.email))
     return LoginResponse(
         access_token=session.access_token,
         user={"id": response.user.id, "email": response.user.email},
@@ -50,34 +61,39 @@ def logout(current_user: dict = Depends(get_current_user)):
         pass
 
 
-@router.post("/recuperar-senha", status_code=status.HTTP_204_NO_CONTENT)
-@limiter.limit("5/minute")
-def forgot_password(request: Request, body: ForgotPasswordRequest):
-    """Gera link de recuperação via Supabase Admin e envia e-mail branded via Resend."""
-    logger.info(
-        "[recuperar-senha] solicitação recebida para email=%s, redirect_to=%s",
-        body.email,
-        body.redirect_to,
-    )
+def _processar_recuperacao_senha(email: str, redirect_to: str | None) -> None:
+    """Roda em background — gera o link via Supabase Admin e envia via Resend.
+
+    Falhas (e-mail inexistente, Supabase fora do ar, Resend fora do ar) são só
+    logadas. O cliente sempre recebe 204, sem oracle de enumeração de e-mail.
+    """
+    masked = _mask_email(email)
     try:
-        params: dict = {"type": "recovery", "email": body.email}
-        if body.redirect_to:
-            params["options"] = {"redirect_to": body.redirect_to}
+        params: dict = {"type": "recovery", "email": email}
+        if redirect_to:
+            params["options"] = {"redirect_to": redirect_to}
 
         response = supabase_admin.auth.admin.generate_link(params)
         action_link = response.properties.action_link
-        logger.info("[recuperar-senha] link gerado com sucesso para email=%s", body.email)
     except Exception:
-        # Não revela ao cliente se o e-mail existe ou não.
-        logger.exception("[recuperar-senha] falha ao gerar link no Supabase Admin")
+        logger.exception("[recuperar-senha] falha ao gerar link (email=%s)", masked)
         return
 
     try:
-        enviar_recuperacao_senha(body.email, action_link)
-        logger.info("[recuperar-senha] e-mail enviado via Resend para email=%s", body.email)
+        enviar_recuperacao_senha(email, action_link)
+        logger.info("[recuperar-senha] e-mail enviado (email=%s)", masked)
     except Exception:
-        logger.exception("[recuperar-senha] falha ao enviar e-mail via Resend")
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Falha ao enviar o e-mail de recuperação. Tente novamente em instantes.",
-        )
+        logger.exception("[recuperar-senha] falha ao enviar e-mail (email=%s)", masked)
+
+
+@router.post("/recuperar-senha", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("5/minute")
+def forgot_password(
+    request: Request,
+    body: ForgotPasswordRequest,
+    background_tasks: BackgroundTasks,
+):
+    """Sempre retorna 204 — o trabalho real roda em background para não revelar
+    se o e-mail existe (evita enumeração via timing/status code)."""
+    logger.info("[recuperar-senha] solicitação recebida (email=%s)", _mask_email(body.email))
+    background_tasks.add_task(_processar_recuperacao_senha, body.email, body.redirect_to)

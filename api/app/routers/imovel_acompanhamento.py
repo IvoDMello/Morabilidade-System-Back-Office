@@ -6,6 +6,7 @@ Visitas e percepções persistem mesmo após o imóvel sair de "disponível" —
 somem se o imóvel for deletado (cascade na migration 020).
 """
 import csv
+import hmac
 import io
 import logging
 from datetime import date, datetime, timezone
@@ -231,7 +232,7 @@ def job_relatorio_30dias(
 
     Autenticação: header `X-Cron-Token` deve bater com `settings.cron_token`.
     """
-    if not settings.cron_token or x_cron_token != settings.cron_token:
+    if not settings.cron_token or not hmac.compare_digest(x_cron_token, settings.cron_token):
         raise HTTPException(status_code=403, detail="Token inválido.")
 
     corte = (datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0))

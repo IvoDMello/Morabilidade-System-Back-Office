@@ -27,6 +27,22 @@ _CAMPOS_EXPORT = [
     "created_at",
 ]
 
+# Caracteres que o Excel/LibreOffice interpretam como início de fórmula. Se um
+# valor do banco começar com qualquer um deles, prefixamos com apóstrofo para
+# neutralizar a fórmula sem afetar a leitura humana.
+_CSV_FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
+
+
+def _csv_safe(valor) -> str:
+    """Neutraliza CSV/Formula Injection ao serializar um valor para CSV."""
+    if valor is None:
+        return ""
+    s = str(valor)
+    if s and s[0] in _CSV_FORMULA_PREFIXES:
+        return "'" + s
+    return s
+
+
 _STATUS_VALIDOS = {"ativo", "em_negociacao", "inativo", "concluido"}
 _TIPOS_VALIDOS = {"comprador", "locatario", "proprietario", "investidor"}
 _ORIGENS_VALIDAS = {
@@ -352,7 +368,7 @@ def exportar_clientes_csv(
     )
     writer.writeheader()
     for row in todos:
-        writer.writerow({c: ("" if row.get(c) is None else row.get(c)) for c in _CAMPOS_EXPORT})
+        writer.writerow({c: _csv_safe(row.get(c)) for c in _CAMPOS_EXPORT})
 
     nome_arquivo = f"clientes-{date.today().isoformat()}.csv"
     return Response(

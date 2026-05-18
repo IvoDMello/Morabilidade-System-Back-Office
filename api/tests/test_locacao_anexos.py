@@ -14,10 +14,13 @@ CONTRATO_ID = CONTRATO_DB["id"]
 
 
 def _mock_storage(db_mock, url_publica="https://storage.example/file.pdf"):
-    """Anexa um storage mock ao db_mock; retorna o storage para asserts."""
+    """Anexa um storage mock ao db_mock; retorna o storage para asserts.
+    Cobre as duas formas de URL: signed (padrão para anexos) e public (fallback).
+    """
     storage_mock = MagicMock()
     storage_mock.upload.return_value = None
     storage_mock.get_public_url.return_value = url_publica
+    storage_mock.create_signed_url.return_value = {"signedURL": url_publica}
     storage_mock.remove.return_value = None
     db_mock.storage.from_.return_value = storage_mock
     return storage_mock

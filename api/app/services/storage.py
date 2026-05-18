@@ -9,6 +9,12 @@ logger = logging.getLogger(__name__)
 
 BUCKET = "media"
 ALLOWED_TYPES = {"image/jpeg", "image/png", "image/webp"}
+PHOTO_MAX_BYTES = 10 * 1024 * 1024  # 10 MB — fotos de imóvel e perfil
+
+# Bloqueia "decompression bombs" — uma PNG de 10 KB pode descompactar para
+# centenas de MB de pixels e estourar a RAM do worker. 50 megapixels cobre até
+# fotos profissionais de imóvel (8K) com folga.
+Image.MAX_IMAGE_PIXELS = 50_000_000
 
 
 async def upload_foto(file: UploadFile, path: str) -> str:
@@ -23,8 +29,19 @@ async def upload_foto(file: UploadFile, path: str) -> str:
     if not contents:
         raise HTTPException(status_code=400, detail="Arquivo vazio recebido.")
 
+    if len(contents) > PHOTO_MAX_BYTES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Imagem muito grande (máx {PHOTO_MAX_BYTES // (1024 * 1024)} MB).",
+        )
+
     try:
         contents = _para_jpeg(contents)
+    except Image.DecompressionBombError:
+        raise HTTPException(
+            status_code=400,
+            detail="Imagem com resolução muito alta — reduza antes de enviar.",
+        )
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Não foi possível processar a imagem: {e}")
 
@@ -111,10 +128,29 @@ async def upload_documento(file: UploadFile, path: str) -> dict:
     }
 
 
+DOCUMENT_SIGNED_URL_TTL = 300  # 5 min — janela para o browser baixar o arquivo
+
+
 def url_publica_documento(path: str) -> str:
-    """Devolve a URL pública (bucket é público para downloads autenticados
-    via painel — controle de acesso fica no nível da API)."""
-    return supabase_admin.storage.from_(BUCKET).get_public_url(path)
+    """Gera uma signed URL de curta duração (5 min) para download do documento.
+
+    O bucket é tecnicamente público, mas anexos de contrato contêm CPF, valores
+    e dados sensíveis. URLs assinadas evitam que um link vazado por log/e-mail
+    encaminhado permaneça válido indefinidamente.
+    """
+    try:
+        signed = supabase_admin.storage.from_(BUCKET).create_signed_url(
+            path, DOCUMENT_SIGNED_URL_TTL
+        )
+    except Exception:
+        logger.warning("Falha ao assinar URL — caindo no get_public_url (path=%s)", path)
+        return supabase_admin.storage.from_(BUCKET).get_public_url(path)
+
+    # O SDK do supabase-py retorna ora {"signedURL": "..."} (snake_case adapter),
+    # ora {"signed_url": "..."}; cobrimos os dois.
+    if isinstance(signed, dict):
+        return signed.get("signedURL") or signed.get("signed_url") or signed.get("signedUrl") or ""
+    return signed or ""
 
 
 def deletar_documento(path: str) -> None:

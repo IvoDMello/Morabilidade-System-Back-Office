@@ -203,8 +203,10 @@ describe("proxy — respostas upstream", () => {
 // ── Seguimento de redirects ───────────────────────────────────────────────────
 
 describe("proxy — seguimento de redirects", () => {
-  it("segue redirecionamento 301 preservando Authorization", async () => {
-    const redirectHeaders = new Headers({ location: "https://upstream/clientes" });
+  // O proxy só segue redirects para o mesmo host da API (default localhost:8000).
+  // Redirects cross-origin são bloqueados para nunca vazar o Bearer token.
+  it("segue redirecionamento 301 same-host preservando Authorization", async () => {
+    const redirectHeaders = new Headers({ location: "https://localhost:8000/clientes" });
     mockFetch
       .mockResolvedValueOnce({
         status: 301,
@@ -225,15 +227,37 @@ describe("proxy — seguimento de redirects", () => {
     expect(mockFetch).toHaveBeenCalledTimes(2);
     expect(mockFetch).toHaveBeenNthCalledWith(
       2,
-      "https://upstream/clientes",
+      "https://localhost:8000/clientes",
       expect.objectContaining({
         headers: expect.objectContaining({ Authorization: `Bearer ${TOKEN}` }),
       })
     );
   });
 
+  it("bloqueia redirect cross-origin e devolve 502 sem vazar o Bearer", async () => {
+    const redirectHeaders = new Headers({ location: "https://upstream-malicioso/clientes" });
+    mockFetch.mockResolvedValueOnce({
+      status: 301,
+      headers: {
+        get: (k: string) => redirectHeaders.get(k),
+        forEach: (cb: (v: string, k: string) => void) => redirectHeaders.forEach(cb),
+      },
+      async arrayBuffer() {
+        return new ArrayBuffer(0);
+      },
+    });
+
+    const res = (await GET(makeProxyReq("GET", "/api/proxy/clientes", { auth: TOKEN }), {
+      params: Promise.resolve({ path: ["clientes"] }),
+    })) as any;
+
+    // Apenas a chamada inicial — o segundo fetch foi bloqueado antes de sair.
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(res.status).toBe(502);
+  });
+
   it("limita a no máximo 6 chamadas fetch (1 + 5 redirects)", async () => {
-    const redirectHeaders = new Headers({ location: "https://upstream/loop" });
+    const redirectHeaders = new Headers({ location: "http://localhost:8000/loop" });
     const redirectRes = {
       status: 301,
       headers: {
