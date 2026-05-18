@@ -42,8 +42,14 @@ export function HeroSearch() {
       {/* Toggle Comprar / Alugar */}
       <div className="flex items-center justify-center mb-3">
         <div
-          className="inline-flex items-center bg-white/10 backdrop-blur-md border border-white/20 rounded-full p-1"
+          className="inline-flex items-center rounded-full p-1"
           role="tablist"
+          style={{
+            background: "rgba(20,22,18,0.34)",
+            backdropFilter: "blur(10px)",
+            WebkitBackdropFilter: "blur(10px)",
+            border: "1px solid rgba(252,252,252,0.14)",
+          }}
         >
           <SegmentButton
             active={tipoNegocio === ""}

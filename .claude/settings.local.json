@@ -276,7 +276,14 @@
       "PowerShell($PWD.Path; Test-Path venv/Scripts/python.exe)",
       "PowerShell(api\\\\venv\\\\Scripts\\\\python.exe -m pytest api/tests/test_locacoes.py api/tests/test_locacoes_fase5.py api/tests/test_locacao_anexos.py api/tests/test_demonstrativo_pdf.py api/tests/test_locacoes_gaps.py -q 2>&1)",
       "PowerShell($PWD.Path; if \\(-not \\(Test-Path web\\)\\) { Set-Location .. }; Set-Location web; npx vitest run src/__tests__/pagamentos-locacao.test.tsx src/__tests__/reajustes-locacao.test.tsx src/__tests__/anexos-locacao.test.tsx 2>&1 | Select-Object -Last 15)",
-      "PowerShell($PWD.Path; npx vitest run 2>&1 | Select-Object -Last 15)"
+      "PowerShell($PWD.Path; npx vitest run 2>&1 | Select-Object -Last 15)",
+      "Bash(python -m pytest --collect-only -q)",
+      "Bash(./venv/Scripts/python.exe -m pytest --collect-only -q)",
+      "Bash(./venv/Scripts/python.exe -m pytest -q)",
+      "Bash(npx --no-install vitest run)",
+      "Bash(npx --no-install vitest run src/__tests__/api-proxy.test.ts)",
+      "Bash(mkdir \"c:\\\\Users\\\\novopc2024\\\\Documents\\\\GitHub\\\\Morabilidade-System-Back-Office\\\\site\\\\public\\\\assets\")",
+      "Bash(copy \"c:\\\\Users\\\\novopc2024\\\\Downloads\\\\Site-Morabilidade \\(2\\)\\\\handoff\\\\azulejo-morabilidade.png\" \"c:\\\\Users\\\\novopc2024\\\\Documents\\\\GitHub\\\\Morabilidade-System-Back-Office\\\\site\\\\public\\\\assets\\\\azulejo-morabilidade.png\")"
     ],
     "additionalDirectories": [
       "C:\\Users\\novopc2024\\Documents\\GitHub\\Morabilidade-System-Back-Office\\api"

@@ -64,13 +64,31 @@ export default async function HomePage() {
           alt="Zona Sul do Rio de Janeiro"
           fill
           className="object-cover object-center"
+          style={{ filter: "saturate(1.22) contrast(1.04) brightness(1.02)" }}
           priority
         />
+        {/* wash quente (soft-light) */}
+        <div
+          className="absolute inset-0 mix-blend-soft-light"
+          style={{
+            background:
+              "linear-gradient(155deg, rgba(216,203,106,0.05) 0%, rgba(216,203,106,0.02) 35%, rgba(46,48,42,0.04) 65%, rgba(46,48,42,0.10) 100%)",
+          }}
+        />
+        {/* spotlight radial */}
         <div
           className="absolute inset-0"
           style={{
             background:
-              "linear-gradient(to bottom, rgba(45,47,40,0.62) 0%, rgba(30,32,25,0.78) 100%)",
+              "radial-gradient(ellipse 72% 62% at 50% 52%, rgba(20,22,18,0.62) 0%, rgba(20,22,18,0.42) 40%, rgba(20,22,18,0.10) 74%, rgba(20,22,18,0) 100%)",
+          }}
+        />
+        {/* bordas superior/inferior */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(20,22,18,0.20) 0%, rgba(20,22,18,0) 22%, rgba(20,22,18,0) 78%, rgba(20,22,18,0.22) 100%)",
           }}
         />
 
@@ -98,7 +116,12 @@ export default async function HomePage() {
 
           <h1
             className="font-serif text-white mb-5"
-            style={{ fontSize: "clamp(32px,5.5vw,62px)", fontWeight: 500, lineHeight: 1.1 }}
+            style={{
+              fontSize: "clamp(32px,5.5vw,62px)",
+              fontWeight: 500,
+              lineHeight: 1.1,
+              textShadow: "0 2px 28px rgba(20,22,18,0.55)",
+            }}
           >
             Encontre o imóvel
             <br />
@@ -109,9 +132,10 @@ export default async function HomePage() {
             className="mb-8 mx-auto"
             style={{
               fontSize: "clamp(14px,1.8vw,17px)",
-              color: "rgba(252,252,252,0.65)",
+              color: "rgba(252,252,252,0.82)",
               lineHeight: 1.7,
               maxWidth: 500,
+              textShadow: "0 1px 14px rgba(20,22,18,0.6)",
             }}
           >
             Casas, apartamentos e muito mais para venda e locação nas melhores regiões.
@@ -120,12 +144,27 @@ export default async function HomePage() {
           <HeroSearch />
 
           {total > 0 && (
-            <p
-              className="mt-4"
-              style={{ fontSize: 12, color: "rgba(252,252,252,0.38)", letterSpacing: "0.03em" }}
-            >
-              {total} imóve{total !== 1 ? "is" : "l"} disponíve{total !== 1 ? "is" : "l"} agora
-            </p>
+            <div className="mt-4 flex justify-center">
+              <div
+                className="inline-flex items-center gap-[9px] rounded-full px-[18px] py-2 border border-white/15 backdrop-blur-md backdrop-saturate-150"
+                style={{
+                  background: "rgba(20,22,18,0.40)",
+                  boxShadow:
+                    "0 8px 24px rgba(20,22,18,0.28), inset 0 1px 0 rgba(252,252,252,0.08)",
+                }}
+              >
+                <span className="relative inline-flex w-2 h-2 shrink-0">
+                  <span className="absolute inset-[-4px] rounded-full bg-gold-400 opacity-35 animate-pulse-ring" />
+                  <span className="relative w-2 h-2 rounded-full bg-gold-400 shadow-[0_0_10px_#d8cb6a]" />
+                </span>
+                <span className="text-[12.5px] font-medium text-white/80 tracking-wide">
+                  <span className="text-gold-light font-bold text-[13px]" style={{ color: "#e8dea0" }}>
+                    {total}
+                  </span>{" "}
+                  imóve{total !== 1 ? "is" : "l"} disponíve{total !== 1 ? "is" : "l"} agora
+                </span>
+              </div>
+            </div>
           )}
         </div>
       </section>
@@ -207,39 +246,71 @@ export default async function HomePage() {
         )}
       </section>
 
-      {/* ── Faixa região ── */}
-      <div className="relative overflow-hidden flex items-center justify-center" style={{ height: 160 }}>
-        <Image
-          src="/faixa-zona-sul.jpg"
-          alt="Zona Sul do Rio de Janeiro"
-          fill
-          className="object-cover object-center"
-        />
+      {/* ── Faixa região (azulejo Morabilidade) ── */}
+      <section className="relative overflow-hidden flex items-center justify-center bg-olive-800 min-h-[240px]">
+        {/* base: padrão de azulejo tilado */}
         <div
           className="absolute inset-0"
-          style={{ background: "rgba(30,32,25,0.72)" }}
+          style={{
+            backgroundImage: "url(/assets/azulejo-morabilidade.png)",
+            backgroundSize: "auto 384px",
+            backgroundRepeat: "repeat-x",
+            backgroundPosition: "center center",
+            filter: "saturate(1.20) contrast(1.04) brightness(1.02)",
+          }}
         />
-        <div className="relative z-10 text-center">
-          <p
-            style={{
-              fontSize: 10,
-              fontWeight: 700,
-              letterSpacing: "0.2em",
-              textTransform: "uppercase",
-              color: "#d8cb6a",
-              marginBottom: 10,
-            }}
+        {/* wash quente (soft-light) */}
+        <div
+          className="absolute inset-0 mix-blend-soft-light"
+          style={{
+            background:
+              "linear-gradient(155deg, rgba(216,203,106,0.05) 0%, rgba(216,203,106,0.02) 35%, rgba(46,48,42,0.04) 65%, rgba(46,48,42,0.10) 100%)",
+          }}
+        />
+        {/* vignette lateral olive */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(90deg, rgba(46,48,42,0.78) 0%, rgba(46,48,42,0.38) 16%, rgba(46,48,42,0.28) 50%, rgba(46,48,42,0.38) 84%, rgba(46,48,42,0.78) 100%)",
+          }}
+        />
+        {/* scrim central para legibilidade */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(ellipse 38% 75% at 50% 50%, rgba(20,22,18,0.62) 0%, rgba(20,22,18,0) 100%)",
+          }}
+        />
+        {/* hairlines dourados */}
+        <div
+          className="absolute top-0 inset-x-0 h-px opacity-40"
+          style={{ background: "linear-gradient(90deg, transparent, #d8cb6a 50%, transparent)" }}
+        />
+        <div
+          className="absolute bottom-0 inset-x-0 h-px opacity-40"
+          style={{ background: "linear-gradient(90deg, transparent, #d8cb6a 50%, transparent)" }}
+        />
+
+        <div className="relative z-10 text-center px-5 py-7">
+          <div
+            className="text-[10px] font-bold tracking-[0.22em] uppercase text-gold-400 mb-2.5"
+            style={{ textShadow: "0 1px 8px rgba(20,22,18,0.7)" }}
           >
             Nossa região
-          </p>
-          <p
-            className="font-serif text-white"
-            style={{ fontSize: "clamp(20px,3vw,32px)", fontWeight: 500 }}
+          </div>
+          <div
+            className="font-display font-medium text-white"
+            style={{
+              fontSize: "clamp(20px,3vw,32px)",
+              textShadow: "0 2px 16px rgba(20,22,18,0.7)",
+            }}
           >
             Zona Sul · Rio de Janeiro, RJ
-          </p>
+          </div>
         </div>
-      </div>
+      </section>
 
       {/* ── Por que escolher ── */}
       <section style={{ backgroundColor: "#f7f6f2", padding: "clamp(56px,7vw,88px) clamp(20px,5vw,48px)" }}>

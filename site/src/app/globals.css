@@ -39,6 +39,15 @@ body {
   animation: fadeIn 0.2s ease both;
 }
 
+@keyframes pulse-ring {
+  0%   { transform: scale(0.6); opacity: 0.55; }
+  70%  { transform: scale(2.2); opacity: 0;    }
+  100% { transform: scale(2.2); opacity: 0;    }
+}
+.animate-pulse-ring {
+  animation: pulse-ring 1.8s ease-out infinite;
+}
+
 @layer utilities {
   .font-display {
     font-family: var(--font-playfair), Georgia, serif;
