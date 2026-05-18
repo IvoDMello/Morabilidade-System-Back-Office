@@ -71,6 +71,7 @@ export interface Imovel {
   destaque_ordem?: number | null;
   fotos: Foto[];
   tags: Tag[];
+  relatorio_30dias_enviado_em?: string | null;
   created_at: string;
   updated_at: string;
 }

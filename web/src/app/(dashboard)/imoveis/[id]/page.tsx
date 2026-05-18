@@ -10,6 +10,7 @@ import { api } from "@/lib/api";
 import { Sparkles } from "lucide-react";
 import { ImovelForm, type ImovelFormData } from "@/components/imoveis/imovel-form";
 import { InteressadosImovel } from "@/components/imoveis/interessados-imovel";
+import { AcompanhamentoImovel } from "@/components/imoveis/acompanhamento-imovel";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import type { Imovel, Foto } from "@/types";
 
@@ -173,6 +174,7 @@ export default function EditarImovelPage({
   const [imovel, setImovel] = useState<Imovel | null>(null);
   const [loadingDados, setLoadingDados] = useState(true);
   const [salvando, setSalvando] = useState(false);
+  const [abaAtiva, setAbaAtiva] = useState<"dados" | "acompanhamento">("dados");
 
   const carregarImovel = useCallback(async () => {
     try {
@@ -278,45 +280,80 @@ export default function EditarImovelPage({
         </div>
       </div>
 
-      {/* Formulário de dados */}
-      <ImovelForm
-        key={imovel.id}
-        defaultValues={defaultValues}
-        onSubmit={handleSubmit}
-        isLoading={salvando}
-        submitLabel="Salvar alterações"
-      />
-
-      {/* Galeria de fotos */}
-      <div className="mt-8">
-        <GaleriaFotos
-          imovelId={id}
-          fotos={imovel.fotos ?? []}
-          onAtualizar={carregarImovel}
-        />
+      {/* Tabs */}
+      <div className="flex gap-1 mb-4 border-b border-slate-200">
+        {(
+          [
+            { key: "dados", label: "Dados do imóvel" },
+            { key: "acompanhamento", label: "Acompanhamento" },
+          ] as const
+        ).map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            onClick={() => setAbaAtiva(tab.key)}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition ${
+              abaAtiva === tab.key
+                ? "border-[#585a4f] text-[#585a4f]"
+                : "border-transparent text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
-      {/* Clientes interessados (matches) */}
-      <div className="mt-4 bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
-        <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100">
-          <Sparkles className="w-4 h-4 text-amber-500" />
-          <h2 className="text-sm font-semibold text-slate-700">Clientes interessados</h2>
-          <span className="text-xs text-slate-400">
-            · clientes cuja preferência ativa casa com este imóvel
-          </span>
-        </div>
-        <InteressadosImovel
+      {abaAtiva === "dados" && (
+        <>
+          {/* Formulário de dados */}
+          <ImovelForm
+            key={imovel.id}
+            defaultValues={defaultValues}
+            onSubmit={handleSubmit}
+            isLoading={salvando}
+            submitLabel="Salvar alterações"
+          />
+
+          {/* Galeria de fotos */}
+          <div className="mt-8">
+            <GaleriaFotos
+              imovelId={id}
+              fotos={imovel.fotos ?? []}
+              onAtualizar={carregarImovel}
+            />
+          </div>
+
+          {/* Clientes interessados (matches) */}
+          <div className="mt-4 bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
+            <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100">
+              <Sparkles className="w-4 h-4 text-amber-500" />
+              <h2 className="text-sm font-semibold text-slate-700">Clientes interessados</h2>
+              <span className="text-xs text-slate-400">
+                · clientes cuja preferência ativa casa com este imóvel
+              </span>
+            </div>
+            <InteressadosImovel
+              imovelId={imovel.id}
+              imovelCodigo={imovel.codigo}
+              imovelBairro={imovel.bairro}
+              imovelCidade={imovel.cidade}
+              imovelTipoImovel={imovel.tipo_imovel}
+              imovelTipoNegocio={imovel.tipo_negocio}
+              imovelDormitorios={imovel.dormitorios}
+              imovelValorVenda={imovel.valor_venda}
+              imovelValorLocacao={imovel.valor_locacao}
+            />
+          </div>
+        </>
+      )}
+
+      {abaAtiva === "acompanhamento" && (
+        <AcompanhamentoImovel
           imovelId={imovel.id}
-          imovelCodigo={imovel.codigo}
-          imovelBairro={imovel.bairro}
-          imovelCidade={imovel.cidade}
-          imovelTipoImovel={imovel.tipo_imovel}
-          imovelTipoNegocio={imovel.tipo_negocio}
-          imovelDormitorios={imovel.dormitorios}
-          imovelValorVenda={imovel.valor_venda}
-          imovelValorLocacao={imovel.valor_locacao}
+          createdAt={imovel.created_at}
+          relatorio30diasEnviadoEm={imovel.relatorio_30dias_enviado_em ?? null}
         />
-      </div>
+      )}
     </div>
   );
 }

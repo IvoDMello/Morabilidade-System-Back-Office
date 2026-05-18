@@ -28,6 +28,11 @@ class Settings(BaseSettings):
     # Monitoramento
     sentry_dsn: str = ""
 
+    # Token compartilhado com o cron externo (Railway Cron) que dispara
+    # o relatório automático de 30 dias. Sem token configurado o endpoint
+    # interno fica inacessível.
+    cron_token: str = ""
+
     @model_validator(mode="after")
     def validate_cors_production(self) -> "Settings":
         if self.app_env == "production" and "localhost" in self.cors_origins:

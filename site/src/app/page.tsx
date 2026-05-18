@@ -11,18 +11,18 @@ import { getImoveisDestaques, getImoveisDisponiveis } from "@/lib/api";
 const diferenciais = [
   {
     icon: "◈",
-    titulo: "Amplo portfólio",
-    texto: "Imóveis selecionados para venda e locação nas melhores regiões da Zona Sul.",
+    titulo: "Simples",
+    texto: "Simplificamos a comunicação, os processos e as decisões. Escolhemos sempre o caminho da verdade e buscamos tornar tudo menos burocrático, sem abrir mão da segurança.",
   },
   {
     icon: "◎",
-    titulo: "Atendimento personalizado",
-    texto: "Nossa equipe está pronta para entender suas necessidades e encontrar o imóvel certo.",
+    titulo: "Eficiente",
+    texto: "Temos um cuidado criterioso na precificação dos imóveis, sempre alinhada à realidade do mercado, e conduzimos cada etapa com organização, agilidade e atenção aos detalhes. Isso nos permitiu alcançar resultados expressivos, com diversas vendas realizadas em tempo recorde.",
   },
   {
     icon: "◇",
-    titulo: "Processo ágil",
-    texto: "Da visita à assinatura, cuidamos de toda a burocracia para você.",
+    titulo: "Humanizada",
+    texto: "Acreditamos em relações próximas, empatia e cuidado genuíno com as pessoas em todos os momentos do processo.",
   },
 ];
 
