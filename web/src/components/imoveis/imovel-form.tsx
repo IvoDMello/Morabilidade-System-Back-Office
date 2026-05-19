@@ -161,10 +161,13 @@ export function ImovelForm({
   useEffect(() => {
     api.get<Tag[]>("/tags/").then((r) => setTags(r.data)).catch(() => {});
     api.get<User[]>("/usuarios/").then((r) => setUsers(r.data)).catch(() => {});
-    // page_size alto: a operação tem ~100 clientes; basta uma chamada.
-    api.get<Cliente[]>("/clientes/", { params: { page_size: 200 } })
+    // O endpoint /clientes/ aceita page_size até 100 (limite do backend).
+    // Operação tem ~100 clientes — uma página basta hoje; se crescer, vira combobox com busca.
+    api.get<Cliente[]>("/clientes/", { params: { page_size: 100 } })
       .then((r) => setClientes(r.data))
-      .catch(() => {});
+      .catch((err) => {
+        console.error("[imovel-form] falha ao carregar clientes", err);
+      });
   }, []);
 
   const proprietarioSelecionado = useMemo(
@@ -323,6 +326,44 @@ export function ImovelForm({
             <p className="mt-1 text-xs text-slate-400">
               Ao escolher uma posição já em uso, o imóvel anterior perde o destaque.
             </p>
+          </div>
+
+          <div className="sm:col-span-2 lg:col-span-2">
+            <Label>Proprietário</Label>
+            <select {...register("proprietario_id")} className={selectClass}>
+              <option value="">Nenhum</option>
+              {clientes
+                // Mantém o proprietário atual mesmo que não seja tipo_cliente='proprietario'
+                // (ex: foi reclassificado). Caso contrário, oferece apenas proprietários ou
+                // clientes sem tipo definido — evita poluir o select com locatários/investidores.
+                .filter(
+                  (c) =>
+                    c.id === proprietarioId ||
+                    !c.tipo_cliente ||
+                    c.tipo_cliente === "proprietario"
+                )
+                .map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nome_completo}
+                  </option>
+                ))}
+            </select>
+            {proprietarioSelecionado?.telefone ? (
+              <a
+                href={`https://wa.me/${proprietarioSelecionado.telefone.replace(/\D/g, "")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-1 inline-flex items-center gap-1 text-xs text-[#585a4f] hover:underline"
+                title="Abrir conversa no WhatsApp"
+              >
+                <Phone className="w-3 h-3" />
+                {proprietarioSelecionado.telefone}
+              </a>
+            ) : (
+              <p className="mt-1 text-xs text-slate-400">
+                Sincroniza automaticamente com o contrato de locação deste imóvel.
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -642,43 +683,6 @@ export function ImovelForm({
                 </option>
               ))}
             </select>
-          </div>
-
-          <div>
-            <Label>Proprietário</Label>
-            <select {...register("proprietario_id")} className={selectClass}>
-              <option value="">Nenhum</option>
-              {clientes
-                // Mantém o proprietário atual mesmo que não seja mais tipo_cliente='proprietario'
-                // (ex: foi reclassificado). Caso contrário, oferece apenas proprietários ou
-                // clientes sem tipo definido — evita poluir o select com locatários/investidores.
-                .filter(
-                  (c) =>
-                    c.id === proprietarioId ||
-                    !c.tipo_cliente ||
-                    c.tipo_cliente === "proprietario"
-                )
-                .map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nome_completo}
-                  </option>
-                ))}
-            </select>
-            {proprietarioSelecionado?.telefone && (
-              <a
-                href={`https://wa.me/${proprietarioSelecionado.telefone.replace(/\D/g, "")}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-1 inline-flex items-center gap-1 text-xs text-[#585a4f] hover:underline"
-                title="Abrir conversa no WhatsApp"
-              >
-                <Phone className="w-3 h-3" />
-                {proprietarioSelecionado.telefone}
-              </a>
-            )}
-            <p className="mt-1 text-xs text-slate-400">
-              Sincroniza automaticamente com o contrato de locação deste imóvel.
-            </p>
           </div>
         </div>
 
