@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Upload, Trash2, Star, Loader2, ImageOff, RotateCw, GripVertical } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
-import { api } from "@/lib/api";
+import { api, getErrorMessage } from "@/lib/api";
 import { Sparkles } from "lucide-react";
 import { ImovelForm, type ImovelFormData } from "@/components/imoveis/imovel-form";
 import { InteressadosImovel } from "@/components/imoveis/interessados-imovel";
@@ -46,21 +46,14 @@ function GaleriaFotos({ imovelId, fotos: fotosProp, onAtualizar }: {
       try {
         const formData = new FormData();
         files.forEach((f) => formData.append("fotos", f));
-        // Sem header Content-Type: axios + browser ajustam o boundary.
+        // O interceptor do `api` remove o Content-Type quando o body é FormData
+        // (do contrário axios v1 converte o FormData em JSON e o server responde 422).
         await api.post(`/imoveis/${imovelId}/fotos`, formData);
         toast.success(`${files.length} foto${files.length > 1 ? "s" : ""} enviada${files.length > 1 ? "s" : ""} com sucesso.`);
         onAtualizar();
       } catch (err: unknown) {
         console.error("[upload fotos] erro completo:", err);
-        const axiosErr = err as { response?: { status?: number; data?: { detail?: string } }; message?: string };
-        const detail = axiosErr?.response?.data?.detail;
-        const status = axiosErr?.response?.status;
-        const msg = detail
-          ? detail
-          : status
-          ? `Erro ${status} ao enviar fotos.`
-          : (axiosErr?.message ?? "Erro ao enviar fotos. Tente novamente.");
-        toast.error(msg);
+        toast.error(getErrorMessage(err, "Erro ao enviar fotos. Tente novamente."));
       } finally {
         setUploading(false);
       }
@@ -96,8 +89,7 @@ function GaleriaFotos({ imovelId, fotos: fotosProp, onAtualizar }: {
       toast.success("Foto girada.");
       onAtualizar();
     } catch (err: unknown) {
-      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      toast.error(detail ?? "Erro ao girar a foto.");
+      toast.error(getErrorMessage(err, "Erro ao girar a foto."));
     } finally {
       setRotacionandoId(null);
     }
@@ -113,8 +105,7 @@ function GaleriaFotos({ imovelId, fotos: fotosProp, onAtualizar }: {
       // o `ordem` persistido, garantindo consistência se outra aba mudar.
       onAtualizar();
     } catch (err: unknown) {
-      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      toast.error(detail ?? "Erro ao reordenar fotos. Restaurando.");
+      toast.error(getErrorMessage(err, "Erro ao reordenar fotos. Restaurando."));
       setFotos(fotosProp); // rollback
     } finally {
       setReordenando(false);
@@ -352,10 +343,7 @@ export default function EditarImovelPage({
       toast.success("Imóvel atualizado com sucesso!");
       carregarImovel();
     } catch (err: unknown) {
-      const msg =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
-        "Erro ao salvar. Verifique os dados.";
-      toast.error(msg);
+      toast.error(getErrorMessage(err, "Erro ao salvar. Verifique os dados."));
     } finally {
       setSalvando(false);
     }

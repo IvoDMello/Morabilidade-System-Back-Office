@@ -31,7 +31,18 @@ vi.mock("@/lib/api", () => ({
     get: (...args: unknown[]) => apiGetMock(...args),
     put: (...args: unknown[]) => apiPutMock(...args),
     post: vi.fn(),
+    patch: vi.fn(),
     delete: vi.fn(),
+  },
+  getErrorMessage: (err: unknown, fallback = "Ocorreu um erro.") => {
+    const d = (err as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail;
+    if (typeof d === "string" && d.trim()) return d;
+    if (Array.isArray(d) && d.length > 0) {
+      return d
+        .map((x) => (typeof x === "string" ? x : (x as { msg?: string })?.msg ?? "Erro de validação"))
+        .join("; ");
+    }
+    return fallback;
   },
 }));
 

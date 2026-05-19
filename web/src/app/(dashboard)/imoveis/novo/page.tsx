@@ -6,7 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, Upload, X, ImageOff, RotateCw, GripVertical } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
-import { api } from "@/lib/api";
+import { api, getErrorMessage } from "@/lib/api";
 import { ImovelForm, type ImovelFormData } from "@/components/imoveis/imovel-form";
 import { rotacionarArquivoImagem } from "@/lib/imagem";
 
@@ -116,18 +116,11 @@ export default function NovoImovelPage() {
         try {
           const formData = new FormData();
           pendingFotos.forEach((f) => formData.append("fotos", f));
-          // Não definimos Content-Type manualmente: o axios + o proxy do Next
-          // precisam que o browser adicione o boundary automaticamente.
+          // O interceptor do `api` remove o Content-Type quando o body é
+          // FormData — assim o browser adiciona o boundary correto.
           await api.post(`/imoveis/${imovelId}/fotos`, formData);
         } catch (err: unknown) {
-          const axiosErr = err as { response?: { status?: number; data?: { detail?: string } }; message?: string };
-          const detail = axiosErr?.response?.data?.detail;
-          const status = axiosErr?.response?.status;
-          const msg = detail
-            ? detail
-            : status
-            ? `Erro ${status} ao enviar fotos.`
-            : axiosErr?.message ?? "tente adicioná-las na edição.";
+          const msg = getErrorMessage(err, "tente adicioná-las na edição.");
           toast.warning(`Imóvel cadastrado, mas houve um erro ao enviar as fotos: ${msg}`);
           router.push(`/imoveis/${imovelId}`);
           return;
@@ -137,10 +130,7 @@ export default function NovoImovelPage() {
       toast.success("Imóvel cadastrado com sucesso!");
       router.push(`/imoveis/${imovelId}`);
     } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: { detail?: unknown } } };
-      const detail = axiosErr?.response?.data?.detail;
-      const msg = typeof detail === "string" ? detail : "Erro ao cadastrar imóvel. Verifique os dados.";
-      toast.error(msg);
+      toast.error(getErrorMessage(err, "Erro ao cadastrar imóvel. Verifique os dados."));
     } finally {
       setIsLoading(false);
     }
