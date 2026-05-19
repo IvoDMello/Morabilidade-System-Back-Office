@@ -457,6 +457,19 @@ def atualizar_imovel(
 
 @router.delete("/{imovel_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def deletar_imovel(imovel_id: str, current_user: dict = Depends(require_admin)):
+    contratos_vinculados = (
+        supabase_admin.table("contratos_locacao")
+        .select("id", count="exact")
+        .eq("imovel_id", imovel_id)
+        .limit(1)
+        .execute()
+    )
+    if (contratos_vinculados.count or 0) > 0:
+        raise HTTPException(
+            status_code=409,
+            detail="Não é possível excluir o imóvel: existem contratos de locação vinculados. Remova os contratos antes de excluir.",
+        )
+
     fotos = (
         supabase_admin.table("imovel_fotos")
         .select("url")

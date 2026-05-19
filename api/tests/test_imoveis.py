@@ -157,15 +157,27 @@ def test_atualizar_imovel(client):
 # ── DELETE /imoveis/{id} ──────────────────────────────────────────────────────
 
 def test_deletar_imovel(client):
-    # 2 execute(): select fotos (data=[]) + delete imovel
+    # 3 execute(): select contratos_locacao (count=0) + select fotos (data=[]) + delete imovel
+    contratos_mock = MagicMock(count=0, data=[])
     fotos_mock = MagicMock(data=[])
     delete_mock = MagicMock(data=[])
-    db = make_db_mock(fotos_mock, delete_mock)
+    db = make_db_mock(contratos_mock, fotos_mock, delete_mock)
 
     with patch("app.routers.imoveis.supabase_admin", db):
         res = client.delete("/imoveis/imovel-uuid-1")
 
     assert res.status_code == 204
+
+
+def test_deletar_imovel_com_contrato_vinculado(client):
+    contratos_mock = MagicMock(count=1, data=[{"id": "contrato-uuid-1"}])
+    db = make_db_mock(contratos_mock)
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.delete("/imoveis/imovel-uuid-1")
+
+    assert res.status_code == 409
+    assert "contrato" in res.json()["detail"].lower()
 
 
 # ── GET /imoveis/exportar ─────────────────────────────────────────────────────

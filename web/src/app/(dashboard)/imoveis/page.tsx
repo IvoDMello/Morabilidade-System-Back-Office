@@ -182,8 +182,11 @@ setLoading(true);
       } else {
         buscar(page, filtros);
       }
-    } catch {
-      toast.error("Erro ao excluir imóvel.");
+    } catch (err: unknown) {
+      const detail =
+        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
+        "Erro ao excluir imóvel.";
+      toast.error(detail);
     } finally {
       setDeletandoLoading(false);
     }
