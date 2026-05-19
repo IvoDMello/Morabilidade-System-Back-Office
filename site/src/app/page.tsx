@@ -370,7 +370,7 @@ export default async function HomePage() {
               >
                 <Image
                   src="/assets/rodrigo-proprietario.jpeg"
-                  alt="Rodrigo Barbosa — proprietário da Morabilidade"
+                  alt="Rodrigo Barbosa — sócio-fundador da Morabilidade"
                   fill
                   sizes="(max-width: 860px) 100vw, 45vw"
                   style={{ objectFit: "cover", objectPosition: "center 30%" }}
@@ -408,7 +408,7 @@ export default async function HomePage() {
                       marginBottom: 8,
                     }}
                   >
-                    O proprietário
+                    Sócio-fundador
                   </div>
                   <div
                     className="font-serif"

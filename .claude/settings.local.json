@@ -291,7 +291,18 @@
       "Bash(pip show *)",
       "Bash(pytest tests/test_imoveis.py -x --tb=short -q)",
       "Bash(git show *)",
-      "Bash(python -c \"import ast; ast.parse\\(open\\('app/services/storage.py'\\).read\\(\\)\\); ast.parse\\(open\\('app/routers/imoveis.py'\\).read\\(\\)\\); print\\('OK'\\)\")"
+      "Bash(python -c \"import ast; ast.parse\\(open\\('app/services/storage.py'\\).read\\(\\)\\); ast.parse\\(open\\('app/routers/imoveis.py'\\).read\\(\\)\\); print\\('OK'\\)\")",
+      "Bash(python -c 'from PIL import Image; import os; *)",
+      "Bash(python -c 'from PIL import Image; import os *)",
+      "Bash(.venv/Scripts/python.exe -c 'from PIL import Image; import os *)",
+      "Bash(venv/Scripts/python.exe -c 'from PIL import Image; import os *)",
+      "Bash(git -C /c/Users/novopc2024/Documents/GitHub/Morabilidade-System-Back-Office status)",
+      "Bash(git -C /c/Users/novopc2024/Documents/GitHub/Morabilidade-System-Back-Office diff)",
+      "Bash(git -C /c/Users/novopc2024/Documents/GitHub/Morabilidade-System-Back-Office log --oneline -10)",
+      "Bash(git -C /c/Users/novopc2024/Documents/GitHub/Morabilidade-System-Back-Office add api/app/services/storage.py api/app/assets/watermark.png)",
+      "Bash(git -C /c/Users/novopc2024/Documents/GitHub/Morabilidade-System-Back-Office commit -m ' *)",
+      "Bash(git -C /c/Users/novopc2024/Documents/GitHub/Morabilidade-System-Back-Office push origin main)",
+      "Bash(git -C /c/Users/novopc2024/Documents/GitHub/Morabilidade-System-Back-Office add api/app/services/storage.py)"
     ],
     "additionalDirectories": [
       "C:\\Users\\novopc2024\\Documents\\GitHub\\Morabilidade-System-Back-Office\\api"
