@@ -6,7 +6,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2 } from "lucide-react";
 import { api } from "@/lib/api";
-import { useAuthStore } from "@/lib/auth-store";
 import type { Tag, User } from "@/types";
 
 // ── Schema de validação ────────────────────────────────────────────────────────
@@ -48,12 +47,19 @@ const schema = z.object({
     (v) => (v === "" || v == null ? null : Number(v)),
     z.number().int().min(1900).max(2100).nullable().optional()
   ),
+  idade_predio: z.preprocess(
+    (v) => (v === "" || v == null ? null : Number(v)),
+    z.number().int().min(0).max(500).nullable().optional()
+  ),
   area_total: optPositive,
   area_util: optPositive,
   valor_venda: optPositive,
   valor_locacao: optPositive,
   iptu_mensal: optPositive,
   condominio_mensal: optPositive,
+  inscricao_municipal: z.string().optional(),
+  rgi: z.string().optional(),
+  numero_matricula: z.string().optional(),
   descricao: z.string().optional(),
   observacoes_internas: z.string().optional(),
   video_url: z.string().optional(),
@@ -116,7 +122,6 @@ export function ImovelForm({
   isLoading = false,
   submitLabel = "Salvar imóvel",
 }: ImovelFormProps) {
-  const isAdmin = useAuthStore((s) => s.user?.perfil === "admin");
   const [tags, setTags] = useState<Tag[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [cepLoading, setCepLoading] = useState(false);
@@ -436,6 +441,22 @@ export function ImovelForm({
           </div>
 
           <div>
+            <Label>Idade do prédio (anos)</Label>
+            <input
+              type="number"
+              min={0}
+              max={500}
+              {...register("idade_predio")}
+              className={inputClass}
+              placeholder="Ex: 15"
+            />
+            <FieldError message={errors.idade_predio?.message} />
+            <p className="mt-1 text-xs text-slate-400">
+              Use quando o ano de construção for desconhecido.
+            </p>
+          </div>
+
+          <div>
             <Label>Área total (m²)</Label>
             <input type="number" step="0.01" min={0} {...register("area_total")} className={inputClass} placeholder="0,00" />
           </div>
@@ -514,7 +535,40 @@ export function ImovelForm({
         </div>
       </div>
 
-      {/* ── 5. Informações adicionais ── */}
+      {/* ── 5. Documentação ── */}
+      <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
+        <SectionTitle>Documentação</SectionTitle>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div>
+            <Label>Inscrição municipal</Label>
+            <input
+              {...register("inscricao_municipal")}
+              className={inputClass}
+              placeholder="Ex: 1234567-8"
+            />
+          </div>
+
+          <div>
+            <Label>RGI</Label>
+            <input
+              {...register("rgi")}
+              className={inputClass}
+              placeholder="Registro Geral de Imóveis"
+            />
+          </div>
+
+          <div>
+            <Label>Número da matrícula</Label>
+            <input
+              {...register("numero_matricula")}
+              className={inputClass}
+              placeholder="Nº da matrícula no cartório"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* ── 6. Informações adicionais ── */}
       <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
         <SectionTitle>Informações adicionais</SectionTitle>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -538,20 +592,18 @@ export function ImovelForm({
             <FieldError message={errors.video_url?.message} />
           </div>
 
-          {isAdmin && (
-            <div className="lg:col-span-2">
-              <Label>Observações internas (somente admin)</Label>
-              <textarea
-                {...register("observacoes_internas")}
-                rows={3}
-                className={inputClass + " resize-y"}
-                placeholder="Notas privadas — não aparecem para corretores nem no site."
-              />
-              <p className="mt-1 text-xs text-amber-600">
-                Visível apenas para administradores.
-              </p>
-            </div>
-          )}
+          <div className="lg:col-span-2">
+            <Label>Observações internas</Label>
+            <textarea
+              {...register("observacoes_internas")}
+              rows={3}
+              className={inputClass + " resize-y"}
+              placeholder="Notas internas da equipe — não aparecem no site público."
+            />
+            <p className="mt-1 text-xs text-amber-600">
+              Visível para a equipe (admins e corretores). Não aparece no site público.
+            </p>
+          </div>
 
           <div>
             <Label>Corretor responsável</Label>

@@ -123,9 +123,10 @@ def _transformar_detalhe(raw: dict) -> dict:
 
 
 def _ocultar_internas(imovel: dict, current_user: Optional[dict]) -> dict:
-    """Remove observacoes_internas se o usuário não for admin (ou for público)."""
-    if not current_user or current_user.get("perfil") != "admin":
-        imovel.pop("observacoes_internas", None)
+    """Remove campos internos/documentação se o acesso for público (sem usuário autenticado)."""
+    if not current_user:
+        for campo in ("observacoes_internas", "inscricao_municipal", "rgi", "numero_matricula"):
+            imovel.pop(campo, None)
     return imovel
 
 

@@ -59,12 +59,16 @@ export interface Imovel {
   condicao: CondicaoImovel;
   andar?: number;
   ano_construcao?: number;
+  idade_predio?: number;
   area_total?: number;
   area_util?: number;
   valor_venda?: number;
   valor_locacao?: number;
   iptu_mensal?: number;
   condominio_mensal?: number;
+  inscricao_municipal?: string;
+  rgi?: string;
+  numero_matricula?: string;
   descricao?: string;
   observacoes_internas?: string;
   video_url?: string;

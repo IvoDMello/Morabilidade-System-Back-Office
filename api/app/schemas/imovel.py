@@ -62,14 +62,18 @@ class ImovelCreate(BaseModel):
     condicao: CondicaoImovel
     andar: Optional[int] = None
     ano_construcao: Optional[int] = None
+    idade_predio: Optional[int] = None
     area_total: Optional[Decimal] = None
     area_util: Optional[Decimal] = None
     valor_venda: Optional[Decimal] = None
     valor_locacao: Optional[Decimal] = None
     iptu_mensal: Optional[Decimal] = None
     condominio_mensal: Optional[Decimal] = None
+    inscricao_municipal: Optional[str] = None
+    rgi: Optional[str] = None
+    numero_matricula: Optional[str] = None
     descricao: Optional[str] = None
-    observacoes_internas: Optional[str] = None  # restrito a admin (gate na rota)
+    observacoes_internas: Optional[str] = None  # visível para usuários autenticados; oculto no público
     video_url: Optional[str] = None
     corretor_id: Optional[str] = None
     destaque_ordem: Optional[int] = None  # 1-5 ou None
