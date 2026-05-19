@@ -19,7 +19,7 @@ from app.services.storage import deletar_foto, upload_foto
 
 
 _CAMPOS_EXPORT = [
-    "codigo", "tipo_negocio", "disponibilidade", "tipo_imovel", "condicao",
+    "codigo", "titulo", "tipo_negocio", "disponibilidade", "tipo_imovel", "condicao",
     "cidade", "bairro", "logradouro", "numero", "complemento", "cep",
     "dormitorios", "suites", "banheiros", "vagas_garagem", "andar", "mobiliado",
     "ano_construcao", "area_total", "area_util", "valor_venda", "valor_locacao",
@@ -53,7 +53,7 @@ def _norm(s: str) -> str:
 router = APIRouter()
 
 _LIST_FIELDS = (
-    "id, codigo, tipo_negocio, disponibilidade, cidade, bairro, "
+    "id, codigo, titulo, tipo_negocio, disponibilidade, cidade, bairro, "
     "logradouro, numero, tipo_imovel, dormitorios, suites, banheiros, "
     "vagas_garagem, area_util, valor_venda, valor_locacao, "
     "condominio_mensal, iptu_mensal, destaque_ordem, created_at, "

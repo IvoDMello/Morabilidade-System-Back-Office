@@ -46,6 +46,7 @@ export interface ImovelCard {
 export interface Imovel {
   id: string;
   codigo: string;
+  titulo?: string;
   tipo_negocio: TipoNegocio;
   disponibilidade: Disponibilidade;
   cidade: string;

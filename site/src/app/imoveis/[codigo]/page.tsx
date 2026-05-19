@@ -26,7 +26,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const imovel = await getImovel(codigo).catch(() => null);
   if (!imovel) return { title: "Imóvel não encontrado" };
 
-  const titulo = `${labelTipoImovel(imovel.tipo_imovel)} em ${imovel.bairro}, ${imovel.cidade}`;
+  const titulo =
+    imovel.titulo?.trim() ||
+    `${labelTipoImovel(imovel.tipo_imovel)} em ${imovel.bairro}, ${imovel.cidade}`;
   const descricao =
     imovel.descricao?.slice(0, 160) ??
     `${titulo} — ${labelTipoNegocio(imovel.tipo_negocio)} pela Morabilidade.`;
@@ -81,33 +83,24 @@ export default async function DetalheImovelPage({ params }: Props) {
   const precoVenda = imovel.valor_venda ? formatarMoeda(imovel.valor_venda) : null;
   const precoLocacao = imovel.valor_locacao ? `${formatarMoeda(imovel.valor_locacao)}/mês` : null;
 
-  const endereco = [
-    imovel.logradouro,
-    imovel.numero ? `nº ${imovel.numero}` : null,
-    imovel.complemento,
-    imovel.bairro,
-    imovel.cidade,
-  ]
-    .filter(Boolean)
-    .join(", ");
+  const regiao = [imovel.bairro, imovel.cidade].filter(Boolean).join(", ");
+  const mapQuery = encodeURIComponent(regiao);
 
-  const mapQuery = encodeURIComponent(endereco);
-
-  const tituloImovel = `${labelTipoImovel(imovel.tipo_imovel)} em ${imovel.bairro}, ${imovel.cidade}`;
+  const tituloPublico =
+    imovel.titulo?.trim() ||
+    `${labelTipoImovel(imovel.tipo_imovel)} em ${imovel.bairro}, ${imovel.cidade}`;
 
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "RealEstateListing",
-    name: tituloImovel,
-    description: imovel.descricao ?? tituloImovel,
+    name: tituloPublico,
+    description: imovel.descricao ?? tituloPublico,
     url: `${SITE_URL}/imoveis/${imovel.codigo}`,
     image: imovel.fotos.map((f) => f.url),
     address: {
       "@type": "PostalAddress",
-      streetAddress: [imovel.logradouro, imovel.numero].filter(Boolean).join(", "),
       addressLocality: imovel.cidade,
       addressRegion: "RJ",
-      postalCode: imovel.cep ?? "",
       addressCountry: "BR",
     },
     ...(imovel.valor_venda && {
@@ -136,7 +129,7 @@ export default async function DetalheImovelPage({ params }: Props) {
         }}
       />
       <Navbar />
-      <WhatsAppButtonImovel codigo={imovel.codigo} titulo={tituloImovel} />
+      <WhatsAppButtonImovel codigo={imovel.codigo} titulo={tituloPublico} />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
         {/* Breadcrumb */}
@@ -176,11 +169,11 @@ export default async function DetalheImovelPage({ params }: Props) {
                 ))}
               </div>
               <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">
-                {labelTipoImovel(imovel.tipo_imovel)}
+                {tituloPublico}
               </h1>
               <p className="text-slate-500 mt-1 flex items-center gap-1.5">
                 <MapPin className="w-4 h-4 flex-shrink-0" />
-                {endereco}
+                {regiao}
               </p>
             </div>
 
@@ -263,15 +256,20 @@ export default async function DetalheImovelPage({ params }: Props) {
             <div>
               <h2 className="font-semibold text-slate-800 mb-3 flex items-center gap-2">
                 <MapPin className="w-4 h-4" style={{ color: "#585a4f" }} />
-                Localização
+                Região
               </h2>
-              <p className="text-sm text-slate-500 mb-4">{endereco}</p>
+              <p className="text-sm text-slate-500 mb-4">
+                {regiao}
+                <span className="block text-xs text-slate-400 mt-1">
+                  O mapa mostra apenas a região aproximada. Endereço completo enviado ao confirmar o interesse.
+                </span>
+              </p>
 
-              {/* Google Maps embed */}
+              {/* Google Maps embed — região aproximada (bairro/cidade) */}
               <div className="relative rounded-xl overflow-hidden border border-slate-100 shadow-sm mb-3 aspect-video">
                 <iframe
-                  title={`Mapa — ${endereco}`}
-                  src={`https://maps.google.com/maps?q=${mapQuery}&output=embed&hl=pt-BR&z=15`}
+                  title={`Mapa da região — ${regiao}`}
+                  src={`https://maps.google.com/maps?q=${mapQuery}&output=embed&hl=pt-BR&z=14`}
                   className="absolute inset-0 w-full h-full"
                   style={{ border: 0 }}
                   allowFullScreen
@@ -287,7 +285,7 @@ export default async function DetalheImovelPage({ params }: Props) {
                 className="inline-flex items-center gap-1.5 text-sm font-medium underline transition hover:opacity-80"
                 style={{ color: "#585a4f" }}
               >
-                Abrir no Google Maps →
+                Ver a região no Google Maps →
               </a>
             </div>
           </div>
@@ -321,7 +319,7 @@ export default async function DetalheImovelPage({ params }: Props) {
 
               {/* Botão primário — WhatsApp */}
               <a
-                href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP ?? "5500000000000"}?text=${encodeURIComponent(`Olá! Tenho interesse no imóvel *${tituloImovel}* (código *${imovel.codigo}*). Pode me dar mais informações?`)}`}
+                href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP ?? "5500000000000"}?text=${encodeURIComponent(`Olá! Tenho interesse no imóvel *${tituloPublico}* (código *${imovel.codigo}*). Pode me dar mais informações?`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold text-white transition hover:opacity-90"

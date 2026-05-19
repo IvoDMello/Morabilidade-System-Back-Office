@@ -24,6 +24,7 @@ const optPositive = z.preprocess(
 
 const schema = z.object({
   codigo: z.string().optional(),
+  titulo: z.string().max(120, "Máximo de 120 caracteres").optional(),
   tipo_negocio: z.enum(["venda", "locacao", "ambos"]),
   disponibilidade: z.enum(["disponivel", "reservado", "vendido_locado"]),
   condicao: z.enum(["em_construcao", "na_planta", "novo", "usado"]),
@@ -242,6 +243,20 @@ export function ImovelForm({
       <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
         <SectionTitle>Identificação</SectionTitle>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="sm:col-span-2 lg:col-span-4">
+            <Label>Título</Label>
+            <input
+              {...register("titulo")}
+              className={inputClass}
+              placeholder="Ex.: Apartamento amplo com vista para o mar"
+              maxLength={120}
+            />
+            <FieldError message={errors.titulo?.message} />
+            <p className="mt-1 text-xs text-slate-400">
+              Exibido na página pública do imóvel no lugar do endereço.
+            </p>
+          </div>
+
           <div>
             <Label>Código</Label>
             <input

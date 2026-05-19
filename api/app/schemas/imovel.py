@@ -45,6 +45,7 @@ class CondicaoImovel(str, Enum):
 
 class ImovelCreate(BaseModel):
     codigo: Optional[str] = None  # gerado automaticamente se None
+    titulo: Optional[str] = None
     tipo_negocio: TipoNegocio
     disponibilidade: Disponibilidade = Disponibilidade.disponivel
     cidade: str
@@ -116,6 +117,7 @@ class ImovelOut(ImovelCreate):
 class ImovelListOut(BaseModel):
     id: str
     codigo: str
+    titulo: Optional[str] = None
     tipo_negocio: TipoNegocio
     disponibilidade: Disponibilidade
     cidade: str
