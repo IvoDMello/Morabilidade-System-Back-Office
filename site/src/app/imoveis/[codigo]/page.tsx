@@ -237,10 +237,6 @@ export default async function DetalheImovelPage({ params }: Props) {
               {imovel.condominio_mensal != null && (
                 <InfoRow label="Condomínio" value={formatarMoeda(imovel.condominio_mensal)} />
               )}
-              <InfoRow
-                label="Cadastrado em"
-                value={new Date(imovel.created_at).toLocaleDateString("pt-BR")}
-              />
             </div>
 
             {/* Vídeo */}
