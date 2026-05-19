@@ -107,6 +107,7 @@ const depoimentos = [
 const stats = [
   { n: "+15", d: "Anos de mercado" },
   { n: "+95K", d: "Seguidores no Instagram" },
+  { n: "1.5mi", d: "Views/mês" },
   { n: "100%", d: "Atendimento digital" },
   { n: "ZS", d: "Zona Sul · Rio de Janeiro" },
 ];
