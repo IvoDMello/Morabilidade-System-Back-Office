@@ -279,8 +279,7 @@ def gerar_demonstrativo_pdf(contrato: dict, mes_referencia: date) -> bytes:
     c.rect(0, 0, largura, footer_h, fill=1, stroke=0)
     c.setFillColor(colors.white)
     c.setFont("Helvetica", 11)
-    c.drawString(15 * mm, footer_h / 2 - 2 * mm, "CRECI 074155")
-    c.drawCentredString(largura / 2, footer_h / 2 - 2 * mm, "www.morabilidade.com")
+    c.drawString(15 * mm, footer_h / 2 - 2 * mm, "www.morabilidade.com")
     c.drawRightString(largura - 15 * mm, footer_h / 2 - 2 * mm, "(21) 99772-9990")
 
     c.showPage()
