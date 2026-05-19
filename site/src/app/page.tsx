@@ -297,7 +297,7 @@ export default async function HomePage() {
       </section>
 
       {/* ── Por que escolher ── */}
-      <section style={{ backgroundColor: "#585a4f", padding: "clamp(56px,7vw,88px) clamp(20px,5vw,48px)" }}>
+      <section style={{ backgroundColor: "#f7f6f2", padding: "clamp(56px,7vw,88px) clamp(20px,5vw,48px)" }}>
         <div style={{ maxWidth: 1080, margin: "0 auto" }}>
           <div className="text-center mb-12">
             <p
@@ -314,7 +314,7 @@ export default async function HomePage() {
             </p>
             <h2
               className="font-serif"
-              style={{ fontSize: "clamp(24px,3.5vw,38px)", fontWeight: 500, color: "#f7f6f2" }}
+              style={{ fontSize: "clamp(24px,3.5vw,38px)", fontWeight: 500, color: "#585a4f" }}
             >
               Por que escolher a Morabilidade?
             </h2>
@@ -331,14 +331,16 @@ export default async function HomePage() {
                 key={titulo}
                 style={{
                   backgroundColor: "#d8cb6a",
+                  border: "1px solid #b8a94a",
                   borderRadius: 14,
                   padding: "28px 24px",
+                  boxShadow: "0 2px 12px rgba(184,169,74,0.25)",
                 }}
               >
-                <div style={{ fontSize: 16, fontWeight: 700, color: "#2d2f28", marginBottom: 10 }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#ffffff", marginBottom: 10 }}>
                   {titulo}
                 </div>
-                <div style={{ fontSize: 14, color: "#3e4037", lineHeight: 1.7 }}>{texto}</div>
+                <div style={{ fontSize: 14, color: "#ffffff", lineHeight: 1.7 }}>{texto}</div>
               </div>
             ))}
           </div>
