@@ -1,5 +1,6 @@
 import io
 import logging
+from pathlib import Path
 
 from fastapi import UploadFile, HTTPException
 from app.database import supabase_admin
@@ -15,6 +16,47 @@ PHOTO_MAX_BYTES = 10 * 1024 * 1024  # 10 MB — fotos de imóvel e perfil
 # centenas de MB de pixels e estourar a RAM do worker. 50 megapixels cobre até
 # fotos profissionais de imóvel (8K) com folga.
 Image.MAX_IMAGE_PIXELS = 50_000_000
+
+# Marca d'água — carregada uma vez na importação do módulo e reutilizada.
+WATERMARK_PATH = Path(__file__).resolve().parent.parent / "assets" / "watermark.png"
+_watermark_cache: Image.Image | None = None
+
+
+def _carregar_marca_dagua() -> Image.Image:
+    global _watermark_cache
+    if _watermark_cache is None:
+        _watermark_cache = Image.open(WATERMARK_PATH).convert("RGBA")
+    return _watermark_cache
+
+
+def _aplicar_marca_dagua(
+    img: Image.Image,
+    *,
+    largura_pct: float = 0.20,
+    padding_pct: float = 0.02,
+    opacidade: float = 0.55,
+) -> Image.Image:
+    """Cola a marca d'água no canto inferior direito de `img` (modo RGB) e
+    devolve uma nova imagem RGB. O dimensionamento e o padding são
+    proporcionais ao tamanho da foto, então o resultado fica consistente em
+    fotos de qualquer resolução."""
+    marca_original = _carregar_marca_dagua()
+
+    nova_largura = max(1, round(img.width * largura_pct))
+    proporcao = marca_original.height / marca_original.width
+    nova_altura = max(1, round(nova_largura * proporcao))
+    marca = marca_original.resize((nova_largura, nova_altura), Image.LANCZOS)
+
+    if opacidade < 1.0:
+        alpha = marca.split()[-1].point(lambda p: round(p * opacidade))
+        marca.putalpha(alpha)
+
+    base = img.convert("RGBA")
+    pad_x = round(img.width * padding_pct)
+    pad_y = round(img.height * padding_pct)
+    pos = (img.width - marca.width - pad_x, img.height - marca.height - pad_y)
+    base.alpha_composite(marca, dest=pos)
+    return base.convert("RGB")
 
 
 async def upload_foto(file: UploadFile, path: str) -> str:
@@ -35,8 +77,10 @@ async def upload_foto(file: UploadFile, path: str) -> str:
             detail=f"Imagem muito grande (máx {PHOTO_MAX_BYTES // (1024 * 1024)} MB).",
         )
 
+    # Aplica marca d'água apenas em fotos de imóvel (não nas de perfil).
+    aplicar_marca = path.startswith("imoveis/")
     try:
-        contents = _para_jpeg(contents)
+        contents = _para_jpeg(contents, aplicar_marca=aplicar_marca)
     except Image.DecompressionBombError:
         raise HTTPException(
             status_code=400,
@@ -82,6 +126,11 @@ def baixar_e_rotacionar(url: str, graus: int) -> bytes:
         img = img.rotate(-graus, expand=True)
         if img.mode in ("RGBA", "P"):
             img = img.convert("RGB")
+        # Re-aplica a marca após a rotação. A marca antiga (já gravada na foto)
+        # girou junto e ficou em outro canto; a reaplicação garante uma marca
+        # sempre no canto inferior direito. Aceita-se que rotações sucessivas
+        # acumulem marcas residuais nas bordas.
+        img = _aplicar_marca_dagua(img)
         out = io.BytesIO()
         img.save(out, format="JPEG", quality=85, optimize=True)
         return out.getvalue()
@@ -113,7 +162,7 @@ async def deletar_foto(url: str) -> None:
         logger.warning("Falha ao deletar foto do storage: url=%s erro=%s", url, e)
 
 
-def _para_jpeg(contents: bytes, qualidade: int = 85) -> bytes:
+def _para_jpeg(contents: bytes, qualidade: int = 85, aplicar_marca: bool = False) -> bytes:
     img = Image.open(io.BytesIO(contents))
     # Aplica a orientação registrada no EXIF antes de salvar. Sem isso, fotos
     # tiradas no celular (que gravam a rotação como metadado, mantendo os pixels
@@ -121,6 +170,8 @@ def _para_jpeg(contents: bytes, qualidade: int = 85) -> bytes:
     img = ImageOps.exif_transpose(img)
     if img.mode in ("RGBA", "P"):
         img = img.convert("RGB")
+    if aplicar_marca:
+        img = _aplicar_marca_dagua(img)
     out = io.BytesIO()
     img.save(out, format="JPEG", quality=qualidade, optimize=True)
     return out.getvalue()
