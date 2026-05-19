@@ -32,14 +32,14 @@ def _carregar_marca_dagua() -> Image.Image:
 def _aplicar_marca_dagua(
     img: Image.Image,
     *,
-    largura_pct: float = 0.20,
-    padding_pct: float = 0.02,
-    opacidade: float = 0.55,
+    largura_pct: float = 0.40,
+    centro_y_pct: float = 0.65,
+    opacidade: float = 0.50,
 ) -> Image.Image:
-    """Cola a marca d'água no canto inferior direito de `img` (modo RGB) e
-    devolve uma nova imagem RGB. O dimensionamento e o padding são
-    proporcionais ao tamanho da foto, então o resultado fica consistente em
-    fotos de qualquer resolução."""
+    """Cola a marca d'água centralizada horizontalmente e levemente abaixo do
+    centro vertical de `img` (modo RGB). Devolve uma nova imagem RGB. O
+    dimensionamento e o posicionamento são proporcionais ao tamanho da foto,
+    então o resultado fica consistente em fotos de qualquer resolução."""
     marca_original = _carregar_marca_dagua()
 
     nova_largura = max(1, round(img.width * largura_pct))
@@ -52,10 +52,9 @@ def _aplicar_marca_dagua(
         marca.putalpha(alpha)
 
     base = img.convert("RGBA")
-    pad_x = round(img.width * padding_pct)
-    pad_y = round(img.height * padding_pct)
-    pos = (img.width - marca.width - pad_x, img.height - marca.height - pad_y)
-    base.alpha_composite(marca, dest=pos)
+    pos_x = (img.width - marca.width) // 2
+    pos_y = round(img.height * centro_y_pct - marca.height / 2)
+    base.alpha_composite(marca, dest=(pos_x, pos_y))
     return base.convert("RGB")
 
 
