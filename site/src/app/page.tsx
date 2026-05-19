@@ -8,18 +8,24 @@ import { TestimonialCarousel } from "@/components/home/TestimonialCarousel";
 import { HeroSearch } from "@/components/home/HeroSearch";
 import { getImoveisDestaques, getImoveisDisponiveis } from "@/lib/api";
 
-const diferenciais = [
+const pilares = [
   {
+    num: "01",
     titulo: "Simples",
-    texto: "Simplificamos a comunicação, os processos e as decisões. Escolhemos sempre o caminho da verdade e buscamos tornar tudo menos burocrático, sem abrir mão da segurança.",
+    texto:
+      "Simplificamos a comunicação, os processos e as decisões. Escolhemos sempre o caminho da verdade e buscamos tornar tudo menos burocrático, sem abrir mão da segurança.",
   },
   {
+    num: "02",
     titulo: "Eficiente",
-    texto: "Temos um cuidado criterioso na precificação dos imóveis, sempre alinhada à realidade do mercado, e conduzimos cada etapa com organização, agilidade e atenção aos detalhes. Isso nos permitiu alcançar resultados expressivos, com diversas vendas realizadas em tempo recorde.",
+    texto:
+      "Temos um cuidado criterioso na precificação dos imóveis, sempre alinhada à realidade do mercado, e conduzimos cada etapa com organização, agilidade e atenção aos detalhes. Isso nos permitiu alcançar resultados expressivos, com diversas vendas realizadas em tempo recorde.",
   },
   {
+    num: "03",
     titulo: "Humanizada",
-    texto: "Acreditamos em relações próximas, empatia e cuidado genuíno com as pessoas em todos os momentos do processo.",
+    texto:
+      "Acreditamos em relações próximas, empatia e cuidado genuíno com as pessoas em todos os momentos do processo.",
   },
 ];
 
@@ -296,53 +302,317 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ── Por que escolher ── */}
-      <section style={{ backgroundColor: "#f7f6f2", padding: "clamp(56px,7vw,88px) clamp(20px,5vw,48px)" }}>
-        <div style={{ maxWidth: 1080, margin: "0 auto" }}>
-          <div className="text-center mb-12">
-            <p
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                color: "#d8cb6a",
-                marginBottom: 12,
-              }}
-            >
-              Diferenciais
-            </p>
-            <h2
-              className="font-serif"
-              style={{ fontSize: "clamp(24px,3.5vw,38px)", fontWeight: 500, color: "#585a4f" }}
-            >
-              Por que escolher a Morabilidade?
-            </h2>
-          </div>
+      {/* ── Proprietário + Por que a Morabilidade (merged) ── */}
+      <section
+        style={{ backgroundColor: "#f7f6f2", position: "relative", overflow: "hidden" }}
+      >
+        {/* Echo strip dourada no topo */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 6,
+            background:
+              "linear-gradient(90deg, #585a4f, #d8cb6a 50%, #585a4f)",
+            opacity: 0.4,
+          }}
+        />
+
+        <div
+          style={{
+            maxWidth: 1180,
+            margin: "0 auto",
+            padding: "clamp(56px,7vw,96px) clamp(20px,5vw,48px)",
+          }}
+        >
           <div
+            className="proprietario-grid"
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))",
-              gap: 20,
+              gridTemplateColumns: "minmax(0, 0.85fr) minmax(0, 1.15fr)",
+              gap: "clamp(32px,5vw,72px)",
+              alignItems: "stretch",
             }}
           >
-            {diferenciais.map(({ titulo, texto }) => (
+            {/* LEFT — coluna da foto */}
+            <div
+              className="proprietario-photo"
+              style={{
+                position: "relative",
+                minHeight: "clamp(420px, 60vh, 640px)",
+              }}
+            >
+              {/* moldura dourada com offset */}
               <div
-                key={titulo}
+                className="proprietario-photo-frame"
                 style={{
-                  backgroundColor: "#d8cb6a",
-                  border: "1px solid #b8a94a",
+                  position: "absolute",
+                  inset: 0,
+                  border: "1.5px solid #d8cb6a",
                   borderRadius: 14,
-                  padding: "28px 24px",
-                  boxShadow: "0 2px 12px rgba(184,169,74,0.25)",
+                  transform: "translate(14px, 14px)",
+                  opacity: 0.55,
+                }}
+              />
+              {/* foto */}
+              <div
+                style={{
+                  position: "relative",
+                  width: "100%",
+                  height: "100%",
+                  borderRadius: 14,
+                  overflow: "hidden",
+                  background: "#e8e5db",
+                  boxShadow: "0 20px 50px rgba(88,90,79,0.22)",
                 }}
               >
-                <div style={{ fontSize: 16, fontWeight: 700, color: "#585a4f", marginBottom: 10 }}>
-                  {titulo}
+                <Image
+                  src="/assets/rodrigo-proprietario.jpeg"
+                  alt="Rodrigo Barbosa — proprietário da Morabilidade"
+                  fill
+                  sizes="(max-width: 860px) 100vw, 45vw"
+                  style={{ objectFit: "cover", objectPosition: "center 30%" }}
+                />
+                {/* gradiente inferior para legibilidade */}
+                <div
+                  style={{
+                    position: "absolute",
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    height: "45%",
+                    background:
+                      "linear-gradient(180deg, rgba(46,48,42,0) 0%, rgba(46,48,42,0.78) 100%)",
+                  }}
+                />
+                {/* legenda sobre a foto */}
+                <div
+                  style={{
+                    position: "absolute",
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    padding: "clamp(20px,3vw,32px)",
+                    color: "#fcfcfc",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 700,
+                      letterSpacing: "0.22em",
+                      textTransform: "uppercase",
+                      color: "#e8dea0",
+                      marginBottom: 8,
+                    }}
+                  >
+                    O proprietário
+                  </div>
+                  <div
+                    className="font-serif"
+                    style={{
+                      fontSize: "clamp(22px,2.6vw,30px)",
+                      fontWeight: 500,
+                      lineHeight: 1.15,
+                      marginBottom: 6,
+                    }}
+                  >
+                    Rodrigo Barbosa
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: "rgba(252,252,252,0.7)",
+                      letterSpacing: "0.04em",
+                    }}
+                  >
+                    Corretor · CRECI-RJ nº 70411
+                  </div>
                 </div>
-                <div style={{ fontSize: 14, color: "#585a4f", lineHeight: 1.7 }}>{texto}</div>
               </div>
-            ))}
+            </div>
+
+            {/* RIGHT — coluna de conteúdo */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                paddingTop: 6,
+              }}
+            >
+              <p
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: "0.18em",
+                  textTransform: "uppercase",
+                  color: "#d8cb6a",
+                  marginBottom: 14,
+                }}
+              >
+                Por que a Morabilidade
+              </p>
+              <h2
+                className="font-serif"
+                style={{
+                  fontSize: "clamp(26px,3.6vw,42px)",
+                  fontWeight: 500,
+                  color: "#2d2f28",
+                  lineHeight: 1.15,
+                  marginBottom: 22,
+                }}
+              >
+                Uma imobiliária com
+                <br />
+                <em style={{ color: "#585a4f" }}>nome, rosto e história.</em>
+              </h2>
+              <p
+                style={{
+                  fontSize: "clamp(14px,1.4vw,16px)",
+                  color: "#7a7c72",
+                  lineHeight: 1.85,
+                  marginBottom: 14,
+                  maxWidth: 560,
+                }}
+              >
+                Por trás da Morabilidade está{" "}
+                <strong style={{ color: "#2d2f28", fontWeight: 600 }}>
+                  Rodrigo Barbosa
+                </strong>
+                . Carioca, com mais de 15 anos de mercado imobiliário e a Zona Sul
+                como território de atuação.
+              </p>
+              <p
+                style={{
+                  fontSize: "clamp(14px,1.4vw,16px)",
+                  color: "#7a7c72",
+                  lineHeight: 1.85,
+                  marginBottom: 36,
+                  maxWidth: 560,
+                }}
+              >
+                Atendimento pessoal, do primeiro contato até a entrega das chaves.
+                Sem call center, sem terceirização, sem ruído.
+              </p>
+
+              {/* Pilares — Simples · Eficiente · Humanizada */}
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 0,
+                  borderTop: "1px solid #e4e1d6",
+                }}
+              >
+                {pilares.map(({ num, titulo, texto }) => (
+                  <div
+                    key={num}
+                    className="pilar-row"
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "56px 1fr",
+                      gap: "clamp(14px,2vw,28px)",
+                      padding: "22px 0",
+                      borderBottom: "1px solid #e4e1d6",
+                      alignItems: "baseline",
+                    }}
+                  >
+                    <div
+                      className="font-serif"
+                      style={{
+                        fontSize: "clamp(20px,2vw,24px)",
+                        fontStyle: "italic",
+                        color: "#d8cb6a",
+                        fontWeight: 500,
+                        lineHeight: 1,
+                      }}
+                    >
+                      {num}
+                    </div>
+                    <div>
+                      <div
+                        className="font-serif"
+                        style={{
+                          fontSize: "clamp(20px,2vw,24px)",
+                          fontWeight: 500,
+                          color: "#2d2f28",
+                          marginBottom: 8,
+                          letterSpacing: "-0.01em",
+                          lineHeight: 1.1,
+                        }}
+                      >
+                        {titulo}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "clamp(13.5px,1.3vw,15px)",
+                          color: "#7a7c72",
+                          lineHeight: 1.7,
+                        }}
+                      >
+                        {texto}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* CTAs */}
+              <div
+                style={{
+                  marginTop: 32,
+                  display: "flex",
+                  flexWrap: "wrap",
+                  alignItems: "center",
+                  gap: 14,
+                }}
+              >
+                <Link
+                  href="/contato"
+                  className="inline-flex items-center hover:opacity-90 transition-opacity"
+                  style={{
+                    gap: 9,
+                    background: "#585a4f",
+                    color: "#fcfcfc",
+                    textDecoration: "none",
+                    padding: "12px 22px",
+                    borderRadius: 8,
+                    fontSize: 14,
+                    fontWeight: 600,
+                  }}
+                >
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                  </svg>
+                  Entre em contato
+                </Link>
+                <Link
+                  href="/sobre"
+                  className="inline-flex items-center hover:opacity-80 transition-opacity"
+                  style={{
+                    gap: 6,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: "#585a4f",
+                    textDecoration: "none",
+                    borderBottom: "1px solid #d8cb6a",
+                    paddingBottom: 2,
+                  }}
+                >
+                  Conhecer a história completa
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </section>

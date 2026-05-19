@@ -39,6 +39,14 @@ body {
   animation: fadeIn 0.2s ease both;
 }
 
+@keyframes fadeInPlain {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-fade-in {
+  animation: fadeInPlain 0.18s ease-out both;
+}
+
 @keyframes pulse-ring {
   0%   { transform: scale(0.6); opacity: 0.55; }
   70%  { transform: scale(2.2); opacity: 0;    }
@@ -63,4 +71,35 @@ body {
 /* Smooth image loading */
 img {
   transition: opacity 0.2s ease;
+}
+
+/* Proprietario + Por que (home) - responsividade */
+@media (max-width: 860px) {
+  .proprietario-grid {
+    grid-template-columns: 1fr !important;
+    gap: clamp(32px, 6vw, 44px) !important;
+  }
+  .proprietario-photo {
+    min-height: clamp(360px, 78vw, 480px) !important;
+    max-width: 460px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  .proprietario-photo-frame {
+    transform: translate(8px, 8px) !important;
+  }
+}
+@media (max-width: 520px) {
+  .pilar-row {
+    grid-template-columns: 40px 1fr !important;
+    gap: 14px !important;
+    padding: 18px 0 !important;
+  }
+  .proprietario-photo {
+    min-height: 420px !important;
+    max-width: none;
+  }
+  .proprietario-photo-frame {
+    transform: translate(6px, 6px) !important;
+  }
 }
