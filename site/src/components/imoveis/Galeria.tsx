@@ -210,10 +210,11 @@ export function Galeria({ fotos }: { fotos: Foto[] }) {
               e.stopPropagation();
               setLightbox(false);
             }}
-            className="absolute top-4 right-4 p-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition"
+            className="absolute top-4 right-4 z-10 w-12 h-12 flex items-center justify-center rounded-full bg-white text-slate-900 shadow-lg ring-2 ring-white/80 hover:bg-slate-100 hover:scale-105 transition focus:outline-none focus:ring-4 focus:ring-[#d8cb6a]"
             aria-label="Fechar"
+            title="Fechar (Esc)"
           >
-            <X className="w-6 h-6" />
+            <X className="w-7 h-7" strokeWidth={2.5} />
           </button>
 
           <div
@@ -237,7 +238,7 @@ export function Galeria({ fotos }: { fotos: Foto[] }) {
                   e.stopPropagation();
                   anterior();
                 }}
-                className="absolute left-3 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition"
+                className="absolute left-3 top-1/2 -translate-y-1/2 z-10 p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition"
                 aria-label="Foto anterior"
               >
                 <ChevronLeft className="w-6 h-6" />
@@ -247,12 +248,12 @@ export function Galeria({ fotos }: { fotos: Foto[] }) {
                   e.stopPropagation();
                   proxima();
                 }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition"
+                className="absolute right-3 top-1/2 -translate-y-1/2 z-10 p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition"
                 aria-label="Próxima foto"
               >
                 <ChevronRight className="w-6 h-6" />
               </button>
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-white/10 text-white text-sm">
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 px-3 py-1 rounded-full bg-white/10 text-white text-sm">
                 {ativa + 1} / {fotos.length}
               </div>
             </>
