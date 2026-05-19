@@ -10,17 +10,14 @@ import { getImoveisDestaques, getImoveisDisponiveis } from "@/lib/api";
 
 const diferenciais = [
   {
-    icon: "◈",
     titulo: "Simples",
     texto: "Simplificamos a comunicação, os processos e as decisões. Escolhemos sempre o caminho da verdade e buscamos tornar tudo menos burocrático, sem abrir mão da segurança.",
   },
   {
-    icon: "◎",
     titulo: "Eficiente",
     texto: "Temos um cuidado criterioso na precificação dos imóveis, sempre alinhada à realidade do mercado, e conduzimos cada etapa com organização, agilidade e atenção aos detalhes. Isso nos permitiu alcançar resultados expressivos, com diversas vendas realizadas em tempo recorde.",
   },
   {
-    icon: "◇",
     titulo: "Humanizada",
     texto: "Acreditamos em relações próximas, empatia e cuidado genuíno com as pessoas em todos os momentos do processo.",
   },
@@ -300,7 +297,7 @@ export default async function HomePage() {
       </section>
 
       {/* ── Por que escolher ── */}
-      <section style={{ backgroundColor: "#f7f6f2", padding: "clamp(56px,7vw,88px) clamp(20px,5vw,48px)" }}>
+      <section style={{ backgroundColor: "#585a4f", padding: "clamp(56px,7vw,88px) clamp(20px,5vw,48px)" }}>
         <div style={{ maxWidth: 1080, margin: "0 auto" }}>
           <div className="text-center mb-12">
             <p
@@ -317,7 +314,7 @@ export default async function HomePage() {
             </p>
             <h2
               className="font-serif"
-              style={{ fontSize: "clamp(24px,3.5vw,38px)", fontWeight: 500, color: "#2d2f28" }}
+              style={{ fontSize: "clamp(24px,3.5vw,38px)", fontWeight: 500, color: "#f7f6f2" }}
             >
               Por que escolher a Morabilidade?
             </h2>
@@ -329,23 +326,19 @@ export default async function HomePage() {
               gap: 20,
             }}
           >
-            {diferenciais.map(({ icon, titulo, texto }) => (
+            {diferenciais.map(({ titulo, texto }) => (
               <div
                 key={titulo}
                 style={{
-                  backgroundColor: "#fcfcfc",
-                  border: "1px solid #e4e1d6",
+                  backgroundColor: "#d8cb6a",
                   borderRadius: 14,
                   padding: "28px 24px",
                 }}
               >
-                <div style={{ fontSize: 22, color: "#d8cb6a", marginBottom: 16, lineHeight: 1 }}>
-                  {icon}
-                </div>
-                <div style={{ fontSize: 15, fontWeight: 600, color: "#2d2f28", marginBottom: 8 }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#2d2f28", marginBottom: 10 }}>
                   {titulo}
                 </div>
-                <div style={{ fontSize: 14, color: "#7a7c72", lineHeight: 1.7 }}>{texto}</div>
+                <div style={{ fontSize: 14, color: "#3e4037", lineHeight: 1.7 }}>{texto}</div>
               </div>
             ))}
           </div>
