@@ -31,6 +31,10 @@ export const metadata: Metadata = {
     locale: "pt_BR",
     type: "website",
   },
+  other: {
+    "color-scheme": "light only",
+    "supported-color-schemes": "light",
+  },
 };
 
 export default function RootLayout({

@@ -3,11 +3,11 @@ import Image from "next/image";
 import { Instagram } from "lucide-react";
 
 export function Footer() {
-  const anosDeMarket = new Date().getFullYear() - 2010;
+  const anosDeMarket = 15;
 
   return (
     <footer
-      style={{ backgroundColor: "#585a4f" }}
+      style={{ backgroundColor: "#585a4f", colorScheme: "light" }}
       className="text-white"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-14 pb-8">

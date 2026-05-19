@@ -28,7 +28,7 @@ export default async function ContatoPage({ searchParams }: Props) {
     : "https://wa.link/we06jw";
 
   const stats = [
-    { n: "+ de 10", d: "anos de mercado" },
+    { n: "+ de 15", d: "anos de mercado" },
     { n: "100%", d: "atendimento online" },
     { n: "Zona Sul", d: "Rio de Janeiro · RJ" },
   ];

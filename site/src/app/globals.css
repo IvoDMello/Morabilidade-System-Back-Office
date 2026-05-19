@@ -12,10 +12,12 @@
   --border: #e4e1d6;
   --text: #2d2f28;
   --text-muted: #7a7c72;
+  color-scheme: light;
 }
 
 html {
   scroll-behavior: smooth;
+  color-scheme: light;
 }
 
 body {
