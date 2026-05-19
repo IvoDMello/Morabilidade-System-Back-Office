@@ -57,12 +57,14 @@ _LIST_FIELDS = (
     "id, codigo, titulo, tipo_negocio, disponibilidade, cidade, bairro, "
     "logradouro, numero, tipo_imovel, dormitorios, suites, banheiros, "
     "vagas_garagem, area_util, valor_venda, valor_locacao, "
-    "condominio_mensal, iptu_mensal, destaque_ordem, created_at, "
-    "imovel_fotos(url, ordem), imovel_tags(tags(id, nome, cor))"
+    "condominio_mensal, iptu_mensal, destaque_ordem, proprietario_id, created_at, "
+    "imovel_fotos(url, ordem), imovel_tags(tags(id, nome, cor)), "
+    "proprietario:clientes!proprietario_id(id, nome_completo, telefone, email)"
 )
 
 _DETAIL_FIELDS = (
-    "*, imovel_fotos(id, url, ordem), imovel_tags(tags(id, nome, cor))"
+    "*, imovel_fotos(id, url, ordem), imovel_tags(tags(id, nome, cor)), "
+    "proprietario:clientes!proprietario_id(id, nome_completo, telefone, email)"
 )
 
 
@@ -107,12 +109,27 @@ def _aplicar_filtros(query, *, tipo_negocio, disponibilidade, cidade, bairro,
     return query
 
 
+def _normalizar_proprietario(raw: dict) -> Optional[dict]:
+    """Extrai o objeto proprietário do join e devolve só os campos que o front
+    usa — evita vazar dados desnecessários e mantém a forma estável."""
+    prop = raw.pop("proprietario", None)
+    if not prop:
+        return None
+    return {
+        "id": prop.get("id"),
+        "nome_completo": prop.get("nome_completo"),
+        "telefone": prop.get("telefone"),
+        "email": prop.get("email"),
+    }
+
+
 def _transformar_lista(raw: dict) -> dict:
     fotos = sorted(raw.pop("imovel_fotos", None) or [], key=lambda f: f.get("ordem", 0))
     foto_capa = fotos[0]["url"] if fotos else None
     tags_raw = raw.pop("imovel_tags", None) or []
     tags = [t["tags"] for t in tags_raw if t.get("tags")]
-    return {**raw, "foto_capa": foto_capa, "tags": tags}
+    proprietario = _normalizar_proprietario(raw)
+    return {**raw, "foto_capa": foto_capa, "tags": tags, "proprietario": proprietario}
 
 
 def _transformar_detalhe(raw: dict) -> dict:
@@ -120,7 +137,8 @@ def _transformar_detalhe(raw: dict) -> dict:
     tags_raw = raw.pop("imovel_tags", None) or []
     tags = [t["tags"] for t in tags_raw if t.get("tags")]
     tag_ids = [t["id"] for t in tags]
-    return {**raw, "fotos": fotos, "tags": tags, "tag_ids": tag_ids}
+    proprietario = _normalizar_proprietario(raw)
+    return {**raw, "fotos": fotos, "tags": tags, "tag_ids": tag_ids, "proprietario": proprietario}
 
 
 def _ocultar_internas(imovel: dict, current_user: Optional[dict]) -> dict:
@@ -366,29 +384,7 @@ def listar_imoveis(
         supabase_admin.table("imoveis").select(_LIST_FIELDS), **filtros
     )
     result = data_q.order("created_at", desc=True).range(offset, offset + page_size - 1).execute()
-
-    imoveis = [_transformar_lista(item) for item in result.data]
-
-    # Buscar proprietários (cliente.imovel_codigo == imovel.codigo, tipo_cliente=proprietario)
-    # em uma única query batch para evitar N+1.
-    codigos = [im["codigo"] for im in imoveis if im.get("codigo")]
-    if codigos:
-        props_resp = (
-            supabase_admin.table("clientes")
-            .select("nome_completo, telefone, imovel_codigo")
-            .in_("imovel_codigo", codigos)
-            .eq("tipo_cliente", "proprietario")
-            .execute()
-        )
-        mapa_props = {p["imovel_codigo"]: p for p in (props_resp.data or [])}
-        for im in imoveis:
-            p = mapa_props.get(im["codigo"])
-            im["proprietario"] = (
-                {"nome_completo": p["nome_completo"], "telefone": p["telefone"]}
-                if p else None
-            )
-
-    return imoveis
+    return [_transformar_lista(item) for item in result.data]
 
 
 @router.post("/", response_model=ImovelOut, status_code=status.HTTP_201_CREATED)

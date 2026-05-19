@@ -77,6 +77,7 @@ class ImovelCreate(BaseModel):
     observacoes_internas: Optional[str] = None  # visível para usuários autenticados; oculto no público
     video_url: Optional[str] = None
     corretor_id: Optional[str] = None
+    proprietario_id: Optional[str] = None  # FK para clientes; sincroniza com contratos_locacao
     destaque_ordem: Optional[int] = None  # 1-5 ou None
     tag_ids: Optional[List[str]] = []
 
@@ -103,6 +104,7 @@ class ImovelOut(ImovelCreate):
     tag_ids: List[str] = []
     fotos: List[FotoOut] = []
     tags: List[dict] = []
+    proprietario: Optional[dict] = None  # {id, nome_completo, telefone, email} se houver
     created_at: str
     updated_at: str
 
@@ -137,7 +139,8 @@ class ImovelListOut(BaseModel):
     foto_capa: Optional[str] = None
     tags: List[dict] = []
     destaque_ordem: Optional[int] = None
-    proprietario: Optional[dict] = None  # {nome_completo, telefone} se houver
+    proprietario_id: Optional[str] = None
+    proprietario: Optional[dict] = None  # {id, nome_completo, telefone} se houver
     created_at: str
 
     @field_serializer(

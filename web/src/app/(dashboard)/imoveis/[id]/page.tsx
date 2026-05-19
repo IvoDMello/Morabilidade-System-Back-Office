@@ -337,6 +337,7 @@ export default function EditarImovelPage({
       const payload = {
         ...data,
         corretor_id: data.corretor_id || null,
+        proprietario_id: data.proprietario_id || null,
         mobiliado: data.mobiliado || null,
       };
       await api.put(`/imoveis/${id}`, payload);
@@ -394,6 +395,7 @@ export default function EditarImovelPage({
     observacoes_internas: imovel.observacoes_internas ?? "",
     video_url: imovel.video_url ?? "",
     corretor_id: imovel.corretor_id ?? null,
+    proprietario_id: imovel.proprietario_id ?? null,
     destaque_ordem: imovel.destaque_ordem ?? null,
     tag_ids: imovel.tags?.map((t) => t.id) ?? [],
   };

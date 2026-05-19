@@ -682,6 +682,29 @@ def gerar_demonstrativo_individual(
     )
 
 
+def _sincronizar_proprietario_imovel(imovel_id: str, proprietario_id: str) -> None:
+    """Espelha o proprietário do contrato no cadastro do imóvel.
+
+    Why: o form de locação aceita escolher (ou trocar) o proprietário; para
+    manter as duas telas em sincronia (e o "vice-versa" pedido pelo cliente),
+    o imóvel é sempre atualizado para refletir o proprietário mais recente.
+    """
+    try:
+        (
+            supabase_admin.table("imoveis")
+            .update({"proprietario_id": proprietario_id})
+            .eq("id", imovel_id)
+            .execute()
+        )
+    except Exception:
+        # Não derruba o request principal: a sincronização é "best effort".
+        # O contrato em si já foi gravado com o proprietário correto.
+        logger.exception(
+            "Falha ao sincronizar proprietario_id do imovel (%s ← %s)",
+            imovel_id, proprietario_id,
+        )
+
+
 @router.post("/", response_model=ContratoLocacaoOut, status_code=status.HTTP_201_CREATED)
 def criar_contrato(body: ContratoLocacaoCreate, current_user: dict = Depends(require_admin)):
     existente = (
@@ -707,6 +730,7 @@ def criar_contrato(body: ContratoLocacaoCreate, current_user: dict = Depends(req
         raise HTTPException(status_code=400, detail=f"Erro ao criar contrato: {e}")
 
     novo = result.data[0]
+    _sincronizar_proprietario_imovel(body.imovel_id, body.proprietario_id)
     registrar_audit_locacao(
         user=current_user,
         acao="insert",

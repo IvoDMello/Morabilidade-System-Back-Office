@@ -120,6 +120,7 @@ export function LocacaoForm({
     handleSubmit,
     watch,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<LocacaoFormData>({
     resolver: zodResolver(schema),
@@ -168,6 +169,20 @@ export function LocacaoForm({
       jaResetou.current = true;
     }
   }, [loadingListas, defaultValues, reset]);
+
+  // Auto-preenche o proprietário quando o usuário escolhe um imóvel que já
+  // tem proprietário cadastrado. Só dispara em modo "novo" (sem defaultValues
+  // já contendo proprietario_id) — em edição, respeita o que foi salvo.
+  const imovelSelecionadoId = watch("imovel_id");
+  const proprietarioAtualId = watch("proprietario_id");
+  useEffect(() => {
+    if (!imovelSelecionadoId || loadingListas) return;
+    const imv = imoveis.find((i) => i.id === imovelSelecionadoId);
+    const propDoImovel = imv?.proprietario_id;
+    if (propDoImovel && propDoImovel !== proprietarioAtualId) {
+      setValue("proprietario_id", propDoImovel, { shouldDirty: true, shouldValidate: true });
+    }
+  }, [imovelSelecionadoId, imoveis, loadingListas, proprietarioAtualId, setValue]);
 
   // Cálculo do total ao vivo — replica a regra do PDF:
   //   Aluguel + (Condomínio) + (Fundo de obra) + (IPTU/10) + (Seguro/12) − Fundo de reserva
@@ -239,7 +254,14 @@ export function LocacaoForm({
               >
                 <option value="">— Selecionar —</option>
                 {clientes
-                  .filter((c) => !c.tipo_cliente || c.tipo_cliente === "proprietario")
+                  // Mantém o proprietário atual mesmo que não seja tipo_cliente='proprietario'
+                  // (compatibilidade com clientes reclassificados ou auto-preenchidos via imóvel).
+                  .filter(
+                    (c) =>
+                      c.id === proprietarioAtualId ||
+                      !c.tipo_cliente ||
+                      c.tipo_cliente === "proprietario"
+                  )
                   .map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.nome_completo}

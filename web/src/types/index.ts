@@ -73,6 +73,13 @@ export interface Imovel {
   observacoes_internas?: string;
   video_url?: string;
   corretor_id?: string;
+  proprietario_id?: string | null;
+  proprietario?: {
+    id: string;
+    nome_completo: string;
+    telefone?: string;
+    email?: string;
+  } | null;
   destaque_ordem?: number | null;
   fotos: Foto[];
   tags: Tag[];
@@ -103,7 +110,8 @@ export interface ImovelListOut {
   foto_capa?: string;
   tags: { id: string; nome: string; cor?: string }[];
   destaque_ordem?: number | null;
-  proprietario?: { nome_completo: string; telefone: string } | null;
+  proprietario_id?: string | null;
+  proprietario?: { id?: string; nome_completo: string; telefone?: string; email?: string } | null;
   created_at: string;
 }
 

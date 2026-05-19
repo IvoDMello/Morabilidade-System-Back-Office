@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2 } from "lucide-react";
+import { Loader2, Phone } from "lucide-react";
 import { api } from "@/lib/api";
-import type { Tag, User } from "@/types";
+import type { Cliente, Tag, User } from "@/types";
 
 // ── Schema de validação ────────────────────────────────────────────────────────
 
@@ -65,6 +65,7 @@ const schema = z.object({
   observacoes_internas: z.string().optional(),
   video_url: z.string().optional(),
   corretor_id: z.string().optional().nullable(),
+  proprietario_id: z.string().optional().nullable(),
   destaque_ordem: z.preprocess(
     (v) => (v === "" || v == null ? null : Number(v)),
     z.number().int().min(1).max(5).nullable().optional()
@@ -125,6 +126,7 @@ export function ImovelForm({
 }: ImovelFormProps) {
   const [tags, setTags] = useState<Tag[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [clientes, setClientes] = useState<Cliente[]>([]);
   const [cepLoading, setCepLoading] = useState(false);
   const [iptuPeriodo, setIptuPeriodo] = useState<"mensal" | "anual">("mensal");
   const [iptuDisplay, setIptuDisplay] = useState<string>(
@@ -154,11 +156,21 @@ export function ImovelForm({
   const tipoNegocio = watch("tipo_negocio");
   const selectedTagIds = watch("tag_ids") ?? [];
   const descricaoValue = watch("descricao");
+  const proprietarioId = watch("proprietario_id");
 
   useEffect(() => {
     api.get<Tag[]>("/tags/").then((r) => setTags(r.data)).catch(() => {});
     api.get<User[]>("/usuarios/").then((r) => setUsers(r.data)).catch(() => {});
+    // page_size alto: a operação tem ~100 clientes; basta uma chamada.
+    api.get<Cliente[]>("/clientes/", { params: { page_size: 200 } })
+      .then((r) => setClientes(r.data))
+      .catch(() => {});
   }, []);
+
+  const proprietarioSelecionado = useMemo(
+    () => clientes.find((c) => c.id === proprietarioId) ?? null,
+    [clientes, proprietarioId]
+  );
 
   // Auto-resize da textarea de descrição para eliminar scrollbar dupla
   useEffect(() => {
@@ -630,6 +642,43 @@ export function ImovelForm({
                 </option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <Label>Proprietário</Label>
+            <select {...register("proprietario_id")} className={selectClass}>
+              <option value="">Nenhum</option>
+              {clientes
+                // Mantém o proprietário atual mesmo que não seja mais tipo_cliente='proprietario'
+                // (ex: foi reclassificado). Caso contrário, oferece apenas proprietários ou
+                // clientes sem tipo definido — evita poluir o select com locatários/investidores.
+                .filter(
+                  (c) =>
+                    c.id === proprietarioId ||
+                    !c.tipo_cliente ||
+                    c.tipo_cliente === "proprietario"
+                )
+                .map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nome_completo}
+                  </option>
+                ))}
+            </select>
+            {proprietarioSelecionado?.telefone && (
+              <a
+                href={`https://wa.me/${proprietarioSelecionado.telefone.replace(/\D/g, "")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-1 inline-flex items-center gap-1 text-xs text-[#585a4f] hover:underline"
+                title="Abrir conversa no WhatsApp"
+              >
+                <Phone className="w-3 h-3" />
+                {proprietarioSelecionado.telefone}
+              </a>
+            )}
+            <p className="mt-1 text-xs text-slate-400">
+              Sincroniza automaticamente com o contrato de locação deste imóvel.
+            </p>
           </div>
         </div>
 

@@ -171,10 +171,12 @@ def test_obter_contrato_nao_encontrado(client):
 # ── POST /locacoes/ ──────────────────────────────────────────────────────────
 
 def test_criar_contrato(client):
-    # 3 executes: checagem de duplicidade (vazio) + insert + _buscar_contrato
+    # 4 executes: checagem de duplicidade (vazio) + insert + sync imovel.proprietario_id
+    # + _buscar_contrato
     db = make_db_mock(
         MagicMock(data=[]),
         MagicMock(data=[CONTRATO_DB]),
+        MagicMock(data=[{"id": CONTRATO_PAYLOAD["imovel_id"]}]),  # sync update
         MagicMock(data=CONTRATO_DB),
     )
 

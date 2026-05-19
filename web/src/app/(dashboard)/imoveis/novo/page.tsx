@@ -105,6 +105,7 @@ export default function NovoImovelPage() {
       const payload = {
         ...data,
         corretor_id: data.corretor_id || null,
+        proprietario_id: data.proprietario_id || null,
         mobiliado: data.mobiliado || null,
         codigo: data.codigo || undefined,
       };
