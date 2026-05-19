@@ -63,8 +63,8 @@ export default async function HomePage() {
         style={{ minHeight: "clamp(480px, 70vh, 700px)" }}
       >
         <Image
-          src="/mar_doisIrmaos.png"
-          alt="Morro Dois Irmãos visto do mar"
+          src="/nova_foto_hero.jpeg"
+          alt="Vista do Rio de Janeiro"
           fill
           className="object-cover object-center"
           style={{ filter: "saturate(1.22) contrast(1.04) brightness(1.02)" }}
