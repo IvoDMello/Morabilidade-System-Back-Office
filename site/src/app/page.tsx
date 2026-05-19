@@ -337,10 +337,10 @@ export default async function HomePage() {
                   boxShadow: "0 2px 12px rgba(184,169,74,0.25)",
                 }}
               >
-                <div style={{ fontSize: 16, fontWeight: 700, color: "#ffffff", marginBottom: 10 }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#585a4f", marginBottom: 10 }}>
                   {titulo}
                 </div>
-                <div style={{ fontSize: 14, color: "#ffffff", lineHeight: 1.7 }}>{texto}</div>
+                <div style={{ fontSize: 14, color: "#585a4f", lineHeight: 1.7 }}>{texto}</div>
               </div>
             ))}
           </div>
