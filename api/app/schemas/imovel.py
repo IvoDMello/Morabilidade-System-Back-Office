@@ -61,6 +61,7 @@ class ImovelCreate(BaseModel):
     mobiliado: Optional[Mobiliado] = None
     condicao: CondicaoImovel
     andar: Optional[int] = None
+    ano_construcao: Optional[int] = None
     area_total: Optional[Decimal] = None
     area_util: Optional[Decimal] = None
     valor_venda: Optional[Decimal] = None

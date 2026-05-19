@@ -44,6 +44,10 @@ const schema = z.object({
     z.enum(["sim", "nao", "semi-mobiliado"]).nullable().optional()
   ),
   andar: optInt,
+  ano_construcao: z.preprocess(
+    (v) => (v === "" || v == null ? null : Number(v)),
+    z.number().int().min(1900).max(2100).nullable().optional()
+  ),
   area_total: optPositive,
   area_util: optPositive,
   valor_venda: optPositive,
@@ -403,6 +407,32 @@ export function ImovelForm({
             <p className="mt-1 text-xs text-slate-400">
               Térreo = <strong>1</strong> (usado pelo filtro &quot;Apenas térreo&quot; do site).
             </p>
+          </div>
+
+          <div>
+            <Label>Ano de construção</Label>
+            <input
+              type="number"
+              min={1900}
+              max={2100}
+              {...register("ano_construcao")}
+              className={inputClass}
+              placeholder="Ex: 2010"
+            />
+            <FieldError message={errors.ano_construcao?.message} />
+            {(() => {
+              const ano = watch("ano_construcao");
+              const anoAtual = new Date().getFullYear();
+              if (ano && Number(ano) > 0 && Number(ano) <= anoAtual) {
+                const idade = anoAtual - Number(ano);
+                return (
+                  <p className="mt-1 text-xs text-slate-400">
+                    Idade aproximada: <strong>{idade} {idade === 1 ? "ano" : "anos"}</strong>.
+                  </p>
+                );
+              }
+              return null;
+            })()}
           </div>
 
           <div>

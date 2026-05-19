@@ -243,6 +243,7 @@ export default function EditarImovelPage({
     vagas_garagem: imovel.vagas_garagem ?? null,
     mobiliado: imovel.mobiliado ?? null,
     andar: imovel.andar ?? null,
+    ano_construcao: imovel.ano_construcao ?? null,
     area_total: imovel.area_total ?? null,
     area_util: imovel.area_util ?? null,
     valor_venda: imovel.valor_venda ?? null,

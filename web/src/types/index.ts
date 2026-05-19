@@ -58,6 +58,7 @@ export interface Imovel {
   mobiliado?: Mobiliado;
   condicao: CondicaoImovel;
   andar?: number;
+  ano_construcao?: number;
   area_total?: number;
   area_util?: number;
   valor_venda?: number;

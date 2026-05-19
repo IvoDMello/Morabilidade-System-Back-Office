@@ -22,7 +22,7 @@ _CAMPOS_EXPORT = [
     "codigo", "tipo_negocio", "disponibilidade", "tipo_imovel", "condicao",
     "cidade", "bairro", "logradouro", "numero", "complemento", "cep",
     "dormitorios", "suites", "banheiros", "vagas_garagem", "andar", "mobiliado",
-    "area_total", "area_util", "valor_venda", "valor_locacao",
+    "ano_construcao", "area_total", "area_util", "valor_venda", "valor_locacao",
     "iptu_mensal", "condominio_mensal", "video_url", "descricao", "created_at",
 ]
 
