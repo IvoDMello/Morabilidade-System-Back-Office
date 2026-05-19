@@ -86,6 +86,14 @@ export default async function HomePage() {
               "radial-gradient(ellipse 72% 62% at 50% 52%, rgba(20,22,18,0.62) 0%, rgba(20,22,18,0.42) 40%, rgba(20,22,18,0.10) 74%, rgba(20,22,18,0) 100%)",
           }}
         />
+        {/* mobile: escurecimento extra para deixar a imagem menos poluída */}
+        <div
+          className="absolute inset-0 md:hidden"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(20,22,18,0.32) 0%, rgba(20,22,18,0.22) 50%, rgba(20,22,18,0.34) 100%)",
+          }}
+        />
         {/* bordas superior/inferior */}
         <div
           className="absolute inset-0"

@@ -73,13 +73,13 @@ export function HeroSearch() {
       </div>
 
       {/* Card de busca */}
-      <div className="bg-white rounded-2xl shadow-xl shadow-black/30 p-2 sm:p-2.5 flex flex-col sm:flex-row gap-2 items-stretch">
+      <div className="bg-white rounded-2xl shadow-xl shadow-black/30 p-1.5 sm:p-2.5 flex flex-col sm:flex-row gap-1.5 sm:gap-2 items-stretch">
         {/* Tipo de imóvel */}
         <div className="relative flex-1 min-w-0">
           <select
             value={tipoImovel}
             onChange={(e) => setTipoImovel(e.target.value)}
-            className="w-full pl-4 pr-9 py-3 sm:py-3.5 rounded-xl text-sm font-medium text-slate-700 bg-slate-50 hover:bg-slate-100 border-0 focus:outline-none focus:ring-2 focus:ring-[#585a4f]/30 cursor-pointer appearance-none transition"
+            className="w-full pl-4 pr-9 py-2.5 sm:py-3.5 rounded-xl text-sm font-medium text-slate-700 bg-slate-50 hover:bg-slate-100 border-0 focus:outline-none focus:ring-2 focus:ring-[#585a4f]/30 cursor-pointer appearance-none transition"
           >
             {TIPOS_IMOVEL.map((t) => (
               <option key={t.value} value={t.value}>
@@ -90,22 +90,22 @@ export function HeroSearch() {
           <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
         </div>
 
-        {/* Bairro / cidade */}
-        <div className="relative flex-1 min-w-0">
+        {/* Bairro / cidade — escondido no mobile para limpar o hero */}
+        <div className="relative flex-1 min-w-0 hidden sm:block">
           <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
           <input
             type="text"
             value={bairro}
             onChange={(e) => setBairro(e.target.value)}
             placeholder="Ipanema, Leblon, Botafogo..."
-            className="w-full pl-10 pr-3 py-3 sm:py-3.5 rounded-xl text-sm font-medium text-slate-700 bg-slate-50 hover:bg-slate-100 border-0 focus:outline-none focus:ring-2 focus:ring-[#585a4f]/30 placeholder:text-slate-400 placeholder:font-normal transition"
+            className="w-full pl-10 pr-3 py-2.5 sm:py-3.5 rounded-xl text-sm font-medium text-slate-700 bg-slate-50 hover:bg-slate-100 border-0 focus:outline-none focus:ring-2 focus:ring-[#585a4f]/30 placeholder:text-slate-400 placeholder:font-normal transition"
           />
         </div>
 
         {/* Botão Buscar */}
         <button
           type="submit"
-          className="flex items-center justify-center gap-2 px-6 py-3 sm:py-3.5 rounded-xl font-semibold text-sm transition-all hover:opacity-90 hover:shadow-lg whitespace-nowrap"
+          className="flex items-center justify-center gap-2 px-6 py-2.5 sm:py-3.5 rounded-xl font-semibold text-sm transition-all hover:opacity-90 hover:shadow-lg whitespace-nowrap"
           style={{ backgroundColor: "#d8cb6a", color: "#2e302a" }}
         >
           <Search className="w-4 h-4" />
