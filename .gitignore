@@ -60,3 +60,8 @@ firebase-credentials.json
 *.swo
 .DS_Store
 Thumbs.db
+
+# ========================
+# Material de referência (não vai pro repo)
+# ========================
+design_handoff_morabilidade/
