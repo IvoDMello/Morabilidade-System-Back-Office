@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight, ImageOff, X, ZoomIn } from "lucide-react";
+import { ChevronLeft, ChevronRight, ImageOff, Loader2, X, ZoomIn } from "lucide-react";
 import type { Foto } from "@/types";
 
 export function Galeria({ fotos }: { fotos: Foto[] }) {
@@ -10,6 +10,18 @@ export function Galeria({ fotos }: { fotos: Foto[] }) {
   const [drag, setDrag] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [lightbox, setLightbox] = useState(false);
+  const [imgCarregando, setImgCarregando] = useState(true);
+
+  // Índices das fotos vizinhas (com wrap-around) para pré-carregar e cobrir a
+  // navegação instantânea. Em galeria com 1 foto, prox/ant apontam para si mesma.
+  const proxIdx = useMemo(
+    () => (fotos.length > 0 ? (ativa + 1) % fotos.length : 0),
+    [ativa, fotos.length]
+  );
+  const antIdx = useMemo(
+    () => (fotos.length > 0 ? (ativa === 0 ? fotos.length - 1 : ativa - 1) : 0),
+    [ativa, fotos.length]
+  );
 
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
@@ -30,13 +42,15 @@ export function Galeria({ fotos }: { fotos: Foto[] }) {
     strip.scrollBy({ left: offset, behavior: "smooth" });
   }, [ativa]);
 
-  function anterior() {
+  const anterior = useCallback(() => {
     setAtiva((i) => (i === 0 ? fotos.length - 1 : i - 1));
-  }
+    setImgCarregando(true);
+  }, [fotos.length]);
 
-  function proxima() {
+  const proxima = useCallback(() => {
     setAtiva((i) => (i === fotos.length - 1 ? 0 : i + 1));
-  }
+    setImgCarregando(true);
+  }, [fotos.length]);
 
   function onTouchStart(e: React.TouchEvent) {
     touchStartX.current = e.touches[0].clientX;
@@ -86,8 +100,14 @@ export function Galeria({ fotos }: { fotos: Foto[] }) {
       window.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lightbox, fotos.length]);
+  }, [lightbox, anterior, proxima]);
+
+  // Abrir o lightbox: força o estado de carregando para que o spinner apareça
+  // até o onLoad do Image disparar (evita flash de tela preta).
+  function abrirLightbox() {
+    setImgCarregando(true);
+    setLightbox(true);
+  }
 
   if (fotos.length === 0) {
     return (
@@ -117,31 +137,38 @@ export function Galeria({ fotos }: { fotos: Foto[] }) {
           style={{
             transform: `translate3d(calc(${slidePct}% + ${dragPx}px), 0, 0)`,
             transition: dragging ? "none" : "transform 320ms cubic-bezier(0.22, 0.61, 0.36, 1)",
-            willChange: "transform",
+            willChange: dragging ? "transform" : undefined,
           }}
         >
-          {fotos.map((foto, i) => (
-            <div key={foto.id} className="relative w-full h-full flex-shrink-0">
-              <Image
-                src={foto.url}
-                alt={`Foto ${i + 1}`}
-                fill
-                className="object-cover object-center pointer-events-none"
-                sizes="(max-width: 1024px) 100vw, 50vw"
-                priority={i === 0}
-                draggable={false}
-              />
-            </div>
-          ))}
+          {fotos.map((foto, i) => {
+            // Carrega antecipadamente a foto ativa e suas vizinhas — evita o
+            // delay de fetch quando o usuário clica em "próxima".
+            const eager = i === ativa || i === proxIdx || i === antIdx;
+            return (
+              <div key={foto.id} className="relative w-full h-full flex-shrink-0">
+                <Image
+                  src={foto.url}
+                  alt={`Foto ${i + 1}`}
+                  fill
+                  className="object-cover object-center pointer-events-none"
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                  priority={i === 0}
+                  loading={i === 0 ? undefined : eager ? "eager" : "lazy"}
+                  draggable={false}
+                />
+              </div>
+            );
+          })}
         </div>
 
         {/* Botão de zoom — abre lightbox */}
         <button
-          onClick={() => setLightbox(true)}
-          className="absolute top-2 right-2 p-2 rounded-full bg-black/40 text-white hover:bg-black/60 transition opacity-100 md:opacity-0 md:group-hover:opacity-100"
+          onClick={abrirLightbox}
+          className="absolute top-2 right-2 w-9 h-9 flex items-center justify-center rounded-full bg-black/55 text-white shadow-md ring-1 ring-white/20 hover:bg-black/75 hover:scale-105 transition focus:outline-none focus:ring-2 focus:ring-[#d8cb6a]"
           aria-label="Ampliar imagem"
+          title="Ampliar"
         >
-          <ZoomIn className="w-4 h-4" />
+          <ZoomIn className="w-5 h-5" strokeWidth={2.25} />
         </button>
 
         {fotos.length > 1 && (
@@ -202,7 +229,7 @@ export function Galeria({ fotos }: { fotos: Foto[] }) {
       {/* Lightbox — pinch-zoom nativo do browser */}
       {lightbox && (
         <div
-          className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center"
+          className="fixed inset-0 z-[100] bg-black/95 animate-fade-in"
           onClick={() => setLightbox(false)}
         >
           <button
@@ -210,26 +237,58 @@ export function Galeria({ fotos }: { fotos: Foto[] }) {
               e.stopPropagation();
               setLightbox(false);
             }}
-            className="absolute top-4 right-4 z-10 w-12 h-12 flex items-center justify-center rounded-full bg-white text-slate-900 shadow-lg ring-2 ring-white/80 hover:bg-slate-100 hover:scale-105 transition focus:outline-none focus:ring-4 focus:ring-[#d8cb6a]"
+            className="absolute top-4 right-4 z-20 w-12 h-12 flex items-center justify-center rounded-full bg-white text-slate-900 shadow-lg ring-2 ring-white/80 hover:bg-slate-100 hover:scale-105 transition focus:outline-none focus:ring-4 focus:ring-[#d8cb6a]"
             aria-label="Fechar"
             title="Fechar (Esc)"
           >
             <X className="w-7 h-7" strokeWidth={2.5} />
           </button>
 
+          {/* Spinner enquanto a imagem carrega — sobreposto, mas escondido sem layout shift */}
+          {imgCarregando && (
+            <div className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none">
+              <Loader2 className="w-10 h-10 text-white/70 animate-spin" />
+            </div>
+          )}
+
+          {/* Imagem ativa — next/image otimizado. O backdrop pai mantém o click-to-close;
+              o wrapper interno tem `pointer-events-none` exceto na própria imagem para
+              que clicar fora da foto feche o lightbox. */}
           <div
-            className="relative w-full h-full flex items-center justify-center"
+            className="absolute inset-0 z-10 flex items-center justify-center p-4 sm:p-8 pointer-events-none"
             style={{ touchAction: "pinch-zoom" }}
-            onClick={(e) => e.stopPropagation()}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={fotos[ativa].url}
-              alt={`Foto ${ativa + 1}`}
-              className="max-w-full max-h-full object-contain select-none"
-              draggable={false}
-            />
+            <div
+              className="relative w-full h-full max-w-7xl pointer-events-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Image
+                key={fotos[ativa].id}
+                src={fotos[ativa].url}
+                alt={`Foto ${ativa + 1}`}
+                fill
+                priority
+                sizes="100vw"
+                quality={90}
+                className={`object-contain select-none transition-opacity duration-200 ${
+                  imgCarregando ? "opacity-0" : "opacity-100"
+                }`}
+                draggable={false}
+                onLoad={() => setImgCarregando(false)}
+              />
+            </div>
           </div>
+
+          {/* Preload das vizinhas (off-screen / invisível) — quando o usuário
+              navegar, as imagens já estarão no cache do browser. */}
+          {fotos.length > 1 && (
+            <div aria-hidden className="hidden">
+              <Image src={fotos[proxIdx].url} alt="" width={1} height={1} sizes="100vw" priority />
+              {antIdx !== proxIdx && (
+                <Image src={fotos[antIdx].url} alt="" width={1} height={1} sizes="100vw" priority />
+              )}
+            </div>
+          )}
 
           {fotos.length > 1 && (
             <>
@@ -238,22 +297,22 @@ export function Galeria({ fotos }: { fotos: Foto[] }) {
                   e.stopPropagation();
                   anterior();
                 }}
-                className="absolute left-3 top-1/2 -translate-y-1/2 z-10 p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition"
+                className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-12 h-12 flex items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/30 backdrop-blur-sm transition focus:outline-none focus:ring-2 focus:ring-[#d8cb6a]"
                 aria-label="Foto anterior"
               >
-                <ChevronLeft className="w-6 h-6" />
+                <ChevronLeft className="w-7 h-7" strokeWidth={2.25} />
               </button>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   proxima();
                 }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 z-10 p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition"
+                className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-12 h-12 flex items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/30 backdrop-blur-sm transition focus:outline-none focus:ring-2 focus:ring-[#d8cb6a]"
                 aria-label="Próxima foto"
               >
-                <ChevronRight className="w-6 h-6" />
+                <ChevronRight className="w-7 h-7" strokeWidth={2.25} />
               </button>
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 px-3 py-1 rounded-full bg-white/10 text-white text-sm">
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 px-3 py-1 rounded-full bg-white/15 backdrop-blur-sm text-white text-sm font-medium tabular-nums">
                 {ativa + 1} / {fotos.length}
               </div>
             </>

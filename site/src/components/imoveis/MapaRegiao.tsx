@@ -9,11 +9,11 @@ interface Props {
   raioMetros?: number;
 }
 
-export default function MapaRegiao({ lat, lng, raioMetros = 300 }: Props) {
+export default function MapaRegiao({ lat, lng, raioMetros = 400 }: Props) {
   return (
     <MapContainer
       center={[lat, lng]}
-      zoom={16}
+      zoom={15}
       scrollWheelZoom={false}
       style={{ height: "100%", width: "100%" }}
     >
