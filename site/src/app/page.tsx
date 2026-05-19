@@ -128,19 +128,6 @@ export default async function HomePage() {
             <em style={{ color: "#e8dea0" }}>ideal para você</em>
           </h1>
 
-          <p
-            className="mb-8 mx-auto"
-            style={{
-              fontSize: "clamp(14px,1.8vw,17px)",
-              color: "rgba(252,252,252,0.82)",
-              lineHeight: 1.7,
-              maxWidth: 500,
-              textShadow: "0 1px 14px rgba(20,22,18,0.6)",
-            }}
-          >
-            Casas, apartamentos e muito mais para venda e locação nas melhores regiões.
-          </p>
-
           <HeroSearch />
 
           {total > 0 && (
