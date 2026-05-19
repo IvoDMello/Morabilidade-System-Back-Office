@@ -7,6 +7,7 @@ from enum import Enum
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, Response, UploadFile, status
+from pydantic import BaseModel
 
 from app.auth.dependencies import get_current_user, require_admin
 from app.database import supabase_admin
@@ -15,7 +16,7 @@ from app.schemas.imovel import (
     CondicaoImovel, Disponibilidade, ImovelCreate, ImovelListOut, ImovelOut,
     ImovelUpdate, Mobiliado, TipoImovel, TipoNegocio,
 )
-from app.services.storage import deletar_foto, upload_foto
+from app.services.storage import baixar_e_rotacionar, deletar_foto, upload_bytes_jpeg, upload_foto
 
 
 _CAMPOS_EXPORT = [
@@ -532,3 +533,96 @@ async def remover_foto(
 
     await deletar_foto(foto.data["url"])
     supabase_admin.table("imovel_fotos").delete().eq("id", foto_id).execute()
+
+
+class ReordenarFotosBody(BaseModel):
+    foto_ids: List[str]
+
+
+@router.patch("/{imovel_id}/fotos/ordem", status_code=status.HTTP_200_OK)
+def reordenar_fotos(
+    imovel_id: str,
+    body: ReordenarFotosBody,
+    current_user: dict = Depends(require_admin),
+):
+    """Recebe a lista completa de foto_ids na nova ordem (capa = primeiro).
+    Atualiza o campo `ordem` (1..N) de cada foto em uma transação lógica."""
+    if not body.foto_ids:
+        raise HTTPException(status_code=400, detail="Lista de fotos vazia.")
+
+    if len(body.foto_ids) != len(set(body.foto_ids)):
+        raise HTTPException(status_code=400, detail="IDs duplicados na lista de ordem.")
+
+    existentes = (
+        supabase_admin.table("imovel_fotos")
+        .select("id")
+        .eq("imovel_id", imovel_id)
+        .execute()
+    )
+    ids_no_banco = {row["id"] for row in (existentes.data or [])}
+    ids_recebidos = set(body.foto_ids)
+
+    if ids_no_banco != ids_recebidos:
+        raise HTTPException(
+            status_code=400,
+            detail="A lista enviada não corresponde às fotos cadastradas neste imóvel.",
+        )
+
+    for posicao, foto_id in enumerate(body.foto_ids, start=1):
+        (
+            supabase_admin.table("imovel_fotos")
+            .update({"ordem": posicao})
+            .eq("id", foto_id)
+            .eq("imovel_id", imovel_id)
+            .execute()
+        )
+
+    return {"atualizadas": len(body.foto_ids)}
+
+
+class RotacionarFotoBody(BaseModel):
+    graus: int = 90  # 90, 180 ou 270 — sentido horário
+
+
+@router.post("/{imovel_id}/fotos/{foto_id}/rotacionar", status_code=status.HTTP_200_OK)
+async def rotacionar_foto(
+    imovel_id: str,
+    foto_id: str,
+    body: RotacionarFotoBody,
+    current_user: dict = Depends(require_admin),
+):
+    """Baixa a foto, rotaciona `graus`° no sentido horário e re-envia com um
+    novo path (evita cache do CDN). Substitui o URL no banco e apaga o arquivo
+    antigo. Em caso de falha após upload, faz rollback do arquivo novo."""
+    foto = (
+        supabase_admin.table("imovel_fotos")
+        .select("*")
+        .eq("id", foto_id)
+        .eq("imovel_id", imovel_id)
+        .single()
+        .execute()
+    )
+    if not foto.data:
+        raise HTTPException(status_code=404, detail="Foto não encontrada.")
+
+    url_antiga = foto.data["url"]
+    contents = baixar_e_rotacionar(url_antiga, body.graus)
+
+    novo_filename = f"foto_{uuid.uuid4().hex}.jpg"
+    novo_path = f"imoveis/{imovel_id}/{novo_filename}"
+    nova_url = upload_bytes_jpeg(contents, novo_path)
+
+    try:
+        (
+            supabase_admin.table("imovel_fotos")
+            .update({"url": nova_url})
+            .eq("id", foto_id)
+            .execute()
+        )
+    except Exception as e:
+        # rollback do arquivo recém-subido para não deixar lixo no storage
+        await deletar_foto(nova_url)
+        raise HTTPException(status_code=500, detail=f"Falha ao atualizar registro: {e}")
+
+    await deletar_foto(url_antiga)
+    return {"id": foto_id, "url": nova_url, "ordem": foto.data.get("ordem")}

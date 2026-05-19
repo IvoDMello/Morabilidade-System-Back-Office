@@ -283,7 +283,15 @@
       "Bash(npx --no-install vitest run)",
       "Bash(npx --no-install vitest run src/__tests__/api-proxy.test.ts)",
       "Bash(mkdir \"c:\\\\Users\\\\novopc2024\\\\Documents\\\\GitHub\\\\Morabilidade-System-Back-Office\\\\site\\\\public\\\\assets\")",
-      "Bash(copy \"c:\\\\Users\\\\novopc2024\\\\Downloads\\\\Site-Morabilidade \\(2\\)\\\\handoff\\\\azulejo-morabilidade.png\" \"c:\\\\Users\\\\novopc2024\\\\Documents\\\\GitHub\\\\Morabilidade-System-Back-Office\\\\site\\\\public\\\\assets\\\\azulejo-morabilidade.png\")"
+      "Bash(copy \"c:\\\\Users\\\\novopc2024\\\\Downloads\\\\Site-Morabilidade \\(2\\)\\\\handoff\\\\azulejo-morabilidade.png\" \"c:\\\\Users\\\\novopc2024\\\\Documents\\\\GitHub\\\\Morabilidade-System-Back-Office\\\\site\\\\public\\\\assets\\\\azulejo-morabilidade.png\")",
+      "PowerShell(npx tsc --noEmit -p web/tsconfig.json 2>&1)",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('api/app/services/storage.py'\\).read\\(\\)\\); ast.parse\\(open\\('api/app/routers/imoveis.py'\\).read\\(\\)\\); print\\('OK'\\)\")",
+      "Bash(python -m pytest tests/test_imoveis.py -x --tb=short -q)",
+      "Bash(python -c \"import sys; print\\(sys.executable\\)\")",
+      "Bash(pip show *)",
+      "Bash(pytest tests/test_imoveis.py -x --tb=short -q)",
+      "Bash(git show *)",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('app/services/storage.py'\\).read\\(\\)\\); ast.parse\\(open\\('app/routers/imoveis.py'\\).read\\(\\)\\); print\\('OK'\\)\")"
     ],
     "additionalDirectories": [
       "C:\\Users\\novopc2024\\Documents\\GitHub\\Morabilidade-System-Back-Office\\api"

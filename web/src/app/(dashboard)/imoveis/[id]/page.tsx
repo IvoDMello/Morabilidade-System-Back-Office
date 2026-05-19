@@ -1,9 +1,9 @@
 "use client";
 
-import { use, useEffect, useState, useCallback } from "react";
+import { use, useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Upload, Trash2, Star, Loader2, ImageOff } from "lucide-react";
+import { ArrowLeft, Upload, Trash2, Star, Loader2, ImageOff, RotateCw, GripVertical } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
@@ -14,9 +14,11 @@ import { AcompanhamentoImovel } from "@/components/imoveis/acompanhamento-imovel
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import type { Imovel, Foto } from "@/types";
 
+const MAX_FOTOS = 30;
+
 // ── Galeria de fotos ──────────────────────────────────────────────────────────
 
-function GaleriaFotos({ imovelId, fotos, onAtualizar }: {
+function GaleriaFotos({ imovelId, fotos: fotosProp, onAtualizar }: {
   imovelId: string;
   fotos: Foto[];
   onAtualizar: () => void;
@@ -24,20 +26,28 @@ function GaleriaFotos({ imovelId, fotos, onAtualizar }: {
   const [uploading, setUploading] = useState(false);
   const [confirmFoto, setConfirmFoto] = useState<Foto | null>(null);
   const [deletandoLoading, setDeletandoLoading] = useState(false);
+  const [rotacionandoId, setRotacionandoId] = useState<string | null>(null);
+  const [reordenando, setReordenando] = useState(false);
+
+  // Cópia local da lista para suportar reordenação otimista (rollback em erro).
+  const [fotos, setFotos] = useState<Foto[]>(fotosProp);
+  useEffect(() => { setFotos(fotosProp); }, [fotosProp]);
+
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   const onDrop = useCallback(
     async (files: File[]) => {
-      if (fotos.length + files.length > 30) {
-        toast.error(`Limite de 30 fotos. Você pode adicionar ainda ${30 - fotos.length}.`);
+      if (fotos.length + files.length > MAX_FOTOS) {
+        toast.error(`Limite de ${MAX_FOTOS} fotos. Você pode adicionar ainda ${MAX_FOTOS - fotos.length}.`);
         return;
       }
       setUploading(true);
       try {
         const formData = new FormData();
         files.forEach((f) => formData.append("fotos", f));
-        await api.post(`/imoveis/${imovelId}/fotos`, formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
+        // Sem header Content-Type: axios + browser ajustam o boundary.
+        await api.post(`/imoveis/${imovelId}/fotos`, formData);
         toast.success(`${files.length} foto${files.length > 1 ? "s" : ""} enviada${files.length > 1 ? "s" : ""} com sucesso.`);
         onAtualizar();
       } catch (err: unknown) {
@@ -61,7 +71,7 @@ function GaleriaFotos({ imovelId, fotos, onAtualizar }: {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: { "image/jpeg": [], "image/png": [], "image/webp": [] },
-    disabled: uploading || fotos.length >= 30,
+    disabled: uploading || fotos.length >= MAX_FOTOS,
   });
 
   async function handleDeletarFoto() {
@@ -79,17 +89,96 @@ function GaleriaFotos({ imovelId, fotos, onAtualizar }: {
     }
   }
 
+  async function rotacionarFoto(foto: Foto) {
+    setRotacionandoId(foto.id);
+    try {
+      await api.post(`/imoveis/${imovelId}/fotos/${foto.id}/rotacionar`, { graus: 90 });
+      toast.success("Foto girada.");
+      onAtualizar();
+    } catch (err: unknown) {
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      toast.error(detail ?? "Erro ao girar a foto.");
+    } finally {
+      setRotacionandoId(null);
+    }
+  }
+
+  async function persistirNovaOrdem(novaLista: Foto[]) {
+    setReordenando(true);
+    try {
+      await api.patch(`/imoveis/${imovelId}/fotos/ordem`, {
+        foto_ids: novaLista.map((f) => f.id),
+      });
+      // Atualização leve: a chamada onAtualizar refaz o GET para refletir
+      // o `ordem` persistido, garantindo consistência se outra aba mudar.
+      onAtualizar();
+    } catch (err: unknown) {
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      toast.error(detail ?? "Erro ao reordenar fotos. Restaurando.");
+      setFotos(fotosProp); // rollback
+    } finally {
+      setReordenando(false);
+    }
+  }
+
+  function moverFoto(de: number, para: number) {
+    if (de === para || para < 0 || para >= fotos.length) return;
+    const novaLista = [...fotos];
+    const [moved] = novaLista.splice(de, 1);
+    novaLista.splice(para, 0, moved);
+    setFotos(novaLista);
+    persistirNovaOrdem(novaLista);
+  }
+
+  function handleDragStart(e: React.DragEvent<HTMLDivElement>, index: number) {
+    setDragIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", String(index));
+  }
+  function handleDragOver(e: React.DragEvent<HTMLDivElement>, index: number) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    if (dragOverIndex !== index) setDragOverIndex(index);
+  }
+  function handleDrop(e: React.DragEvent<HTMLDivElement>, index: number) {
+    e.preventDefault();
+    if (dragIndex === null) return;
+    moverFoto(dragIndex, index);
+    setDragIndex(null);
+    setDragOverIndex(null);
+  }
+  function handleDragEnd() {
+    setDragIndex(null);
+    setDragOverIndex(null);
+  }
+
+  // Mostra apenas o que o usuário enxergaria pela ordem atual (índice = capa).
+  const cabecalhoAjuda = useMemo(
+    () => "A primeira foto é a capa. Arraste para reordenar. Use o ícone de girar para corrigir a orientação.",
+    []
+  );
+
   return (
     <div className="bg-white rounded-xl border border-slate-200 p-6">
       <div className="pb-2 mb-4 border-b border-slate-100">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Fotos</h3>
-          <span className="text-xs text-slate-400">{fotos.length}/30</span>
+          <div className="flex items-center gap-3">
+            {reordenando && (
+              <span className="flex items-center gap-1 text-xs text-slate-400">
+                <Loader2 className="w-3 h-3 animate-spin" /> salvando ordem…
+              </span>
+            )}
+            <span className="text-xs text-slate-400">{fotos.length}/{MAX_FOTOS}</span>
+          </div>
         </div>
+        {fotos.length > 0 && (
+          <p className="mt-2 text-xs text-slate-400">{cabecalhoAjuda}</p>
+        )}
       </div>
 
       {/* Dropzone */}
-      {fotos.length < 30 && (
+      {fotos.length < MAX_FOTOS && (
         <div
           {...getRootProps()}
           className={`mb-4 border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition ${
@@ -110,7 +199,7 @@ function GaleriaFotos({ imovelId, fotos, onAtualizar }: {
               <p className="text-sm font-medium text-slate-600">
                 {isDragActive ? "Solte as fotos aqui" : "Clique ou arraste fotos aqui"}
               </p>
-              <p className="text-xs">JPEG, PNG, WebP · Até {30 - fotos.length} foto{30 - fotos.length !== 1 ? "s" : ""}</p>
+              <p className="text-xs">JPEG, PNG, WebP · Até {MAX_FOTOS - fotos.length} foto{MAX_FOTOS - fotos.length !== 1 ? "s" : ""}</p>
             </div>
           )}
         </div>
@@ -124,28 +213,87 @@ function GaleriaFotos({ imovelId, fotos, onAtualizar }: {
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-          {fotos.map((foto, index) => (
-            <div key={foto.id} className="relative group aspect-square">
-              <img
-                src={foto.url}
-                alt={`Foto ${index + 1}`}
-                className="w-full h-full object-cover rounded-lg border border-slate-100"
-              />
-              {index === 0 && (
-                <div className="absolute top-1 left-1 flex items-center gap-0.5 bg-amber-400 text-white text-xs px-1.5 py-0.5 rounded-md font-medium shadow">
-                  <Star className="w-3 h-3 fill-current" />
-                  Capa
-                </div>
-              )}
-              <button
-                onClick={() => setConfirmFoto(foto)}
-                className="absolute top-1 right-1 p-1 bg-red-500 hover:bg-red-600 text-white rounded-md opacity-0 group-hover:opacity-100 transition"
-                title="Excluir foto"
+          {fotos.map((foto, index) => {
+            const isDragging = dragIndex === index;
+            const isOver = dragOverIndex === index && dragIndex !== index;
+            const isRotating = rotacionandoId === foto.id;
+            return (
+              <div
+                key={foto.id}
+                draggable={!reordenando && !isRotating}
+                onDragStart={(e) => handleDragStart(e, index)}
+                onDragOver={(e) => handleDragOver(e, index)}
+                onDrop={(e) => handleDrop(e, index)}
+                onDragEnd={handleDragEnd}
+                className={`relative group aspect-square rounded-lg border transition cursor-grab active:cursor-grabbing ${
+                  isDragging ? "opacity-40 border-[#585a4f]" : "border-slate-100"
+                } ${isOver ? "ring-2 ring-[#585a4f] ring-offset-1" : ""}`}
+                title="Arraste para reordenar"
               >
-                <Trash2 className="w-3 h-3" />
-              </button>
-            </div>
-          ))}
+                <img
+                  src={foto.url}
+                  alt={`Foto ${index + 1}`}
+                  draggable={false}
+                  className="w-full h-full object-cover rounded-lg pointer-events-none select-none"
+                />
+                {index === 0 && (
+                  <div className="absolute top-1 left-1 flex items-center gap-0.5 bg-amber-400 text-white text-xs px-1.5 py-0.5 rounded-md font-medium shadow">
+                    <Star className="w-3 h-3 fill-current" />
+                    Capa
+                  </div>
+                )}
+
+                <div className="absolute bottom-1 left-1 p-0.5 bg-black/40 text-white rounded-md opacity-0 group-hover:opacity-100 transition">
+                  <GripVertical className="w-3 h-3" />
+                </div>
+
+                <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition">
+                  <button
+                    type="button"
+                    draggable={false}
+                    disabled={isRotating}
+                    onClick={(e) => { e.stopPropagation(); rotacionarFoto(foto); }}
+                    className="p-1 bg-slate-700 hover:bg-slate-800 text-white rounded-md disabled:opacity-60"
+                    title="Girar 90°"
+                  >
+                    <RotateCw className={`w-3 h-3 ${isRotating ? "animate-spin" : ""}`} />
+                  </button>
+                  <button
+                    type="button"
+                    draggable={false}
+                    onClick={(e) => { e.stopPropagation(); setConfirmFoto(foto); }}
+                    className="p-1 bg-red-500 hover:bg-red-600 text-white rounded-md"
+                    title="Excluir foto"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </div>
+
+                <div className="absolute bottom-1 right-1 flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition">
+                  <button
+                    type="button"
+                    draggable={false}
+                    disabled={index === 0 || reordenando}
+                    onClick={(e) => { e.stopPropagation(); moverFoto(index, index - 1); }}
+                    className="px-1.5 text-[10px] leading-none bg-white/90 hover:bg-white border border-slate-200 text-slate-700 rounded disabled:opacity-30"
+                    title="Mover para frente"
+                  >
+                    ◀
+                  </button>
+                  <button
+                    type="button"
+                    draggable={false}
+                    disabled={index === fotos.length - 1 || reordenando}
+                    onClick={(e) => { e.stopPropagation(); moverFoto(index, index + 1); }}
+                    className="px-1.5 text-[10px] leading-none bg-white/90 hover:bg-white border border-slate-200 text-slate-700 rounded disabled:opacity-30"
+                    title="Mover para trás"
+                  >
+                    ▶
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 

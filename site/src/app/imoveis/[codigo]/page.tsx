@@ -9,7 +9,9 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Galeria } from "@/components/imoveis/Galeria";
 import { WhatsAppButtonImovel } from "@/components/imoveis/WhatsAppButtonImovel";
+import MapaRegiaoClient from "@/components/imoveis/MapaRegiaoClient";
 import { getImovel } from "@/lib/api";
+import { geocodificarEndereco } from "@/lib/geocoding";
 import {
   formatarMoeda, labelTipoImovel, labelTipoNegocio,
   labelCondicao, labelMobiliado,
@@ -85,6 +87,11 @@ export default async function DetalheImovelPage({ params }: Props) {
 
   const regiao = [imovel.bairro, imovel.cidade].filter(Boolean).join(", ");
   const mapQuery = encodeURIComponent(regiao);
+  const coordenadas = await geocodificarEndereco(
+    imovel.logradouro,
+    imovel.bairro,
+    imovel.cidade,
+  );
 
   const tituloPublico =
     imovel.titulo?.trim() ||
@@ -265,17 +272,21 @@ export default async function DetalheImovelPage({ params }: Props) {
                 </span>
               </p>
 
-              {/* Google Maps embed — região aproximada (bairro/cidade) */}
+              {/* Radar da região — círculo de ~300m sobre OpenStreetMap */}
               <div className="relative rounded-xl overflow-hidden border border-slate-100 shadow-sm mb-3 aspect-video">
-                <iframe
-                  title={`Mapa da região — ${regiao}`}
-                  src={`https://maps.google.com/maps?q=${mapQuery}&output=embed&hl=pt-BR&z=14`}
-                  className="absolute inset-0 w-full h-full"
-                  style={{ border: 0 }}
-                  allowFullScreen
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                />
+                {coordenadas ? (
+                  <MapaRegiaoClient lat={coordenadas.lat} lng={coordenadas.lng} />
+                ) : (
+                  <iframe
+                    title={`Mapa da região — ${regiao}`}
+                    src={`https://maps.google.com/maps?q=${mapQuery}&output=embed&hl=pt-BR&z=14`}
+                    className="absolute inset-0 w-full h-full"
+                    style={{ border: 0 }}
+                    allowFullScreen
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  />
+                )}
               </div>
 
               <a

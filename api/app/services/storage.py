@@ -3,7 +3,7 @@ import logging
 
 from fastapi import UploadFile, HTTPException
 from app.database import supabase_admin
-from PIL import Image
+from PIL import Image, ImageOps
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +56,52 @@ async def upload_foto(file: UploadFile, path: str) -> str:
         raise HTTPException(status_code=500, detail=f"Falha no upload: {e}")
 
 
+def _bucket_e_path_da_url(url: str) -> tuple[str, str]:
+    parte = url.split("/object/public/")[1]
+    bucket, path = parte.split("/", 1)
+    return bucket, path
+
+
+def baixar_e_rotacionar(url: str, graus: int) -> bytes:
+    """Baixa a foto do storage, rotaciona `graus` (90/180/270 sentido horário)
+    e devolve os bytes JPEG re-codificados."""
+    if graus not in (90, 180, 270):
+        raise HTTPException(status_code=400, detail="Rotação inválida. Use 90, 180 ou 270 graus.")
+
+    bucket, path = _bucket_e_path_da_url(url)
+    try:
+        contents = supabase_admin.storage.from_(bucket).download(path)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Falha ao baixar foto do storage: {e}")
+
+    try:
+        img = Image.open(io.BytesIO(contents))
+        img = ImageOps.exif_transpose(img)
+        # Pillow gira no sentido anti-horário por padrão → negativamos para
+        # manter o sentido "horário" intuitivo do botão "girar".
+        img = img.rotate(-graus, expand=True)
+        if img.mode in ("RGBA", "P"):
+            img = img.convert("RGB")
+        out = io.BytesIO()
+        img.save(out, format="JPEG", quality=85, optimize=True)
+        return out.getvalue()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Não foi possível rotacionar a imagem: {e}")
+
+
+def upload_bytes_jpeg(contents: bytes, path: str) -> str:
+    """Sobe bytes JPEG já processados para o storage e devolve a URL pública."""
+    try:
+        supabase_admin.storage.from_(BUCKET).upload(
+            path=path,
+            file=contents,
+            file_options={"content-type": "image/jpeg", "upsert": "false"},
+        )
+        return supabase_admin.storage.from_(BUCKET).get_public_url(path)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Falha no upload: {e}")
+
+
 async def deletar_foto(url: str) -> None:
     try:
         # Extrai bucket e path da URL pública do Supabase
@@ -69,6 +115,10 @@ async def deletar_foto(url: str) -> None:
 
 def _para_jpeg(contents: bytes, qualidade: int = 85) -> bytes:
     img = Image.open(io.BytesIO(contents))
+    # Aplica a orientação registrada no EXIF antes de salvar. Sem isso, fotos
+    # tiradas no celular (que gravam a rotação como metadado, mantendo os pixels
+    # no sentido do sensor) ficam deitadas após a re-codificação para JPEG.
+    img = ImageOps.exif_transpose(img)
     if img.mode in ("RGBA", "P"):
         img = img.convert("RGB")
     out = io.BytesIO()

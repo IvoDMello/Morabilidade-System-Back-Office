@@ -1,25 +1,41 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Upload, X, ImageOff } from "lucide-react";
+import { ArrowLeft, Upload, X, ImageOff, RotateCw, GripVertical } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { ImovelForm, type ImovelFormData } from "@/components/imoveis/imovel-form";
+import { rotacionarArquivoImagem } from "@/lib/imagem";
+
+const MAX_FOTOS = 30;
 
 export default function NovoImovelPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [pendingFotos, setPendingFotos] = useState<File[]>([]);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [rotacionandoIdx, setRotacionandoIdx] = useState<number | null>(null);
+
+  // URLs de preview com lifecycle controlado (evita vazamento de ObjectURL a
+  // cada re-render quando criadas inline no JSX).
+  const previews = useMemo(
+    () => pendingFotos.map((f) => URL.createObjectURL(f)),
+    [pendingFotos]
+  );
+  useEffect(() => {
+    return () => { previews.forEach((u) => URL.revokeObjectURL(u)); };
+  }, [previews]);
 
   const onDrop = useCallback((accepted: File[]) => {
     setPendingFotos((prev) => {
-      const total = prev.length + accepted.length;
-      if (total > 30) {
-        toast.error(`Limite de 30 fotos. Você pode adicionar ainda ${30 - prev.length}.`);
-        return [...prev, ...accepted.slice(0, 30 - prev.length)];
+      const espacoLivre = MAX_FOTOS - prev.length;
+      if (accepted.length > espacoLivre) {
+        toast.error(`Limite de ${MAX_FOTOS} fotos. Você pode adicionar ainda ${espacoLivre}.`);
+        return [...prev, ...accepted.slice(0, espacoLivre)];
       }
       return [...prev, ...accepted];
     });
@@ -28,11 +44,59 @@ export default function NovoImovelPage() {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: { "image/jpeg": [], "image/png": [], "image/webp": [] },
-    disabled: pendingFotos.length >= 30,
+    disabled: pendingFotos.length >= MAX_FOTOS,
+    noClick: false,
   });
 
   function removerFoto(index: number) {
     setPendingFotos((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  async function rotacionarFoto(index: number) {
+    setRotacionandoIdx(index);
+    try {
+      const original = pendingFotos[index];
+      const rotated = await rotacionarArquivoImagem(original, 90);
+      setPendingFotos((prev) => prev.map((f, i) => (i === index ? rotated : f)));
+    } catch (err) {
+      console.error("[rotacionar foto]", err);
+      toast.error("Não foi possível girar a foto. Tente novamente.");
+    } finally {
+      setRotacionandoIdx(null);
+    }
+  }
+
+  function moverFoto(de: number, para: number) {
+    if (de === para || para < 0 || para >= pendingFotos.length) return;
+    setPendingFotos((prev) => {
+      const next = [...prev];
+      const [moved] = next.splice(de, 1);
+      next.splice(para, 0, moved);
+      return next;
+    });
+  }
+
+  function handleDragStart(e: React.DragEvent<HTMLDivElement>, index: number) {
+    setDragIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+    // dataTransfer.setData é exigido pelo Firefox para iniciar o drag.
+    e.dataTransfer.setData("text/plain", String(index));
+  }
+  function handleDragOver(e: React.DragEvent<HTMLDivElement>, index: number) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    if (dragOverIndex !== index) setDragOverIndex(index);
+  }
+  function handleDrop(e: React.DragEvent<HTMLDivElement>, index: number) {
+    e.preventDefault();
+    if (dragIndex === null) return;
+    moverFoto(dragIndex, index);
+    setDragIndex(null);
+    setDragOverIndex(null);
+  }
+  function handleDragEnd() {
+    setDragIndex(null);
+    setDragOverIndex(null);
   }
 
   async function handleSubmit(data: ImovelFormData) {
@@ -52,12 +116,19 @@ export default function NovoImovelPage() {
         try {
           const formData = new FormData();
           pendingFotos.forEach((f) => formData.append("fotos", f));
-          await api.post(`/imoveis/${imovelId}/fotos`, formData, {
-            headers: { "Content-Type": "multipart/form-data" },
-          });
+          // Não definimos Content-Type manualmente: o axios + o proxy do Next
+          // precisam que o browser adicione o boundary automaticamente.
+          await api.post(`/imoveis/${imovelId}/fotos`, formData);
         } catch (err: unknown) {
-          const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-          toast.warning(`Imóvel cadastrado, mas houve um erro ao enviar as fotos: ${detail ?? "tente adicioná-las na edição."}`);
+          const axiosErr = err as { response?: { status?: number; data?: { detail?: string } }; message?: string };
+          const detail = axiosErr?.response?.data?.detail;
+          const status = axiosErr?.response?.status;
+          const msg = detail
+            ? detail
+            : status
+            ? `Erro ${status} ao enviar fotos.`
+            : axiosErr?.message ?? "tente adicioná-las na edição.";
+          toast.warning(`Imóvel cadastrado, mas houve um erro ao enviar as fotos: ${msg}`);
           router.push(`/imoveis/${imovelId}`);
           return;
         }
@@ -100,14 +171,15 @@ export default function NovoImovelPage() {
       <div className="mt-8 bg-white rounded-xl border border-slate-200 p-6">
         <div className="pb-2 mb-4 border-b border-slate-100 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Fotos</h3>
-          <span className="text-xs text-slate-400">{pendingFotos.length}/30</span>
+          <span className="text-xs text-slate-400">{pendingFotos.length}/{MAX_FOTOS}</span>
         </div>
         <p className="text-xs text-slate-400 mb-4">
-          As fotos serão enviadas automaticamente ao cadastrar o imóvel.
+          A primeira foto é a capa. Arraste para reordenar, gire usando o ícone <RotateCw className="inline w-3 h-3 align-text-bottom" /> se necessário.
+          As fotos são enviadas automaticamente ao cadastrar o imóvel.
         </p>
 
         {/* Dropzone */}
-        {pendingFotos.length < 30 && (
+        {pendingFotos.length < MAX_FOTOS && (
           <div
             {...getRootProps()}
             className={`mb-4 border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition ${
@@ -122,7 +194,7 @@ export default function NovoImovelPage() {
               <p className="text-sm font-medium text-slate-600">
                 {isDragActive ? "Solte as fotos aqui" : "Clique ou arraste fotos aqui"}
               </p>
-              <p className="text-xs">JPEG, PNG, WebP · Até {30 - pendingFotos.length} foto{30 - pendingFotos.length !== 1 ? "s" : ""}</p>
+              <p className="text-xs">JPEG, PNG, WebP · Até {MAX_FOTOS - pendingFotos.length} foto{MAX_FOTOS - pendingFotos.length !== 1 ? "s" : ""}</p>
             </div>
           </div>
         )}
@@ -135,27 +207,90 @@ export default function NovoImovelPage() {
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-            {pendingFotos.map((file, index) => (
-              <div key={index} className="relative group aspect-square">
-                <img
-                  src={URL.createObjectURL(file)}
-                  alt={`Foto ${index + 1}`}
-                  className="w-full h-full object-cover rounded-lg border border-slate-100"
-                />
-                {index === 0 && (
-                  <div className="absolute top-1 left-1 bg-amber-400 text-white text-xs px-1.5 py-0.5 rounded-md font-medium shadow text-[10px]">
-                    Capa
-                  </div>
-                )}
-                <button
-                  type="button"
-                  onClick={() => removerFoto(index)}
-                  className="absolute top-1 right-1 p-1 bg-red-500 hover:bg-red-600 text-white rounded-md opacity-0 group-hover:opacity-100 transition"
+            {pendingFotos.map((file, index) => {
+              const isDragging = dragIndex === index;
+              const isOver = dragOverIndex === index && dragIndex !== index;
+              return (
+                <div
+                  key={`${file.name}-${index}-${file.lastModified}`}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, index)}
+                  onDragOver={(e) => handleDragOver(e, index)}
+                  onDrop={(e) => handleDrop(e, index)}
+                  onDragEnd={handleDragEnd}
+                  className={`relative group aspect-square rounded-lg border transition cursor-grab active:cursor-grabbing ${
+                    isDragging ? "opacity-40 border-[#585a4f]" : "border-slate-100"
+                  } ${isOver ? "ring-2 ring-[#585a4f] ring-offset-1" : ""}`}
+                  title="Arraste para reordenar"
                 >
-                  <X className="w-3 h-3" />
-                </button>
-              </div>
-            ))}
+                  <img
+                    src={previews[index]}
+                    alt={`Foto ${index + 1}`}
+                    draggable={false}
+                    className="w-full h-full object-cover rounded-lg pointer-events-none select-none"
+                  />
+
+                  {/* Badge de capa */}
+                  {index === 0 && (
+                    <div className="absolute top-1 left-1 bg-amber-400 text-white text-[10px] px-1.5 py-0.5 rounded-md font-medium shadow">
+                      Capa
+                    </div>
+                  )}
+
+                  {/* Indicador de drag */}
+                  <div className="absolute bottom-1 left-1 p-0.5 bg-black/40 text-white rounded-md opacity-0 group-hover:opacity-100 transition">
+                    <GripVertical className="w-3 h-3" />
+                  </div>
+
+                  {/* Botões de ação */}
+                  <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition">
+                    <button
+                      type="button"
+                      draggable={false}
+                      disabled={rotacionandoIdx === index}
+                      onClick={(e) => { e.stopPropagation(); rotacionarFoto(index); }}
+                      className="p-1 bg-slate-700 hover:bg-slate-800 text-white rounded-md disabled:opacity-60"
+                      title="Girar 90°"
+                    >
+                      <RotateCw className={`w-3 h-3 ${rotacionandoIdx === index ? "animate-spin" : ""}`} />
+                    </button>
+                    <button
+                      type="button"
+                      draggable={false}
+                      onClick={(e) => { e.stopPropagation(); removerFoto(index); }}
+                      className="p-1 bg-red-500 hover:bg-red-600 text-white rounded-md"
+                      title="Remover"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+
+                  {/* Botões mover (acessibilidade / fallback mobile) */}
+                  <div className="absolute bottom-1 right-1 flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition">
+                    <button
+                      type="button"
+                      draggable={false}
+                      disabled={index === 0}
+                      onClick={(e) => { e.stopPropagation(); moverFoto(index, index - 1); }}
+                      className="px-1.5 text-[10px] leading-none bg-white/90 hover:bg-white border border-slate-200 text-slate-700 rounded disabled:opacity-30"
+                      title="Mover para frente"
+                    >
+                      ◀
+                    </button>
+                    <button
+                      type="button"
+                      draggable={false}
+                      disabled={index === pendingFotos.length - 1}
+                      onClick={(e) => { e.stopPropagation(); moverFoto(index, index + 1); }}
+                      className="px-1.5 text-[10px] leading-none bg-white/90 hover:bg-white border border-slate-200 text-slate-700 rounded disabled:opacity-30"
+                      title="Mover para trás"
+                    >
+                      ▶
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
