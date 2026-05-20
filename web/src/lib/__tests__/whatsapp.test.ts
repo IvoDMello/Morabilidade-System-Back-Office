@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { whatsappLink } from "../whatsapp";
 
 const IMOVEL_BASE = {
-  codigo: "IMO-00001",
+  codigo: "MB-00001",
   bairro: "Pinheiros",
   cidade: "São Paulo",
   tipo_imovel: "apartamento",
@@ -20,7 +20,7 @@ describe("whatsappLink", () => {
 
   it("inclui o código do imóvel na mensagem", () => {
     const url = whatsappLink("11999998888", IMOVEL_BASE);
-    expect(decodeURIComponent(url)).toContain("IMO-00001");
+    expect(decodeURIComponent(url)).toContain("MB-00001");
   });
 
   it("exibe label legível para tipo de imóvel", () => {

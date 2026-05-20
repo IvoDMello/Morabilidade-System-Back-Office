@@ -70,7 +70,7 @@ _DETAIL_FIELDS = (
 
 def _gerar_codigo() -> str:
     result = supabase_admin.rpc("proxima_sequencia_imovel").execute()
-    return f"IMO-{result.data:05d}"
+    return f"MB-{result.data:05d}"
 
 
 def _aplicar_filtros(query, *, tipo_negocio, disponibilidade, cidade, bairro,

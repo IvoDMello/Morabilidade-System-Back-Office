@@ -410,7 +410,7 @@ def test_remover_preferencia_exige_admin(corretor_client):
 
 IMOVEL_MATCH = {
     "id": "imovel-uuid-1",
-    "codigo": "IMO-00001",
+    "codigo": "MB-00001",
     "cidade": "São Paulo",
     "bairro": "Pinheiros",
     "tipo_imovel": "apartamento",
@@ -443,7 +443,7 @@ def test_matches_retorna_imoveis_compativeis(client):
     assert res.status_code == 200
     body = res.json()
     assert len(body) == 1
-    assert body[0]["codigo"] == "IMO-00001"
+    assert body[0]["codigo"] == "MB-00001"
     assert "score" in body[0]
 
 
@@ -479,7 +479,7 @@ def test_matches_ordena_por_score_decrescente(client):
     # Simula dois imoveis — preferência com mais score deve vencer
     # Usamos 1 preferência com score alto para verificar a ordenação da lista de matches
     pref_mock = MagicMock(data=pref_alta)
-    imovel2 = {**IMOVEL_MATCH, "id": "i2", "codigo": "IMO-00002", "valor_venda": 4_000_000.0}
+    imovel2 = {**IMOVEL_MATCH, "id": "i2", "codigo": "MB-00002", "valor_venda": 4_000_000.0}
     imoveis_mock = MagicMock(data=[IMOVEL_MATCH, imovel2])
     db = make_db_mock(pref_mock, imoveis_mock)
 

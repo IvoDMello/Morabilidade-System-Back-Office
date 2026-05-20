@@ -227,12 +227,12 @@ def test_repasses_agrupa_por_proprietario(client):
     contratos = [
         {"id": "c1", "taxa_administracao_pct": "10.00",
          "proprietario_id": "prop-1",
-         "imovel": {"codigo": "IMO-001", "endereco": "Rua A", "bairro": "Gávea"},
+         "imovel": {"codigo": "MB-001", "endereco": "Rua A", "bairro": "Gávea"},
          "proprietario": {"id": "prop-1", "nome_completo": "Maria",
                           "email": "m@a.com"}},
         {"id": "c2", "taxa_administracao_pct": "10.00",
          "proprietario_id": "prop-1",
-         "imovel": {"codigo": "IMO-002", "endereco": "Rua B", "bairro": "Leblon"},
+         "imovel": {"codigo": "MB-002", "endereco": "Rua B", "bairro": "Leblon"},
          "proprietario": {"id": "prop-1", "nome_completo": "Maria",
                           "email": "m@a.com"}},
     ]
@@ -262,7 +262,7 @@ def test_repasses_calcula_pagamento_parcial(client):
     contratos = [
         {"id": "c1", "taxa_administracao_pct": "8.00",
          "proprietario_id": "p1",
-         "imovel": {"codigo": "IMO-001", "endereco": None, "bairro": None},
+         "imovel": {"codigo": "MB-001", "endereco": None, "bairro": None},
          "proprietario": {"id": "p1", "nome_completo": "João", "email": None}},
     ]
     db = make_db_mock(MagicMock(data=pagamentos), MagicMock(data=contratos))

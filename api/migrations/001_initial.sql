@@ -6,7 +6,7 @@
 -- Habilita extensão para UUIDs
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Sequência para código de imóveis (IMO-00001, IMO-00002, ...)
+-- Sequência para código de imóveis (MB-00001, MB-00002, ...)
 CREATE SEQUENCE IF NOT EXISTS imoveis_seq START 1;
 
 -- Função auxiliar para obter próximo código de imóvel

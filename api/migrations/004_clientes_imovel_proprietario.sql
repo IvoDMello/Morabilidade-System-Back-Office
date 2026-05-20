@@ -11,4 +11,4 @@
 ALTER TABLE clientes
   ADD COLUMN IF NOT EXISTS imovel_codigo TEXT;
 
-COMMENT ON COLUMN clientes.imovel_codigo IS 'Código do imóvel do proprietário (ex: IMO-00001). Opcional — preenchido apenas quando tipo_cliente = ''proprietario''.';
+COMMENT ON COLUMN clientes.imovel_codigo IS 'Código do imóvel do proprietário (ex: MB-00001). Opcional — preenchido apenas quando tipo_cliente = ''proprietario''.';

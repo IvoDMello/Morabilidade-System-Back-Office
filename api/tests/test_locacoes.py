@@ -40,7 +40,7 @@ CONTRATO_DB = {
     # Joins que o _SELECT_FULL produz — serão achatados pelo router
     "imovel": {
         "id": "imovel-uuid-1",
-        "codigo": "IMO-00042",
+        "codigo": "MB-00042",
         "logradouro": "Rua Artur Araripe",
         "numero": "82",
         "complemento": None,
@@ -117,7 +117,7 @@ def test_listar_contratos(client):
     assert res.status_code == 200
     body = res.json()
     assert len(body) == 1
-    assert body[0]["imovel"]["codigo"] == "IMO-00042"
+    assert body[0]["imovel"]["codigo"] == "MB-00042"
     assert body[0]["proprietario"]["nome"] == "Pedro Bassan Jr"
     assert res.headers["x-total-count"] == "1"
 

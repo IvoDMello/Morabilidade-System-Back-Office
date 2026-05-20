@@ -143,7 +143,7 @@ def test_gerar_pdf_retorna_bytes_com_header_valido():
         "incluir_iptu_cobranca": False,
         "dia_vencimento": 5,
         "dados_cobranca_pix": "teste@email.com",
-        "imovel": {"endereco": "Rua X, 10", "codigo": "IMO-00001"},
+        "imovel": {"endereco": "Rua X, 10", "codigo": "MB-00001"},
     }
     pdf = gerar_demonstrativo_pdf(contrato, date(2026, 5, 1))
     assert isinstance(pdf, bytes)
@@ -211,7 +211,7 @@ def test_demonstrativo_individual_retorna_pdf(client):
     assert res.status_code == 200
     assert res.headers["content-type"] == "application/pdf"
     assert "Content-Disposition" in res.headers
-    assert "demonstrativo_IMO-00042_2026-05.pdf" in res.headers["Content-Disposition"]
+    assert "demonstrativo_MB-00042_2026-05.pdf" in res.headers["Content-Disposition"]
     assert res.content.startswith(b"%PDF-")
 
 
@@ -286,7 +286,7 @@ def test_demonstrativos_em_lote_retorna_zip(client):
     """Dois contratos ativos → ZIP com 2 PDFs. Cada contrato consome:
     1 select snapshot + 1 insert. Mais 1 select inicial de contratos."""
     contrato2 = {**CONTRATO_DB, "id": "contrato-uuid-2",
-                 "imovel": {**CONTRATO_DB["imovel"], "codigo": "IMO-00099"}}
+                 "imovel": {**CONTRATO_DB["imovel"], "codigo": "MB-00099"}}
     db = make_db_mock(
         MagicMock(data=[CONTRATO_DB, contrato2]),  # listar contratos ativos
         MagicMock(data=[]), MagicMock(data=[{}]),  # snapshot 1: select + insert
@@ -335,7 +335,7 @@ def test_demonstrativos_em_lote_isola_falha_de_um_contrato(client):
     Erros vão para um arquivo _erros.txt dentro do ZIP."""
     contrato_quebrado = {**CONTRATO_DB, "id": "contrato-uuid-2",
                          "dia_vencimento": None,  # vai falhar no PDF
-                         "imovel": {"codigo": "IMO-RUIM"}}
+                         "imovel": {"codigo": "MB-RUIM"}}
     db = make_db_mock(
         MagicMock(data=[CONTRATO_DB, contrato_quebrado]),
         MagicMock(data=[]), MagicMock(data=[{}]),  # snapshot 1

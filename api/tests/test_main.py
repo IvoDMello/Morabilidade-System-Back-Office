@@ -111,12 +111,12 @@ def test_stats_imoveis_sem_foto_calculado_corretamente(client):
 
 
 def test_stats_imovel_mais_antigo_presente(client):
-    mais_antigo = {"codigo": "IMO-00001", "created_at": "2024-01-01T00:00:00+00:00"}
+    mais_antigo = {"codigo": "MB-00001", "created_at": "2024-01-01T00:00:00+00:00"}
     db = _make_stats_db(mais_antigo=mais_antigo)
     with patch("app.main.supabase_admin", db):
         res = client.get("/stats")
 
-    assert res.json()["imovel_mais_antigo"]["codigo"] == "IMO-00001"
+    assert res.json()["imovel_mais_antigo"]["codigo"] == "MB-00001"
 
 
 def test_stats_imovel_mais_antigo_nulo_quando_sem_imoveis(client):

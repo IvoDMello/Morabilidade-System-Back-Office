@@ -7,7 +7,7 @@ from tests.conftest import make_db_mock
 
 IMOVEL_DB = {
     "id": "imovel-uuid-1",
-    "codigo": "IMO-00001",
+    "codigo": "MB-00001",
     "tipo_negocio": "venda",
     "disponibilidade": "disponivel",
     "condicao": "usado",
@@ -66,7 +66,7 @@ def test_listar_imoveis_retorna_lista(client):
     assert res.status_code == 200
     body = res.json()
     assert len(body) == 1
-    assert body[0]["codigo"] == "IMO-00001"
+    assert body[0]["codigo"] == "MB-00001"
     assert res.headers["x-total-count"] == "1"
 
 
@@ -99,7 +99,7 @@ def test_obter_imovel_existente(client):
         res = client.get("/imoveis/imovel-uuid-1")
 
     assert res.status_code == 200
-    assert res.json()["codigo"] == "IMO-00001"
+    assert res.json()["codigo"] == "MB-00001"
     assert res.json()["fotos"] == []
     assert res.json()["tags"] == []
 
@@ -127,7 +127,7 @@ def test_criar_imovel(client):
         res = client.post("/imoveis/", json=IMOVEL_PAYLOAD)
 
     assert res.status_code == 201
-    assert res.json()["codigo"] == "IMO-00001"
+    assert res.json()["codigo"] == "MB-00001"
 
 
 def test_criar_imovel_campos_obrigatorios_faltando(client):
@@ -197,7 +197,7 @@ def test_exportar_imoveis_csv(client):
     linhas = body.strip().split("\r\n")
     assert len(linhas) == 2
     assert linhas[0].startswith("codigo;tipo_negocio;disponibilidade")
-    assert "IMO-00001" in linhas[1]
+    assert "MB-00001" in linhas[1]
 
 
 def test_exportar_imoveis_exige_autenticacao(anon_client):
@@ -230,8 +230,8 @@ def test_corretor_nao_pode_deletar_imovel(corretor_client):
 
 def test_destaques_publico_retorna_ordenados(anon_client):
     """Endpoint público de destaques é acessível sem auth e retorna em ordem."""
-    destaque1 = {**IMOVEL_DB, "id": "i1", "codigo": "IMO-001", "destaque_ordem": 1}
-    destaque3 = {**IMOVEL_DB, "id": "i3", "codigo": "IMO-003", "destaque_ordem": 3}
+    destaque1 = {**IMOVEL_DB, "id": "i1", "codigo": "MB-001", "destaque_ordem": 1}
+    destaque3 = {**IMOVEL_DB, "id": "i3", "codigo": "MB-003", "destaque_ordem": 3}
     db = make_db_mock(MagicMock(data=[destaque1, destaque3]))
 
     with patch("app.routers.imoveis.supabase_admin", db):
@@ -240,8 +240,8 @@ def test_destaques_publico_retorna_ordenados(anon_client):
     assert res.status_code == 200
     body = res.json()
     assert len(body) == 2
-    assert body[0]["codigo"] == "IMO-001"
-    assert body[1]["codigo"] == "IMO-003"
+    assert body[0]["codigo"] == "MB-001"
+    assert body[1]["codigo"] == "MB-003"
 
 
 def test_destaques_publico_vazio(anon_client):

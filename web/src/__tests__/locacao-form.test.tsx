@@ -21,7 +21,7 @@ vi.mock("@/lib/api", () => ({
 const IMOVEIS = [
   {
     id: "imo-1",
-    codigo: "IMO-001",
+    codigo: "MB-001",
     logradouro: "Rua A",
     numero: "10",
     bairro: "Centro",
@@ -52,7 +52,7 @@ function byName<T extends HTMLElement = HTMLInputElement>(container: HTMLElement
 
 async function preencherMinimo(container: HTMLElement) {
   await waitFor(() =>
-    expect(screen.getByRole("option", { name: /IMO-001/ })).toBeInTheDocument()
+    expect(screen.getByRole("option", { name: /MB-001/ })).toBeInTheDocument()
   );
   await userEvent.selectOptions(byName<HTMLSelectElement>(container, "imovel_id"), "imo-1");
   await userEvent.selectOptions(byName<HTMLSelectElement>(container, "proprietario_id"), "prop-1");
@@ -70,7 +70,7 @@ describe("LocacaoForm", () => {
       expect(apiGet).toHaveBeenCalledWith("/clientes/", { params: { page_size: 100 } });
     });
     await waitFor(() =>
-      expect(screen.getByRole("option", { name: /IMO-001/ })).toBeInTheDocument()
+      expect(screen.getByRole("option", { name: /MB-001/ })).toBeInTheDocument()
     );
   });
 
@@ -113,7 +113,7 @@ describe("LocacaoForm", () => {
     const onSubmit = vi.fn();
     const { container } = render(<LocacaoForm onSubmit={onSubmit} />);
     await waitFor(() =>
-      expect(screen.getByRole("option", { name: /IMO-001/ })).toBeInTheDocument()
+      expect(screen.getByRole("option", { name: /MB-001/ })).toBeInTheDocument()
     );
 
     await userEvent.selectOptions(byName<HTMLSelectElement>(container, "imovel_id"), "imo-1");
@@ -146,7 +146,7 @@ describe("LocacaoForm", () => {
   it("preview do total replica a fórmula do backend (aluguel − fundo reserva)", async () => {
     const { container } = render(<LocacaoForm onSubmit={vi.fn()} />);
     await waitFor(() =>
-      expect(screen.getByRole("option", { name: /IMO-001/ })).toBeInTheDocument()
+      expect(screen.getByRole("option", { name: /MB-001/ })).toBeInTheDocument()
     );
 
     await userEvent.type(byName(container, "aluguel_mensal"), "8500");
@@ -161,7 +161,7 @@ describe("LocacaoForm", () => {
   it("inclui IPTU dividido por 10 e seguro por 12 quando marcados", async () => {
     const { container } = render(<LocacaoForm onSubmit={vi.fn()} />);
     await waitFor(() =>
-      expect(screen.getByRole("option", { name: /IMO-001/ })).toBeInTheDocument()
+      expect(screen.getByRole("option", { name: /MB-001/ })).toBeInTheDocument()
     );
 
     await userEvent.type(byName(container, "aluguel_mensal"), "5000");

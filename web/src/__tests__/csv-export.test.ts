@@ -77,8 +77,8 @@ describe("CSV export — params de imóveis", () => {
   });
 
   it("busca é mapeada para codigo", () => {
-    const p = buildImovelExportParams({ busca: "IMO-00001" });
-    expect(p.codigo).toBe("IMO-00001");
+    const p = buildImovelExportParams({ busca: "MB-00001" });
+    expect(p.codigo).toBe("MB-00001");
   });
 
   it("ignora campos vazios", () => {

@@ -220,7 +220,7 @@ Em ordem, abra cada URL e teste:
 [ ] https://morabilidade.com.br/imoveis
     - Filtros funcionam, abre detalhe
 
-[ ] https://morabilidade.com.br/imoveis/IMO-XXXXX
+[ ] https://morabilidade.com.br/imoveis/MB-XXXXX
     - Galeria de fotos, mapa, botões "Tenho Interesse"
     - Clicar no WhatsApp deve abrir o app com mensagem pré-preenchida
       pro número 21 99772-9990

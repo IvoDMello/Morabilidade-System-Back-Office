@@ -62,7 +62,7 @@ describe("getBairros", () => {
 describe("getImoveisDisponiveis", () => {
   const mockImovel = {
     id: "1",
-    codigo: "IMO-00001",
+    codigo: "MB-00001",
     tipo_negocio: "venda",
     disponibilidade: "disponivel",
     cidade: "São Paulo",
@@ -138,32 +138,32 @@ describe("getImoveisDisponiveis", () => {
 describe("getImovel", () => {
   it("retorna null para imóvel não encontrado (404)", async () => {
     mockFetch.mockResolvedValueOnce({ ok: false, status: 404 });
-    const result = await getImovel("IMO-99999");
+    const result = await getImovel("MB-99999");
     expect(result).toBeNull();
   });
 
   it("lança erro para outros status de falha", async () => {
     mockFetch.mockResolvedValueOnce({ ok: false, status: 500 });
-    await expect(getImovel("IMO-00001")).rejects.toThrow("Erro ao buscar imóvel");
+    await expect(getImovel("MB-00001")).rejects.toThrow("Erro ao buscar imóvel");
   });
 
   it("retorna dados do imóvel em caso de sucesso", async () => {
-    const imovelDetalhado = { id: "1", codigo: "IMO-00001", fotos: [], tags: [] };
+    const imovelDetalhado = { id: "1", codigo: "MB-00001", fotos: [], tags: [] };
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => imovelDetalhado,
     });
-    const result = await getImovel("IMO-00001");
-    expect(result?.codigo).toBe("IMO-00001");
+    const result = await getImovel("MB-00001");
+    expect(result?.codigo).toBe("MB-00001");
   });
 
   it("chama o endpoint correto com o codigo", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ id: "1", codigo: "IMO-00001" }),
+      json: async () => ({ id: "1", codigo: "MB-00001" }),
     });
-    await getImovel("IMO-00001");
+    await getImovel("MB-00001");
     const [url] = mockFetch.mock.calls[0];
-    expect(url).toContain("/imoveis/publico/IMO-00001");
+    expect(url).toContain("/imoveis/publico/MB-00001");
   });
 });

@@ -133,7 +133,7 @@ def test_criar_proprietario_com_imovel_codigo(client):
     proprietario = {
         **CLIENTE_DB,
         "tipo_cliente": "proprietario",
-        "imovel_codigo": "IMO-00042",
+        "imovel_codigo": "MB-00042",
     }
     db = make_db_mock(MagicMock(data=[proprietario]), MagicMock(data=proprietario))
 
@@ -143,15 +143,15 @@ def test_criar_proprietario_com_imovel_codigo(client):
             json={
                 **CLIENTE_PAYLOAD,
                 "tipo_cliente": "proprietario",
-                "imovel_codigo": "IMO-00042",
+                "imovel_codigo": "MB-00042",
             },
         )
 
     assert res.status_code == 201
-    assert res.json()["imovel_codigo"] == "IMO-00042"
+    assert res.json()["imovel_codigo"] == "MB-00042"
     # Verifica que o código foi mantido no payload enviado ao Supabase
     inserted = db.insert.call_args.args[0]
-    assert inserted["imovel_codigo"] == "IMO-00042"
+    assert inserted["imovel_codigo"] == "MB-00042"
     assert inserted["tipo_cliente"] == "proprietario"
 
 
@@ -165,7 +165,7 @@ def test_criar_nao_proprietario_descarta_imovel_codigo(client):
             json={
                 **CLIENTE_PAYLOAD,
                 "tipo_cliente": "comprador",
-                "imovel_codigo": "IMO-99999",
+                "imovel_codigo": "MB-99999",
             },
         )
 
@@ -184,7 +184,7 @@ def test_atualizar_para_nao_proprietario_limpa_imovel_codigo(client):
     with patch("app.routers.clientes.supabase_admin", db):
         res = client.put(
             "/clientes/cliente-uuid-1",
-            json={**CLIENTE_PAYLOAD, "tipo_cliente": "comprador", "imovel_codigo": "IMO-00042"},
+            json={**CLIENTE_PAYLOAD, "tipo_cliente": "comprador", "imovel_codigo": "MB-00042"},
         )
 
     assert res.status_code == 200

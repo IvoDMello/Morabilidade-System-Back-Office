@@ -193,7 +193,7 @@ export function ClienteForm({ defaultValues, onSubmit, isLoading, submitLabel = 
               <input
                 {...register("imovel_codigo")}
                 className={inputClass}
-                placeholder="Ex: IMO-00001 (opcional)"
+                placeholder="Ex: MB-00001 (opcional)"
               />
             </Field>
           )}
