@@ -4,8 +4,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, Phone } from "lucide-react";
+import { Loader2, Phone, RotateCcw, X } from "lucide-react";
 import { api } from "@/lib/api";
+import { useFormAutosave } from "@/lib/use-form-autosave";
 import type { Cliente, Tag, User } from "@/types";
 
 // ── Schema de validação ────────────────────────────────────────────────────────
@@ -139,6 +140,7 @@ export function ImovelForm({
     handleSubmit,
     control,
     watch,
+    reset,
     setValue,
     formState: { errors },
   } = useForm<ImovelFormData>({
@@ -152,6 +154,15 @@ export function ImovelForm({
       ...defaultValues,
     },
   });
+
+  // Autosave do rascunho no localStorage. Defesa em profundidade contra
+  // crash do browser, perda de sessão (já mitigada pelo refresh proativo),
+  // ou fechar a aba sem querer. Chave estável por imóvel:
+  //  - "novo"          → cadastro
+  //  - "<codigo>"      → edição (cada imóvel tem seu próprio rascunho)
+  const draftKey = `imovel:${defaultValues?.codigo ?? "novo"}`;
+  const { hasDraft, draftAgeMs, restoreDraft, discardDraft, clearDraft } =
+    useFormAutosave<ImovelFormData>({ key: draftKey, watch, reset });
 
   const tipoNegocio = watch("tipo_negocio");
   const selectedTagIds = watch("tag_ids") ?? [];
@@ -249,8 +260,52 @@ export function ImovelForm({
     </button>
   );
 
+  async function handleSubmitWithDraftCleanup(data: ImovelFormData) {
+    await onSubmit(data);
+    // Submit OK → o pai (página) sobrevive ao await. Se chegou aqui, limpa.
+    clearDraft();
+  }
+
+  function formatDraftAge(ms: number): string {
+    const min = Math.floor(ms / 60_000);
+    if (min < 1) return "agora há pouco";
+    if (min < 60) return `${min} min atrás`;
+    const h = Math.floor(min / 60);
+    return h === 1 ? "1 hora atrás" : `${h} horas atrás`;
+  }
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+    <form onSubmit={handleSubmit(handleSubmitWithDraftCleanup)} className="space-y-8">
+      {/* Banner de recuperação de rascunho */}
+      {hasDraft && (
+        <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <RotateCcw className="w-4 h-4 mt-0.5 flex-shrink-0" />
+          <div className="flex-1">
+            <p className="font-medium">Rascunho não salvo encontrado</p>
+            <p className="text-xs text-amber-800 mt-0.5">
+              Você começou a preencher este formulário {formatDraftAge(draftAgeMs)} e não chegou a salvar. Deseja recuperar?
+            </p>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              type="button"
+              onClick={restoreDraft}
+              className="px-3 py-1.5 text-xs font-semibold rounded-md bg-amber-600 text-white hover:bg-amber-700 transition"
+            >
+              Recuperar
+            </button>
+            <button
+              type="button"
+              onClick={discardDraft}
+              aria-label="Descartar rascunho"
+              className="p-1.5 text-amber-700 hover:bg-amber-100 rounded-md transition"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Botão de salvar no topo (atalho — evita rolar até o final) */}
       <div className="flex justify-end">{submitButton}</div>
 

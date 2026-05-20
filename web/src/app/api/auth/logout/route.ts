@@ -15,13 +15,16 @@ export async function POST(request: NextRequest) {
     }).catch(() => {});
   }
 
+  const isProd = process.env.NODE_ENV === "production";
   const response = NextResponse.json({ ok: true });
-  response.cookies.set("morabilidade-auth", "", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    path: "/",
-    maxAge: 0,
-  });
+  for (const name of ["morabilidade-auth", "morabilidade-refresh"]) {
+    response.cookies.set(name, "", {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: "strict",
+      path: "/",
+      maxAge: 0,
+    });
+  }
   return response;
 }

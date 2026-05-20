@@ -39,13 +39,9 @@ import { POST } from "@/app/api/auth/login/route";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function makeJwt(exp: number): string {
-  const enc = (o: object) =>
-    btoa(JSON.stringify(o)).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
-  return `${enc({ alg: "HS256" })}.${enc({ sub: "u1", exp })}.sig`;
-}
-
-const TOKEN = makeJwt(Math.floor(Date.now() / 1000) + 3600);
+const TOKEN = "fake.access.token";
+const REFRESH = "fake.refresh.token";
+const EXPIRES_IN = 3600;
 
 function makeReq(body: unknown) {
   return new Request("http://localhost/api/auth/login", {
@@ -53,6 +49,15 @@ function makeReq(body: unknown) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
+}
+
+function loginUpstreamResponse(overrides: Record<string, unknown> = {}) {
+  return {
+    access_token: TOKEN,
+    refresh_token: REFRESH,
+    expires_in: EXPIRES_IN,
+    ...overrides,
+  };
 }
 
 const mockFetch = vi.fn();
@@ -88,7 +93,7 @@ describe("POST /api/auth/login — falhas de conectividade", () => {
 
   it("retorna 502 quando /usuarios/me não responde", async () => {
     mockFetch
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ access_token: TOKEN }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => loginUpstreamResponse() })
       .mockRejectedValueOnce(new Error("timeout"));
     const res = (await POST(makeReq({ email: "a@a.com", password: "123456" }) as any)) as any;
     expect(res._status).toBe(502);
@@ -109,14 +114,26 @@ describe("POST /api/auth/login — erros upstream", () => {
   });
 
   it("retorna 502 quando a resposta não contém access_token", async () => {
-    mockFetch.mockResolvedValue({ ok: true, json: async () => ({}) });
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({ refresh_token: REFRESH, expires_in: EXPIRES_IN }),
+    });
+    const res = (await POST(makeReq({ email: "a@a.com", password: "123456" }) as any)) as any;
+    expect(res._status).toBe(502);
+  });
+
+  it("retorna 502 quando a resposta não contém refresh_token", async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({ access_token: TOKEN, expires_in: EXPIRES_IN }),
+    });
     const res = (await POST(makeReq({ email: "a@a.com", password: "123456" }) as any)) as any;
     expect(res._status).toBe(502);
   });
 
   it("repassa status de /usuarios/me com detalhe", async () => {
     mockFetch
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ access_token: TOKEN }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => loginUpstreamResponse() })
       .mockResolvedValueOnce({
         ok: false,
         status: 404,
@@ -136,41 +153,50 @@ describe("POST /api/auth/login — sucesso", () => {
 
   beforeEach(() => {
     mockFetch
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ access_token: TOKEN }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => loginUpstreamResponse() })
       .mockResolvedValueOnce({ ok: true, json: async () => user });
   });
 
-  it("retorna 200 com dados do usuário", async () => {
+  it("retorna 200 com dados do usuário e expires_in", async () => {
     const res = (await POST(makeReq({ email: "admin@test.com", password: "pass123" }) as any)) as any;
     expect(res._status).toBe(200);
     const body = await res.json();
     expect((body as any).user).toEqual(user);
+    expect((body as any).expires_in).toBe(EXPIRES_IN);
   });
 
-  it("seta o cookie morabilidade-auth com o token", async () => {
+  it("seta o cookie morabilidade-auth com o access token", async () => {
     const res = (await POST(makeReq({ email: "admin@test.com", password: "pass123" }) as any)) as any;
     const cookie = res._cookiesSet.find((c: any) => c.name === "morabilidade-auth");
     expect(cookie).toBeDefined();
     expect(cookie.value).toBe(TOKEN);
   });
 
-  it("cookie é httpOnly", async () => {
+  it("seta o cookie morabilidade-refresh com o refresh token", async () => {
     const res = (await POST(makeReq({ email: "admin@test.com", password: "pass123" }) as any)) as any;
-    const cookie = res._cookiesSet.find((c: any) => c.name === "morabilidade-auth");
-    expect(cookie?.options.httpOnly).toBe(true);
+    const cookie = res._cookiesSet.find((c: any) => c.name === "morabilidade-refresh");
+    expect(cookie).toBeDefined();
+    expect(cookie.value).toBe(REFRESH);
   });
 
-  it("cookie usa sameSite strict", async () => {
+  it("ambos os cookies são httpOnly + sameSite strict", async () => {
     const res = (await POST(makeReq({ email: "admin@test.com", password: "pass123" }) as any)) as any;
-    const cookie = res._cookiesSet.find((c: any) => c.name === "morabilidade-auth");
-    expect(cookie?.options.sameSite).toBe("strict");
+    for (const name of ["morabilidade-auth", "morabilidade-refresh"]) {
+      const cookie = res._cookiesSet.find((c: any) => c.name === name);
+      expect(cookie?.options.httpOnly).toBe(true);
+      expect(cookie?.options.sameSite).toBe("strict");
+    }
   });
 
-  it("maxAge do cookie é derivado do exp do JWT (~3600s)", async () => {
+  it("maxAge do cookie de access é expires_in", async () => {
     const res = (await POST(makeReq({ email: "admin@test.com", password: "pass123" }) as any)) as any;
     const cookie = res._cookiesSet.find((c: any) => c.name === "morabilidade-auth");
-    // Permite até 5s de margem para a execução do teste
-    expect(cookie?.options.maxAge).toBeGreaterThan(3595);
-    expect(cookie?.options.maxAge).toBeLessThanOrEqual(3600);
+    expect(cookie?.options.maxAge).toBe(EXPIRES_IN);
+  });
+
+  it("maxAge do cookie de refresh é 30 dias", async () => {
+    const res = (await POST(makeReq({ email: "admin@test.com", password: "pass123" }) as any)) as any;
+    const cookie = res._cookiesSet.find((c: any) => c.name === "morabilidade-refresh");
+    expect(cookie?.options.maxAge).toBe(60 * 60 * 24 * 30);
   });
 });

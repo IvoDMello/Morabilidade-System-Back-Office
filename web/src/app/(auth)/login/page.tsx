@@ -54,7 +54,20 @@ export default function LoginPage() {
 
       setUser(json.user);
       if (json.access_token) setToken(json.access_token);
-      router.push("/");
+
+      // Avisa o AuthProvider para armar o timer de refresh proativo.
+      if (typeof window !== "undefined" && typeof json.expires_in === "number") {
+        window.dispatchEvent(
+          new CustomEvent("auth:logged-in", { detail: { expires_in: json.expires_in } }),
+        );
+      }
+
+      // Respeita ?next= preservado pelo middleware quando a sessão expirou
+      // numa rota interna — devolve o usuário onde ele estava (form, edição etc).
+      const params = new URLSearchParams(window.location.search);
+      const next = params.get("next");
+      const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
+      router.push(safeNext);
     } catch (err) {
       console.error("[login] erro inesperado:", err);
       toast.error("Erro de rede. Tente novamente.");

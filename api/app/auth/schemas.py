@@ -9,8 +9,21 @@ class LoginRequest(BaseModel):
 
 class LoginResponse(BaseModel):
     access_token: str
+    refresh_token: str
+    expires_in: int
     token_type: str = "bearer"
     user: dict
+
+
+class RefreshRequest(BaseModel):
+    refresh_token: str
+
+
+class RefreshResponse(BaseModel):
+    access_token: str
+    refresh_token: str
+    expires_in: int
+    token_type: str = "bearer"
 
 
 class ForgotPasswordRequest(BaseModel):

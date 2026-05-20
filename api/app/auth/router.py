@@ -1,7 +1,13 @@
 import logging
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from app.limiter import limiter
-from app.auth.schemas import LoginRequest, LoginResponse, ForgotPasswordRequest
+from app.auth.schemas import (
+    ForgotPasswordRequest,
+    LoginRequest,
+    LoginResponse,
+    RefreshRequest,
+    RefreshResponse,
+)
 from app.auth.dependencies import get_current_user
 from app.database import supabase, supabase_admin
 from app.services.email import enviar_recuperacao_senha
@@ -48,7 +54,42 @@ def login(request: Request, body: LoginRequest):
     logger.info("[login] sucesso para email=%s", _mask_email(body.email))
     return LoginResponse(
         access_token=session.access_token,
+        refresh_token=session.refresh_token,
+        expires_in=getattr(session, "expires_in", 3600) or 3600,
         user={"id": response.user.id, "email": response.user.email},
+    )
+
+
+@router.post("/refresh", response_model=RefreshResponse)
+@limiter.limit("30/minute")
+def refresh(request: Request, body: RefreshRequest):
+    """Troca um refresh_token por um novo par (access + refresh).
+
+    O Supabase rotaciona o refresh_token a cada uso: o antigo é invalidado
+    assim que o novo é emitido — token roubado fica inservível depois do
+    primeiro uso legítimo.
+    """
+    try:
+        response = supabase.auth.refresh_session(body.refresh_token)
+    except Exception:
+        logger.warning("[refresh] refresh_token inválido ou expirado")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Sessão expirada. Faça login novamente.",
+        )
+
+    session = response.session
+    if not session or not session.access_token or not session.refresh_token:
+        logger.warning("[refresh] Supabase respondeu sem session válida")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Sessão expirada. Faça login novamente.",
+        )
+
+    return RefreshResponse(
+        access_token=session.access_token,
+        refresh_token=session.refresh_token,
+        expires_in=getattr(session, "expires_in", 3600) or 3600,
     )
 
 
