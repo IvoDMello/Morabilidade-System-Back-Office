@@ -174,7 +174,7 @@ export default function DashboardHome() {
                 value={v(stats?.imoveis_sem_foto)}
                 icon={<ImageOff className="w-4 h-4 text-rose-500" />}
                 tone={stats?.imoveis_sem_foto ? "alert" : "neutral"}
-                href="/imoveis"
+                href="/imoveis?sem_foto=1"
                 hint="Imóveis publicados sem foto não convertem"
               />
               <MiniCard
@@ -190,7 +190,7 @@ export default function DashboardHome() {
                 value={v(stats?.leads_ultimos_7_dias)}
                 icon={<CalendarPlus className="w-4 h-4 text-indigo-500" />}
                 tone="neutral"
-                href="/clientes"
+                href="/clientes?dias=7"
                 hint="Clientes cadastrados na última semana"
               />
             </div>

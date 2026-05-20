@@ -293,10 +293,16 @@ def listar_clientes(
     nome: Optional[str] = None,
     email: Optional[str] = None,
     status: Optional[StatusCliente] = None,
+    dias: Optional[int] = Query(default=None, ge=1, le=365),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
     current_user: dict = Depends(get_current_user),
 ):
+    desde_iso: Optional[str] = None
+    if dias:
+        from datetime import timezone, timedelta
+        desde_iso = (datetime.now(timezone.utc) - timedelta(days=dias)).isoformat()
+
     def _aplicar(q):
         if nome:
             q = q.ilike("nome_completo", f"%{nome}%")
@@ -304,6 +310,8 @@ def listar_clientes(
             q = q.ilike("email", f"%{email}%")
         if status:
             q = q.eq("status", status)
+        if desde_iso:
+            q = q.gte("created_at", desde_iso)
         return q
 
     total = (_aplicar(supabase_admin.table("clientes").select("id", count="exact"))

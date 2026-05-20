@@ -361,6 +361,7 @@ def listar_imoveis(
     condicao: Optional[CondicaoImovel] = None,
     mobiliado: Optional[Mobiliado] = None,
     codigo: Optional[str] = None,
+    sem_foto: Optional[bool] = None,
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
     current_user: dict = Depends(get_current_user),
@@ -372,9 +373,23 @@ def listar_imoveis(
         condicao=condicao, mobiliado=mobiliado, codigo=codigo,
     )
 
+    ids_sem_foto: Optional[List[str]] = None
+    if sem_foto:
+        todos_resp = supabase_admin.table("imoveis").select("id").execute()
+        com_foto_resp = supabase_admin.table("imovel_fotos").select("imovel_id").execute()
+        ids_total = {row["id"] for row in (todos_resp.data or [])}
+        ids_com_foto = {row["imovel_id"] for row in (com_foto_resp.data or [])}
+        ids_sem_foto = list(ids_total - ids_com_foto)
+        if not ids_sem_foto:
+            http_response.headers["X-Total-Count"] = "0"
+            http_response.headers["Access-Control-Expose-Headers"] = "X-Total-Count"
+            return []
+
     count_q = _aplicar_filtros(
         supabase_admin.table("imoveis").select("id", count="exact"), **filtros
     )
+    if ids_sem_foto is not None:
+        count_q = count_q.in_("id", ids_sem_foto)
     total = count_q.execute().count or 0
     http_response.headers["X-Total-Count"] = str(total)
     http_response.headers["Access-Control-Expose-Headers"] = "X-Total-Count"
@@ -383,6 +398,8 @@ def listar_imoveis(
     data_q = _aplicar_filtros(
         supabase_admin.table("imoveis").select(_LIST_FIELDS), **filtros
     )
+    if ids_sem_foto is not None:
+        data_q = data_q.in_("id", ids_sem_foto)
     result = data_q.order("created_at", desc=True).range(offset, offset + page_size - 1).execute()
     return [_transformar_lista(item) for item in result.data]
 

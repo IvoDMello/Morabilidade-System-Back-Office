@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Search, ChevronLeft, ChevronRight, BedDouble, Bath,
   Car, Maximize2, Pencil, Info as InfoIcon,
@@ -27,6 +27,7 @@ interface Filtros {
   tipo_imovel: string;
   preco_min: string;
   preco_max: string;
+  sem_foto: boolean;
 }
 
 const FILTROS_VAZIOS: Filtros = {
@@ -39,6 +40,7 @@ const FILTROS_VAZIOS: Filtros = {
   tipo_imovel: "",
   preco_min: "",
   preco_max: "",
+  sem_foto: false,
 };
 
 // ── Labels ─────────────────────────────────────────────────────────────────────
@@ -77,12 +79,19 @@ const inputCls =
 
 export default function ImoveisPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const isAdmin = useAuthStore((s) => s.user?.perfil === "admin");
   const [imoveis, setImoveis] = useState<ImovelListOut[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [filtros, setFiltros] = useState<Filtros>(FILTROS_VAZIOS);
+  const [filtros, setFiltros] = useState<Filtros>(() => ({
+    ...FILTROS_VAZIOS,
+    codigo: searchParams.get("codigo") ?? "",
+    disponibilidade: searchParams.get("disponibilidade") ?? "",
+    tipo_imovel: searchParams.get("tipo_imovel") ?? "",
+    sem_foto: searchParams.get("sem_foto") === "1",
+  }));
   const [filtrosOpen, setFiltrosOpen] = useState(false);
   const [deletando, setDeletando] = useState<{ id: string; codigo: string } | null>(null);
   const [deletandoLoading, setDeletandoLoading] = useState(false);
@@ -135,6 +144,7 @@ setLoading(true);
       if (f.tipo_imovel) params.tipo_imovel = f.tipo_imovel;
       if (f.preco_min) params.preco_min = f.preco_min;
       if (f.preco_max) params.preco_max = f.preco_max;
+      if (f.sem_foto) params.sem_foto = "true";
 
       const res = await api.get<ImovelListOut[]>("/imoveis/", { params });
       setImoveis(res.data);
@@ -296,11 +306,26 @@ setLoading(true);
                 onChange={(e) => setFiltros((f) => ({ ...f, disponibilidade: e.target.value }))}
                 className={inputCls}
               >
-                <option value="">Disponível, negociado, etc...</option>
+                <option value="">Todos</option>
                 <option value="disponivel">Disponível</option>
                 <option value="reservado">Reservado</option>
                 <option value="vendido_locado">Vendido / Locado</option>
               </select>
+            </div>
+
+            {/* Sem foto */}
+            <div>
+              <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={filtros.sem_foto}
+                  onChange={(e) =>
+                    setFiltros((f) => ({ ...f, sem_foto: e.target.checked }))
+                  }
+                  className="w-4 h-4 rounded border-slate-300 accent-[#585a4f]"
+                />
+                Apenas imóveis sem foto
+              </label>
             </div>
 
             {/* Tipo */}

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Search, X, Pencil, Trash2, ChevronLeft, ChevronRight, Users, Download, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
@@ -28,9 +28,10 @@ interface Filtros {
   nome: string;
   email: string;
   status: string;
+  dias: string;
 }
 
-const FILTROS_VAZIOS: Filtros = { nome: "", email: "", status: "" };
+const FILTROS_VAZIOS: Filtros = { nome: "", email: "", status: "", dias: "" };
 
 const STATUS_LABEL: Record<string, { label: string; class: string }> = {
   ativo: { label: "Ativo", class: "bg-emerald-50 text-emerald-700 ring-emerald-200" },
@@ -53,12 +54,17 @@ const inputClass = selectClass;
 
 export default function ClientesPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const isAdmin = useAuthStore((s) => s.user?.perfil === "admin");
   const [clientes, setClientes] = useState<ClienteListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [filtros, setFiltros] = useState<Filtros>(FILTROS_VAZIOS);
+  const [filtros, setFiltros] = useState<Filtros>(() => ({
+    ...FILTROS_VAZIOS,
+    status: searchParams.get("status") ?? "",
+    dias: searchParams.get("dias") ?? "",
+  }));
   const [filtrosAbertos, setFiltrosAbertos] = useState(false);
   const [deletando, setDeletando] = useState<{ id: string; nome: string } | null>(null);
   const [deletandoLoading, setDeletandoLoading] = useState(false);
@@ -74,6 +80,7 @@ export default function ClientesPage() {
       if (f.nome) params.nome = f.nome;
       if (f.email) params.email = f.email;
       if (f.status) params.status = f.status;
+      if (f.dias) params.dias = f.dias;
 
       const res = await api.get<ClienteListItem[]>("/clientes/", { params });
       setClientes(res.data);
