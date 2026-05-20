@@ -14,7 +14,7 @@ function jwtNaoExpirado(token: string): boolean {
 }
 
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const { pathname, search } = request.nextUrl;
 
   if (/\.(?:png|jpe?g|gif|svg|ico|webp|woff2?)$/.test(pathname)) {
     return NextResponse.next();
@@ -22,18 +22,29 @@ export function middleware(request: NextRequest) {
 
   const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
 
-  const tokenCookie = request.cookies.get("morabilidade-auth");
-  const tokenValido = !!tokenCookie?.value && jwtNaoExpirado(tokenCookie.value);
+  const accessCookie = request.cookies.get("morabilidade-auth");
+  const refreshCookie = request.cookies.get("morabilidade-refresh");
+  const accessValido = !!accessCookie?.value && jwtNaoExpirado(accessCookie.value);
+  const podeTentarRefresh = !!refreshCookie?.value;
 
-  if (!isPublic && !tokenValido) {
+  if (!isPublic && !accessValido) {
+    // Se tem refresh, tenta renovar via /api/auth/refresh server-side e
+    // devolve o usuário na rota original. Preserva o trabalho em andamento
+    // (ex.: form de imóvel) — não joga pro login à toa.
+    if (podeTentarRefresh) {
+      const refreshUrl = new URL("/api/auth/refresh", request.url);
+      refreshUrl.searchParams.set("next", pathname + search);
+      return NextResponse.redirect(refreshUrl);
+    }
     const response = NextResponse.redirect(new URL("/login", request.url));
-    if (tokenCookie) response.cookies.delete("morabilidade-auth");
+    if (accessCookie) response.cookies.delete("morabilidade-auth");
+    if (refreshCookie) response.cookies.delete("morabilidade-refresh");
     return response;
   }
 
   // /redefinir-senha precisa funcionar mesmo se houver sessão ativa, pois o
   // usuário pode chegar aqui pelo link do e-mail enquanto está logado em outra aba.
-  if (isPublic && tokenValido && !pathname.startsWith("/redefinir-senha")) {
+  if (isPublic && accessValido && !pathname.startsWith("/redefinir-senha")) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 

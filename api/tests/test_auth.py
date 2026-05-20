@@ -121,6 +121,8 @@ def test_admin_pode_listar_usuarios(admin_client):
 def test_login_credenciais_validas_retorna_token(anon_client):
     session_mock = MagicMock()
     session_mock.session.access_token = "token-valido-abc"
+    session_mock.session.refresh_token = "refresh-valido-xyz"
+    session_mock.session.expires_in = 3600
     session_mock.user.id = REGULAR_USER["id"]
     session_mock.user.email = REGULAR_USER["email"]
 
@@ -134,8 +136,11 @@ def test_login_credenciais_validas_retorna_token(anon_client):
         )
 
     assert res.status_code == 200
-    assert res.json()["access_token"] == "token-valido-abc"
-    assert res.json()["token_type"] == "bearer"
+    body = res.json()
+    assert body["access_token"] == "token-valido-abc"
+    assert body["refresh_token"] == "refresh-valido-xyz"
+    assert body["expires_in"] == 3600
+    assert body["token_type"] == "bearer"
 
 
 def test_login_credenciais_invalidas_retorna_401(anon_client):
@@ -177,6 +182,65 @@ def test_login_email_invalido_retorna_422(anon_client):
 
 def test_login_payload_incompleto_retorna_422(anon_client):
     res = anon_client.post("/auth/login", json={"email": "usuario@teste.com"})
+    assert res.status_code == 422
+
+
+# ── POST /auth/refresh ────────────────────────────────────────────────────────
+
+def test_refresh_token_valido_retorna_novo_par(anon_client):
+    session_mock = MagicMock()
+    session_mock.session.access_token = "novo-access"
+    session_mock.session.refresh_token = "novo-refresh"
+    session_mock.session.expires_in = 3600
+
+    supabase_mock = MagicMock()
+    supabase_mock.auth.refresh_session.return_value = session_mock
+
+    with patch("app.auth.router.supabase", supabase_mock):
+        res = anon_client.post(
+            "/auth/refresh",
+            json={"refresh_token": "refresh-antigo"},
+        )
+
+    assert res.status_code == 200
+    body = res.json()
+    assert body["access_token"] == "novo-access"
+    assert body["refresh_token"] == "novo-refresh"
+    assert body["expires_in"] == 3600
+    supabase_mock.auth.refresh_session.assert_called_once_with("refresh-antigo")
+
+
+def test_refresh_token_invalido_retorna_401(anon_client):
+    supabase_mock = MagicMock()
+    supabase_mock.auth.refresh_session.side_effect = Exception("invalid refresh token")
+
+    with patch("app.auth.router.supabase", supabase_mock):
+        res = anon_client.post(
+            "/auth/refresh",
+            json={"refresh_token": "token-ruim"},
+        )
+
+    assert res.status_code == 401
+
+
+def test_refresh_sem_session_retorna_401(anon_client):
+    session_mock = MagicMock()
+    session_mock.session = None
+
+    supabase_mock = MagicMock()
+    supabase_mock.auth.refresh_session.return_value = session_mock
+
+    with patch("app.auth.router.supabase", supabase_mock):
+        res = anon_client.post(
+            "/auth/refresh",
+            json={"refresh_token": "refresh-qualquer"},
+        )
+
+    assert res.status_code == 401
+
+
+def test_refresh_payload_invalido_retorna_422(anon_client):
+    res = anon_client.post("/auth/refresh", json={})
     assert res.status_code == 422
 
 

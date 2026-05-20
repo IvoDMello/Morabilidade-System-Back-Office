@@ -4,6 +4,13 @@ import { NextRequest, NextResponse } from "next/server";
 // Node.js no Windows, que dá ECONNREFUSED quando o uvicorn só escuta IPv4.
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
+const COOKIE_ACCESS = "morabilidade-auth";
+const COOKIE_REFRESH = "morabilidade-refresh";
+// Refresh token vive 30 dias no cookie. O Supabase rotaciona a cada uso e
+// invalida o anterior — se for roubado e usado, o legítimo cai junto na
+// próxima tentativa de refresh, encurtando a janela de exposição.
+const REFRESH_MAX_AGE = 60 * 60 * 24 * 30;
+
 export async function POST(request: NextRequest) {
   let body: unknown;
   try {
@@ -48,8 +55,8 @@ export async function POST(request: NextRequest) {
   }
 
   const loginData = await loginRes.json().catch(() => null);
-  if (!loginData?.access_token) {
-    console.error("[api/auth/login] resposta da API sem access_token:", loginData);
+  if (!loginData?.access_token || !loginData?.refresh_token) {
+    console.error("[api/auth/login] resposta da API sem tokens:", loginData);
     return NextResponse.json(
       { detail: "Resposta inesperada do servidor de autenticação." },
       { status: 502 }
@@ -57,6 +64,8 @@ export async function POST(request: NextRequest) {
   }
 
   const access_token: string = loginData.access_token;
+  const refresh_token: string = loginData.refresh_token;
+  const expires_in: number = Number(loginData.expires_in) || 3600;
 
   // ── 2. Buscar perfil do usuário ──────────────────────────────────────────
   let meRes: Response;
@@ -80,8 +89,6 @@ export async function POST(request: NextRequest) {
       meRes.status,
       data
     );
-    // Mensagem específica para o caso comum de usuário no auth.users sem
-    // registro correspondente em public.usuarios.
     const detail =
       typeof data === "object" && data && "detail" in data && data.detail
         ? String(data.detail)
@@ -91,28 +98,23 @@ export async function POST(request: NextRequest) {
 
   const user = await meRes.json();
 
-  // ── 3. Setar cookie httpOnly e responder ─────────────────────────────────
-  // Sync cookie TTL with JWT exp — avoids stale-cookie 401s when Supabase
-  // session expires before the 8h fallback.
-  let cookieMaxAge = 60 * 60 * 8;
-  try {
-    const [, payloadB64] = access_token.split(".");
-    const payloadStr = payloadB64.replace(/-/g, "+").replace(/_/g, "/");
-    const payload = JSON.parse(atob(payloadStr)) as { exp?: number };
-    if (typeof payload.exp === "number") {
-      const secondsLeft = payload.exp - Math.floor(Date.now() / 1000);
-      if (secondsLeft > 60) cookieMaxAge = secondsLeft;
-    }
-  } catch {}
+  // ── 3. Setar cookies httpOnly e responder ───────────────────────────────
+  const isProd = process.env.NODE_ENV === "production";
+  const response = NextResponse.json({ user, expires_in });
 
-  // Token fica apenas no cookie httpOnly — não exposto ao JS do cliente.
-  const response = NextResponse.json({ user });
-  response.cookies.set("morabilidade-auth", access_token, {
+  response.cookies.set(COOKIE_ACCESS, access_token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: isProd,
     sameSite: "strict",
     path: "/",
-    maxAge: cookieMaxAge,
+    maxAge: expires_in,
+  });
+  response.cookies.set(COOKIE_REFRESH, refresh_token, {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: "strict",
+    path: "/",
+    maxAge: REFRESH_MAX_AGE,
   });
   return response;
 }
