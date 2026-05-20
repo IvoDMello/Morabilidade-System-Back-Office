@@ -52,17 +52,31 @@ export function Navbar() {
                   key={link.href}
                   href={link.href}
                   style={{
+                    position: "relative",
                     fontSize: 14,
-                    color: active ? "#fcfcfc" : "rgba(252,252,252,0.6)",
+                    color: active ? "#d8cb6a" : "rgba(252,252,252,0.65)",
                     textDecoration: "none",
-                    borderBottom: active ? "1.5px solid #d8cb6a" : "none",
-                    paddingBottom: active ? 2 : 0,
+                    paddingBottom: 6,
                     transition: "color 0.15s",
-                    fontWeight: active ? 500 : 400,
+                    fontWeight: active ? 600 : 400,
+                    letterSpacing: active ? "0.02em" : "0",
                   }}
                   className="hover:!text-[#fcfcfc]"
                 >
                   {link.label}
+                  {active && (
+                    <span
+                      style={{
+                        position: "absolute",
+                        left: 0,
+                        right: 0,
+                        bottom: -2,
+                        height: 2,
+                        backgroundColor: "#d8cb6a",
+                        borderRadius: 1,
+                      }}
+                    />
+                  )}
                 </Link>
               );
             })}
@@ -128,24 +142,40 @@ export function Navbar() {
           className="md:hidden fixed inset-0 z-50 flex flex-col"
           style={{ backgroundColor: "#3e4037", padding: "88px 28px 32px" }}
         >
-          {links.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              onClick={() => setOpen(false)}
-              style={{
-                display: "block",
-                padding: "18px 0",
-                fontSize: 22,
-                fontFamily: "var(--font-playfair), Georgia, serif",
-                color: "#fcfcfc",
-                textDecoration: "none",
-                borderBottom: "1px solid rgba(252,252,252,0.08)",
-              }}
-            >
-              {link.label}
-            </Link>
-          ))}
+          {links.map((link) => {
+            const active = isActive(link.href);
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setOpen(false)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  padding: "18px 0",
+                  fontSize: 22,
+                  fontFamily: "var(--font-playfair), Georgia, serif",
+                  color: active ? "#d8cb6a" : "#fcfcfc",
+                  textDecoration: "none",
+                  borderBottom: "1px solid rgba(252,252,252,0.08)",
+                  fontWeight: active ? 600 : 400,
+                }}
+              >
+                {active && (
+                  <span
+                    style={{
+                      width: 4,
+                      height: 24,
+                      backgroundColor: "#d8cb6a",
+                      borderRadius: 2,
+                    }}
+                  />
+                )}
+                {link.label}
+              </Link>
+            );
+          })}
           <Link
             href="/imoveis"
             onClick={() => setOpen(false)}
