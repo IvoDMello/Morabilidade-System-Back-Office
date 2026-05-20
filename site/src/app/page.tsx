@@ -582,7 +582,7 @@ export default async function HomePage() {
                   href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP ?? "5500000000000"}?text=${encodeURIComponent("Olá! Gostaria de mais informações sobre os imóveis disponíveis na Morabilidade.")}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center transition-all hover:-translate-y-0.5 hover:shadow-lg"
+                  className="inline-flex items-center transition-all hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:scale-95 active:shadow-inner"
                   style={{
                     gap: 9,
                     background: "#585a4f",
