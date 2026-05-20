@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search, X, Pencil, Trash2, ChevronLeft, ChevronRight, Users, Download, Upload } from "lucide-react";
@@ -53,6 +53,14 @@ const selectClass =
 const inputClass = selectClass;
 
 export default function ClientesPage() {
+  return (
+    <Suspense fallback={null}>
+      <ClientesPageInner />
+    </Suspense>
+  );
+}
+
+function ClientesPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isAdmin = useAuthStore((s) => s.user?.perfil === "admin");

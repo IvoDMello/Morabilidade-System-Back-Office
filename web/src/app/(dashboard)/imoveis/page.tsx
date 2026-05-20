@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -78,6 +78,14 @@ const inputCls =
 // ── Componente principal ──────────────────────────────────────────────────────
 
 export default function ImoveisPage() {
+  return (
+    <Suspense fallback={null}>
+      <ImoveisPageInner />
+    </Suspense>
+  );
+}
+
+function ImoveisPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isAdmin = useAuthStore((s) => s.user?.perfil === "admin");
