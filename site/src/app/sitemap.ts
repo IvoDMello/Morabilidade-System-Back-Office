@@ -14,10 +14,12 @@ const staticPages: MetadataRoute.Sitemap = [
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10000);
   try {
     const res = await fetch(
       `${API_URL}/imoveis/publico/disponiveis?page_size=1000`,
-      { next: { revalidate: 86400 } }
+      { next: { revalidate: 86400 }, signal: controller.signal }
     );
     if (!res.ok) return staticPages;
 
@@ -33,5 +35,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     return [...staticPages, ...imovelPages];
   } catch {
     return staticPages;
+  } finally {
+    clearTimeout(timer);
   }
 }
