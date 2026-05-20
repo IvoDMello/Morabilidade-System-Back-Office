@@ -302,6 +302,7 @@ def exportar_imoveis_csv(
     condicao: Optional[CondicaoImovel] = None,
     mobiliado: Optional[Mobiliado] = None,
     codigo: Optional[str] = None,
+    sem_foto: Optional[bool] = None,
     current_user: dict = Depends(get_current_user),
 ):
     """Baixa imóveis como CSV respeitando os filtros ativos (UTF-8 com BOM, delimitador ';' para Excel PT-BR)."""
@@ -311,13 +312,37 @@ def exportar_imoveis_csv(
         dormitorios_min=dormitorios_min, preco_min=preco_min, preco_max=preco_max,
         condicao=condicao, mobiliado=mobiliado, codigo=codigo,
     )
+
+    ids_sem_foto: Optional[List[str]] = None
+    if sem_foto:
+        todos_resp = supabase_admin.table("imoveis").select("id").execute()
+        com_foto_resp = supabase_admin.table("imovel_fotos").select("imovel_id").execute()
+        ids_total = {row["id"] for row in (todos_resp.data or [])}
+        ids_com_foto = {row["imovel_id"] for row in (com_foto_resp.data or [])}
+        ids_sem_foto = list(ids_total - ids_com_foto)
+        if not ids_sem_foto:
+            buffer = io.StringIO()
+            buffer.write("﻿")
+            writer = csv.DictWriter(buffer, fieldnames=_CAMPOS_EXPORT, extrasaction="ignore", delimiter=";")
+            writer.writeheader()
+            return Response(
+                content=buffer.getvalue(),
+                media_type="text/csv; charset=utf-8",
+                headers={
+                    "Content-Disposition": f'attachment; filename="imoveis-{date.today().isoformat()}.csv"',
+                    "Access-Control-Expose-Headers": "Content-Disposition",
+                },
+            )
+
     todos = []
     offset = 0
     page_size = 1000
     while True:
+        q = _aplicar_filtros(supabase_admin.table("imoveis").select("*"), **filtros)
+        if ids_sem_foto is not None:
+            q = q.in_("id", ids_sem_foto)
         result = (
-            _aplicar_filtros(supabase_admin.table("imoveis").select("*"), **filtros)
-            .order("created_at", desc=True)
+            q.order("created_at", desc=True)
             .range(offset, offset + page_size - 1)
             .execute()
         )

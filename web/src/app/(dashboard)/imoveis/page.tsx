@@ -118,6 +118,7 @@ function ImoveisPageInner() {
       if (filtros.tipo_imovel) params.tipo_imovel = filtros.tipo_imovel;
       if (filtros.preco_min) params.preco_min = filtros.preco_min;
       if (filtros.preco_max) params.preco_max = filtros.preco_max;
+      if (filtros.sem_foto) params.sem_foto = "true";
       const res = await api.get("/imoveis/exportar", { responseType: "blob", params });
       const blob = new Blob([res.data], { type: "text/csv;charset=utf-8" });
       const url = window.URL.createObjectURL(blob);
