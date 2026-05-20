@@ -15,7 +15,7 @@ export default function MapaRegiao({ lat, lng, raioMetros = 400 }: Props) {
       center={[lat, lng]}
       zoom={15}
       scrollWheelZoom={false}
-      style={{ height: "100%", width: "100%" }}
+      style={{ height: "100%", width: "100%", isolation: "isolate" }}
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'

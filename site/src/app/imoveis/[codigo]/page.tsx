@@ -269,7 +269,9 @@ export default async function DetalheImovelPage({ params }: Props) {
               </p>
 
               {/* Radar da região — círculo de ~300m sobre OpenStreetMap */}
-              <div className="relative rounded-xl overflow-hidden border border-slate-100 shadow-sm mb-3 aspect-video">
+              {/* `isolate` cria stacking context para conter o z-index alto das panes do Leaflet
+                  (até 1000) e impedir que sobreponham a navbar sticky (z-50). */}
+              <div className="relative isolate rounded-xl overflow-hidden border border-slate-100 shadow-sm mb-3 aspect-video">
                 {coordenadas ? (
                   <MapaRegiaoClient lat={coordenadas.lat} lng={coordenadas.lng} />
                 ) : (
@@ -300,8 +302,11 @@ export default async function DetalheImovelPage({ params }: Props) {
           {/* ── Sidebar ── */}
           <div className="space-y-4">
 
-            {/* Card de preço */}
-            <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-5 md:sticky md:top-[104px]">
+            {/* Card de preço — sticky usa a mesma fórmula de altura da navbar */}
+            <div
+              className="bg-white rounded-xl border border-slate-100 shadow-sm p-5 md:sticky"
+              style={{ top: "clamp(96px, 12vw, 104px)" }}
+            >
               <p className="text-xs text-slate-400 font-mono mb-1">{imovel.codigo}</p>
 
               {precoVenda && (
