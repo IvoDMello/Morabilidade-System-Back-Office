@@ -315,7 +315,13 @@ def exportar_imoveis_csv(
 
     ids_sem_foto: Optional[List[str]] = None
     if sem_foto:
-        todos_resp = supabase_admin.table("imoveis").select("id").execute()
+        # Locação não conta no filtro "sem foto" — ver /stats em main.py.
+        todos_resp = (
+            supabase_admin.table("imoveis")
+            .select("id")
+            .neq("tipo_negocio", "locacao")
+            .execute()
+        )
         com_foto_resp = supabase_admin.table("imovel_fotos").select("imovel_id").execute()
         ids_total = {row["id"] for row in (todos_resp.data or [])}
         ids_com_foto = {row["imovel_id"] for row in (com_foto_resp.data or [])}
@@ -400,7 +406,13 @@ def listar_imoveis(
 
     ids_sem_foto: Optional[List[str]] = None
     if sem_foto:
-        todos_resp = supabase_admin.table("imoveis").select("id").execute()
+        # Locação não conta no filtro "sem foto" — ver /stats em main.py.
+        todos_resp = (
+            supabase_admin.table("imoveis")
+            .select("id")
+            .neq("tipo_negocio", "locacao")
+            .execute()
+        )
         com_foto_resp = supabase_admin.table("imovel_fotos").select("imovel_id").execute()
         ids_total = {row["id"] for row in (todos_resp.data or [])}
         ids_com_foto = {row["imovel_id"] for row in (com_foto_resp.data or [])}

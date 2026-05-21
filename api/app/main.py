@@ -92,8 +92,14 @@ def get_stats(current_user: dict = Depends(get_current_user)):
     )
 
     # Imóveis sem foto — críticos para conversão no site público.
-    # Estratégia: puxar todos os ids de imóveis vs ids que têm fotos, diferença é o que falta.
-    todos_ids_resp = supabase_admin.table("imoveis").select("id").execute()
+    # Locação fica de fora (tipo_negocio = 'locacao'): não vai pro site público,
+    # então não polui o indicador. "ambos" continua contando (também é vendido).
+    todos_ids_resp = (
+        supabase_admin.table("imoveis")
+        .select("id")
+        .neq("tipo_negocio", "locacao")
+        .execute()
+    )
     ids_imoveis = {row["id"] for row in (todos_ids_resp.data or [])}
     com_foto_resp = supabase_admin.table("imovel_fotos").select("imovel_id").execute()
     ids_com_foto = {row["imovel_id"] for row in (com_foto_resp.data or [])}

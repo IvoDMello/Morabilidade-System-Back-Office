@@ -175,7 +175,7 @@ export default function DashboardHome() {
                 icon={<ImageOff className="w-4 h-4 text-rose-500" />}
                 tone={stats?.imoveis_sem_foto ? "alert" : "neutral"}
                 href="/imoveis?sem_foto=1"
-                hint="Imóveis publicados sem foto não convertem"
+                hint="Imóveis à venda sem foto não convertem (locação não conta)"
               />
               <MiniCard
                 label="Reservados"

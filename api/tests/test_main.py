@@ -110,6 +110,16 @@ def test_stats_imoveis_sem_foto_calculado_corretamente(client):
     assert res.json()["imoveis_sem_foto"] == 2
 
 
+def test_stats_imoveis_sem_foto_exclui_locacao(client):
+    """Locação não deve entrar no contador 'sem foto' — não vai pro site público."""
+    db = _make_stats_db()
+    with patch("app.main.supabase_admin", db):
+        res = client.get("/stats")
+
+    assert res.status_code == 200
+    db.neq.assert_any_call("tipo_negocio", "locacao")
+
+
 def test_stats_imovel_mais_antigo_presente(client):
     mais_antigo = {"codigo": "MB-00001", "created_at": "2024-01-01T00:00:00+00:00"}
     db = _make_stats_db(mais_antigo=mais_antigo)
