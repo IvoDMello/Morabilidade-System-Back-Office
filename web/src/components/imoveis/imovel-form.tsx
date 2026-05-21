@@ -107,6 +107,82 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   );
 }
 
+// ── Máscara de dinheiro pt-BR (separador de milhar + vírgula decimal) ────────
+function formatMoneyBR(value: number | null | undefined): string {
+  if (value == null || isNaN(value as number)) return "";
+  return Number(value).toLocaleString("pt-BR", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
+}
+
+function parseMoneyBR(display: string): number | null {
+  const clean = display.replace(/\./g, "").replace(",", ".");
+  if (clean === "" || clean === "-") return null;
+  const n = parseFloat(clean);
+  return isNaN(n) ? null : n;
+}
+
+// Reaplica milhares enquanto o usuário digita, mantendo a vírgula decimal e
+// limitando a 2 casas. Aceita apenas dígitos e uma vírgula.
+function maskMoneyTyping(raw: string): string {
+  let s = raw.replace(/[^\d,]/g, "");
+  const firstComma = s.indexOf(",");
+  if (firstComma !== -1) {
+    s = s.slice(0, firstComma + 1) + s.slice(firstComma + 1).replace(/,/g, "");
+  }
+  const [intPart = "", decPart] = s.split(",");
+  const intClean = intPart.replace(/^0+(?=\d)/, "");
+  const intFormatted = intClean.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  if (decPart !== undefined) {
+    return `${intFormatted || "0"},${decPart.slice(0, 2)}`;
+  }
+  return intFormatted;
+}
+
+function MoneyInput({
+  value,
+  onChange,
+  onBlur,
+  className,
+  placeholder,
+}: {
+  value: number | null | undefined;
+  onChange: (v: number | null) => void;
+  onBlur?: () => void;
+  className?: string;
+  placeholder?: string;
+}) {
+  const [display, setDisplay] = useState<string>(() => formatMoneyBR(value));
+
+  // Sincroniza se o valor externo mudar por outro caminho (reset, restore draft,
+  // CEP, troca de período do IPTU, etc.). Só sobrescreve quando o valor parseado
+  // do display divergir, pra não brigar com o que o usuário está digitando.
+  useEffect(() => {
+    const parsed = parseMoneyBR(display);
+    if ((value ?? null) !== (parsed ?? null)) {
+      setDisplay(formatMoneyBR(value));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+
+  return (
+    <input
+      type="text"
+      inputMode="decimal"
+      className={className}
+      placeholder={placeholder}
+      value={display}
+      onChange={(e) => {
+        const masked = maskMoneyTyping(e.target.value);
+        setDisplay(masked);
+        onChange(parseMoneyBR(masked));
+      }}
+      onBlur={onBlur}
+    />
+  );
+}
+
 const inputClass =
   "w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-900 " +
   "focus:outline-none focus:ring-2 focus:ring-[#585a4f]/30 focus:border-[#585a4f] " +
@@ -130,8 +206,11 @@ export function ImovelForm({
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [cepLoading, setCepLoading] = useState(false);
   const [iptuPeriodo, setIptuPeriodo] = useState<"mensal" | "anual">("mensal");
-  const [iptuDisplay, setIptuDisplay] = useState<string>(
-    defaultValues?.iptu_mensal != null ? String(defaultValues.iptu_mensal) : ""
+  // Valor exibido no input do IPTU. Em modo "anual" representa o anual; em
+  // "mensal" representa o mensal — a conversão acontece no handler abaixo
+  // antes de persistir em `iptu_mensal` no form.
+  const [iptuValor, setIptuValor] = useState<number | null>(
+    defaultValues?.iptu_mensal != null ? defaultValues.iptu_mensal : null
   );
   const descricaoRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -216,22 +295,20 @@ export function ImovelForm({
 
   function handleIptuPeriodoChange(periodo: "mensal" | "anual") {
     if (periodo === iptuPeriodo) return;
-    const num = parseFloat(iptuDisplay);
-    if (!isNaN(num) && num > 0) {
+    if (iptuValor != null && iptuValor > 0) {
       const converted =
         periodo === "anual"
-          ? parseFloat((num * 10).toFixed(2))
-          : parseFloat((num / 10).toFixed(2));
-      setIptuDisplay(String(converted));
+          ? parseFloat((iptuValor * 10).toFixed(2))
+          : parseFloat((iptuValor / 10).toFixed(2));
+      setIptuValor(converted);
       setValue("iptu_mensal", periodo === "anual" ? parseFloat((converted / 10).toFixed(2)) : converted);
     }
     setIptuPeriodo(periodo);
   }
 
-  function handleIptuDisplayChange(value: string) {
-    setIptuDisplay(value);
-    const num = parseFloat(value);
-    if (isNaN(num) || value === "") {
+  function handleIptuValorChange(num: number | null) {
+    setIptuValor(num);
+    if (num == null) {
       setValue("iptu_mensal", null);
     } else {
       setValue("iptu_mensal", iptuPeriodo === "anual" ? parseFloat((num / 10).toFixed(2)) : num);
@@ -598,7 +675,19 @@ export function ImovelForm({
           {(tipoNegocio === "venda" || tipoNegocio === "ambos") && (
             <div>
               <Label>Valor de venda (R$)</Label>
-              <input type="number" step="0.01" min={0} {...register("valor_venda")} className={inputClass} placeholder="0,00" />
+              <Controller
+                control={control}
+                name="valor_venda"
+                render={({ field }) => (
+                  <MoneyInput
+                    value={field.value as number | null | undefined}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    className={inputClass}
+                    placeholder="0,00"
+                  />
+                )}
+              />
               <FieldError message={errors.valor_venda?.message} />
             </div>
           )}
@@ -606,7 +695,19 @@ export function ImovelForm({
           {(tipoNegocio === "locacao" || tipoNegocio === "ambos") && (
             <div>
               <Label>Valor de locação (R$)</Label>
-              <input type="number" step="0.01" min={0} {...register("valor_locacao")} className={inputClass} placeholder="0,00" />
+              <Controller
+                control={control}
+                name="valor_locacao"
+                render={({ field }) => (
+                  <MoneyInput
+                    value={field.value as number | null | undefined}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    className={inputClass}
+                    placeholder="0,00"
+                  />
+                )}
+              />
               <FieldError message={errors.valor_locacao?.message} />
             </div>
           )}
@@ -630,19 +731,16 @@ export function ImovelForm({
                 ))}
               </div>
             </div>
-            <input
-              type="number"
-              step="0.01"
-              min={0}
-              value={iptuDisplay}
-              onChange={(e) => handleIptuDisplayChange(e.target.value)}
+            <MoneyInput
+              value={iptuValor}
+              onChange={handleIptuValorChange}
               className={inputClass}
               placeholder="0,00"
             />
-            {iptuPeriodo === "anual" && parseFloat(iptuDisplay) > 0 && (
+            {iptuPeriodo === "anual" && iptuValor != null && iptuValor > 0 && (
               <p className="mt-1 text-xs text-slate-400">
                 ≈ R${" "}
-                {(parseFloat(iptuDisplay) / 10).toLocaleString("pt-BR", {
+                {(iptuValor / 10).toLocaleString("pt-BR", {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
                 })}{" "}
@@ -653,7 +751,19 @@ export function ImovelForm({
 
           <div>
             <Label>Condomínio mensal (R$)</Label>
-            <input type="number" step="0.01" min={0} {...register("condominio_mensal")} className={inputClass} placeholder="0,00" />
+            <Controller
+              control={control}
+              name="condominio_mensal"
+              render={({ field }) => (
+                <MoneyInput
+                  value={field.value as number | null | undefined}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  className={inputClass}
+                  placeholder="0,00"
+                />
+              )}
+            />
           </div>
         </div>
       </div>
