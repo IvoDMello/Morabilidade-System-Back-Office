@@ -268,11 +268,11 @@ function StatCard({
   return (
     <Link
       href={href}
-      className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex items-start gap-4 hover:shadow-md hover:border-slate-300 transition group"
+      className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4 hover:shadow-md hover:border-slate-300 transition group"
     >
-      <div className={`p-2 rounded-lg flex-shrink-0 ${bg[color]}`}>{icon}</div>
+      <div className={`p-2 rounded-lg flex-shrink-0 self-start ${bg[color]}`}>{icon}</div>
       <div className="min-w-0">
-        <p className="text-xs text-slate-500 uppercase tracking-wide leading-tight">{label}</p>
+        <p className="text-[11px] sm:text-xs text-slate-500 uppercase tracking-wide leading-tight">{label}</p>
         <p className="text-3xl font-bold text-slate-900 mt-1 group-hover:text-[#585a4f] transition">
           {value}
         </p>

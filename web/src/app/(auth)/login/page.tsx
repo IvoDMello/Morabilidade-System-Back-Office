@@ -135,20 +135,39 @@ export default function LoginPage() {
       </div>
 
       {/* ── Painel direito: formulário ── */}
-      <div className="flex-1 flex items-center justify-center bg-white px-6 py-12">
-        <div className="w-full max-w-sm">
-          {/* Logo mobile (aparece só em telas pequenas) */}
-          <div className="lg:hidden mb-10 flex flex-col items-center gap-3">
+      <div className="flex-1 flex flex-col lg:items-center lg:justify-center bg-white">
+        {/* Hero mobile (foto + logo sobreposta) — só fora do desktop */}
+        <div className="lg:hidden relative w-full h-56 sm:h-72 flex-shrink-0">
+          <Image
+            src="/login-bg.jpeg"
+            alt="Zona Sul do Rio de Janeiro"
+            fill
+            className="object-cover object-center"
+            priority
+          />
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(to bottom, rgba(88,90,79,0.55) 0%, rgba(88,90,79,0.75) 60%, rgba(30,30,20,0.92) 100%)",
+            }}
+          />
+          <div className="relative h-full flex flex-col items-center justify-end px-6 pb-6 gap-2">
             <Image
               src="/Logo_fundoTransparente.png"
               alt="Morabilidade"
               width={160}
               height={44}
-              className="object-contain"
+              className="object-contain drop-shadow"
               priority
             />
-            <p className="text-slate-500 text-sm text-center">Simples, Eficiente e Humanizada</p>
+            <p className="text-[#d8cb6a] text-[11px] font-semibold tracking-widest uppercase">
+              Painel Administrativo
+            </p>
           </div>
+        </div>
+
+        <div className="w-full max-w-sm mx-auto px-6 py-8 lg:py-12">
 
           {/* Título */}
           <div className="mb-8">

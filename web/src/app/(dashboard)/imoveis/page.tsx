@@ -555,11 +555,11 @@ setLoading(true);
                   </div>
 
                   {/* Conteúdo do card */}
-                  <div className="flex items-stretch px-4 py-4 gap-4">
+                  <div className="flex flex-wrap sm:flex-nowrap items-stretch px-4 py-4 gap-4">
                     {/* Barra de status + foto */}
                     <div className="flex gap-3 shrink-0">
                       <div className={`w-1 rounded-full self-stretch ${barColor}`} />
-                      <div className="relative w-28 h-24 sm:w-36 sm:h-28 md:w-44 md:h-32 rounded-lg overflow-hidden bg-slate-100 shrink-0">
+                      <div className="relative w-24 h-20 sm:w-36 sm:h-28 md:w-44 md:h-32 rounded-lg overflow-hidden bg-slate-100 shrink-0">
                         {imovel.foto_capa ? (
                           <img
                             src={imovel.foto_capa}
@@ -649,12 +649,14 @@ setLoading(true);
                       </div>
                     </div>
 
-                    {/* Preço */}
-                    <div className="shrink-0 text-right min-w-[90px] sm:min-w-[140px]">
-                      <p className="text-xs font-medium text-slate-400">{tipo}</p>
-                      <p className="text-base font-bold text-slate-900">{valor}</p>
+                    {/* Preço — empilhado abaixo no mobile, lateral no sm+ */}
+                    <div className="w-full sm:w-auto sm:shrink-0 sm:text-right sm:min-w-[140px] order-last sm:order-none border-t sm:border-t-0 border-slate-100 pt-3 sm:pt-0 flex flex-wrap sm:block items-baseline gap-x-4 gap-y-1">
+                      <div>
+                        <p className="text-xs font-medium text-slate-400">{tipo}</p>
+                        <p className="text-base font-bold text-slate-900">{valor}</p>
+                      </div>
                       {imovel.condominio_mensal != null && (
-                        <div className="mt-2">
+                        <div className="sm:mt-2">
                           <p className="text-xs text-slate-400">Condomínio</p>
                           <p className="text-sm font-medium text-slate-700">
                             {formatarMoeda(imovel.condominio_mensal)}
@@ -662,7 +664,7 @@ setLoading(true);
                         </div>
                       )}
                       {imovel.iptu_mensal != null && (
-                        <div className="mt-1">
+                        <div className="sm:mt-1">
                           <p className="text-xs text-slate-400">IPTU (mensal)</p>
                           <p className="text-sm font-medium text-slate-700">
                             {formatarMoeda(imovel.iptu_mensal)}
@@ -671,8 +673,8 @@ setLoading(true);
                       )}
                     </div>
 
-                    {/* Seta */}
-                    <div className="flex items-center text-slate-300 shrink-0">
+                    {/* Seta — só desktop, decorativa */}
+                    <div className="hidden sm:flex items-center text-slate-300 shrink-0">
                       <ChevronRight className="w-5 h-5" />
                     </div>
                   </div>
