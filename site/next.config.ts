@@ -3,11 +3,16 @@ import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   images: {
+    // Loader custom roteia fotos do Supabase pro endpoint de transformação
+    // nativa (render/image/public). Tira a Vercel do meio — estávamos
+    // estourando a cota grátis de Image Optimization (erro 402).
+    loader: "custom",
+    loaderFile: "./src/lib/image-loader.ts",
     remotePatterns: [
       {
         protocol: "https",
         hostname: "*.supabase.co",
-        pathname: "/storage/v1/object/public/**",
+        pathname: "/storage/v1/**",
       },
     ],
   },
