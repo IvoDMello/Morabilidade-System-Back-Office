@@ -30,6 +30,7 @@ export interface Foto {
   id: string;
   url: string;
   ordem: number;
+  object_position?: string;
 }
 
 export interface Tag {
@@ -108,6 +109,7 @@ export interface ImovelListOut {
   condominio_mensal?: number;
   iptu_mensal?: number;
   foto_capa?: string;
+  foto_capa_position?: string;
   tags: { id: string; nome: string; cor?: string }[];
   destaque_ordem?: number | null;
   proprietario_id?: string | null;

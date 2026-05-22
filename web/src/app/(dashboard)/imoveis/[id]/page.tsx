@@ -3,7 +3,7 @@
 import { use, useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Upload, Trash2, Star, Loader2, ImageOff, RotateCw, GripVertical } from "lucide-react";
+import { ArrowLeft, Upload, Trash2, Star, Loader2, ImageOff, RotateCw, GripVertical, Crosshair, X } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 import { api, getErrorMessage } from "@/lib/api";
@@ -15,6 +15,34 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import type { Imovel, Foto } from "@/types";
 
 const MAX_FOTOS = 30;
+const DEFAULT_OBJECT_POSITION = "50% 50%";
+
+interface FocoPoint {
+  x: number;
+  y: number;
+}
+
+function clampPercent(value: number): number {
+  return Math.max(0, Math.min(100, value));
+}
+
+function parseObjectPosition(value?: string | null): FocoPoint {
+  const match = (value ?? "").match(/(\d+(?:\.\d+)?)%\s+(\d+(?:\.\d+)?)%/);
+  if (!match) return { x: 50, y: 50 };
+  return {
+    x: clampPercent(Number(match[1])),
+    y: clampPercent(Number(match[2])),
+  };
+}
+
+function formatPercent(value: number): string {
+  const rounded = Math.round(clampPercent(value) * 10) / 10;
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+}
+
+function formatObjectPosition(point: FocoPoint): string {
+  return `${formatPercent(point.x)}% ${formatPercent(point.y)}%`;
+}
 
 // ── Galeria de fotos ──────────────────────────────────────────────────────────
 
@@ -28,6 +56,10 @@ function GaleriaFotos({ imovelId, fotos: fotosProp, onAtualizar }: {
   const [deletandoLoading, setDeletandoLoading] = useState(false);
   const [rotacionandoId, setRotacionandoId] = useState<string | null>(null);
   const [reordenando, setReordenando] = useState(false);
+  const [fotoFoco, setFotoFoco] = useState<Foto | null>(null);
+  const [focoDraft, setFocoDraft] = useState<FocoPoint>({ x: 50, y: 50 });
+  const [arrastandoFoco, setArrastandoFoco] = useState(false);
+  const [salvandoFoco, setSalvandoFoco] = useState(false);
 
   // Cópia local da lista para suportar reordenação otimista (rollback em erro).
   const [fotos, setFotos] = useState<Foto[]>(fotosProp);
@@ -119,6 +151,42 @@ function GaleriaFotos({ imovelId, fotos: fotosProp, onAtualizar }: {
     novaLista.splice(para, 0, moved);
     setFotos(novaLista);
     persistirNovaOrdem(novaLista);
+  }
+
+  function abrirEditorFoco(foto: Foto) {
+    setFotoFoco(foto);
+    setFocoDraft(parseObjectPosition(foto.object_position));
+  }
+
+  function atualizarFocoPeloPointer(e: React.PointerEvent<HTMLDivElement>) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setFocoDraft({ x: clampPercent(x), y: clampPercent(y) });
+  }
+
+  async function salvarFocoFoto() {
+    if (!fotoFoco) return;
+    const objectPosition = formatObjectPosition(focoDraft);
+    setSalvandoFoco(true);
+    try {
+      await api.patch(`/imoveis/${imovelId}/fotos/${fotoFoco.id}/foco`, {
+        object_position: objectPosition,
+      });
+      setFotos((prev) =>
+        prev.map((f) =>
+          f.id === fotoFoco.id ? { ...f, object_position: objectPosition } : f
+        )
+      );
+      toast.success("Foco da foto salvo.");
+      setFotoFoco(null);
+      onAtualizar();
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Erro ao salvar o foco da foto."));
+    } finally {
+      setSalvandoFoco(false);
+    }
   }
 
   function handleDragStart(e: React.DragEvent<HTMLDivElement>, index: number) {
@@ -226,6 +294,7 @@ function GaleriaFotos({ imovelId, fotos: fotosProp, onAtualizar }: {
                   alt={`Foto ${index + 1}`}
                   draggable={false}
                   className="w-full h-full object-cover rounded-lg pointer-events-none select-none"
+                  style={{ objectPosition: foto.object_position ?? DEFAULT_OBJECT_POSITION }}
                 />
                 {index === 0 && (
                   <div className="absolute top-1 left-1 flex items-center gap-0.5 bg-amber-400 text-white text-xs px-1.5 py-0.5 rounded-md font-medium shadow">
@@ -239,6 +308,16 @@ function GaleriaFotos({ imovelId, fotos: fotosProp, onAtualizar }: {
                 </div>
 
                 <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition">
+                  <button
+                    type="button"
+                    draggable={false}
+                    onClick={(e) => { e.stopPropagation(); abrirEditorFoco(foto); }}
+                    className="p-1 bg-amber-500 hover:bg-amber-600 text-white rounded-md"
+                    title="Definir foco"
+                    aria-label="Definir foco da foto"
+                  >
+                    <Crosshair className="w-3 h-3" />
+                  </button>
                   <button
                     type="button"
                     draggable={false}
@@ -285,6 +364,115 @@ function GaleriaFotos({ imovelId, fotos: fotosProp, onAtualizar }: {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {fotoFoco && (
+        <div
+          className="fixed inset-0 z-[80] bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setFotoFoco(null)}
+        >
+          <div
+            className="w-full max-w-3xl bg-white rounded-2xl shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-3 px-4 sm:px-5 py-4 border-b border-slate-100">
+              <div>
+                <h4 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
+                  <Crosshair className="w-4 h-4 text-amber-500" />
+                  Foco da foto
+                </h4>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  {formatObjectPosition(focoDraft)}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setFotoFoco(null)}
+                className="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
+                aria-label="Fechar editor de foco"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-4 sm:p-5">
+              <div
+                className="relative w-full aspect-[4/3] max-h-[70vh] bg-slate-100 rounded-xl overflow-hidden select-none cursor-crosshair touch-none"
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  e.currentTarget.setPointerCapture(e.pointerId);
+                  setArrastandoFoco(true);
+                  atualizarFocoPeloPointer(e);
+                }}
+                onPointerMove={(e) => {
+                  if (arrastandoFoco) atualizarFocoPeloPointer(e);
+                }}
+                onPointerUp={(e) => {
+                  if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+                    e.currentTarget.releasePointerCapture(e.pointerId);
+                  }
+                  setArrastandoFoco(false);
+                  atualizarFocoPeloPointer(e);
+                }}
+                onPointerCancel={(e) => {
+                  if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+                    e.currentTarget.releasePointerCapture(e.pointerId);
+                  }
+                  setArrastandoFoco(false);
+                }}
+              >
+                <img
+                  src={fotoFoco.url}
+                  alt="Prévia do corte"
+                  draggable={false}
+                  className="w-full h-full object-cover select-none pointer-events-none"
+                  style={{ objectPosition: formatObjectPosition(focoDraft) }}
+                />
+                <div className="absolute inset-0 pointer-events-none">
+                  <div
+                    className="absolute inset-y-0 w-px bg-white/70 shadow-[0_0_12px_rgba(0,0,0,0.35)]"
+                    style={{ left: `${focoDraft.x}%` }}
+                  />
+                  <div
+                    className="absolute inset-x-0 h-px bg-white/70 shadow-[0_0_12px_rgba(0,0,0,0.35)]"
+                    style={{ top: `${focoDraft.y}%` }}
+                  />
+                  <div
+                    className="absolute w-7 h-7 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-amber-400 shadow-lg ring-4 ring-black/20"
+                    style={{ left: `${focoDraft.x}%`, top: `${focoDraft.y}%` }}
+                  >
+                    <Crosshair className="w-4 h-4 text-white absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <p className="text-xs text-slate-500">
+                  Arraste o alvo para o ponto que deve continuar visível nos cortes do site.
+                </p>
+                <div className="flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFocoDraft({ x: 50, y: 50 })}
+                    className="px-3 py-2 text-xs font-medium rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition"
+                  >
+                    Centralizar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={salvarFocoFoto}
+                    disabled={salvandoFoco}
+                    className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg text-white transition disabled:opacity-60"
+                    style={{ backgroundColor: "#585a4f" }}
+                  >
+                    {salvandoFoco && <Loader2 className="w-3 h-3 animate-spin" />}
+                    Salvar foco
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

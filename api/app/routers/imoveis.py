@@ -1,5 +1,6 @@
 import csv
 import io
+import re
 import unicodedata
 import uuid
 from datetime import date
@@ -51,6 +52,38 @@ def _norm(s: str) -> str:
     nfkd = unicodedata.normalize("NFKD", s)
     return "".join(c for c in nfkd if not unicodedata.combining(c)).lower()
 
+
+_OBJECT_POSITION_RE = re.compile(
+    r"^\s*(100(?:\.0{1,2})?|[0-9]{1,2}(?:\.[0-9]{1,2})?)%\s+"
+    r"(100(?:\.0{1,2})?|[0-9]{1,2}(?:\.[0-9]{1,2})?)%\s*$"
+)
+
+
+def _fmt_pct(v: float) -> str:
+    return f"{v:g}%"
+
+
+def _validar_object_position(value: str) -> str:
+    match = _OBJECT_POSITION_RE.match(value or "")
+    if not match:
+        raise HTTPException(
+            status_code=422,
+            detail="object_position deve estar no formato '50% 30%'.",
+        )
+    x = float(match.group(1))
+    y = float(match.group(2))
+    if x < 0 or x > 100 or y < 0 or y > 100:
+        raise HTTPException(
+            status_code=422,
+            detail="object_position deve usar percentuais entre 0% e 100%.",
+        )
+    return f"{_fmt_pct(x)} {_fmt_pct(y)}"
+
+
+def _foto_object_position(foto: dict) -> str:
+    return foto.get("object_position") or "50% 50%"
+
+
 router = APIRouter()
 
 _LIST_FIELDS = (
@@ -58,12 +91,12 @@ _LIST_FIELDS = (
     "logradouro, numero, tipo_imovel, dormitorios, suites, banheiros, "
     "vagas_garagem, area_util, valor_venda, valor_locacao, "
     "condominio_mensal, iptu_mensal, destaque_ordem, proprietario_id, created_at, "
-    "imovel_fotos(url, ordem), imovel_tags(tags(id, nome, cor)), "
+    "imovel_fotos(url, ordem, object_position), imovel_tags(tags(id, nome, cor)), "
     "proprietario:clientes!proprietario_id(id, nome_completo, telefone, email)"
 )
 
 _DETAIL_FIELDS = (
-    "*, imovel_fotos(id, url, ordem), imovel_tags(tags(id, nome, cor)), "
+    "*, imovel_fotos(id, url, ordem, object_position), imovel_tags(tags(id, nome, cor)), "
     "proprietario:clientes!proprietario_id(id, nome_completo, telefone, email)"
 )
 
@@ -126,14 +159,22 @@ def _normalizar_proprietario(raw: dict) -> Optional[dict]:
 def _transformar_lista(raw: dict) -> dict:
     fotos = sorted(raw.pop("imovel_fotos", None) or [], key=lambda f: f.get("ordem", 0))
     foto_capa = fotos[0]["url"] if fotos else None
+    foto_capa_position = _foto_object_position(fotos[0]) if fotos else "50% 50%"
     tags_raw = raw.pop("imovel_tags", None) or []
     tags = [t["tags"] for t in tags_raw if t.get("tags")]
     proprietario = _normalizar_proprietario(raw)
-    return {**raw, "foto_capa": foto_capa, "tags": tags, "proprietario": proprietario}
+    return {
+        **raw,
+        "foto_capa": foto_capa,
+        "foto_capa_position": foto_capa_position,
+        "tags": tags,
+        "proprietario": proprietario,
+    }
 
 
 def _transformar_detalhe(raw: dict) -> dict:
     fotos = sorted(raw.pop("imovel_fotos", None) or [], key=lambda f: f.get("ordem", 0))
+    fotos = [{**f, "object_position": _foto_object_position(f)} for f in fotos]
     tags_raw = raw.pop("imovel_tags", None) or []
     tags = [t["tags"] for t in tags_raw if t.get("tags")]
     tag_ids = [t["id"] for t in tags]
@@ -557,7 +598,12 @@ async def upload_fotos(
         filename = f"foto_{uuid.uuid4().hex}.jpg"
         path = f"imoveis/{imovel_id}/{filename}"
         url = await upload_foto(foto, path=path)
-        record = {"imovel_id": imovel_id, "url": url, "ordem": qtd_atual + i + 1}
+        record = {
+            "imovel_id": imovel_id,
+            "url": url,
+            "ordem": qtd_atual + i + 1,
+            "object_position": "50% 50%",
+        }
         result = supabase_admin.table("imovel_fotos").insert(record).execute()
         uploaded.append(result.data[0])
 
@@ -630,6 +676,31 @@ def reordenar_fotos(
     return {"atualizadas": len(body.foto_ids)}
 
 
+class AtualizarFocoFotoBody(BaseModel):
+    object_position: str
+
+
+@router.patch("/{imovel_id}/fotos/{foto_id}/foco", status_code=status.HTTP_200_OK)
+def atualizar_foco_foto(
+    imovel_id: str,
+    foto_id: str,
+    body: AtualizarFocoFotoBody,
+    current_user: dict = Depends(require_admin),
+):
+    """Salva o ponto focal da foto como CSS object-position (ex: "50% 30%")."""
+    object_position = _validar_object_position(body.object_position)
+    result = (
+        supabase_admin.table("imovel_fotos")
+        .update({"object_position": object_position})
+        .eq("id", foto_id)
+        .eq("imovel_id", imovel_id)
+        .execute()
+    )
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Foto não encontrada.")
+    return {"id": foto_id, "object_position": object_position}
+
+
 class RotacionarFotoBody(BaseModel):
     graus: int = 90  # 90, 180 ou 270 — sentido horário
 
@@ -675,4 +746,9 @@ async def rotacionar_foto(
         raise HTTPException(status_code=500, detail=f"Falha ao atualizar registro: {e}")
 
     await deletar_foto(url_antiga)
-    return {"id": foto_id, "url": nova_url, "ordem": foto.data.get("ordem")}
+    return {
+        "id": foto_id,
+        "url": nova_url,
+        "ordem": foto.data.get("ordem"),
+        "object_position": _foto_object_position(foto.data),
+    }

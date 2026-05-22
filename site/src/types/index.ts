@@ -17,6 +17,7 @@ export interface Foto {
   id: string;
   url: string;
   ordem: number;
+  object_position?: string;
 }
 
 export interface ImovelCard {
@@ -39,6 +40,7 @@ export interface ImovelCard {
   condominio_mensal?: number;
   iptu_mensal?: number;
   foto_capa?: string;
+  foto_capa_position?: string;
   tags: Tag[];
   created_at: string;
 }
