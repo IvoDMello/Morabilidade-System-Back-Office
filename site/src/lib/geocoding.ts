@@ -5,6 +5,9 @@ export interface Coordenadas {
 
 const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
 const USER_AGENT = "Morabilidade-Site/1.0 (contato@morabilidade.com)";
+// Nominatim é externo e fora do nosso controle. Sem timeout, uma lentidão lá
+// segura o SSR — foi o padrão que amplificou a queda de 19/05.
+const NOMINATIM_TIMEOUT_MS = 4000;
 
 export async function geocodificarEndereco(
   logradouro: string | undefined,
@@ -14,10 +17,13 @@ export async function geocodificarEndereco(
   const query = [logradouro, bairro, cidade, "Brasil"].filter(Boolean).join(", ");
   const url = `${NOMINATIM_URL}?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=br`;
 
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), NOMINATIM_TIMEOUT_MS);
   try {
     const res = await fetch(url, {
       headers: { "User-Agent": USER_AGENT },
       next: { revalidate: 60 * 60 * 24 * 30 },
+      signal: controller.signal,
     });
     if (!res.ok) return null;
 
@@ -31,5 +37,7 @@ export async function geocodificarEndereco(
     return { lat, lng };
   } catch {
     return null;
+  } finally {
+    clearTimeout(timer);
   }
 }
