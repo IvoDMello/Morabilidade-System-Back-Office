@@ -43,8 +43,7 @@ export function DestCard({ imovel }: { imovel: ImovelCard }) {
             src={imovel.foto_capa}
             alt={`${labelTipoImovel(imovel.tipo_imovel)} em ${imovel.bairro}`}
             fill
-            className="object-cover group-hover:scale-105 transition-transform duration-500"
-            style={{ objectPosition: imovel.foto_capa_position ?? "50% 50%" }}
+            className="object-cover object-center group-hover:scale-105 transition-transform duration-500"
             sizes="(max-width: 640px) 75vw, 320px"
           />
         ) : (

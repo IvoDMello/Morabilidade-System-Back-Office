@@ -565,7 +565,6 @@ setLoading(true);
                             src={imovel.foto_capa}
                             alt=""
                             className="w-full h-full object-cover"
-                            style={{ objectPosition: imovel.foto_capa_position ?? "50% 50%" }}
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">

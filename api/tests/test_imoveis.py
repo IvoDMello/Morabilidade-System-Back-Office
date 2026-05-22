@@ -180,30 +180,6 @@ def test_deletar_imovel_com_contrato_vinculado(client):
     assert "contrato" in res.json()["detail"].lower()
 
 
-def test_atualizar_foco_foto_salva_object_position(client):
-    update_mock = MagicMock(data=[{"id": "foto-1", "object_position": "50% 30%"}])
-    db = make_db_mock(update_mock)
-
-    with patch("app.routers.imoveis.supabase_admin", db):
-        res = client.patch(
-            "/imoveis/imovel-uuid-1/fotos/foto-1/foco",
-            json={"object_position": "50% 30%"},
-        )
-
-    assert res.status_code == 200
-    assert res.json()["object_position"] == "50% 30%"
-    assert db.update.call_args.args[0] == {"object_position": "50% 30%"}
-
-
-def test_atualizar_foco_foto_rejeita_formato_invalido(client):
-    res = client.patch(
-        "/imoveis/imovel-uuid-1/fotos/foto-1/foco",
-        json={"object_position": "top center"},
-    )
-    assert res.status_code == 422
-    assert "50% 30%" in res.json()["detail"]
-
-
 # ── GET /imoveis/exportar ─────────────────────────────────────────────────────
 
 def test_exportar_imoveis_csv(client):
@@ -220,7 +196,7 @@ def test_exportar_imoveis_csv(client):
     body = res.content.decode("utf-8-sig")
     linhas = body.strip().split("\r\n")
     assert len(linhas) == 2
-    assert linhas[0].startswith("codigo;titulo;tipo_negocio;disponibilidade")
+    assert linhas[0].startswith("codigo;tipo_negocio;disponibilidade")
     assert "MB-00001" in linhas[1]
 
 

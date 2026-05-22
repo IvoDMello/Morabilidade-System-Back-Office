@@ -96,7 +96,6 @@ class FotoOut(BaseModel):
     id: str
     url: str
     ordem: int
-    object_position: Optional[str] = "50% 50%"
 
 
 class ImovelOut(ImovelCreate):
@@ -138,7 +137,6 @@ class ImovelListOut(BaseModel):
     condominio_mensal: Optional[Decimal] = None
     iptu_mensal: Optional[Decimal] = None
     foto_capa: Optional[str] = None
-    foto_capa_position: Optional[str] = "50% 50%"
     tags: List[dict] = []
     destaque_ordem: Optional[int] = None
     proprietario_id: Optional[str] = None

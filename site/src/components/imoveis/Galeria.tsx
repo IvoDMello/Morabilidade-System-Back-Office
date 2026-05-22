@@ -150,8 +150,7 @@ export function Galeria({ fotos }: { fotos: Foto[] }) {
                   src={foto.url}
                   alt={`Foto ${i + 1}`}
                   fill
-                  className="object-cover pointer-events-none"
-                  style={{ objectPosition: foto.object_position ?? "50% 50%" }}
+                  className="object-cover object-center pointer-events-none"
                   sizes="(max-width: 1024px) 100vw, 50vw"
                   priority={i === 0}
                   loading={i === 0 ? undefined : eager ? "eager" : "lazy"}
@@ -219,8 +218,7 @@ export function Galeria({ fotos }: { fotos: Foto[] }) {
                 src={foto.url}
                 alt={`Miniatura ${i + 1}`}
                 fill
-                className="object-cover"
-                style={{ objectPosition: foto.object_position ?? "50% 50%" }}
+                className="object-cover object-center"
                 sizes="48px"
               />
             </button>
