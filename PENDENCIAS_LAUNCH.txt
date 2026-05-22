@@ -1,0 +1,84 @@
+PENDÊNCIAS PÓS-HARDENING — Launch 22/05/2026
+==============================================
+
+Commit aplicado: d799ea2 (já em origin/main)
+
+
+HOJE — antes/durante o launch
+------------------------------
+
+[ ] SMTP do Resend no Supabase Auth
+    Caminho: Supabase Dashboard -> Project Settings -> Auth -> SMTP Settings
+    Se "Enable custom SMTP" estiver desligado, ativar com:
+      Host:     smtp.resend.com
+      Port:     465 (SSL) ou 587 (TLS)
+      Username: resend
+      Password: sua RESEND_API_KEY
+      Sender:   noreply@morabilidade.com.br
+    O domínio precisa estar verificado no Resend antes (DNS records SPF/DKIM).
+    Sem isso: recuperação de senha cai em rate limit do Supabase e em spam.
+
+[ ] Snapshot do banco antes do tráfego real
+    Opção 1: Supabase Dashboard -> Database -> Backups -> Create backup
+    Opção 2: pg_dump local da connection string de prod
+    Rede de segurança barata caso algo escape no go-live.
+
+[ ] Smoke test após o deploy do commit d799ea2
+    [ ] GET https://api.morabilidade.com.br/health -> {"status":"ok"}
+    [ ] Login no painel funciona
+    [ ] Criar imóvel + upload de foto
+    [ ] Foto aparece no site público
+    [ ] Formulário de contato envia email (conferir caixa)
+    [ ] Sentry recebe um erro de teste
+
+
+PÓS-LAUNCH — esta semana, sem pressa
+-------------------------------------
+
+[ ] Plano do Supabase / política de backup
+    Se ainda for Free: sem PITR (point-in-time recovery).
+    Decidir: subir para Pro ou agendar pg_dump diário externo.
+
+[ ] Object Versioning no bucket Firebase Storage
+    Console GCP -> Storage -> [bucket] -> Protection -> ativar Object Versioning.
+    Protege contra delete acidental de fotos.
+
+[ ] Rotacionar chave do Firebase
+    A chave do commit be8096a ainda funciona (foi removida do tracking em
+    e77b7af mas continua recuperável no histórico).
+    Console Google Cloud -> IAM -> Service Accounts -> criar nova chave,
+    substituir FIREBASE_CREDENTIALS_JSON no Railway, revogar a antiga.
+    Não é urgente (repo privado), só higiene.
+
+[ ] npm audit fix --force em site/ e web/
+    Sobe Next.js 15.5.15 -> 15.5.18.
+    Resolve 4 CVEs:
+      - HIGH: SSRF via WebSocket upgrades
+      - HIGH: middleware/proxy bypass via dynamic route params
+      - MODERATE: cache poisoning em RSC
+      - MODERATE: postcss XSS e ws memory disclosure
+    Não foi feito no dia do launch porque é upgrade forçado de major dep.
+
+[ ] Limpar typecheck pré-existente
+    web/src/lib/__tests__/api.test.ts -> mocks incompletos de AuthState.
+    site/ -> embla-carousel-react e react-leaflet sem types instalados.
+    Não bloqueia (CI roda next build, não tsc --noEmit), mas vale alinhar.
+
+
+CONTEXTO — o que o commit d799ea2 fez
+--------------------------------------
+
+Estabilidade:
+  - site/src/lib/geocoding.ts: AbortController 4s no Nominatim
+  - site/src/lib/api.ts: retry em 502/503/504/timeout nos GETs
+  - railway.toml: healthcheckPath, restartPolicyType=ON_FAILURE
+  - api/Dockerfile: usuário non-root, HEALTHCHECK nativo
+
+Segurança:
+  - site/next.config.ts e web/next.config.ts: HSTS, X-Frame-Options,
+    X-Content-Type-Options, Referrer-Policy, Permissions-Policy
+  - site/sentry.{client,server}.config.ts: beforeSend scrub de PII
+
+UX em falha:
+  - site/src/app/{error,not-found,global-error}.tsx
+  - web/src/app/{error,not-found}.tsx
