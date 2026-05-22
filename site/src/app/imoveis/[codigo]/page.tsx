@@ -300,13 +300,16 @@ export default async function DetalheImovelPage({ params }: Props) {
           </div>
 
           {/* ── Sidebar ── */}
-          <div className="space-y-4">
+          {/* Sticky no container inteiro pra que card de preço + características
+              acompanhem a rolagem juntos no desktop. No mobile (sidebar abaixo
+              do conteúdo) `sticky` não tem efeito útil, então fica só md+. */}
+          <div
+            className="space-y-4 md:sticky md:self-start"
+            style={{ top: "clamp(96px, 12vw, 104px)" }}
+          >
 
-            {/* Card de preço — sticky usa a mesma fórmula de altura da navbar */}
-            <div
-              className="bg-white rounded-xl border border-slate-100 shadow-sm p-5 md:sticky"
-              style={{ top: "clamp(96px, 12vw, 104px)" }}
-            >
+            {/* Card de preço */}
+            <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-5">
               <p className="text-xs text-slate-400 font-mono mb-1">{imovel.codigo}</p>
 
               {precoVenda && (
