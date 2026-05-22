@@ -55,10 +55,16 @@ function ScrollArrow({
   );
 }
 
+const AUTOPLAY_INTERVAL_MS = 6000;
+const AUTOPLAY_RESUME_AFTER_INTERACTION_MS = 10000;
+
 function DestaquesScrollInner({ imoveis }: { imoveis: ImovelCard[] }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canLeft, setCanLeft] = useState(false);
   const [canRight, setCanRight] = useState(false);
+  const pausedRef = useRef(false);
+  const visibleRef = useRef(false);
+  const interactionPauseUntilRef = useRef(0);
 
   const updateArrows = useCallback(() => {
     const el = scrollRef.current;
@@ -80,19 +86,86 @@ function DestaquesScrollInner({ imoveis }: { imoveis: ImovelCard[] }) {
     };
   }, [updateArrows]);
 
-  const scroll = (dir: "left" | "right") => {
-    const el = scrollRef.current;
-    if (!el) return;
+  const getStep = (el: HTMLDivElement) => {
     const firstCard = el.firstElementChild as HTMLElement | null;
     const cardWidth = firstCard?.getBoundingClientRect().width ?? el.clientWidth * 0.72;
     const gap = parseFloat(getComputedStyle(el).columnGap || "0") || 20;
-    const step = cardWidth + gap;
+    return cardWidth + gap;
+  };
+
+  const scroll = (dir: "left" | "right") => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const step = getStep(el);
     el.scrollBy({ left: dir === "left" ? -step : step, behavior: "smooth" });
   };
 
+  // Auto-rotação: avança 1 card a cada AUTOPLAY_INTERVAL_MS.
+  // Pausa: hover, touch ativo, fora do viewport, prefers-reduced-motion,
+  // ou interação manual recente (setas, scroll do usuário).
+  useEffect(() => {
+    if (imoveis.length <= 1) return;
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduceMotion) return;
+
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        visibleRef.current = entry.isIntersecting;
+      },
+      { threshold: 0.25 },
+    );
+    io.observe(el);
+
+    const markInteraction = () => {
+      interactionPauseUntilRef.current = Date.now() + AUTOPLAY_RESUME_AFTER_INTERACTION_MS;
+    };
+    // Scroll por touch/wheel/drag conta como interação; scroll programático nosso
+    // também dispara, mas marcar a pausa nesse caso só atrasa o próximo tick —
+    // tolerável e mais simples que tentar diferenciar a origem.
+    el.addEventListener("wheel", markInteraction, { passive: true });
+    el.addEventListener("touchstart", markInteraction, { passive: true });
+
+    const tick = () => {
+      if (pausedRef.current) return;
+      if (!visibleRef.current) return;
+      if (Date.now() < interactionPauseUntilRef.current) return;
+      const step = getStep(el);
+      const atEnd = el.scrollLeft >= el.scrollWidth - el.clientWidth - 4;
+      el.scrollTo({
+        left: atEnd ? 0 : el.scrollLeft + step,
+        behavior: "smooth",
+      });
+    };
+    const id = window.setInterval(tick, AUTOPLAY_INTERVAL_MS);
+
+    return () => {
+      window.clearInterval(id);
+      io.disconnect();
+      el.removeEventListener("wheel", markInteraction);
+      el.removeEventListener("touchstart", markInteraction);
+    };
+  }, [imoveis.length]);
+
+  const handleArrowClick = (dir: "left" | "right") => {
+    interactionPauseUntilRef.current = Date.now() + AUTOPLAY_RESUME_AFTER_INTERACTION_MS;
+    scroll(dir);
+  };
+
   return (
-    <div className="relative" style={{ paddingLeft: 28, paddingRight: 28 }}>
-      <ScrollArrow dir="left" visible={canLeft} onClick={() => scroll("left")} />
+    <div
+      className="relative"
+      style={{ paddingLeft: 28, paddingRight: 28 }}
+      onMouseEnter={() => {
+        pausedRef.current = true;
+      }}
+      onMouseLeave={() => {
+        pausedRef.current = false;
+      }}
+    >
+      <ScrollArrow dir="left" visible={canLeft} onClick={() => handleArrowClick("left")} />
 
       <div
         ref={scrollRef}
@@ -109,7 +182,7 @@ function DestaquesScrollInner({ imoveis }: { imoveis: ImovelCard[] }) {
         ))}
       </div>
 
-      <ScrollArrow dir="right" visible={canRight} onClick={() => scroll("right")} />
+      <ScrollArrow dir="right" visible={canRight} onClick={() => handleArrowClick("right")} />
     </div>
   );
 }
