@@ -55,16 +55,14 @@ function ScrollArrow({
   );
 }
 
-const AUTOPLAY_INTERVAL_MS = 6000;
-const AUTOPLAY_RESUME_AFTER_INTERACTION_MS = 10000;
+const AUTOPLAY_INTERVAL_MS = 3000;
+const MOBILE_MEDIA_QUERY = "(max-width: 767px)";
 
 function DestaquesScrollInner({ imoveis }: { imoveis: ImovelCard[] }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canLeft, setCanLeft] = useState(false);
   const [canRight, setCanRight] = useState(false);
-  const pausedRef = useRef(false);
-  const visibleRef = useRef(false);
-  const interactionPauseUntilRef = useRef(0);
+  const interactedRef = useRef(false);
 
   const updateArrows = useCallback(() => {
     const el = scrollRef.current;
@@ -100,38 +98,29 @@ function DestaquesScrollInner({ imoveis }: { imoveis: ImovelCard[] }) {
     el.scrollBy({ left: dir === "left" ? -step : step, behavior: "smooth" });
   };
 
-  // Auto-rotação: avança 1 card a cada AUTOPLAY_INTERVAL_MS.
-  // Pausa: hover, touch ativo, fora do viewport, prefers-reduced-motion,
-  // ou interação manual recente (setas, scroll do usuário).
+  // Auto-rotação só no mobile. Avança 1 card a cada AUTOPLAY_INTERVAL_MS.
+  // Para permanentemente assim que o usuário interagir (touch ou clique nas setas).
   useEffect(() => {
     if (imoveis.length <= 1) return;
     const el = scrollRef.current;
     if (!el) return;
+    if (typeof window === "undefined") return;
 
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduceMotion) return;
+    const mql = window.matchMedia(MOBILE_MEDIA_QUERY);
+    let intervalId: number | null = null;
 
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        visibleRef.current = entry.isIntersecting;
-      },
-      { threshold: 0.25 },
-    );
-    io.observe(el);
-
-    const markInteraction = () => {
-      interactionPauseUntilRef.current = Date.now() + AUTOPLAY_RESUME_AFTER_INTERACTION_MS;
+    const stop = () => {
+      if (intervalId !== null) {
+        window.clearInterval(intervalId);
+        intervalId = null;
+      }
     };
-    // Scroll por touch/wheel/drag conta como interação; scroll programático nosso
-    // também dispara, mas marcar a pausa nesse caso só atrasa o próximo tick —
-    // tolerável e mais simples que tentar diferenciar a origem.
-    el.addEventListener("wheel", markInteraction, { passive: true });
-    el.addEventListener("touchstart", markInteraction, { passive: true });
 
     const tick = () => {
-      if (pausedRef.current) return;
-      if (!visibleRef.current) return;
-      if (Date.now() < interactionPauseUntilRef.current) return;
+      if (interactedRef.current) {
+        stop();
+        return;
+      }
       const step = getStep(el);
       const atEnd = el.scrollLeft >= el.scrollWidth - el.clientWidth - 4;
       el.scrollTo({
@@ -139,32 +128,42 @@ function DestaquesScrollInner({ imoveis }: { imoveis: ImovelCard[] }) {
         behavior: "smooth",
       });
     };
-    const id = window.setInterval(tick, AUTOPLAY_INTERVAL_MS);
+
+    const start = () => {
+      if (intervalId !== null) return;
+      if (interactedRef.current) return;
+      if (!mql.matches) return;
+      intervalId = window.setInterval(tick, AUTOPLAY_INTERVAL_MS);
+    };
+
+    const onMediaChange = () => {
+      if (mql.matches) start();
+      else stop();
+    };
+
+    const onInteraction = () => {
+      interactedRef.current = true;
+      stop();
+    };
+    el.addEventListener("touchstart", onInteraction, { passive: true });
+
+    start();
+    mql.addEventListener("change", onMediaChange);
 
     return () => {
-      window.clearInterval(id);
-      io.disconnect();
-      el.removeEventListener("wheel", markInteraction);
-      el.removeEventListener("touchstart", markInteraction);
+      stop();
+      mql.removeEventListener("change", onMediaChange);
+      el.removeEventListener("touchstart", onInteraction);
     };
   }, [imoveis.length]);
 
   const handleArrowClick = (dir: "left" | "right") => {
-    interactionPauseUntilRef.current = Date.now() + AUTOPLAY_RESUME_AFTER_INTERACTION_MS;
+    interactedRef.current = true;
     scroll(dir);
   };
 
   return (
-    <div
-      className="relative"
-      style={{ paddingLeft: 28, paddingRight: 28 }}
-      onMouseEnter={() => {
-        pausedRef.current = true;
-      }}
-      onMouseLeave={() => {
-        pausedRef.current = false;
-      }}
-    >
+    <div className="relative" style={{ paddingLeft: 28, paddingRight: 28 }}>
       <ScrollArrow dir="left" visible={canLeft} onClick={() => handleArrowClick("left")} />
 
       <div
