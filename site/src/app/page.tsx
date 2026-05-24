@@ -140,30 +140,6 @@ export default async function HomePage() {
           </h1>
 
           <HeroSearch />
-
-          {total > 0 && (
-            <div className="mt-4 flex justify-center">
-              <div
-                className="inline-flex items-center gap-[9px] rounded-full px-[18px] py-2 border border-white/15 backdrop-blur-md backdrop-saturate-150"
-                style={{
-                  background: "rgba(20,22,18,0.40)",
-                  boxShadow:
-                    "0 8px 24px rgba(20,22,18,0.28), inset 0 1px 0 rgba(252,252,252,0.08)",
-                }}
-              >
-                <span className="relative inline-flex w-2 h-2 shrink-0">
-                  <span className="absolute inset-[-4px] rounded-full bg-gold-400 opacity-35 animate-pulse-ring" />
-                  <span className="relative w-2 h-2 rounded-full bg-gold-400 shadow-[0_0_10px_#d8cb6a]" />
-                </span>
-                <span className="text-[12.5px] font-medium text-white/80 tracking-wide">
-                  <span className="text-gold-light font-bold text-[13px]" style={{ color: "#e8dea0" }}>
-                    {total}
-                  </span>{" "}
-                  imóve{total !== 1 ? "is" : "l"} disponíve{total !== 1 ? "is" : "l"} agora
-                </span>
-              </div>
-            </div>
-          )}
         </div>
       </section>
 
@@ -196,11 +172,6 @@ export default async function HomePage() {
               >
                 {usandoDestaquesAdmin ? "Nossos destaques" : "Imóveis disponíveis"}
               </h2>
-              {total > 0 && (
-                <p style={{ fontSize: 14, color: "#7a7c72", marginTop: 6 }}>
-                  {total} imóve{total !== 1 ? "is" : "l"} disponíve{total !== 1 ? "is" : "l"} no portfólio
-                </p>
-              )}
             </div>
             <Link
               href="/imoveis"

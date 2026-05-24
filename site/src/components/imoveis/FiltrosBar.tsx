@@ -253,13 +253,6 @@ export function FiltrosBar({ total, bairros = [] }: Props) {
           </button>
         )}
 
-        {/* Contador */}
-        <div
-          className={`${hasFilters ? "" : "ml-auto"} flex-shrink-0 text-xs italic`}
-          style={{ color: "#7a7c72", whiteSpace: "nowrap" }}
-        >
-          {total} {total === 1 ? "imóvel" : "imóveis"}
-        </div>
       </div>
     </div>
   );

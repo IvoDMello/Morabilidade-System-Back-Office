@@ -36,11 +36,11 @@ export function ListagemContent({ imoveis, total, page, totalPages }: Props) {
 
   return (
     <div>
-      <p className="text-slate-400 text-sm mb-6 h-5">
-        {total === 0
-          ? "Nenhum imóvel encontrado para os filtros selecionados."
-          : `${total} imóve${total !== 1 ? "is" : "l"} encontrado${total !== 1 ? "s" : ""}`}
-      </p>
+      {total === 0 && (
+        <p className="text-slate-400 text-sm mb-6 h-5">
+          Nenhum imóvel encontrado para os filtros selecionados.
+        </p>
+      )}
 
       {imoveis.length === 0 ? (
         <div className="py-24 text-center border border-dashed border-slate-200 rounded-2xl">
