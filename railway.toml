@@ -3,11 +3,11 @@ builder = "dockerfile"
 dockerfilePath = "api/Dockerfile"
 
 [deploy]
-# $PORT é injetado pelo Railway em runtime — não hardcodar 8000.
-# Sem isso o Railway envia tráfego pra uma porta diferente da que o uvicorn
-# escuta e o healthcheck dá timeout (caso em 2026-05-26: api de pé na 8000,
-# Railway tentando outra porta, deploy "Online" mas marcado Failed).
-startCommand = "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"
+# Sem startCommand: usamos o CMD do Dockerfile, que faz `sh -c uvicorn ... --port ${PORT:-8000}`.
+# O Railway passa startCommand direto pro processo sem shell, então tentar
+# expansão de variável aqui resulta em "Invalid value for '--port'" (a string
+# literal vai pro uvicorn). O CMD do Dockerfile usa exec form com `sh -c`,
+# que expande $PORT corretamente.
 healthcheckPath = "/health"
 healthcheckTimeout = 30
 restartPolicyType = "ON_FAILURE"
