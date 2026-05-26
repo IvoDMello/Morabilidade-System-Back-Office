@@ -17,6 +17,7 @@ import {
 import { Sparkles } from "lucide-react";
 import Link from "next/link";
 import { api } from "@/lib/api";
+import { RelatoriosTabs } from "@/components/layout/relatorios-tabs";
 
 interface RelatoriosData {
   meses_labels: string[];
@@ -420,6 +421,8 @@ export default function RelatoriosPage() {
           Visão analítica do portfólio e da carteira de clientes.
         </p>
       </div>
+
+      <RelatoriosTabs />
 
       {/* Seção: Imóveis ao longo do tempo */}
       <section>

@@ -7,6 +7,7 @@ import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid,
 } from "recharts";
 import { api } from "@/lib/api";
+import { RelatoriosTabs } from "@/components/layout/relatorios-tabs";
 
 interface Janela {
   total_views: number;
@@ -89,11 +90,13 @@ export default function AudienciaPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Audiência</h1>
+        <h1 className="text-2xl font-bold text-slate-900">Relatórios</h1>
         <p className="text-slate-500 text-sm mt-1">
           Quantas pessoas visitaram o site e quais anúncios chamaram mais atenção.
         </p>
       </div>
+
+      <RelatoriosTabs />
 
       <section>
         <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">

@@ -14,7 +14,6 @@ import {
   BarChart2,
   Sparkles,
   FileSignature,
-  LineChart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/lib/auth-store";
@@ -32,8 +31,10 @@ const navItems = [
   { href: "/oportunidades", label: "Oportunidades", icon: Sparkles },
   { href: "/locacoes", label: "Adm Locação", icon: FileSignature },
   { href: "/tags", label: "Tags", icon: Tags },
-  { href: "/relatorios", label: "Relatórios", icon: BarChart2 },
-  { href: "/audiencia", label: "Audiência", icon: LineChart },
+  // Relatórios contém as abas internas Portfólio + Audiência (ver
+  // components/layout/relatorios-tabs.tsx). Quando estamos em /audiencia,
+  // queremos que o item Relatórios continue marcado como ativo no menu.
+  { href: "/relatorios", label: "Relatórios", icon: BarChart2, alsoActiveOn: ["/audiencia"] },
   { href: "/usuarios", label: "Usuários", icon: UserCog, adminOnly: true },
 ];
 
@@ -93,7 +94,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             const active =
               item.href === "/"
                 ? pathname === "/"
-                : pathname.startsWith(item.href);
+                : pathname.startsWith(item.href) ||
+                  (item.alsoActiveOn?.some((p) => pathname.startsWith(p)) ?? false);
 
             return (
               <Link
