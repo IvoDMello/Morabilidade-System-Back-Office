@@ -3,10 +3,13 @@ builder = "dockerfile"
 dockerfilePath = "api/Dockerfile"
 
 [deploy]
-# Sem startCommand: o CMD do Dockerfile (`sh -c "uvicorn ... --port ${PORT:-8000}"`)
-# expande $PORT corretamente. Confirmado em 2026-05-26: o Railway injeta
-# PORT=8080 e a app sobe em 0.0.0.0:8080. Hardcodar 8000 faz o app escutar
-# numa porta diferente da que o Railway roteia → healthcheck timeout + 502.
+# Porta 8000 hardcoded — o proxy público do Railway (Settings → Networking)
+# está configurado pra rotear api.morabilidade.com.br e api.morabilidade.com
+# pra Port 8000. Se a app escutar em outra porta (inclusive 8080 que o Railway
+# injeta via $PORT em runtime), o healthcheck interno até passa, mas todo
+# tráfego externo retorna 502 "Application failed to respond".
+# NÃO MUDAR sem alinhar com a config de Networking do Railway.
+startCommand = "uvicorn app.main:app --host 0.0.0.0 --port 8000"
 healthcheckPath = "/health"
 healthcheckTimeout = 30
 restartPolicyType = "ON_FAILURE"
