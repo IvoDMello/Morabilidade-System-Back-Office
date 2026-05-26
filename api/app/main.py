@@ -65,6 +65,14 @@ def health_check():
     return {"status": "ok", "service": "Morabilidade API"}
 
 
+# Railway healthcheck (railway.toml: healthcheckPath = "/health") e Dockerfile
+# HEALTHCHECK apontam pra esta rota. Sem ela todo deploy falha o healthcheck
+# e o Railway mantém a versão anterior no ar — a nova nunca vai pro tráfego.
+@app.get("/health", tags=["Health"], include_in_schema=False)
+def health_endpoint():
+    return {"status": "ok"}
+
+
 @app.get("/stats", tags=["Health"])
 def get_stats(current_user: dict = Depends(get_current_user)):
     total_imoveis = supabase_admin.table("imoveis").select("id", count="exact").execute().count or 0
