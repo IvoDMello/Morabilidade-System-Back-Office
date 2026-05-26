@@ -3,7 +3,11 @@ builder = "dockerfile"
 dockerfilePath = "api/Dockerfile"
 
 [deploy]
-startCommand = "uvicorn app.main:app --host 0.0.0.0 --port 8000"
+# $PORT é injetado pelo Railway em runtime — não hardcodar 8000.
+# Sem isso o Railway envia tráfego pra uma porta diferente da que o uvicorn
+# escuta e o healthcheck dá timeout (caso em 2026-05-26: api de pé na 8000,
+# Railway tentando outra porta, deploy "Online" mas marcado Failed).
+startCommand = "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"
 healthcheckPath = "/health"
 healthcheckTimeout = 30
 restartPolicyType = "ON_FAILURE"
