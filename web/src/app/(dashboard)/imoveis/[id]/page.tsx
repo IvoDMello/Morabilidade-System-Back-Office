@@ -11,6 +11,7 @@ import { Sparkles } from "lucide-react";
 import { ImovelForm, type ImovelFormData } from "@/components/imoveis/imovel-form";
 import { InteressadosImovel } from "@/components/imoveis/interessados-imovel";
 import { AcompanhamentoImovel } from "@/components/imoveis/acompanhamento-imovel";
+import { AudienciaImovel } from "@/components/imoveis/audiencia-imovel";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import type { Imovel, Foto } from "@/types";
 
@@ -448,6 +449,9 @@ export default function EditarImovelPage({
 
       {abaAtiva === "dados" && (
         <>
+          {/* Audiência no site (público) */}
+          <AudienciaImovel codigo={imovel.codigo} />
+
           {/* Formulário de dados */}
           <ImovelForm
             key={imovel.id}

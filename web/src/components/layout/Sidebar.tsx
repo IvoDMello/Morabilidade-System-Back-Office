@@ -14,6 +14,7 @@ import {
   BarChart2,
   Sparkles,
   FileSignature,
+  LineChart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/lib/auth-store";
@@ -32,6 +33,7 @@ const navItems = [
   { href: "/locacoes", label: "Adm Locação", icon: FileSignature },
   { href: "/tags", label: "Tags", icon: Tags },
   { href: "/relatorios", label: "Relatórios", icon: BarChart2 },
+  { href: "/audiencia", label: "Audiência", icon: LineChart },
   { href: "/usuarios", label: "Usuários", icon: UserCog, adminOnly: true },
 ];
 
