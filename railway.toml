@@ -3,11 +3,10 @@ builder = "dockerfile"
 dockerfilePath = "api/Dockerfile"
 
 [deploy]
-# Porta hardcoded em 8000 — é a config que funcionou em prod por meses antes
-# do experimento de PORT dinâmico em 2026-05-26 quebrar tudo. Voltamos pra cá.
-# A solução do healthcheck (que estava falhando silenciosamente) foi adicionar
-# o endpoint /health no main.py (commit 2de2252).
-startCommand = "uvicorn app.main:app --host 0.0.0.0 --port 8000"
+# Sem startCommand: o CMD do Dockerfile (`sh -c "uvicorn ... --port ${PORT:-8000}"`)
+# expande $PORT corretamente. Confirmado em 2026-05-26: o Railway injeta
+# PORT=8080 e a app sobe em 0.0.0.0:8080. Hardcodar 8000 faz o app escutar
+# numa porta diferente da que o Railway roteia → healthcheck timeout + 502.
 healthcheckPath = "/health"
 healthcheckTimeout = 30
 restartPolicyType = "ON_FAILURE"
