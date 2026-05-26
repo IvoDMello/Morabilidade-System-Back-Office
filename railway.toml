@@ -3,11 +3,11 @@ builder = "dockerfile"
 dockerfilePath = "api/Dockerfile"
 
 [deploy]
-# Sem startCommand: usamos o CMD do Dockerfile, que faz `sh -c uvicorn ... --port ${PORT:-8000}`.
-# O Railway passa startCommand direto pro processo sem shell, então tentar
-# expansão de variável aqui resulta em "Invalid value for '--port'" (a string
-# literal vai pro uvicorn). O CMD do Dockerfile usa exec form com `sh -c`,
-# que expande $PORT corretamente.
+# Porta hardcoded em 8000 — é a config que funcionou em prod por meses antes
+# do experimento de PORT dinâmico em 2026-05-26 quebrar tudo. Voltamos pra cá.
+# A solução do healthcheck (que estava falhando silenciosamente) foi adicionar
+# o endpoint /health no main.py (commit 2de2252).
+startCommand = "uvicorn app.main:app --host 0.0.0.0 --port 8000"
 healthcheckPath = "/health"
 healthcheckTimeout = 30
 restartPolicyType = "ON_FAILURE"
