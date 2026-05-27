@@ -6,6 +6,8 @@ import { formatarMoeda, labelTipoImovel, labelTipoNegocio } from "@/lib/utils";
 
 export function DestCard({ imovel }: { imovel: ImovelCard }) {
   const isVenda = imovel.tipo_negocio === "venda" || imovel.tipo_negocio === "ambos";
+  const tagVendido = imovel.tags.find((t) => t.nome.trim().toLowerCase() === "vendido");
+  const outrasTags = imovel.tags.filter((t) => t !== tagVendido);
 
   function preco(): string | null {
     if (imovel.tipo_negocio === "venda" && imovel.valor_venda)
@@ -51,18 +53,27 @@ export function DestCard({ imovel }: { imovel: ImovelCard }) {
             <Ruler className="w-8 h-8 opacity-20" style={{ color: "#585a4f" }} />
           </div>
         )}
-        <span
-          className="absolute top-3 left-3 text-[10px] font-bold uppercase tracking-[0.1em] px-2.5 py-1 rounded-full"
-          style={{
-            backgroundColor: isVenda ? "#d8cb6a" : "#585a4f",
-            color: isVenda ? "#3e4037" : "#fcfcfc",
-          }}
-        >
-          {labelTipoNegocio(imovel.tipo_negocio)}
-        </span>
-        {imovel.tags.length > 0 && (
+        {tagVendido ? (
+          <span
+            className="absolute top-3 left-3 text-[10px] font-bold uppercase tracking-[0.1em] px-2.5 py-1 rounded-full text-white shadow-sm"
+            style={{ backgroundColor: tagVendido.cor ?? "#6b7280" }}
+          >
+            {tagVendido.nome}
+          </span>
+        ) : (
+          <span
+            className="absolute top-3 left-3 text-[10px] font-bold uppercase tracking-[0.1em] px-2.5 py-1 rounded-full"
+            style={{
+              backgroundColor: isVenda ? "#d8cb6a" : "#585a4f",
+              color: isVenda ? "#3e4037" : "#fcfcfc",
+            }}
+          >
+            {labelTipoNegocio(imovel.tipo_negocio)}
+          </span>
+        )}
+        {outrasTags.length > 0 && (
           <div className="absolute top-3 right-3 flex flex-col gap-1 items-end">
-            {imovel.tags.slice(0, 2).map((tag) => (
+            {outrasTags.slice(0, 2).map((tag) => (
               <span
                 key={tag.id}
                 className="text-[10px] font-bold uppercase tracking-[0.1em] px-2.5 py-1 rounded-full text-white shadow-sm"

@@ -22,6 +22,8 @@ export function ImovelCard({ imovel }: { imovel: ImovelCardType }) {
 
   const negocioLabel = labelTipoNegocio(imovel.tipo_negocio);
   const isVenda = imovel.tipo_negocio === "venda" || imovel.tipo_negocio === "ambos";
+  const tagVendido = imovel.tags.find((t) => t.nome.trim().toLowerCase() === "vendido");
+  const outrasTags = imovel.tags.filter((t) => t !== tagVendido);
 
   return (
     <Link
@@ -48,21 +50,30 @@ export function ImovelCard({ imovel }: { imovel: ImovelCardType }) {
         {/* Overlay gradient */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-        {/* Badge negócio */}
-        <span
-          className="absolute top-3 left-3 px-2.5 py-1 text-[10px] font-bold rounded-full shadow-sm tracking-[0.1em] uppercase"
-          style={{
-            backgroundColor: isVenda ? "#d8cb6a" : "#585a4f",
-            color: isVenda ? "#3e4037" : "#fcfcfc",
-          }}
-        >
-          {negocioLabel}
-        </span>
+        {/* Badge negócio (substituído pela tag "Vendido" quando aplicada) */}
+        {tagVendido ? (
+          <span
+            className="absolute top-3 left-3 px-2.5 py-1 text-[10px] font-bold rounded-full shadow-sm tracking-[0.1em] uppercase text-white"
+            style={{ backgroundColor: tagVendido.cor ?? "#6b7280" }}
+          >
+            {tagVendido.nome}
+          </span>
+        ) : (
+          <span
+            className="absolute top-3 left-3 px-2.5 py-1 text-[10px] font-bold rounded-full shadow-sm tracking-[0.1em] uppercase"
+            style={{
+              backgroundColor: isVenda ? "#d8cb6a" : "#585a4f",
+              color: isVenda ? "#3e4037" : "#fcfcfc",
+            }}
+          >
+            {negocioLabel}
+          </span>
+        )}
 
         {/* Tags */}
-        {imovel.tags.length > 0 && (
+        {outrasTags.length > 0 && (
           <div className="absolute top-3 right-3 flex flex-col gap-1 items-end">
-            {imovel.tags.slice(0, 2).map((tag) => (
+            {outrasTags.slice(0, 2).map((tag) => (
               <span
                 key={tag.id}
                 className="px-2 py-0.5 text-xs font-semibold rounded-full text-white shadow-sm"
