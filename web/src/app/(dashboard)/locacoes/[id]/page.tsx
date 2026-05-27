@@ -188,6 +188,8 @@ export default function EditarContratoPage({
     seguro_incendio_anual: Number(contrato.seguro_incendio_anual ?? 0),
     incluir_seguro_incendio_cobranca:
       contrato.incluir_seguro_incendio_cobranca ?? false,
+    internet_mensal: Number(contrato.internet_mensal ?? 0),
+    incluir_internet_cobranca: contrato.incluir_internet_cobranca ?? false,
     numero_iptu: contrato.numero_iptu ?? "",
     dados_cobranca_pix: contrato.dados_cobranca_pix ?? "",
     dados_cobranca_banco: contrato.dados_cobranca_banco ?? "",
@@ -205,7 +207,8 @@ export default function EditarContratoPage({
     (contrato.incluir_iptu_cobranca ? Number(contrato.iptu_anual) / 10 : 0) +
     (contrato.incluir_seguro_incendio_cobranca
       ? Number(contrato.seguro_incendio_anual ?? 0) / 12
-      : 0) -
+      : 0) +
+    (contrato.incluir_internet_cobranca ? Number(contrato.internet_mensal ?? 0) : 0) -
     Number(contrato.fundo_reserva);
 
   const podeRescindir =

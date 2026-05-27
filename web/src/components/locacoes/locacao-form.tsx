@@ -45,6 +45,9 @@ const schema = z
     seguro_incendio_anual: valorOpcional,
     incluir_seguro_incendio_cobranca: z.boolean().default(false),
 
+    internet_mensal: valorOpcional,
+    incluir_internet_cobranca: z.boolean().default(false),
+
     numero_iptu: z.string().optional().or(z.literal("")),
     dados_cobranca_pix: z.string().optional().or(z.literal("")),
     dados_cobranca_banco: z.string().optional().or(z.literal("")),
@@ -133,6 +136,7 @@ export function LocacaoForm({
       incluir_fundo_obra_cobranca: false,
       incluir_iptu_cobranca: false,
       incluir_seguro_incendio_cobranca: false,
+      incluir_internet_cobranca: false,
       ...defaultValues,
     },
   });
@@ -167,6 +171,7 @@ export function LocacaoForm({
         incluir_fundo_obra_cobranca: false,
         incluir_iptu_cobranca: false,
         incluir_seguro_incendio_cobranca: false,
+        incluir_internet_cobranca: false,
         ...defaultValues,
       });
       jaResetou.current = true;
@@ -188,7 +193,8 @@ export function LocacaoForm({
   }, [imovelSelecionadoId, imoveis, loadingListas, proprietarioAtualId, setValue]);
 
   // Cálculo do total ao vivo — replica a regra do PDF:
-  //   Aluguel + (Condomínio) − (Fundo de obra) + (IPTU/10) + (Seguro/12) − Fundo de reserva
+  //   Aluguel + (Condomínio) − (Fundo de obra) + (IPTU/10) + (Seguro/12)
+  //          + (Internet) − Fundo de reserva
   const w = watch();
   const total = useMemo(() => {
     const aluguel = Number(w.aluguel_mensal) || 0;
@@ -198,19 +204,22 @@ export function LocacaoForm({
     const seguro = w.incluir_seguro_incendio_cobranca
       ? (Number(w.seguro_incendio_anual) || 0) / 12
       : 0;
+    const internet = w.incluir_internet_cobranca ? Number(w.internet_mensal) || 0 : 0;
     const fres = Number(w.fundo_reserva) || 0;
-    return aluguel + cond - fobra + iptu + seguro - fres;
+    return aluguel + cond - fobra + iptu + seguro + internet - fres;
   }, [
     w.aluguel_mensal,
     w.condominio_mensal,
     w.fundo_obra,
     w.iptu_anual,
     w.seguro_incendio_anual,
+    w.internet_mensal,
     w.fundo_reserva,
     w.incluir_condominio_cobranca,
     w.incluir_fundo_obra_cobranca,
     w.incluir_iptu_cobranca,
     w.incluir_seguro_incendio_cobranca,
+    w.incluir_internet_cobranca,
   ]);
 
   const submitButton = (
@@ -434,6 +443,25 @@ export function LocacaoForm({
             </label>
           </Field>
 
+          <Field label="Internet (R$)" error={errors.internet_mensal?.message}>
+            <input
+              type="number"
+              step="0.01"
+              min={0}
+              {...register("internet_mensal")}
+              className={inputClass}
+              onWheel={bloquearScroll}
+            />
+            <label className="flex items-center gap-2 mt-2 text-xs text-slate-600">
+              <input
+                type="checkbox"
+                {...register("incluir_internet_cobranca")}
+                className="rounded border-slate-300 text-[#585a4f] focus:ring-[#585a4f]/30"
+              />
+              Incluir internet na cobrança
+            </label>
+          </Field>
+
           <Field label="Número de inscrição do IPTU">
             <input
               type="text"
@@ -493,6 +521,9 @@ export function LocacaoForm({
               label="+ Seguro incêndio (1/12)"
               valor={(Number(w.seguro_incendio_anual) || 0) / 12}
             />
+          )}
+          {w.incluir_internet_cobranca && (
+            <Linha label="+ Internet" valor={Number(w.internet_mensal) || 0} />
           )}
           {Number(w.fundo_reserva) > 0 && (
             <Linha

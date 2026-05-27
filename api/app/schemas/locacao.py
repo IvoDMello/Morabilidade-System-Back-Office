@@ -57,6 +57,9 @@ class ContratoLocacaoBase(BaseModel):
     seguro_incendio_anual: Decimal = Field(default=Decimal("0"), ge=0)
     incluir_seguro_incendio_cobranca: bool = False
 
+    internet_mensal: Decimal = Field(default=Decimal("0"), ge=0)
+    incluir_internet_cobranca: bool = False
+
     numero_iptu: Optional[str] = None
     dados_cobranca_pix: Optional[str] = None
     dados_cobranca_banco: Optional[str] = None
@@ -104,6 +107,9 @@ class ContratoLocacaoUpdate(BaseModel):
 
     seguro_incendio_anual: Optional[Decimal] = Field(default=None, ge=0)
     incluir_seguro_incendio_cobranca: Optional[bool] = None
+
+    internet_mensal: Optional[Decimal] = Field(default=None, ge=0)
+    incluir_internet_cobranca: Optional[bool] = None
 
     numero_iptu: Optional[str] = None
     dados_cobranca_pix: Optional[str] = None

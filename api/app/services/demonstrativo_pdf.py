@@ -9,6 +9,7 @@ Reproduz a regra de cobrança do exemplo "Artur Araripe" (referência do projeto
                                  cobrado em 10 parcelas — padrão municipal RJ)
           + Seguro incêndio/12  (se incluir_seguro_incendio_cobranca;
                                  apólice anual diluída em 12 meses)
+          + Internet            (se incluir_internet_cobranca)
           - Fundo de reserva    (sempre deduz — responsabilidade do proprietário)
 
 Stack: ReportLab (pure-Python). Escolhido em vez de WeasyPrint porque não tem
@@ -73,6 +74,9 @@ def calcular_total_demonstrativo(contrato: dict) -> Decimal:
     if contrato.get("incluir_seguro_incendio_cobranca"):
         # Seguro incêndio: apólice anual diluída em 12 parcelas.
         total += _dec(contrato.get("seguro_incendio_anual")) / Decimal("12")
+
+    if contrato.get("incluir_internet_cobranca"):
+        total += _dec(contrato.get("internet_mensal"))
 
     total -= _dec(contrato.get("fundo_reserva"))
     return total.quantize(Decimal("0.01"))
@@ -193,6 +197,7 @@ def gerar_demonstrativo_pdf(contrato: dict, mes_referencia: date) -> bytes:
     incluir_fobra = bool(contrato.get("incluir_fundo_obra_cobranca"))
     incluir_iptu = bool(contrato.get("incluir_iptu_cobranca"))
     incluir_seguro = bool(contrato.get("incluir_seguro_incendio_cobranca"))
+    incluir_internet = bool(contrato.get("incluir_internet_cobranca"))
     fres = _dec(contrato.get("fundo_reserva"))
 
     linhas: list[tuple[str, Decimal, bool]] = []  # (label, valor, é_deducao)
@@ -211,6 +216,8 @@ def gerar_demonstrativo_pdf(contrato: dict, mes_referencia: date) -> bytes:
     if incluir_seguro:
         seg_mes = _dec(contrato.get("seguro_incendio_anual")) / Decimal("12")
         linhas.append(("Seguro incêndio (1/12 do anual)", seg_mes, False))
+    if incluir_internet:
+        linhas.append(("Internet", _dec(contrato.get("internet_mensal")), False))
     if fres > 0:
         linhas.append(("Fundo de reserva (dedução)", fres, True))
 

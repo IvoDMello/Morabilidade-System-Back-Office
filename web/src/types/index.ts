@@ -180,6 +180,8 @@ export interface ContratoLocacao {
   incluir_iptu_cobranca: boolean;
   seguro_incendio_anual: number;
   incluir_seguro_incendio_cobranca: boolean;
+  internet_mensal: number;
+  incluir_internet_cobranca: boolean;
   numero_iptu?: string;
   dados_cobranca_pix?: string;
   dados_cobranca_banco?: string;
