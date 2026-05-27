@@ -22,10 +22,9 @@ export function HeroSearch() {
   const [tipoImovel, setTipoImovel] = useState("");
   const [bairro, setBairro] = useState("");
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  function montarUrl(negocio: TipoNegocio): string {
     const params = new URLSearchParams();
-    if (tipoNegocio) params.set("tipo_negocio", tipoNegocio);
+    if (negocio) params.set("tipo_negocio", negocio);
     if (tipoImovel === "apartamento_terreo") {
       params.set("tipo_imovel", "apartamento");
       params.set("andar_max", "1");
@@ -34,7 +33,17 @@ export function HeroSearch() {
     }
     if (bairro.trim()) params.set("bairro", bairro.trim());
     const qs = params.toString();
-    router.push(`/imoveis${qs ? `?${qs}` : ""}`);
+    return `/imoveis${qs ? `?${qs}` : ""}`;
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    router.push(montarUrl(tipoNegocio));
+  }
+
+  function selecionarNegocio(v: TipoNegocio) {
+    setTipoNegocio(v);
+    if (v) router.push(montarUrl(v));
   }
 
   return (
@@ -53,19 +62,19 @@ export function HeroSearch() {
         >
           <SegmentButton
             active={tipoNegocio === ""}
-            onClick={() => setTipoNegocio("")}
+            onClick={() => selecionarNegocio("")}
           >
             Tudo
           </SegmentButton>
           <SegmentButton
             active={tipoNegocio === "venda"}
-            onClick={() => setTipoNegocio("venda")}
+            onClick={() => selecionarNegocio("venda")}
           >
             Comprar
           </SegmentButton>
           <SegmentButton
             active={tipoNegocio === "locacao"}
-            onClick={() => setTipoNegocio("locacao")}
+            onClick={() => selecionarNegocio("locacao")}
           >
             Alugar
           </SegmentButton>
