@@ -54,6 +54,7 @@ const schema = z
     dados_cobranca_agencia: z.string().optional().or(z.literal("")),
     dados_cobranca_conta: z.string().optional().or(z.literal("")),
     observacoes_demonstrativo: z.string().optional().or(z.literal("")),
+    observacoes_internas: z.string().optional().or(z.literal("")),
 
     taxa_administracao_pct: valorPercentual,
   })
@@ -601,6 +602,25 @@ export function LocacaoForm({
               />
             </Field>
           </div>
+        </div>
+      </div>
+
+      {/* Notas internas — apenas para a equipe da imobiliária */}
+      <div className="bg-amber-50/40 rounded-xl border border-amber-200 p-4 sm:p-6">
+        <div className="grid grid-cols-1 gap-4">
+          <SectionTitle>Notas internas</SectionTitle>
+
+          <Field
+            label="Observação interna"
+            hint="Visível apenas no back-office. NÃO aparece no PDF enviado ao locatário. Use para instruções internas, como o passo a passo para baixar o boleto desta locação."
+          >
+            <textarea
+              {...register("observacoes_internas")}
+              rows={5}
+              className={inputClass + " resize-y"}
+              placeholder="Ex: Boleto emitido pelo síndico — acessar portal X com login Y e baixar PDF do mês."
+            />
+          </Field>
         </div>
       </div>
 

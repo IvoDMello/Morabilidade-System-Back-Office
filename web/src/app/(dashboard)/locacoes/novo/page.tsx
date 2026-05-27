@@ -23,6 +23,7 @@ export default function NovoContratoPage() {
         dados_cobranca_agencia: data.dados_cobranca_agencia || null,
         dados_cobranca_conta: data.dados_cobranca_conta || null,
         observacoes_demonstrativo: data.observacoes_demonstrativo || null,
+        observacoes_internas: data.observacoes_internas || null,
       };
       const res = await api.post<{ id: string }>("/locacoes/", payload);
       toast.success("Contrato cadastrado com sucesso!");

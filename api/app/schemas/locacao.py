@@ -66,6 +66,9 @@ class ContratoLocacaoBase(BaseModel):
     dados_cobranca_agencia: Optional[str] = None
     dados_cobranca_conta: Optional[str] = None
     observacoes_demonstrativo: Optional[str] = None
+    # Notas internas da imobiliária (ex.: instruções de baixa do boleto).
+    # NÃO sai no PDF do demonstrativo — só consulta interna no back-office.
+    observacoes_internas: Optional[str] = None
 
     # Repasse ao proprietário (Fase 5) — percentual retido pela imobiliária
     # sobre o aluguel pago, antes do repasse mensal.
@@ -117,6 +120,7 @@ class ContratoLocacaoUpdate(BaseModel):
     dados_cobranca_agencia: Optional[str] = None
     dados_cobranca_conta: Optional[str] = None
     observacoes_demonstrativo: Optional[str] = None
+    observacoes_internas: Optional[str] = None
 
     taxa_administracao_pct: Optional[Decimal] = Field(default=None, ge=0, le=100)
 

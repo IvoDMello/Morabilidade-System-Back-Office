@@ -188,6 +188,7 @@ export interface ContratoLocacao {
   dados_cobranca_agencia?: string;
   dados_cobranca_conta?: string;
   observacoes_demonstrativo?: string;
+  observacoes_internas?: string;
   taxa_administracao_pct: number;
   status: StatusLocacao;
   motivo_rescisao?: string;

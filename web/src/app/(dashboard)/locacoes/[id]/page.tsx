@@ -74,6 +74,7 @@ export default function EditarContratoPage({
         dados_cobranca_agencia: rest.dados_cobranca_agencia || null,
         dados_cobranca_conta: rest.dados_cobranca_conta || null,
         observacoes_demonstrativo: rest.observacoes_demonstrativo || null,
+        observacoes_internas: rest.observacoes_internas || null,
       };
       await api.patch(`/locacoes/${id}`, payload);
       toast.success("Contrato atualizado!");
@@ -196,6 +197,7 @@ export default function EditarContratoPage({
     dados_cobranca_agencia: contrato.dados_cobranca_agencia ?? "",
     dados_cobranca_conta: contrato.dados_cobranca_conta ?? "",
     observacoes_demonstrativo: contrato.observacoes_demonstrativo ?? "",
+    observacoes_internas: contrato.observacoes_internas ?? "",
     taxa_administracao_pct: Number(contrato.taxa_administracao_pct ?? 0),
   };
 
