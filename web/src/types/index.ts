@@ -252,6 +252,7 @@ export interface ContratoLocacaoListItem {
   proprietario?: ParteResumo;
   locatario?: ParteResumo;
   created_at: string;
+  ultimo_mes_gerado?: string | null;
 }
 
 export interface PagamentoLocacao {

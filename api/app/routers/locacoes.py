@@ -191,7 +191,31 @@ def listar_contratos(
         .range(offset, offset + page_size - 1)
         .execute()
     )
-    return [_achatar_partes(c) for c in (result.data or [])]
+    contratos = [_achatar_partes(c) for c in (result.data or [])]
+
+    # Anexa o mês do último pagamento gerado (snapshot) — uma única query
+    # extra para todos os contratos da página, com Python escolhendo o máximo
+    # por contrato_id. Evita N queries e suporta page_size até 100.
+    ids = [c["id"] for c in contratos]
+    if ids:
+        pags = (
+            supabase_admin.table("locacao_pagamentos")
+            .select("contrato_id, mes_referencia")
+            .in_("contrato_id", ids)
+            .order("mes_referencia", desc=True)
+            .execute()
+            .data
+            or []
+        )
+        ultimo_por_contrato: dict[str, str] = {}
+        for p in pags:
+            cid = p.get("contrato_id")
+            if cid and cid not in ultimo_por_contrato:
+                ultimo_por_contrato[cid] = p.get("mes_referencia")
+        for c in contratos:
+            c["ultimo_mes_gerado"] = ultimo_por_contrato.get(c["id"])
+
+    return contratos
 
 
 def _marcar_atrasados(contrato_id: Optional[str] = None) -> None:

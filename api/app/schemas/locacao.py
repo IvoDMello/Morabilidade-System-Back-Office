@@ -168,6 +168,10 @@ class ContratoLocacaoListItem(BaseModel):
     proprietario: Optional[ParteResumo] = None
     locatario: Optional[ParteResumo] = None
     created_at: str
+    # Mês de competência do último pagamento gerado (snapshot). Permite à
+    # listagem mostrar "Último gerado: Junho 2026" sem precisar abrir o
+    # contrato. None quando nunca houve geração.
+    ultimo_mes_gerado: Optional[date] = None
 
 
 class RescindirContrato(BaseModel):

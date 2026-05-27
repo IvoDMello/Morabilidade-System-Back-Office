@@ -183,6 +183,12 @@ function AbaContratos() {
     return new Date(iso + "T00:00:00").toLocaleDateString("pt-BR");
   }
 
+  function formatarMesAno(iso: string) {
+    // mes_referencia vem como "YYYY-MM-01" do backend.
+    const [ano, mes] = iso.split("-");
+    return `${MESES_CURTOS[Number(mes) - 1]}/${ano.slice(2)}`;
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
@@ -242,6 +248,7 @@ function AbaContratos() {
                   <th className="hidden lg:table-cell text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Proprietário</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Status</th>
                   <th className="hidden sm:table-cell text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Aluguel</th>
+                  <th className="hidden lg:table-cell text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Último gerado</th>
                   <th className="hidden md:table-cell text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Vigência</th>
                   <th className="px-4 py-3" />
                 </tr>
@@ -274,6 +281,13 @@ function AbaContratos() {
                       </td>
                       <td className="hidden sm:table-cell px-4 py-3 text-right text-slate-700 font-mono text-xs">
                         {formatarMoeda(Number(c.aluguel_mensal))}
+                      </td>
+                      <td className="hidden lg:table-cell px-4 py-3 text-slate-500 text-xs">
+                        {c.ultimo_mes_gerado ? (
+                          formatarMesAno(c.ultimo_mes_gerado)
+                        ) : (
+                          <span className="text-slate-300">—</span>
+                        )}
                       </td>
                       <td className="hidden md:table-cell px-4 py-3 text-slate-500 text-xs">
                         <p>{formatarData(c.data_inicio)}</p>
