@@ -19,6 +19,9 @@ export default function NovoContratoPage() {
         ...data,
         numero_iptu: data.numero_iptu || null,
         dados_cobranca_pix: data.dados_cobranca_pix || null,
+        dados_cobranca_banco: data.dados_cobranca_banco || null,
+        dados_cobranca_agencia: data.dados_cobranca_agencia || null,
+        dados_cobranca_conta: data.dados_cobranca_conta || null,
         observacoes_demonstrativo: data.observacoes_demonstrativo || null,
       };
       const res = await api.post<{ id: string }>("/locacoes/", payload);

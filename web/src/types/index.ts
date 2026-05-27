@@ -182,6 +182,9 @@ export interface ContratoLocacao {
   incluir_seguro_incendio_cobranca: boolean;
   numero_iptu?: string;
   dados_cobranca_pix?: string;
+  dados_cobranca_banco?: string;
+  dados_cobranca_agencia?: string;
+  dados_cobranca_conta?: string;
   observacoes_demonstrativo?: string;
   taxa_administracao_pct: number;
   status: StatusLocacao;

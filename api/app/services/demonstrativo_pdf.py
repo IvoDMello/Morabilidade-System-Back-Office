@@ -247,7 +247,26 @@ def gerar_demonstrativo_pdf(contrato: dict, mes_referencia: date) -> bytes:
         c.setFillColor(OLIVE)
         c.setFont("Helvetica-Bold", 12)
         c.drawString(15 * mm + 42 * mm, y, pix)
-        y -= 14 * mm
+        y -= 8 * mm
+
+    # Dados bancários (TED/DOC) — só renderiza os campos preenchidos.
+    banco = (contrato.get("dados_cobranca_banco") or "").strip()
+    agencia = (contrato.get("dados_cobranca_agencia") or "").strip()
+    conta = (contrato.get("dados_cobranca_conta") or "").strip()
+    if banco or agencia or conta:
+        for label, valor in (("Banco:", banco), ("Agência:", agencia), ("Conta:", conta)):
+            if not valor:
+                continue
+            c.setFillColor(TEXTO_CLARO)
+            c.setFont("Helvetica", 12)
+            c.drawString(15 * mm, y, label)
+            c.setFillColor(OLIVE)
+            c.setFont("Helvetica-Bold", 12)
+            c.drawString(15 * mm + 22 * mm, y, valor)
+            y -= 7 * mm
+        y -= 5 * mm
+    elif pix:
+        y -= 6 * mm
     else:
         y -= 6 * mm
 

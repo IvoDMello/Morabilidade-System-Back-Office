@@ -70,6 +70,9 @@ export default function EditarContratoPage({
         ...rest,
         numero_iptu: rest.numero_iptu || null,
         dados_cobranca_pix: rest.dados_cobranca_pix || null,
+        dados_cobranca_banco: rest.dados_cobranca_banco || null,
+        dados_cobranca_agencia: rest.dados_cobranca_agencia || null,
+        dados_cobranca_conta: rest.dados_cobranca_conta || null,
         observacoes_demonstrativo: rest.observacoes_demonstrativo || null,
       };
       await api.patch(`/locacoes/${id}`, payload);
@@ -187,6 +190,9 @@ export default function EditarContratoPage({
       contrato.incluir_seguro_incendio_cobranca ?? false,
     numero_iptu: contrato.numero_iptu ?? "",
     dados_cobranca_pix: contrato.dados_cobranca_pix ?? "",
+    dados_cobranca_banco: contrato.dados_cobranca_banco ?? "",
+    dados_cobranca_agencia: contrato.dados_cobranca_agencia ?? "",
+    dados_cobranca_conta: contrato.dados_cobranca_conta ?? "",
     observacoes_demonstrativo: contrato.observacoes_demonstrativo ?? "",
     taxa_administracao_pct: Number(contrato.taxa_administracao_pct ?? 0),
   };

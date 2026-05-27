@@ -59,6 +59,9 @@ class ContratoLocacaoBase(BaseModel):
 
     numero_iptu: Optional[str] = None
     dados_cobranca_pix: Optional[str] = None
+    dados_cobranca_banco: Optional[str] = None
+    dados_cobranca_agencia: Optional[str] = None
+    dados_cobranca_conta: Optional[str] = None
     observacoes_demonstrativo: Optional[str] = None
 
     # Repasse ao proprietário (Fase 5) — percentual retido pela imobiliária
@@ -104,6 +107,9 @@ class ContratoLocacaoUpdate(BaseModel):
 
     numero_iptu: Optional[str] = None
     dados_cobranca_pix: Optional[str] = None
+    dados_cobranca_banco: Optional[str] = None
+    dados_cobranca_agencia: Optional[str] = None
+    dados_cobranca_conta: Optional[str] = None
     observacoes_demonstrativo: Optional[str] = None
 
     taxa_administracao_pct: Optional[Decimal] = Field(default=None, ge=0, le=100)

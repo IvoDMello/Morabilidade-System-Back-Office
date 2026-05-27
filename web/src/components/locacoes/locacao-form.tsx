@@ -47,6 +47,9 @@ const schema = z
 
     numero_iptu: z.string().optional().or(z.literal("")),
     dados_cobranca_pix: z.string().optional().or(z.literal("")),
+    dados_cobranca_banco: z.string().optional().or(z.literal("")),
+    dados_cobranca_agencia: z.string().optional().or(z.literal("")),
+    dados_cobranca_conta: z.string().optional().or(z.literal("")),
     observacoes_demonstrativo: z.string().optional().or(z.literal("")),
 
     taxa_administracao_pct: valorPercentual,
@@ -518,6 +521,38 @@ export function LocacaoForm({
                 {...register("dados_cobranca_pix")}
                 className={inputClass}
                 placeholder="E-mail, CPF, CNPJ, telefone ou chave aleatória"
+              />
+            </Field>
+          </div>
+
+          <Field label="Banco">
+            <input
+              type="text"
+              {...register("dados_cobranca_banco")}
+              className={inputClass}
+              placeholder="Ex: Itaú (341)"
+            />
+          </Field>
+
+          <Field label="Agência">
+            <input
+              type="text"
+              {...register("dados_cobranca_agencia")}
+              className={inputClass}
+              placeholder="Ex: 0123"
+            />
+          </Field>
+
+          <div className="sm:col-span-2">
+            <Field
+              label="Conta"
+              hint="Aparece no PDF junto com banco e agência (quando preenchidos)"
+            >
+              <input
+                type="text"
+                {...register("dados_cobranca_conta")}
+                className={inputClass}
+                placeholder="Ex: 45678-9"
               />
             </Field>
           </div>
