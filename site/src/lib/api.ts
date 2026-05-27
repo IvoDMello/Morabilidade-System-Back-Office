@@ -53,7 +53,14 @@ export async function getImoveisDisponiveis(
 ): Promise<ListResponse<ImovelCard>> {
   const url = new URL(`${API_URL}/imoveis/publico/disponiveis`);
   Object.entries(params).forEach(([k, v]) => {
-    if (v) url.searchParams.set(k, v);
+    if (v == null || v === "") return;
+    if (Array.isArray(v)) {
+      v.forEach((item) => {
+        if (item) url.searchParams.append(k, String(item));
+      });
+    } else {
+      url.searchParams.set(k, String(v));
+    }
   });
 
   const res = await fetchGetWithRetry(

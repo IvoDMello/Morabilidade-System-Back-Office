@@ -80,7 +80,7 @@ export interface Imovel {
 export interface FiltrosParams {
   tipo_negocio?: string;
   cidade?: string;
-  bairro?: string;
+  bairro?: string | string[];
   tipo_imovel?: string;
   dormitorios_min?: string;
   andar_max?: string;
@@ -88,6 +88,8 @@ export interface FiltrosParams {
   preco_max?: string;
   condicao?: string;
   mobiliado?: string;
+  codigo?: string;
+  q?: string;
   ordenar?: string;
   page?: string;
   page_size?: string;

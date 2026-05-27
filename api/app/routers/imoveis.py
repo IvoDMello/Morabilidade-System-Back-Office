@@ -51,6 +51,11 @@ def _norm(s: str) -> str:
     nfkd = unicodedata.normalize("NFKD", s)
     return "".join(c for c in nfkd if not unicodedata.combining(c)).lower()
 
+
+def _safe_for_or(s: str) -> str:
+    """Remove vírgulas/parênteses que quebrariam a sintaxe do PostgREST .or_()."""
+    return s.replace(",", " ").replace("(", " ").replace(")", " ").strip()
+
 router = APIRouter()
 
 _LIST_FIELDS = (
@@ -75,7 +80,12 @@ def _gerar_codigo() -> str:
 
 def _aplicar_filtros(query, *, tipo_negocio, disponibilidade, cidade, bairro,
                      tipo_imovel, dormitorios_min, preco_min, preco_max,
-                     condicao, mobiliado, codigo, andar_max=None):
+                     condicao, mobiliado, codigo, andar_max=None, q=None):
+    if q:
+        termo = _safe_for_or(q)
+        if termo:
+            termo_norm = _norm(termo)
+            query = query.or_(f"codigo.ilike.%{termo}%,bairro_norm.ilike.%{termo_norm}%")
     if codigo:
         query = query.ilike("codigo", f"%{codigo}%")
     if tipo_negocio:
@@ -85,7 +95,15 @@ def _aplicar_filtros(query, *, tipo_negocio, disponibilidade, cidade, bairro,
     if cidade:
         query = query.ilike("cidade_norm", f"%{_norm(cidade)}%")
     if bairro:
-        query = query.ilike("bairro_norm", f"%{_norm(bairro)}%")
+        # Aceita str (legacy do back-office) ou list[str] (multi-bairro do site).
+        bairros = [bairro] if isinstance(bairro, str) else [b for b in bairro if b]
+        if len(bairros) == 1:
+            query = query.ilike("bairro_norm", f"%{_norm(bairros[0])}%")
+        elif len(bairros) > 1:
+            clauses = ",".join(
+                f"bairro_norm.ilike.%{_norm(_safe_for_or(b))}%" for b in bairros
+            )
+            query = query.or_(clauses)
     if tipo_imovel:
         query = query.eq("tipo_imovel", _ev(tipo_imovel))
     if dormitorios_min is not None:
@@ -205,7 +223,9 @@ def imoveis_disponiveis_publico(
     http_response: Response,
     tipo_negocio: Optional[TipoNegocio] = None,
     cidade: Optional[str] = None,
-    bairro: Optional[str] = None,
+    bairro: Optional[List[str]] = Query(default=None, description="Aceita múltiplos: ?bairro=X&bairro=Y"),
+    q: Optional[str] = Query(default=None, description="Busca livre por código ou bairro"),
+    codigo: Optional[str] = Query(default=None, description="Filtra por código exato/contém"),
     tipo_imovel: Optional[TipoImovel] = None,
     dormitorios_min: Optional[int] = None,
     andar_max: Optional[int] = Query(default=None, ge=0, description="Filtro 'apenas térreo': andar_max=1"),
@@ -222,7 +242,7 @@ def imoveis_disponiveis_publico(
         cidade=cidade, bairro=bairro, tipo_imovel=tipo_imovel,
         dormitorios_min=dormitorios_min, andar_max=andar_max,
         preco_min=preco_min, preco_max=preco_max,
-        condicao=condicao, mobiliado=mobiliado, codigo=None,
+        condicao=condicao, mobiliado=mobiliado, codigo=codigo, q=q,
     )
     count_q = _aplicar_filtros(
         supabase_admin.table("imoveis").select("id", count="exact"), **filtros

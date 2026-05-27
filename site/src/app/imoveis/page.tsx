@@ -4,23 +4,33 @@ import { Footer } from "@/components/layout/Footer";
 import { FiltrosBar } from "@/components/imoveis/FiltrosBar";
 import { ListagemContent } from "@/components/imoveis/ListagemContent";
 import { getImoveisDisponiveis, getBairros } from "@/lib/api";
+import type { FiltrosParams } from "@/types";
 
 const PAGE_SIZE = 12;
 
 interface Props {
-  searchParams: Promise<{ [key: string]: string | undefined }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export default async function ImoveisPage({ searchParams }: Props) {
   const params = await searchParams;
-  const page = Math.max(1, Number(params.page ?? "1"));
+  const pageRaw = Array.isArray(params.page) ? params.page[0] : params.page;
+  const page = Math.max(1, Number(pageRaw ?? "1"));
+
+  // Só bairro aceita múltiplos valores; o resto colapsa pro primeiro pra não
+  // misturar tipos.
+  const filtros: FiltrosParams = { page: String(page), page_size: String(PAGE_SIZE) };
+  for (const [k, v] of Object.entries(params)) {
+    if (v == null) continue;
+    if (k === "bairro") {
+      (filtros as Record<string, unknown>).bairro = Array.isArray(v) ? v : [v];
+    } else {
+      (filtros as Record<string, unknown>)[k] = Array.isArray(v) ? v[0] : v;
+    }
+  }
 
   const [{ data: imoveis, total }, bairros] = await Promise.all([
-    getImoveisDisponiveis({
-      ...params,
-      page: String(page),
-      page_size: String(PAGE_SIZE),
-    }).catch(() => ({ data: [], total: 0 })),
+    getImoveisDisponiveis(filtros).catch(() => ({ data: [], total: 0 })),
     getBairros(),
   ]);
 
