@@ -65,3 +65,14 @@ Thumbs.db
 # Material de referência (não vai pro repo)
 # ========================
 design_handoff_morabilidade/
+
+# ========================
+# Claude Code — config local
+# ========================
+.claude/settings.local.json
+
+# ========================
+# Scripts ad-hoc / artefatos gerados localmente
+# ========================
+api/scripts/demonstrativo_administracao_*
+
