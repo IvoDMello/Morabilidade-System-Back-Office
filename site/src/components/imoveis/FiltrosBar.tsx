@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { SlidersHorizontal, ChevronDown, X, Search } from "lucide-react";
+import { SlidersHorizontal, ChevronDown, X, Hash } from "lucide-react";
 
 const TIPOS_IMOVEL = [
   { value: "", label: "Todos os tipos" },
@@ -20,16 +20,6 @@ const ORDENAR_OPTIONS = [
   { value: "preco_asc", label: "Menor preço" },
   { value: "preco_desc", label: "Maior preço" },
 ];
-
-// Heurística: parece código se tem dígito e começa com "MB" ou é "MB-XXXXX".
-function pareceCodigo(s: string): boolean {
-  const t = s.trim().toUpperCase();
-  return /^MB[-\s]?\d/.test(t) || /^\d{3,}$/.test(t);
-}
-
-function normalizar(s: string): string {
-  return s.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase();
-}
 
 const pillStyle = (active: boolean): React.CSSProperties => ({
   padding: "7px 16px",
@@ -77,26 +67,10 @@ export function FiltrosBar({ total: _total, bairros = [] }: Props) {
     tipoImovelUrl === "apartamento" && apenasTerreo ? "apartamento_terreo" : tipoImovelUrl;
   const [tipoImovel, setTipoImovel] = useState(tipoImovelInicial);
   const [ordenar, setOrdenar] = useState(params.get("ordenar") ?? "");
+  const [codigoInput, setCodigoInput] = useState(params.get("codigo") ?? "");
 
-  // Estado da busca: bairros aplicados ficam como chips; código/q ocupam o input.
   const bairrosAtuais = params.getAll("bairro");
   const codigoAtual = params.get("codigo") ?? "";
-  const qAtual = params.get("q") ?? "";
-  const buscaInicial = codigoAtual || qAtual || "";
-  const [busca, setBusca] = useState(buscaInicial);
-  const [autocompleteOpen, setAutocompleteOpen] = useState(false);
-  const wrapRef = useRef<HTMLDivElement>(null);
-
-  // Fecha autocomplete quando clica fora.
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
-        setAutocompleteOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   function buildUrl(overrides: Record<string, string | string[] | null>) {
     const sp = new URLSearchParams(params.toString());
@@ -132,66 +106,36 @@ export function FiltrosBar({ total: _total, bairros = [] }: Props) {
     router.push(buildUrl({ ordenar: v }));
   }
 
-  function aplicarBusca(termo: string) {
-    const t = termo.trim();
-    if (!t) {
-      router.push(buildUrl({ bairro: null, codigo: null, q: null }));
-      return;
-    }
-    if (pareceCodigo(t)) {
-      router.push(buildUrl({ bairro: null, q: null, codigo: t.toUpperCase() }));
-    } else {
-      // Texto livre: usa q (back-end faz OR código/bairro)
-      router.push(buildUrl({ bairro: null, codigo: null, q: t }));
-    }
-    setAutocompleteOpen(false);
-  }
-
-  function selecionarBairro(b: string) {
-    if (bairrosAtuais.includes(b)) {
-      setBusca("");
-      setAutocompleteOpen(false);
-      return;
-    }
-    setBusca("");
-    router.push(
-      buildUrl({ codigo: null, q: null, bairro: [...bairrosAtuais, b] }),
-    );
-    setAutocompleteOpen(false);
+  function adicionarBairro(b: string) {
+    if (!b || bairrosAtuais.includes(b)) return;
+    router.push(buildUrl({ bairro: [...bairrosAtuais, b] }));
   }
 
   function removerBairro(b: string) {
-    router.push(
-      buildUrl({ bairro: bairrosAtuais.filter((x) => x !== b) }),
-    );
+    router.push(buildUrl({ bairro: bairrosAtuais.filter((x) => x !== b) }));
   }
 
-  function limparBusca() {
-    setBusca("");
-    router.push(buildUrl({ codigo: null, q: null }));
-    setAutocompleteOpen(false);
+  function aplicarCodigo() {
+    const v = codigoInput.trim().toUpperCase();
+    router.push(buildUrl({ codigo: v || null }));
   }
 
-  const sugestoes = useMemo(() => {
-    const termoNorm = normalizar(busca.trim());
-    if (!termoNorm) return [];
-    return bairros
-      .filter((b) => normalizar(b).includes(termoNorm))
-      .slice(0, 6);
-  }, [busca, bairros]);
+  function limparCodigo() {
+    setCodigoInput("");
+    router.push(buildUrl({ codigo: null }));
+  }
 
   const hasFilters =
     (tipoNeg && tipoNeg !== "todos") ||
     !!tipoImovel ||
     bairrosAtuais.length > 0 ||
     !!codigoAtual ||
-    !!qAtual ||
     !!ordenar;
 
   function handleLimpar() {
     setTipoNeg("todos");
     setTipoImovel("");
-    setBusca("");
+    setCodigoInput("");
     setOrdenar("");
     router.push("/imoveis?page=1");
   }
@@ -202,13 +146,16 @@ export function FiltrosBar({ total: _total, bairros = [] }: Props) {
     { v: "locacao", l: "Locação" },
   ];
 
+  // Só mostra no select os bairros que ainda não estão nos chips.
+  const bairrosDisponiveis = bairros.filter((b) => !bairrosAtuais.includes(b));
+
   return (
     <div
       className="bg-[#fcfcfc] md:sticky z-[40] md:z-[90]"
       style={{ top: "clamp(96px, 12vw, 104px)", borderBottom: "1px solid #e4e1d6" }}
     >
       <div
-        className="flex items-center gap-2 overflow-x-auto overflow-y-visible"
+        className="flex items-center gap-2 overflow-x-auto"
         style={{
           height: 60,
           padding: "0 clamp(20px, 5vw, 48px)",
@@ -243,6 +190,7 @@ export function FiltrosBar({ total: _total, bairros = [] }: Props) {
 
         <div className="w-px h-5 flex-shrink-0" style={{ backgroundColor: "#e4e1d6" }} />
 
+        {/* Tipo imóvel */}
         <div className="relative flex-shrink-0">
           <select
             value={tipoImovel}
@@ -261,79 +209,38 @@ export function FiltrosBar({ total: _total, bairros = [] }: Props) {
           />
         </div>
 
-        {/* Busca unificada: código ou bairro (multi) */}
-        <div ref={wrapRef} className="relative flex-shrink-0">
-          <div className="relative">
-            <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none"
+        {/* Bairro — select multi (ao selecionar, vira chip) */}
+        {bairros.length > 0 && (
+          <div className="relative flex-shrink-0">
+            <select
+              value=""
+              onChange={(e) => {
+                adicionarBairro(e.target.value);
+                e.target.value = "";
+              }}
+              style={selectStyle}
+              aria-label="Adicionar bairro"
+              disabled={bairrosDisponiveis.length === 0}
+            >
+              <option value="" disabled>
+                {bairrosAtuais.length === 0
+                  ? "Todos os bairros"
+                  : bairrosDisponiveis.length === 0
+                    ? "Todos selecionados"
+                    : "+ adicionar bairro"}
+              </option>
+              {bairrosDisponiveis.map((b) => (
+                <option key={b} value={b}>
+                  {b}
+                </option>
+              ))}
+            </select>
+            <ChevronDown
+              className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none w-3.5 h-3.5"
               style={{ color: "#6e7063" }}
             />
-            <input
-              type="text"
-              value={busca}
-              onChange={(e) => {
-                setBusca(e.target.value);
-                setAutocompleteOpen(true);
-              }}
-              onFocus={() => setAutocompleteOpen(true)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  if (autocompleteOpen && sugestoes.length > 0) {
-                    selecionarBairro(sugestoes[0]);
-                  } else {
-                    aplicarBusca(busca);
-                  }
-                }
-                if (e.key === "Escape") setAutocompleteOpen(false);
-              }}
-              placeholder={
-                bairrosAtuais.length > 0 ? "+ outro bairro ou código" : "Código ou bairro"
-              }
-              aria-label="Buscar por código ou bairro"
-              style={{
-                backgroundColor: "#fcfcfc",
-                border: "1.5px solid #e4e1d6",
-                borderRadius: 100,
-                padding: "7px 30px 7px 32px",
-                fontSize: 13,
-                fontFamily: "inherit",
-                color: "#585a4f",
-                outline: "none",
-                width: 200,
-              }}
-            />
-            {(busca || codigoAtual || qAtual) && (
-              <button
-                type="button"
-                onClick={limparBusca}
-                aria-label="Limpar busca"
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-[#e4e1d6]/50"
-              >
-                <X className="w-3 h-3" style={{ color: "#6e7063" }} />
-              </button>
-            )}
           </div>
-
-          {autocompleteOpen && sugestoes.length > 0 && (
-            <div
-              className="absolute left-0 right-0 mt-1 bg-white border border-[#e4e1d6] rounded-xl shadow-lg overflow-hidden z-[100]"
-              style={{ minWidth: 180 }}
-            >
-              {sugestoes.map((b) => (
-                <button
-                  key={b}
-                  type="button"
-                  onClick={() => selecionarBairro(b)}
-                  className="w-full text-left px-3 py-2 text-sm hover:bg-[#f5f5f3] transition-colors"
-                  style={{ color: "#585a4f" }}
-                >
-                  {b}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        )}
 
         {/* Chips dos bairros selecionados */}
         {bairrosAtuais.map((b) => (
@@ -362,8 +269,55 @@ export function FiltrosBar({ total: _total, bairros = [] }: Props) {
           </span>
         ))}
 
+        {/* Código — input separado */}
+        <div className="relative flex-shrink-0">
+          <Hash
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none"
+            style={{ color: "#6e7063" }}
+          />
+          <input
+            type="text"
+            value={codigoInput}
+            onChange={(e) => setCodigoInput(e.target.value)}
+            onBlur={() => {
+              if (codigoInput.trim().toUpperCase() !== codigoAtual) aplicarCodigo();
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                aplicarCodigo();
+              }
+            }}
+            placeholder="Código"
+            aria-label="Buscar por código"
+            style={{
+              backgroundColor: "#fcfcfc",
+              border: "1.5px solid #e4e1d6",
+              borderRadius: 100,
+              padding: "7px 28px 7px 30px",
+              fontSize: 13,
+              fontFamily: "inherit",
+              color: "#585a4f",
+              outline: "none",
+              width: 140,
+              textTransform: "uppercase",
+            }}
+          />
+          {codigoInput && (
+            <button
+              type="button"
+              onClick={limparCodigo}
+              aria-label="Limpar código"
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-[#e4e1d6]/50"
+            >
+              <X className="w-3 h-3" style={{ color: "#6e7063" }} />
+            </button>
+          )}
+        </div>
+
         <div className="w-px h-5 flex-shrink-0" style={{ backgroundColor: "#e4e1d6" }} />
 
+        {/* Ordenar */}
         <div className="relative flex-shrink-0">
           <select
             value={ordenar}
