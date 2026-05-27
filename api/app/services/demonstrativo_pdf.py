@@ -3,7 +3,8 @@
 Reproduz a regra de cobrança do exemplo "Artur Araripe" (referência do projeto):
     Total = Aluguel
           + Condomínio          (se incluir_condominio_cobranca)
-          + Fundo de obra       (se incluir_fundo_obra_cobranca)
+          - Fundo de obra       (se incluir_fundo_obra_cobranca; despesa
+                                 extraordinária — responsabilidade do proprietário)
           + IPTU / 10           (se incluir_iptu_cobranca; IPTU é anual,
                                  cobrado em 10 parcelas — padrão municipal RJ)
           + Seguro incêndio/12  (se incluir_seguro_incendio_cobranca;
@@ -62,7 +63,8 @@ def calcular_total_demonstrativo(contrato: dict) -> Decimal:
         total += _dec(contrato.get("condominio_mensal"))
 
     if contrato.get("incluir_fundo_obra_cobranca"):
-        total += _dec(contrato.get("fundo_obra"))
+        # Despesa extraordinária do proprietário — deduz do valor a receber.
+        total -= _dec(contrato.get("fundo_obra"))
 
     if contrato.get("incluir_iptu_cobranca"):
         # IPTU anual dividido em 10 parcelas mensais (regra municipal RJ).
@@ -170,10 +172,14 @@ def gerar_demonstrativo_pdf(contrato: dict, mes_referencia: date) -> bytes:
     if incluir_cond:
         linhas.append(("Condomínio (ordinário)", _dec(contrato.get("condominio_mensal")), False))
     if incluir_fobra:
-        linhas.append(("Fundo de obra", _dec(contrato.get("fundo_obra")), False))
+        linhas.append(("Fundo de obra (dedução)", _dec(contrato.get("fundo_obra")), True))
     if incluir_iptu:
         iptu_mes = _dec(contrato.get("iptu_anual")) / Decimal("10")
-        linhas.append(("IPTU (1/10 do anual)", iptu_mes, False))
+        # Parcela do IPTU = mês de referência (Jan=1/10 ... Out=10/10).
+        # Nov/Dez ficam fora do calendário municipal RJ — clampa em 10 para
+        # não exibir "11/10" caso o admin gere demonstrativo desses meses.
+        parcela_iptu = min(mes_referencia.month, 10)
+        linhas.append((f"IPTU ({parcela_iptu}/10 do anual)", iptu_mes, False))
     if incluir_seguro:
         seg_mes = _dec(contrato.get("seguro_incendio_anual")) / Decimal("12")
         linhas.append(("Seguro incêndio (1/12 do anual)", seg_mes, False))

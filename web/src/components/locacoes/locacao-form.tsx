@@ -185,7 +185,7 @@ export function LocacaoForm({
   }, [imovelSelecionadoId, imoveis, loadingListas, proprietarioAtualId, setValue]);
 
   // Cálculo do total ao vivo — replica a regra do PDF:
-  //   Aluguel + (Condomínio) + (Fundo de obra) + (IPTU/10) + (Seguro/12) − Fundo de reserva
+  //   Aluguel + (Condomínio) − (Fundo de obra) + (IPTU/10) + (Seguro/12) − Fundo de reserva
   const w = watch();
   const total = useMemo(() => {
     const aluguel = Number(w.aluguel_mensal) || 0;
@@ -196,7 +196,7 @@ export function LocacaoForm({
       ? (Number(w.seguro_incendio_anual) || 0) / 12
       : 0;
     const fres = Number(w.fundo_reserva) || 0;
-    return aluguel + cond + fobra + iptu + seguro - fres;
+    return aluguel + cond - fobra + iptu + seguro - fres;
   }, [
     w.aluguel_mensal,
     w.condominio_mensal,
@@ -381,7 +381,7 @@ export function LocacaoForm({
                 {...register("incluir_fundo_obra_cobranca")}
                 className="rounded border-slate-300 text-[#585a4f] focus:ring-[#585a4f]/30"
               />
-              Incluir fundo de obra na cobrança
+              Deduzir fundo de obra do total (despesa do proprietário)
             </label>
           </Field>
 
@@ -473,7 +473,11 @@ export function LocacaoForm({
             <Linha label="+ Condomínio" valor={Number(w.condominio_mensal) || 0} />
           )}
           {w.incluir_fundo_obra_cobranca && (
-            <Linha label="+ Fundo de obra" valor={Number(w.fundo_obra) || 0} />
+            <Linha
+              label="− Fundo de obra"
+              valor={Number(w.fundo_obra) || 0}
+              negativo
+            />
           )}
           {w.incluir_iptu_cobranca && (
             <Linha

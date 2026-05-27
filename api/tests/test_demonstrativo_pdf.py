@@ -67,6 +67,8 @@ def test_total_com_iptu_dividido_em_dez():
 
 
 def test_total_com_fundo_obra_e_iptu():
+    """Fundo de obra é despesa extraordinária do proprietário — deduz do total
+    (mesmo tratamento do fundo de reserva)."""
     contrato = {
         "aluguel_mensal": "6000",
         "condominio_mensal": "0",
@@ -77,8 +79,8 @@ def test_total_com_fundo_obra_e_iptu():
         "iptu_anual": "1200",
         "incluir_iptu_cobranca": True,
     }
-    # 6000 + 500 + 120 - 100 = 6520
-    assert calcular_total_demonstrativo(contrato) == Decimal("6520.00")
+    # 6000 - 500 (fundo obra) + 120 (IPTU 1/10) - 100 (fundo reserva) = 5520
+    assert calcular_total_demonstrativo(contrato) == Decimal("5520.00")
 
 
 def test_total_com_seguro_incendio_dividido_em_doze():

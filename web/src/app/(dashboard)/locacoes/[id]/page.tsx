@@ -194,7 +194,7 @@ export default function EditarContratoPage({
   // Valor sugerido para próximo pagamento — replica regra do form.
   const valorSugerido =
     Number(contrato.aluguel_mensal) +
-    (contrato.incluir_condominio_cobranca ? Number(contrato.condominio_mensal) : 0) +
+    (contrato.incluir_condominio_cobranca ? Number(contrato.condominio_mensal) : 0) -
     (contrato.incluir_fundo_obra_cobranca ? Number(contrato.fundo_obra) : 0) +
     (contrato.incluir_iptu_cobranca ? Number(contrato.iptu_anual) / 10 : 0) +
     (contrato.incluir_seguro_incendio_cobranca
