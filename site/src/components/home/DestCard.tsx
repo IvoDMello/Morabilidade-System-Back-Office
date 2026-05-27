@@ -60,6 +60,19 @@ export function DestCard({ imovel }: { imovel: ImovelCard }) {
         >
           {labelTipoNegocio(imovel.tipo_negocio)}
         </span>
+        {imovel.tags.length > 0 && (
+          <div className="absolute top-3 right-3 flex flex-col gap-1 items-end">
+            {imovel.tags.slice(0, 2).map((tag) => (
+              <span
+                key={tag.id}
+                className="text-[10px] font-bold uppercase tracking-[0.1em] px-2.5 py-1 rounded-full text-white shadow-sm"
+                style={{ backgroundColor: tag.cor ?? "#6b7280" }}
+              >
+                {tag.nome}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Body */}
