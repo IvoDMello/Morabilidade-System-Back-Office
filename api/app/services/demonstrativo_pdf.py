@@ -147,12 +147,40 @@ def gerar_demonstrativo_pdf(contrato: dict, mes_referencia: date) -> bytes:
     y = altura - header_h - 18 * mm
 
     imovel = contrato.get("imovel") or {}
-    titulo = f"Demonstrativo Mensal — {_endereco_curto(imovel)}"
+    endereco_str = _endereco_curto(imovel)
 
+    # Título empilhado em 2 linhas: "Demonstrativo Mensal" em cima, endereço
+    # embaixo. Antes era uma linha só "Demonstrativo Mensal — <endereço>" que
+    # estourava a página em endereços longos (ex.: Rua + número + apto + bairro).
     c.setFillColor(TEXTO_ESCURO)
     c.setFont("Helvetica-Bold", 18)
-    c.drawString(15 * mm, y, titulo)
+    c.drawString(15 * mm, y, "Demonstrativo Mensal")
     y -= 8 * mm
+
+    # Auto-fit do endereço — começa em 14pt e reduz 1pt por vez até caber
+    # na largura útil. Piso em 9pt; se ainda assim não couber (caso patológico),
+    # quebra em palavras.
+    largura_util = largura - 30 * mm
+    endereco_size = 14
+    while (
+        endereco_size > 9
+        and pdfmetrics.stringWidth(endereco_str, "Helvetica", endereco_size) > largura_util
+    ):
+        endereco_size -= 1
+
+    c.setFillColor(TEXTO_ESCURO)
+    if pdfmetrics.stringWidth(endereco_str, "Helvetica", endereco_size) <= largura_util:
+        c.setFont("Helvetica", endereco_size)
+        c.drawString(15 * mm, y, endereco_str)
+        y -= 7 * mm
+    else:
+        # Endereço extremamente longo — quebra em até 2 linhas a 11pt.
+        c.setFont("Helvetica", 11)
+        linhas_end = _quebrar_em_linhas(endereco_str, 70)[:2]
+        for linha in linhas_end:
+            c.drawString(15 * mm, y, linha)
+            y -= 6 * mm
+        y -= 1 * mm
 
     c.setFillColor(TEXTO_CLARO)
     c.setFont("Helvetica", 12)
