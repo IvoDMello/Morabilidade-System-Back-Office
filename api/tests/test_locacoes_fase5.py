@@ -90,13 +90,6 @@ def test_enviar_demonstrativo_falha_no_resend_retorna_502(client):
     assert res.status_code == 502
 
 
-def test_enviar_demonstrativo_exige_admin(corretor_client):
-    res = corretor_client.post(
-        f"/locacoes/{CONTRATO_DB['id']}/demonstrativo/enviar?mes=2026-05"
-    )
-    assert res.status_code == 403
-
-
 # ── Auto-marcação de atrasados ──────────────────────────────────────────────
 
 def test_listar_pagamentos_dispara_marcacao_de_atrasados(client):
@@ -177,14 +170,6 @@ def test_aplicar_reajuste_negativo_aceito(client):
     assert res.status_code == 201
     inserted = db.insert.call_args.args[0]
     assert inserted["aluguel_novo"] == 8075.0
-
-
-def test_aplicar_reajuste_exige_admin(corretor_client):
-    res = corretor_client.post(
-        f"/locacoes/{CONTRATO_DB['id']}/reajustar",
-        json={"data_aplicacao": "2027-01-01", "percentual": "4.25"},
-    )
-    assert res.status_code == 403
 
 
 def test_listar_reajustes(client):

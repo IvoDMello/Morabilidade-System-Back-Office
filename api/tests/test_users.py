@@ -38,11 +38,6 @@ def test_listar_usuarios_sem_autenticacao_retorna_403(anon_client):
     assert res.status_code == 403
 
 
-def test_listar_usuarios_como_usuario_comum_retorna_403(corretor_client):
-    res = corretor_client.get("/usuarios/")
-    assert res.status_code == 403
-
-
 # ── GET /usuarios/me ──────────────────────────────────────────────────────────
 
 def test_perfil_atual_retorna_usuario_logado(corretor_client):
@@ -91,11 +86,6 @@ def test_criar_usuario_como_admin(admin_client):
 
     assert res.status_code == 201
     assert res.json()["email"] == USER_DB["email"]
-
-
-def test_criar_usuario_como_comum_retorna_403(corretor_client):
-    res = corretor_client.post("/usuarios/", json=USER_PAYLOAD)
-    assert res.status_code == 403
 
 
 def test_criar_usuario_email_invalido_retorna_422(admin_client):
@@ -191,8 +181,3 @@ def test_desativar_usuario_inexistente_retorna_204(admin_client):
         res = admin_client.delete("/usuarios/uuid-inexistente")
 
     assert res.status_code == 204
-
-
-def test_desativar_usuario_como_comum_retorna_403(corretor_client):
-    res = corretor_client.delete(f"/usuarios/{USER_DB['id']}")
-    assert res.status_code == 403

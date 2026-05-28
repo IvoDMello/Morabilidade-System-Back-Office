@@ -63,7 +63,7 @@ export default function ClientesPage() {
 function ClientesPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const isAdmin = useAuthStore((s) => s.user?.perfil === "admin");
+  const isAdmin = useAuthStore((s) => (s.user?.perfil === "admin" || s.user?.perfil === "corretor"));
   const [clientes, setClientes] = useState<ClienteListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);

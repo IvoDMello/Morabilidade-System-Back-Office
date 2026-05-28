@@ -7,35 +7,7 @@ schema marginais e filtros combinados na listagem.
 from unittest.mock import MagicMock, patch
 
 from tests.conftest import make_db_mock
-from tests.test_locacoes import CONTRATO_DB, CONTRATO_PAYLOAD, PAGAMENTO_DB
-
-
-# ── Permissões admin-only que não estavam cobertas ──────────────────────────
-
-def test_atualizar_pagamento_exige_admin(corretor_client):
-    res = corretor_client.patch(
-        f"/locacoes/pagamentos/{PAGAMENTO_DB['id']}",
-        json={"status": "pago"},
-    )
-    assert res.status_code == 403
-
-
-def test_deletar_pagamento_exige_admin(corretor_client):
-    res = corretor_client.delete(f"/locacoes/pagamentos/{PAGAMENTO_DB['id']}")
-    assert res.status_code == 403
-
-
-def test_rescindir_contrato_exige_admin(corretor_client):
-    res = corretor_client.post(
-        f"/locacoes/{CONTRATO_DB['id']}/rescindir",
-        json={"motivo_rescisao": "x", "data_rescisao": "2026-06-15"},
-    )
-    assert res.status_code == 403
-
-
-def test_encerrar_contrato_exige_admin(corretor_client):
-    res = corretor_client.delete(f"/locacoes/{CONTRATO_DB['id']}")
-    assert res.status_code == 403
+from tests.test_locacoes import CONTRATO_DB, CONTRATO_PAYLOAD
 
 
 def test_listar_pagamentos_permitido_para_corretor(corretor_client):

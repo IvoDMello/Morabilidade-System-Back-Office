@@ -88,7 +88,7 @@ export default function ImoveisPage() {
 function ImoveisPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const isAdmin = useAuthStore((s) => s.user?.perfil === "admin");
+  const isAdmin = useAuthStore((s) => (s.user?.perfil === "admin" || s.user?.perfil === "corretor"));
   const [imoveis, setImoveis] = useState<ImovelListOut[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);

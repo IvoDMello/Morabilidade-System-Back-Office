@@ -96,14 +96,28 @@ def test_token_valido_busca_usuario_no_banco():
 
 # ── RBAC ──────────────────────────────────────────────────────────────────────
 
-def test_usuario_comum_nao_pode_criar_tag(corretor_client):
-    res = corretor_client.post("/tags/", json={"nome": "Teste"})
-    assert res.status_code == 403
+def test_corretor_pode_criar_tag(corretor_client):
+    """Corretor foi equiparado a admin nas permissões de alteração."""
+    tag = {
+        "id": "11111111-1111-1111-1111-111111111111",
+        "nome": "Teste",
+        "created_at": "2025-01-01T00:00:00+00:00",
+    }
+    db = make_db_mock(MagicMock(data=[tag]))
+
+    with patch("app.routers.tags.supabase_admin", db):
+        res = corretor_client.post("/tags/", json={"nome": "Teste"})
+
+    assert res.status_code == 201
 
 
-def test_usuario_comum_nao_pode_listar_usuarios(corretor_client):
-    res = corretor_client.get("/usuarios/")
-    assert res.status_code == 403
+def test_corretor_pode_listar_usuarios(corretor_client):
+    db = make_db_mock(MagicMock(data=[REGULAR_USER]))
+
+    with patch("app.routers.users.supabase_admin", db):
+        res = corretor_client.get("/usuarios/")
+
+    assert res.status_code == 200
 
 
 def test_admin_pode_listar_usuarios(admin_client):

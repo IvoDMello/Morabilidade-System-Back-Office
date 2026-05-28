@@ -124,15 +124,6 @@ def test_upload_anexo_contrato_inexistente(client):
     assert res.status_code == 404
 
 
-def test_upload_anexo_exige_admin(corretor_client):
-    res = corretor_client.post(
-        f"/locacoes/{CONTRATO_ID}/anexos",
-        files={"file": ("c.pdf", b"%PDF-", "application/pdf")},
-        data={"tipo": "contrato"},
-    )
-    assert res.status_code == 403
-
-
 # ── Listagem ────────────────────────────────────────────────────────────────
 
 def test_listar_anexos(client):
@@ -201,8 +192,3 @@ def test_deletar_anexo_inexistente_e_idempotente(client):
 
     assert res.status_code == 204
     storage.remove.assert_not_called()
-
-
-def test_deletar_anexo_exige_admin(corretor_client):
-    res = corretor_client.delete("/locacoes/anexos/qualquer")
-    assert res.status_code == 403

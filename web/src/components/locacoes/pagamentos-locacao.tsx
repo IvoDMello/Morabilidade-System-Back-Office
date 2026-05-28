@@ -45,7 +45,7 @@ export function PagamentosLocacao({
   valorSugerido,
   diaVencimentoPadrao,
 }: Props) {
-  const isAdmin = useAuthStore((s) => s.user?.perfil === "admin");
+  const isAdmin = useAuthStore((s) => (s.user?.perfil === "admin" || s.user?.perfil === "corretor"));
   const [pagamentos, setPagamentos] = useState<PagamentoLocacao[]>([]);
   const [loading, setLoading] = useState(true);
   const [criando, setCriando] = useState(false);

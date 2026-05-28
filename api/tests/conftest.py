@@ -88,7 +88,7 @@ def admin_client():
 
 @pytest.fixture
 def corretor_client():
-    """Cliente autenticado como corretor (perfil somente leitura)."""
+    """Cliente autenticado como corretor (mesmas permissões de alteração do admin)."""
     app.dependency_overrides[get_current_user] = lambda: REGULAR_USER
     yield TestClient(app)
     app.dependency_overrides.clear()

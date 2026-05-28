@@ -60,14 +60,14 @@ describe("ReajustesLocacao", () => {
     );
   });
 
-  it("corretor não vê botão de aplicar", async () => {
+  it("corretor vê botão de aplicar (mesmas permissões do admin)", async () => {
     currentUserPerfil = "corretor";
     apiGet.mockResolvedValue({ data: [] });
     render(<ReajustesLocacao contratoId="c1" aluguelAtual={8500} />);
     await waitFor(() =>
       expect(screen.getByText(/Nenhum reajuste/)).toBeInTheDocument()
     );
-    expect(screen.queryByText("Aplicar reajuste")).not.toBeInTheDocument();
+    expect(screen.getByText("Aplicar reajuste")).toBeInTheDocument();
   });
 
   it("preview do novo aluguel reage ao percentual digitado", async () => {

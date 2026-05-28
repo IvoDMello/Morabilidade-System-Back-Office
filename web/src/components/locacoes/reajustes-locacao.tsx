@@ -16,7 +16,7 @@ interface Props {
 }
 
 export function ReajustesLocacao({ contratoId, aluguelAtual, onAplicado }: Props) {
-  const isAdmin = useAuthStore((s) => s.user?.perfil === "admin");
+  const isAdmin = useAuthStore((s) => (s.user?.perfil === "admin" || s.user?.perfil === "corretor"));
 
   const [reajustes, setReajustes] = useState<ReajusteLocacao[]>([]);
   const [loading, setLoading] = useState(true);

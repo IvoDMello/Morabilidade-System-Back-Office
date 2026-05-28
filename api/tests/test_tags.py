@@ -45,11 +45,6 @@ def test_criar_tag_como_admin(admin_client):
     assert res.json()["nome"] == "Destaque"
 
 
-def test_criar_tag_como_usuario_comum_proibido(corretor_client):
-    res = corretor_client.post("/tags/", json={"nome": "Destaque"})
-    assert res.status_code == 403
-
-
 def test_criar_tag_sem_nome(admin_client):
     res = admin_client.post("/tags/", json={"cor": "#FF0000"})
     assert res.status_code == 422
@@ -88,8 +83,3 @@ def test_deletar_tag_como_admin(admin_client):
         res = admin_client.delete("/tags/tag-uuid-1")
 
     assert res.status_code == 204
-
-
-def test_deletar_tag_como_usuario_comum_proibido(corretor_client):
-    res = corretor_client.delete("/tags/tag-uuid-1")
-    assert res.status_code == 403

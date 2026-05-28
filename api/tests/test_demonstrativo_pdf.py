@@ -236,13 +236,6 @@ def test_demonstrativo_individual_contrato_inexistente(client):
     assert res.status_code == 404
 
 
-def test_demonstrativo_individual_exige_admin(corretor_client):
-    res = corretor_client.post(
-        f"/locacoes/{CONTRATO_DB['id']}/demonstrativo?mes=2026-05"
-    )
-    assert res.status_code == 403
-
-
 def test_demonstrativo_individual_atualiza_snapshot_existente_se_pendente(client):
     """Snapshot pendente → backend faz update (e não bloqueia)."""
     db = make_db_mock(
@@ -325,11 +318,6 @@ def test_demonstrativos_em_lote_sem_contratos_ativos(client):
 def test_demonstrativos_em_lote_mes_invalido(client):
     res = client.post("/locacoes/demonstrativos?mes=invalido")
     assert res.status_code == 422
-
-
-def test_demonstrativos_em_lote_exige_admin(corretor_client):
-    res = corretor_client.post("/locacoes/demonstrativos?mes=2026-05")
-    assert res.status_code == 403
 
 
 def test_demonstrativos_em_lote_isola_falha_de_um_contrato(client):

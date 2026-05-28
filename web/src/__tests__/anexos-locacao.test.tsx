@@ -80,15 +80,15 @@ describe("AnexosLocacao", () => {
     );
   });
 
-  it("corretor não vê upload nem botão de remover", async () => {
+  it("corretor vê upload e botão de remover (mesmas permissões do admin)", async () => {
     currentUserPerfil = "corretor";
     apiGet.mockResolvedValue({ data: [ANEXO] });
     render(<AnexosLocacao contratoId="c1" />);
     await waitFor(() =>
       expect(screen.getByText("contrato.pdf")).toBeInTheDocument()
     );
-    expect(screen.queryByText(/Enviar arquivo/)).not.toBeInTheDocument();
-    expect(screen.queryByTitle("Remover")).not.toBeInTheDocument();
+    expect(screen.getByText(/Enviar arquivo/)).toBeInTheDocument();
+    expect(screen.getByTitle("Remover")).toBeInTheDocument();
   });
 
   it("faz upload com FormData incluindo o tipo selecionado", async () => {

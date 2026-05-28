@@ -376,11 +376,6 @@ def test_atualizar_preferencia_quando_ja_existe(client):
     assert res.status_code == 200
 
 
-def test_upsert_preferencia_exige_admin(corretor_client):
-    res = corretor_client.put("/clientes/cliente-uuid-1/preferencia", json=PREF_PAYLOAD)
-    assert res.status_code == 403
-
-
 def test_upsert_preferencia_falha_no_banco_retorna_500(client):
     existing_mock = MagicMock(data=None)
     insert_falhou = MagicMock(data=None)  # insert não retornou dados
@@ -399,11 +394,6 @@ def test_remover_preferencia(client):
     with patch("app.routers.oportunidades.supabase_admin", db):
         res = client.delete("/clientes/cliente-uuid-1/preferencia")
     assert res.status_code == 204
-
-
-def test_remover_preferencia_exige_admin(corretor_client):
-    res = corretor_client.delete("/clientes/cliente-uuid-1/preferencia")
-    assert res.status_code == 403
 
 
 # ── GET /clientes/{id}/matches ────────────────────────────────────────────────

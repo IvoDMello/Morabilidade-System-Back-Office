@@ -73,3 +73,27 @@ def registrar_audit_locacao(
             "Falha ao registrar auditoria (%s/%s id=%s): %s",
             entidade, acao, entidade_id, e,
         )
+
+
+def registrar_audit_acao(
+    *,
+    user: Optional[dict],
+    metodo: str,
+    path: str,
+) -> None:
+    """Grava uma linha em acao_audit_log para uma ação de escrita.
+
+    Usada no gate de permissão para rastrear QUEM (admin ou corretor)
+    disparou cada requisição de alteração. Nunca lança.
+    """
+    try:
+        row = {
+            "user_id": (user or {}).get("id"),
+            "user_email": (user or {}).get("email"),
+            "user_perfil": (user or {}).get("perfil"),
+            "metodo": metodo,
+            "path": path,
+        }
+        supabase_admin.table("acao_audit_log").insert(row).execute()
+    except Exception as e:
+        logger.error("Falha ao registrar auditoria de ação (%s %s): %s", metodo, path, e)

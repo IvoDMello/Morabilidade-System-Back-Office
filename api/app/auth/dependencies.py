@@ -1,7 +1,12 @@
 import logging
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from app.database import supabase_admin
+from app.services.audit_log import registrar_audit_acao
+
+# Perfis com permissão de alteração. corretor foi equiparado a admin;
+# a distinção de quem alterou fica registrada em acao_audit_log.
+PERFIS_ESCRITA = ("admin", "corretor")
 
 logger = logging.getLogger(__name__)
 security = HTTPBearer()
@@ -57,11 +62,23 @@ def get_current_user(
     return result.data
 
 
-def require_admin(current_user: dict = Depends(get_current_user)) -> dict:
-    """Exige que o usuário seja administrador."""
-    if current_user.get("perfil") != "admin":
+def require_admin(
+    request: Request,
+    current_user: dict = Depends(get_current_user),
+) -> dict:
+    """Exige perfil com permissão de escrita (admin ou corretor).
+
+    O corretor tem as mesmas permissões de alteração do admin; a ação é
+    registrada em acao_audit_log para rastrear quem alterou.
+    """
+    if current_user.get("perfil") not in PERFIS_ESCRITA:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Acesso restrito a administradores.",
+            detail="Acesso restrito.",
         )
+    registrar_audit_acao(
+        user=current_user,
+        metodo=request.method,
+        path=request.url.path,
+    )
     return current_user

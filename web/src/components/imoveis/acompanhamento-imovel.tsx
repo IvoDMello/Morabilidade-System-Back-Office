@@ -41,7 +41,7 @@ function diasDesde(iso: string): number {
 }
 
 export function AcompanhamentoImovel({ imovelId, createdAt, relatorio30diasEnviadoEm }: Props) {
-  const isAdmin = useAuthStore((s) => s.user?.perfil === "admin");
+  const isAdmin = useAuthStore((s) => (s.user?.perfil === "admin" || s.user?.perfil === "corretor"));
 
   const [visitas, setVisitas] = useState<Visita[]>([]);
   const [percepcoes, setPercepcoes] = useState<Percepcao[]>([]);

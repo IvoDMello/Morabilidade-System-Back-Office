@@ -85,15 +85,15 @@ describe("PagamentosLocacao", () => {
     );
   });
 
-  it("corretor não vê botões de admin", async () => {
+  it("corretor vê botões de admin (mesmas permissões do admin)", async () => {
     currentUserPerfil = "corretor";
     apiGet.mockResolvedValue({ data: [PAG_PENDENTE] });
     render(
       <PagamentosLocacao contratoId="c1" valorSugerido={1000} diaVencimentoPadrao={5} />
     );
     await waitFor(() => expect(screen.getByText(/Maio 2026/)).toBeInTheDocument());
-    expect(screen.queryByText("Gerar próximo mês")).not.toBeInTheDocument();
-    expect(screen.queryByTitle("Marcar como pago")).not.toBeInTheDocument();
+    expect(screen.getByText("Gerar próximo mês")).toBeInTheDocument();
+    expect(screen.getByTitle("Marcar como pago")).toBeInTheDocument();
   });
 
   it("marca como pago e recarrega", async () => {

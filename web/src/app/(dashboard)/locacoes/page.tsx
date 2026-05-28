@@ -129,7 +129,7 @@ function TabButton({
 
 function AbaContratos() {
   const router = useRouter();
-  const isAdmin = useAuthStore((s) => s.user?.perfil === "admin");
+  const isAdmin = useAuthStore((s) => (s.user?.perfil === "admin" || s.user?.perfil === "corretor"));
 
   const [contratos, setContratos] = useState<ContratoLocacaoListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -496,7 +496,7 @@ function AbaAnalises() {
 // ── Aba Demonstrativos ──────────────────────────────────────────────────────
 
 function AbaDemonstrativos() {
-  const isAdmin = useAuthStore((s) => s.user?.perfil === "admin");
+  const isAdmin = useAuthStore((s) => (s.user?.perfil === "admin" || s.user?.perfil === "corretor"));
   const [mes, setMes] = useState(new Date().toISOString().slice(0, 7));
   const [gerando, setGerando] = useState(false);
   const [ultimoResultado, setUltimoResultado] = useState<{

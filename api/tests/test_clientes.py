@@ -365,18 +365,3 @@ def test_corretor_pode_listar_clientes(corretor_client):
     with patch("app.routers.clientes.supabase_admin", db):
         res = corretor_client.get("/clientes/")
     assert res.status_code == 200
-
-
-def test_corretor_nao_pode_criar_cliente(corretor_client):
-    res = corretor_client.post("/clientes/", json=CLIENTE_PAYLOAD)
-    assert res.status_code == 403
-
-
-def test_corretor_nao_pode_atualizar_cliente(corretor_client):
-    res = corretor_client.put("/clientes/cliente-uuid-1", json=CLIENTE_PAYLOAD)
-    assert res.status_code == 403
-
-
-def test_corretor_nao_pode_deletar_cliente(corretor_client):
-    res = corretor_client.delete("/clientes/cliente-uuid-1")
-    assert res.status_code == 403

@@ -32,7 +32,7 @@ interface Props {
 }
 
 export function PreferenciaForm({ clienteId, onSaved }: Props) {
-  const isAdmin = useAuthStore((s) => s.user?.perfil === "admin");
+  const isAdmin = useAuthStore((s) => (s.user?.perfil === "admin" || s.user?.perfil === "corretor"));
   const [pref, setPref] = useState<Preferencia>({ ativa: true });
   const [loading, setLoading] = useState(true);
   const [salvando, setSalvando] = useState(false);

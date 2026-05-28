@@ -219,11 +219,6 @@ def test_criar_contrato_aluguel_negativo(client):
     assert res.status_code == 422
 
 
-def test_criar_contrato_exige_admin(corretor_client):
-    res = corretor_client.post("/locacoes/", json=CONTRATO_PAYLOAD)
-    assert res.status_code == 403
-
-
 def test_criar_contrato_bloqueia_duplicidade_quando_imovel_ja_tem_ativo(client):
     db = make_db_mock(MagicMock(data=[{"id": "outro-contrato"}]))
     with patch("app.routers.locacoes.supabase_admin", db):
@@ -260,14 +255,6 @@ def test_atualizar_contrato_nao_encontrado(client):
         res = client.patch("/locacoes/nao-existe", json={"aluguel_mensal": "9000.00"})
 
     assert res.status_code == 404
-
-
-def test_atualizar_contrato_corretor_proibido(corretor_client):
-    res = corretor_client.patch(
-        f"/locacoes/{CONTRATO_DB['id']}",
-        json={"aluguel_mensal": "9000.00"},
-    )
-    assert res.status_code == 403
 
 
 # ── POST /locacoes/{id}/rescindir ────────────────────────────────────────────

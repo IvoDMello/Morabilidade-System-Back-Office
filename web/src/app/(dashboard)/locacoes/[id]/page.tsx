@@ -24,7 +24,7 @@ export default function EditarContratoPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
-  const isAdmin = useAuthStore((s) => s.user?.perfil === "admin");
+  const isAdmin = useAuthStore((s) => (s.user?.perfil === "admin" || s.user?.perfil === "corretor"));
 
   const [contrato, setContrato] = useState<ContratoLocacao | null>(null);
   const [loading, setLoading] = useState(true);

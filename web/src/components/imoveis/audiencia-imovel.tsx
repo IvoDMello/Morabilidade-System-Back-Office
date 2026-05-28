@@ -72,7 +72,7 @@ function Stat({
         className={destaque ? "font-bold text-slate-900" : "font-semibold text-slate-700"}
         style={destaque ? { color: "#585a4f" } : undefined}
       >
-        {valor.toLocaleString("pt-BR")}
+        {(valor ?? 0).toLocaleString("pt-BR")}
       </span>
     </div>
   );

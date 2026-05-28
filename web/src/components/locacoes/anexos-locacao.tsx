@@ -32,7 +32,7 @@ const TIPO_LABEL: Record<TipoAnexoLocacao, string> = Object.fromEntries(
 ) as Record<TipoAnexoLocacao, string>;
 
 export function AnexosLocacao({ contratoId }: Props) {
-  const isAdmin = useAuthStore((s) => s.user?.perfil === "admin");
+  const isAdmin = useAuthStore((s) => (s.user?.perfil === "admin" || s.user?.perfil === "corretor"));
   const [anexos, setAnexos] = useState<AnexoLocacao[]>([]);
   const [loading, setLoading] = useState(true);
   const [enviando, setEnviando] = useState(false);

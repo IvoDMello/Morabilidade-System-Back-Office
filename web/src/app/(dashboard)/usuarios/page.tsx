@@ -39,7 +39,7 @@ export default function UsuariosPage() {
     telefone: "",
   });
 
-  const isAdmin = me?.perfil === "admin";
+  const isAdmin = me?.perfil === "admin" || me?.perfil === "corretor";
 
   async function carregar() {
     setLoading(true);
@@ -120,7 +120,7 @@ export default function UsuariosPage() {
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Usuários</h1>
-          <p className="text-slate-500 text-sm">Gestão de usuários internos — somente Admin</p>
+          <p className="text-slate-500 text-sm">Gestão de usuários internos</p>
         </div>
         {isAdmin && (
           <button
