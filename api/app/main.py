@@ -12,6 +12,12 @@ if settings.sentry_dsn:
     sentry_sdk.init(
         dsn=settings.sentry_dsn,
         environment=settings.app_env,
+        # Erros: captura 100%. Erro precisa ser visto inteiro pra debugar —
+        # com amostragem você descobre o bug 1× e perde as 9 ocorrências
+        # seguintes. Volume real de erros em prod é baixo, custo é baixo.
+        sample_rate=1.0,
+        # Performance traces: 10% basta pra ver padrão estatístico sem inflar
+        # quota; aqui é amostragem honesta.
         traces_sample_rate=0.1,
         send_default_pii=False,
         integrations=[
@@ -83,151 +89,16 @@ def health_endpoint():
 
 @app.get("/stats", tags=["Health"])
 def get_stats(current_user: dict = Depends(get_current_user)):
-    total_imoveis = supabase_admin.table("imoveis").select("id", count="exact").execute().count or 0
-    disponiveis = (supabase_admin.table("imoveis").select("id", count="exact")
-                   .eq("disponibilidade", "disponivel").execute().count or 0)
-    total_clientes = supabase_admin.table("clientes").select("id", count="exact").execute().count or 0
-    em_negociacao = (supabase_admin.table("clientes").select("id", count="exact")
-                     .eq("status", "em_negociacao").execute().count or 0)
-
-    # Imóvel mais antigo AINDA NO PORTFÓLIO (disponível ou reservado).
-    # Vendidos/locados ficam de fora — eles não são mais portfólio ativo.
-    mais_antigo_resp = (
-        supabase_admin.table("imoveis")
-        .select("codigo, created_at")
-        .in_("disponibilidade", ["disponivel", "reservado"])
-        .order("created_at", desc=False)
-        .limit(1)
-        .execute()
-    )
-    imovel_mais_antigo = (mais_antigo_resp.data or [None])[0]
-
-    # Imóveis reservados (pipeline — cada um conta muito num portfólio pequeno).
-    imoveis_reservados = (
-        supabase_admin.table("imoveis").select("id", count="exact")
-        .eq("disponibilidade", "reservado").execute().count or 0
-    )
-
-    # Imóveis sem foto — críticos para conversão no site público.
-    # Locação fica de fora (tipo_negocio = 'locacao'): não vai pro site público,
-    # então não polui o indicador. "ambos" continua contando (também é vendido).
-    todos_ids_resp = (
-        supabase_admin.table("imoveis")
-        .select("id")
-        .neq("tipo_negocio", "locacao")
-        .execute()
-    )
-    ids_imoveis = {row["id"] for row in (todos_ids_resp.data or [])}
-    com_foto_resp = supabase_admin.table("imovel_fotos").select("imovel_id").execute()
-    ids_com_foto = {row["imovel_id"] for row in (com_foto_resp.data or [])}
-    imoveis_sem_foto = len(ids_imoveis - ids_com_foto)
-
-    # Leads novos nos últimos 7 dias (pulso semanal).
-    from datetime import datetime, timedelta, timezone
-    sete_dias_atras = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
-    leads_7d = (
-        supabase_admin.table("clientes").select("id", count="exact")
-        .gte("created_at", sete_dias_atras).execute().count or 0
-    )
-
-    return {
-        "total_imoveis": total_imoveis,
-        "imoveis_disponiveis": disponiveis,
-        "imoveis_reservados": imoveis_reservados,
-        "imoveis_sem_foto": imoveis_sem_foto,
-        "total_clientes": total_clientes,
-        "clientes_em_negociacao": em_negociacao,
-        "leads_ultimos_7_dias": leads_7d,
-        "imovel_mais_antigo": imovel_mais_antigo,
-    }
+    """KPIs do painel inicial. Delegado para a RPC `stats_dashboard()`
+    (migration 032) — 1 query em vez das 9 anteriores."""
+    res = supabase_admin.rpc("stats_dashboard").execute()
+    return res.data or {}
 
 
 @app.get("/relatorios", tags=["Relatórios"])
 def get_relatorios(current_user: dict = Depends(get_current_user)):
-    from datetime import datetime, timezone
-    from collections import defaultdict
-
-    agora = datetime.now(timezone.utc)
-
-    # Gera lista ordenada dos últimos 12 meses no formato "YYYY-MM"
-    meses_labels = []
-    for i in range(11, -1, -1):
-        offset = agora.month - 1 - i
-        mes_0 = offset % 12
-        yr = agora.year + offset // 12
-        meses_labels.append(f"{yr}-{mes_0 + 1:02d}")
-
-    # Busca todos os imóveis com os campos relevantes para relatórios
-    imoveis_raw = (
-        supabase_admin.table("imoveis")
-        .select("created_at, tipo_imovel, tipo_negocio, disponibilidade, bairro, valor_venda")
-        .execute()
-        .data or []
-    )
-
-    # Imóveis cadastrados por mês
-    imoveis_por_mes: dict = {m: 0 for m in meses_labels}
-    tipo_imovel_count: dict = defaultdict(int)
-    tipo_negocio_count: dict = defaultdict(int)
-    disponibilidade_count: dict = defaultdict(int)
-    bairro_count: dict = defaultdict(int)
-    tipo_venda_sum: dict = defaultdict(float)
-    tipo_venda_n: dict = defaultdict(int)
-
-    for im in imoveis_raw:
-        mes_str = (im.get("created_at") or "")[:7]
-        if mes_str in imoveis_por_mes:
-            imoveis_por_mes[mes_str] += 1
-
-        tipo_imovel_count[im.get("tipo_imovel") or "outro"] += 1
-        tipo_negocio_count[im.get("tipo_negocio") or "indefinido"] += 1
-        disponibilidade_count[im.get("disponibilidade") or "indefinido"] += 1
-
-        bairro = (im.get("bairro") or "").strip()
-        if bairro:
-            bairro_count[bairro] += 1
-
-        vv = im.get("valor_venda")
-        if vv is not None and float(vv) > 0:
-            t = im.get("tipo_imovel") or "outro"
-            tipo_venda_sum[t] += float(vv)
-            tipo_venda_n[t] += 1
-
-    top_bairros = dict(sorted(bairro_count.items(), key=lambda x: x[1], reverse=True)[:10])
-
-    preco_medio_por_tipo = {
-        t: round(tipo_venda_sum[t] / tipo_venda_n[t])
-        for t in tipo_venda_n
-        if tipo_venda_n[t] > 0
-    }
-
-    # Clientes cadastrados por mês + distribuição por status e origem
-    clientes_raw = (
-        supabase_admin.table("clientes")
-        .select("created_at, status, origem_lead")
-        .execute()
-        .data or []
-    )
-
-    clientes_por_mes: dict = {m: 0 for m in meses_labels}
-    clientes_por_status: dict = defaultdict(int)
-    clientes_por_origem: dict = defaultdict(int)
-    for cl in clientes_raw:
-        mes_str = (cl.get("created_at") or "")[:7]
-        if mes_str in clientes_por_mes:
-            clientes_por_mes[mes_str] += 1
-        clientes_por_status[cl.get("status") or "indefinido"] += 1
-        clientes_por_origem[cl.get("origem_lead") or "indefinido"] += 1
-
-    return {
-        "meses_labels": meses_labels,
-        "imoveis_por_mes": imoveis_por_mes,
-        "imoveis_por_tipo": dict(tipo_imovel_count),
-        "imoveis_por_tipo_negocio": dict(tipo_negocio_count),
-        "imoveis_por_disponibilidade": dict(disponibilidade_count),
-        "top_bairros": top_bairros,
-        "preco_medio_por_tipo": preco_medio_por_tipo,
-        "clientes_por_mes": clientes_por_mes,
-        "clientes_por_status": dict(clientes_por_status),
-        "clientes_por_origem": dict(clientes_por_origem),
-    }
+    """Agregações da aba Relatórios. Delegado para a RPC
+    `relatorios_dashboard()` (migration 032) — agregação no Postgres em
+    vez de SELECT * + Python."""
+    res = supabase_admin.rpc("relatorios_dashboard").execute()
+    return res.data or {}
