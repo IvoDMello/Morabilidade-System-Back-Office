@@ -1,5 +1,26 @@
-"""Testes dos endpoints de dashboard (/stats) e relatórios (/relatorios)."""
+"""Testes dos endpoints de dashboard (/stats), relatórios (/relatorios) e healthcheck."""
 from unittest.mock import MagicMock, patch
+
+from tests.conftest import make_db_mock
+
+
+# ── /health (Railway healthcheck) ─────────────────────────────────────────────
+
+def test_health_ok_quando_supabase_responde(anon_client):
+    db = make_db_mock(MagicMock(count=1, data=[]))
+    with patch("app.main.supabase_admin", db):
+        res = anon_client.get("/health")
+    assert res.status_code == 200
+    assert res.json() == {"status": "ok"}
+
+
+def test_health_503_quando_supabase_quebra(anon_client):
+    db = MagicMock()
+    db.table.side_effect = ConnectionError("supabase down")
+    with patch("app.main.supabase_admin", db):
+        res = anon_client.get("/health")
+    # Railway precisa ver 503 pra não enviar tráfego pra worker com banco fora.
+    assert res.status_code == 503
 
 
 def _make_stats_db(

@@ -69,6 +69,7 @@ export default async function HomePage() {
           className="object-cover object-center"
           style={{ filter: "saturate(1.22) contrast(1.04) brightness(1.02)" }}
           priority
+          sizes="100vw"
         />
         {/* wash quente (soft-light) */}
         <div

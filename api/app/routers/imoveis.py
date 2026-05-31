@@ -572,16 +572,19 @@ async def upload_fotos(
     if qtd_atual + len(fotos) > 30:
         raise HTTPException(status_code=400, detail="Limite máximo de 30 fotos por imóvel.")
 
-    uploaded = []
+    # Upload pro Storage continua sequencial (cada upload já é um round-trip
+    # I/O bound), mas o INSERT vai em batch — 1 query em vez de N.
+    records = []
     for i, foto in enumerate(fotos):
         filename = f"foto_{uuid.uuid4().hex}.jpg"
         path = f"imoveis/{imovel_id}/{filename}"
         url = await upload_foto(foto, path=path)
-        record = {"imovel_id": imovel_id, "url": url, "ordem": qtd_atual + i + 1}
-        result = supabase_admin.table("imovel_fotos").insert(record).execute()
-        uploaded.append(result.data[0])
+        records.append({"imovel_id": imovel_id, "url": url, "ordem": qtd_atual + i + 1})
 
-    return uploaded
+    if not records:
+        return []
+    result = supabase_admin.table("imovel_fotos").insert(records).execute()
+    return result.data or []
 
 
 @router.delete("/{imovel_id}/fotos/{foto_id}", status_code=status.HTTP_204_NO_CONTENT)

@@ -1,5 +1,5 @@
 import sentry_sdk
-from fastapi import FastAPI, Depends, Request
+from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -68,8 +68,16 @@ def health_check():
 # Railway healthcheck (railway.toml: healthcheckPath = "/health") e Dockerfile
 # HEALTHCHECK apontam pra esta rota. Sem ela todo deploy falha o healthcheck
 # e o Railway mantém a versão anterior no ar — a nova nunca vai pro tráfego.
+#
+# Toca o Supabase pra não passar verde quando o banco está fora — foi
+# exatamente o vetor da queda de 19/05/2026 (SSR amplificou indisponibilidade
+# do banco que o healthcheck não percebia).
 @app.get("/health", tags=["Health"], include_in_schema=False)
 def health_endpoint():
+    try:
+        supabase_admin.table("imoveis").select("id", count="exact").limit(1).execute()
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"db unreachable: {type(exc).__name__}")
     return {"status": "ok"}
 
 

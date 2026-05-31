@@ -103,9 +103,11 @@ export async function getTags(): Promise<Tag[]> {
 }
 
 export async function getBairros(): Promise<string[]> {
+  // Bairros mudam ~nunca (depende de um novo imóvel em região inédita).
+  // 1 dia de cache reduz pressão sem prejudicar discoverability.
   const res = await fetchGetWithRetry(
     `${API_URL}/imoveis/publico/bairros`,
-    { next: { revalidate: 3600 } },
+    { next: { revalidate: 86400 } },
   );
   if (!res.ok) return [];
   return res.json();
