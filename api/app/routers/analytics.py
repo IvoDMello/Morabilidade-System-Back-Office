@@ -1,7 +1,7 @@
 import re
-from typing import Optional
+from typing import Any, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, Field
 
 from app.auth.dependencies import get_current_user
@@ -75,40 +75,155 @@ def track_page_view(request: Request, body: TrackPayload):
     }).execute()
 
 
+# ── Endpoints públicos: busca, favorito, share ────────────────────────────────
+
+_CODIGO_RE = re.compile(r"^MB-\d{5}$")
+
+
+def _resolve_imovel_id(codigo: Optional[str]) -> Optional[str]:
+    if not codigo or not _CODIGO_RE.fullmatch(codigo):
+        return None
+    res = (
+        supabase_admin.table("imoveis")
+        .select("id")
+        .eq("codigo", codigo)
+        .limit(1)
+        .execute()
+    )
+    return res.data[0]["id"] if res.data else None
+
+
+class BuscaPayload(BaseModel):
+    session_id: str = Field(..., min_length=8, max_length=128)
+    termo: Optional[str] = Field(default=None, max_length=200)
+    filtros: dict[str, Any] = Field(default_factory=dict)
+    resultados_count: int = Field(..., ge=0)
+
+
+@router.post("/publico/busca", status_code=status.HTTP_204_NO_CONTENT, tags=["Analytics"])
+@limiter.limit("120/minute")
+def track_busca(request: Request, body: BuscaPayload):
+    user_agent = (request.headers.get("user-agent") or "")[:500] or None
+    termo = body.termo.strip() if body.termo else None
+    supabase_admin.table("search_events").insert({
+        "session_id": body.session_id,
+        "termo": termo if termo else None,
+        "filtros": body.filtros,
+        "resultados_count": body.resultados_count,
+        "is_bot": _is_bot(user_agent),
+    }).execute()
+
+
+class FavoritoPayload(BaseModel):
+    session_id: str = Field(..., min_length=8, max_length=128)
+    imovel_codigo: str = Field(..., max_length=20)
+    acao: str = Field(..., pattern=r"^(add|remove)$")
+
+
+@router.post("/publico/favorito", status_code=status.HTTP_204_NO_CONTENT, tags=["Analytics"])
+@limiter.limit("120/minute")
+def track_favorito(request: Request, body: FavoritoPayload):
+    imovel_id = _resolve_imovel_id(body.imovel_codigo)
+    if not imovel_id:
+        return  # silencioso: código inválido não derruba o site
+    user_agent = (request.headers.get("user-agent") or "")[:500] or None
+    supabase_admin.table("imovel_favoritos").insert({
+        "session_id": body.session_id,
+        "imovel_id": imovel_id,
+        "acao": body.acao,
+        "is_bot": _is_bot(user_agent),
+    }).execute()
+
+
+class SharePayload(BaseModel):
+    session_id: str = Field(..., min_length=8, max_length=128)
+    imovel_codigo: str = Field(..., max_length=20)
+    canal: Optional[str] = Field(default=None, max_length=20)
+
+
+@router.post("/publico/share", status_code=status.HTTP_204_NO_CONTENT, tags=["Analytics"])
+@limiter.limit("120/minute")
+def track_share(request: Request, body: SharePayload):
+    imovel_id = _resolve_imovel_id(body.imovel_codigo)
+    if not imovel_id:
+        return
+    user_agent = (request.headers.get("user-agent") or "")[:500] or None
+    canal = body.canal if body.canal in ("whatsapp", "web_share", "copy_link") else None
+    supabase_admin.table("imovel_shares").insert({
+        "session_id": body.session_id,
+        "imovel_id": imovel_id,
+        "canal": canal,
+        "is_bot": _is_bot(user_agent),
+    }).execute()
+
+
 # ── Endpoints autenticados (dashboard interno) ────────────────────────────────
 
-@router.get("/analytics/resumo", tags=["Analytics"])
-def resumo_analytics(current_user: dict = Depends(get_current_user)):
+@router.get("/analytics/dashboard", tags=["Analytics"])
+def analytics_dashboard(
+    periodo: int = Query(30, description="Janela em dias (7, 30, 90, 365)"),
+    current_user: dict = Depends(get_current_user),
+):
     """
-    Resumo de acesso ao site público.
-    Retorna métricas para 7 e 30 dias + top 10 imóveis + série diária 30d.
+    Resumo completo da aba /audiencia. Devolve KPIs (com delta vs período
+    anterior), série diária, funil, origem do tráfego, top imóveis, bairros,
+    dispositivos, heatmap, termos e buscas sem resultado em uma única chamada.
     """
-    resumo_7d = supabase_admin.rpc("analytics_resumo", {"dias": 7}).execute()
-    resumo_30d = supabase_admin.rpc("analytics_resumo", {"dias": 30}).execute()
-    top_imoveis = supabase_admin.rpc(
-        "analytics_top_imoveis", {"dias": 30, "limite": 10}
-    ).execute()
-    serie = supabase_admin.rpc("analytics_serie_diaria", {"dias": 30}).execute()
+    if periodo not in (7, 30, 90, 365):
+        periodo = 30
 
     def _first(r) -> dict:
         return (r.data or [{}])[0] if r.data else {}
 
-    r7 = _first(resumo_7d)
-    r30 = _first(resumo_30d)
+    kpis_atual = _first(supabase_admin.rpc("analytics_kpis", {"dias": periodo, "prev": False}).execute())
+    kpis_prev = _first(supabase_admin.rpc("analytics_kpis", {"dias": periodo, "prev": True}).execute())
+
+    def _delta(atual: int, anterior: int) -> Optional[float]:
+        if not anterior:
+            return None
+        return round(((atual - anterior) / anterior) * 100, 1)
+
+    kpis = {
+        "visitantes_unicos": {
+            "valor": kpis_atual.get("visitantes_unicos", 0),
+            "delta": _delta(kpis_atual.get("visitantes_unicos", 0), kpis_prev.get("visitantes_unicos", 0)),
+        },
+        "vistas_imovel": {
+            "valor": kpis_atual.get("vistas_imovel", 0),
+            "delta": _delta(kpis_atual.get("vistas_imovel", 0), kpis_prev.get("vistas_imovel", 0)),
+        },
+        "buscas": {
+            "valor": kpis_atual.get("buscas", 0),
+            "delta": _delta(kpis_atual.get("buscas", 0), kpis_prev.get("buscas", 0)),
+        },
+        "favoritos": {
+            "valor": kpis_atual.get("favoritos", 0),
+            "delta": _delta(kpis_atual.get("favoritos", 0), kpis_prev.get("favoritos", 0)),
+        },
+    }
 
     return {
-        "ultimos_7_dias": {
-            "total_views": r7.get("total_views", 0),
-            "sessoes_unicas": r7.get("sessoes_unicas", 0),
-            "views_imovel": r7.get("views_imovel", 0),
-        },
-        "ultimos_30_dias": {
-            "total_views": r30.get("total_views", 0),
-            "sessoes_unicas": r30.get("sessoes_unicas", 0),
-            "views_imovel": r30.get("views_imovel", 0),
-        },
-        "top_imoveis_30d": top_imoveis.data or [],
-        "serie_diaria_30d": serie.data or [],
+        "periodo": periodo,
+        "kpis": kpis,
+        "serie": supabase_admin.rpc("analytics_serie", {"dias": periodo}).execute().data or [],
+        "funil": _first(supabase_admin.rpc("analytics_funil", {"dias": periodo}).execute()),
+        "origem": supabase_admin.rpc("analytics_origem", {"dias": periodo}).execute().data or [],
+        "top_imoveis": supabase_admin.rpc(
+            "analytics_top_imoveis_v2", {"dias": periodo, "limite": 7}
+        ).execute().data or [],
+        "bairros": supabase_admin.rpc(
+            "analytics_bairros", {"dias": periodo, "limite": 8}
+        ).execute().data or [],
+        "dispositivos": supabase_admin.rpc(
+            "analytics_dispositivos", {"dias": periodo}
+        ).execute().data or [],
+        "heatmap": supabase_admin.rpc("analytics_heatmap", {"dias": periodo}).execute().data or [],
+        "termos": supabase_admin.rpc(
+            "analytics_termos", {"dias": periodo, "limite": 6}
+        ).execute().data or [],
+        "buscas_vazias": supabase_admin.rpc(
+            "analytics_buscas_vazias", {"dias": periodo, "limite": 4}
+        ).execute().data or [],
     }
 
 

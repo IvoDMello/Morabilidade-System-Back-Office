@@ -3,6 +3,7 @@ import Image from "next/image";
 import { BedDouble, Ruler, MapPin } from "lucide-react";
 import type { ImovelCard as ImovelCardType } from "@/types";
 import { formatarMoeda, labelTipoImovel, labelTipoNegocio } from "@/lib/utils";
+import { FavoritoButton } from "./FavoritoButton";
 
 export function ImovelCard({ imovel }: { imovel: ImovelCardType }) {
   function preco(): string | null {
@@ -69,6 +70,11 @@ export function ImovelCard({ imovel }: { imovel: ImovelCardType }) {
             {negocioLabel}
           </span>
         )}
+
+        {/* Favorito */}
+        <div className="absolute bottom-3 right-3 z-10">
+          <FavoritoButton codigo={imovel.codigo} variant="icon" />
+        </div>
 
         {/* Tags */}
         {outrasTags.length > 0 && (

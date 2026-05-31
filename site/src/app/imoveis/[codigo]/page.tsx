@@ -9,6 +9,8 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Galeria } from "@/components/imoveis/Galeria";
 import { WhatsAppButtonImovel } from "@/components/imoveis/WhatsAppButtonImovel";
+import { FavoritoButton } from "@/components/imoveis/FavoritoButton";
+import { CompartilharButton } from "@/components/imoveis/CompartilharButton";
 import MapaRegiaoClient from "@/components/imoveis/MapaRegiaoClient";
 import { getImovel } from "@/lib/api";
 import { geocodificarEndereco } from "@/lib/geocoding";
@@ -182,6 +184,10 @@ export default async function DetalheImovelPage({ params }: Props) {
                 <MapPin className="w-4 h-4 flex-shrink-0" />
                 {regiao}
               </p>
+              <div className="flex items-center gap-2 mt-3">
+                <FavoritoButton codigo={imovel.codigo} variant="pill" />
+                <CompartilharButton codigo={imovel.codigo} titulo={tituloPublico} />
+              </div>
             </div>
 
             {/* Chips de características */}

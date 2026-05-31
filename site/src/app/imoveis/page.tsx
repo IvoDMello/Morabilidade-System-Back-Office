@@ -3,6 +3,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { FiltrosBar } from "@/components/imoveis/FiltrosBar";
 import { ListagemContent } from "@/components/imoveis/ListagemContent";
+import { SearchTracker } from "@/components/analytics/SearchTracker";
 import { getImoveisDisponiveis, getBairros } from "@/lib/api";
 import type { FiltrosParams } from "@/types";
 
@@ -39,6 +40,7 @@ export default async function ImoveisPage({ searchParams }: Props) {
   return (
     <>
       <Navbar />
+      <SearchTracker params={params} total={total} />
 
       {/* Header */}
       <div
