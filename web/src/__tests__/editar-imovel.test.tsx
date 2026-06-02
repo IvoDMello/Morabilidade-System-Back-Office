@@ -198,6 +198,39 @@ describe("EditarImovelPage — galeria de fotos", () => {
       expect(screen.getByText("0/30")).toBeInTheDocument();
     });
   });
+
+  it("aplica lazy-loading e decoding async nas fotos (evita decode em massa)", async () => {
+    const fotos = [
+      { id: "f1", url: "https://cdn/fake/1.jpg", ordem: 0 },
+      { id: "f2", url: "https://cdn/fake/2.jpg", ordem: 1 },
+      { id: "f3", url: "https://cdn/fake/3.jpg", ordem: 2 },
+    ];
+    apiGetMock.mockResolvedValue({ data: imovelFixture({ fotos }) });
+    render(<EditarImovelPage params={Promise.resolve({ id: "imovel-abc" })} />);
+    await waitFor(() => {
+      expect(screen.getByAltText("Foto 1")).toBeInTheDocument();
+    });
+    for (let i = 1; i <= fotos.length; i++) {
+      const img = screen.getByAltText(`Foto ${i}`) as HTMLImageElement;
+      expect(img.getAttribute("loading")).toBe("lazy");
+      expect(img.getAttribute("decoding")).toBe("async");
+      // dimensões intrínsecas devem estar presentes para evitar layout shift
+      expect(img.getAttribute("width")).toBeTruthy();
+      expect(img.getAttribute("height")).toBeTruthy();
+    }
+  });
+
+  it("não emite URLs render/image (não consome cota de Image Transformations)", async () => {
+    const fotos = [{ id: "f1", url: "https://cdn/fake/object/public/foto.jpg", ordem: 0 }];
+    apiGetMock.mockResolvedValue({ data: imovelFixture({ fotos }) });
+    render(<EditarImovelPage params={Promise.resolve({ id: "imovel-abc" })} />);
+    await waitFor(() => {
+      expect(screen.getByAltText("Foto 1")).toBeInTheDocument();
+    });
+    const img = screen.getByAltText("Foto 1") as HTMLImageElement;
+    expect(img.src).not.toMatch(/render\/image/);
+    expect(img.src).toContain("object/public");
+  });
 });
 
 // ── Seção de interessados ─────────────────────────────────────────────────────

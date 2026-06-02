@@ -85,7 +85,11 @@ def _aplicar_filtros(query, *, tipo_negocio, disponibilidade, cidade, bairro,
         termo = _safe_for_or(q)
         if termo:
             termo_norm = _norm(termo)
-            query = query.or_(f"codigo.ilike.%{termo}%,bairro_norm.ilike.%{termo_norm}%")
+            query = query.or_(
+                f"codigo.ilike.%{termo}%,"
+                f"logradouro.ilike.%{termo}%,"
+                f"bairro_norm.ilike.%{termo_norm}%"
+            )
     if codigo:
         query = query.ilike("codigo", f"%{codigo}%")
     if tipo_negocio:
@@ -322,6 +326,7 @@ def exportar_imoveis_csv(
     condicao: Optional[CondicaoImovel] = None,
     mobiliado: Optional[Mobiliado] = None,
     codigo: Optional[str] = None,
+    q: Optional[str] = Query(default=None, description="Busca livre por código, logradouro ou bairro"),
     sem_foto: Optional[bool] = None,
     current_user: dict = Depends(get_current_user),
 ):
@@ -330,7 +335,7 @@ def exportar_imoveis_csv(
         tipo_negocio=tipo_negocio, disponibilidade=disponibilidade,
         cidade=cidade, bairro=bairro, tipo_imovel=tipo_imovel,
         dormitorios_min=dormitorios_min, preco_min=preco_min, preco_max=preco_max,
-        condicao=condicao, mobiliado=mobiliado, codigo=codigo,
+        condicao=condicao, mobiliado=mobiliado, codigo=codigo, q=q,
     )
 
     ids_sem_foto: Optional[List[str]] = None
@@ -412,6 +417,7 @@ def listar_imoveis(
     condicao: Optional[CondicaoImovel] = None,
     mobiliado: Optional[Mobiliado] = None,
     codigo: Optional[str] = None,
+    q: Optional[str] = Query(default=None, description="Busca livre por código, logradouro ou bairro"),
     sem_foto: Optional[bool] = None,
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
@@ -421,7 +427,7 @@ def listar_imoveis(
         tipo_negocio=tipo_negocio, disponibilidade=disponibilidade,
         cidade=cidade, bairro=bairro, tipo_imovel=tipo_imovel,
         dormitorios_min=dormitorios_min, preco_min=preco_min, preco_max=preco_max,
-        condicao=condicao, mobiliado=mobiliado, codigo=codigo,
+        condicao=condicao, mobiliado=mobiliado, codigo=codigo, q=q,
     )
 
     ids_sem_foto: Optional[List[str]] = None

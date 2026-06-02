@@ -226,6 +226,10 @@ function GaleriaFotos({ imovelId, fotos: fotosProp, onAtualizar }: {
                   src={foto.url}
                   alt={`Foto ${index + 1}`}
                   draggable={false}
+                  loading="lazy"
+                  decoding="async"
+                  width={400}
+                  height={400}
                   className="w-full h-full object-cover rounded-lg pointer-events-none select-none"
                 />
                 {index === 0 && (

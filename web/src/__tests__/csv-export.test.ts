@@ -25,8 +25,8 @@ function buildImovelExportParams(filtros: {
   preco_max?: string;
 }): Record<string, string> {
   const params: Record<string, string> = {};
-  const busca = filtros.busca || filtros.codigo;
-  if (busca) params.codigo = busca;
+  if (filtros.busca) params.q = filtros.busca;
+  if (filtros.codigo) params.codigo = filtros.codigo;
   if (filtros.tipo_negocio) params.tipo_negocio = filtros.tipo_negocio;
   if (filtros.disponibilidade) params.disponibilidade = filtros.disponibilidade;
   if (filtros.cidade) params.cidade = filtros.cidade;
@@ -76,9 +76,22 @@ describe("CSV export — params de imóveis", () => {
     expect(p.preco_max).toBe("3000000");
   });
 
-  it("busca é mapeada para codigo", () => {
-    const p = buildImovelExportParams({ busca: "MB-00001" });
-    expect(p.codigo).toBe("MB-00001");
+  it("busca livre é mapeada para `q` (cobre endereço/código/bairro no backend)", () => {
+    const p = buildImovelExportParams({ busca: "rainha" });
+    expect(p.q).toBe("rainha");
+    expect(p.codigo).toBeUndefined();
+  });
+
+  it("filtro `codigo` (campo separado) vai como codigo, não como q", () => {
+    const p = buildImovelExportParams({ codigo: "00002" });
+    expect(p.codigo).toBe("00002");
+    expect(p.q).toBeUndefined();
+  });
+
+  it("busca e codigo coexistem em params distintos", () => {
+    const p = buildImovelExportParams({ busca: "ipanema", codigo: "00002" });
+    expect(p.q).toBe("ipanema");
+    expect(p.codigo).toBe("00002");
   });
 
   it("ignora campos vazios", () => {

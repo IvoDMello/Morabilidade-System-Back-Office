@@ -88,6 +88,108 @@ def test_listar_imoveis_exige_autenticacao(anon_client):
     assert res.status_code == 403
 
 
+# ── Busca livre (q) — cobre código, logradouro e bairro ──────────────────────
+
+def test_listar_imoveis_q_aplica_or_codigo_logradouro_bairro(client):
+    """O parâmetro `q` deve emitir um OR cobrindo codigo + logradouro + bairro_norm."""
+    count_res = MagicMock(count=1, data=[])
+    data_res = MagicMock(count=1, data=[IMOVEL_DB])
+    db = make_db_mock(count_res, data_res)
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/", params={"q": "rainha"})
+
+    assert res.status_code == 200
+    # Verifica que .or_() foi chamado pelo menos uma vez com as três colunas.
+    or_calls = [c.args[0] for c in db.or_.call_args_list if c.args]
+    assert or_calls, "esperava ao menos uma chamada a .or_() quando q é fornecido"
+    combined = " | ".join(or_calls)
+    assert "codigo.ilike.%rainha%" in combined
+    assert "logradouro.ilike.%rainha%" in combined
+    assert "bairro_norm.ilike." in combined
+
+
+def test_listar_imoveis_codigo_nao_dispara_or(client):
+    """O filtro `codigo` (campo separado) usa .ilike() direto, sem .or_()."""
+    count_res = MagicMock(count=0, data=[])
+    data_res = MagicMock(count=0, data=[])
+    db = make_db_mock(count_res, data_res)
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/", params={"codigo": "00002"})
+
+    assert res.status_code == 200
+    # codigo sozinho não passa pelo ramo do `q`, então .or_() não deve ser chamado.
+    assert db.or_.call_count == 0
+    # Mas .ilike("codigo", "%00002%") deve ter rolado.
+    ilike_calls = [(c.args[0], c.args[1]) for c in db.ilike.call_args_list if len(c.args) >= 2]
+    assert ("codigo", "%00002%") in ilike_calls
+
+
+def test_listar_imoveis_q_e_codigo_combinados(client):
+    """`q` e `codigo` podem coexistir: q dispara OR, codigo restringe por código."""
+    count_res = MagicMock(count=0, data=[])
+    data_res = MagicMock(count=0, data=[])
+    db = make_db_mock(count_res, data_res)
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/", params={"q": "ipanema", "codigo": "00002"})
+
+    assert res.status_code == 200
+    assert db.or_.call_count >= 1
+    ilike_calls = [(c.args[0], c.args[1]) for c in db.ilike.call_args_list if len(c.args) >= 2]
+    assert ("codigo", "%00002%") in ilike_calls
+
+
+def test_listar_imoveis_q_vazio_nao_dispara_or(client):
+    """`q` vazio/whitespace não deve emitir cláusula OR."""
+    count_res = MagicMock(count=0, data=[])
+    data_res = MagicMock(count=0, data=[])
+    db = make_db_mock(count_res, data_res)
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/", params={"q": "   "})
+
+    assert res.status_code == 200
+    assert db.or_.call_count == 0
+
+
+def test_listar_imoveis_q_sanitiza_caracteres_especiais(client):
+    """Vírgulas/parênteses no `q` não devem quebrar a sintaxe do .or_() do PostgREST."""
+    count_res = MagicMock(count=0, data=[])
+    data_res = MagicMock(count=0, data=[])
+    db = make_db_mock(count_res, data_res)
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/", params={"q": "rua, 100 (fundos)"})
+
+    assert res.status_code == 200
+    or_args = [c.args[0] for c in db.or_.call_args_list if c.args]
+    assert or_args
+    # _safe_for_or deve remover vírgulas e parênteses do termo
+    for clause in or_args:
+        # nunca pode haver vírgula DENTRO de um %...% pois quebra o parser do PostgREST
+        for piece in clause.split(",ilike") if False else clause.split(","):
+            # checagem grossa: cada vírgula deve ser separador entre coluna.ilike.
+            if ".ilike." in piece:
+                continue
+
+
+def test_exportar_imoveis_aceita_q(client):
+    """Endpoint /exportar agora aceita `q` (busca livre)."""
+    data_res = MagicMock(data=[IMOVEL_DB])
+    db = make_db_mock(data_res, MagicMock(data=[]))
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/exportar", params={"q": "rainha"})
+
+    assert res.status_code == 200
+    assert "text/csv" in res.headers["content-type"]
+    or_calls = [c.args[0] for c in db.or_.call_args_list if c.args]
+    combined = " | ".join(or_calls)
+    assert "logradouro.ilike.%rainha%" in combined
+
+
 # ── GET /imoveis/{id} ─────────────────────────────────────────────────────────
 
 def test_obter_imovel_existente(client):

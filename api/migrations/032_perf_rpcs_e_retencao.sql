@@ -1,5 +1,5 @@
 -- Migration 032: RPCs de /stats e /relatorios + retenção 90d dos logs.
--- ⚠️ PENDENTE DE EXECUÇÃO no Supabase — rodar no SQL Editor.
+-- Executada no Supabase em 2026-05-31.
 --
 -- Motivação:
 --   - /stats fazia 9 .execute() em sequência (~270ms só de rede).
@@ -47,20 +47,37 @@ $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION purge_old_logs() IS
     'Apaga linhas com mais de 90 dias das tabelas append-only. Agendado via pg_cron diariamente às 03:15 UTC.';
 
--- Agenda via pg_cron (extensão habilitada por padrão no Supabase Pro).
--- Se rodar mais de uma vez (re-deploy), o unschedule limpa antes.
+-- Agendamento via pg_cron. A extensão NÃO vem habilitada por padrão no
+-- Supabase — precisa ser ligada manualmente em:
+--   Dashboard → Database → Extensions → pg_cron → Enable
+-- Depois de habilitada, rode SÓ o bloco abaixo:
+--
+--   SELECT cron.schedule(
+--     'purge_old_logs_daily',
+--     '15 3 * * *',
+--     $$SELECT purge_old_logs();$$
+--   );
+--
+-- Sem pg_cron, a função `purge_old_logs()` ainda funciona — basta chamar
+-- manualmente periodicamente (`SELECT purge_old_logs();`) ou agendar via
+-- Supabase Edge Function com schedule. O DO block abaixo tenta agendar
+-- silenciosamente; se cron não existir, apenas pula sem travar a migration.
 DO $$
 BEGIN
-    PERFORM cron.unschedule('purge_old_logs_daily')
+    -- Limpa agenda anterior (idempotência em re-deploys).
+    PERFORM cron.unschedule(jobid)
         FROM cron.job WHERE jobname = 'purge_old_logs_daily';
-EXCEPTION WHEN OTHERS THEN NULL;
+    -- Agenda novamente.
+    PERFORM cron.schedule(
+        'purge_old_logs_daily',
+        '15 3 * * *',
+        'SELECT purge_old_logs();'
+    );
+    RAISE NOTICE 'pg_cron: purge_old_logs_daily agendado para 03:15 UTC.';
+EXCEPTION
+    WHEN OTHERS THEN
+        RAISE NOTICE 'pg_cron não está habilitado (ou falhou ao agendar: %) — função criada mas não agendada. Habilite a extensão e rode SELECT cron.schedule(...) manualmente.', SQLERRM;
 END $$;
-
-SELECT cron.schedule(
-    'purge_old_logs_daily',
-    '15 3 * * *',
-    $$SELECT purge_old_logs();$$
-);
 
 
 -- ═════════════════════════════════════════════════════════════════════════════

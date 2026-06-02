@@ -109,8 +109,8 @@ function ImoveisPageInner() {
     setExportando(true);
     try {
       const params: Record<string, string> = {};
-      const busca = filtros.busca || filtros.codigo;
-      if (busca) params.codigo = busca;
+      if (filtros.busca) params.q = filtros.busca;
+      if (filtros.codigo) params.codigo = filtros.codigo;
       if (filtros.tipo_negocio) params.tipo_negocio = filtros.tipo_negocio;
       if (filtros.disponibilidade) params.disponibilidade = filtros.disponibilidade;
       if (filtros.cidade) params.cidade = filtros.cidade;
@@ -144,8 +144,8 @@ function ImoveisPageInner() {
 setLoading(true);
     try {
       const params: Record<string, string> = { page: String(pg), page_size: String(PAGE_SIZE) };
-      const busca = f.busca || f.codigo;
-      if (busca) params.codigo = busca;
+      if (f.busca) params.q = f.busca;
+      if (f.codigo) params.codigo = f.codigo;
       if (f.tipo_negocio) params.tipo_negocio = f.tipo_negocio;
       if (f.disponibilidade) params.disponibilidade = f.disponibilidade;
       if (f.cidade) params.cidade = f.cidade;
