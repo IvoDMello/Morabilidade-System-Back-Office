@@ -27,6 +27,7 @@ export default function PerfilPage() {
 
   const [nome, setNome] = useState(user?.nome_completo ?? "");
   const [telefone, setTelefone] = useState(user?.telefone ?? "");
+  const [creci, setCreci] = useState(user?.creci ?? "");
   const [salvandoPerfil, setSalvandoPerfil] = useState(false);
 
   const [senhaAtual, setSenhaAtual] = useState("");
@@ -39,7 +40,7 @@ export default function PerfilPage() {
     if (!nome.trim()) { toast.error("Nome é obrigatório."); return; }
     setSalvandoPerfil(true);
     try {
-      const res = await api.put("/usuarios/me", { nome_completo: nome.trim(), telefone: telefone || null });
+      const res = await api.put("/usuarios/me", { nome_completo: nome.trim(), telefone: telefone || null, creci: creci.trim() || null });
       setUser(res.data);
       toast.success("Perfil atualizado com sucesso!");
     } catch {
@@ -122,6 +123,16 @@ export default function PerfilPage() {
                 className={inputClass}
                 placeholder="(00) 00000-0000"
               />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1">CRECI</label>
+              <input
+                value={creci}
+                onChange={(e) => setCreci(e.target.value)}
+                className={inputClass}
+                placeholder="CRECI-RJ nº 00000"
+              />
+              <p className="mt-1 text-[11px] text-slate-400">Usado para preencher a ficha de visita automaticamente.</p>
             </div>
           </div>
           <div className="flex justify-end pt-2">

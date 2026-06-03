@@ -24,6 +24,7 @@ class UserUpdate(BaseModel):
     nome_completo: Optional[str] = None
     telefone: Optional[str] = None
     foto_url: Optional[str] = None
+    creci: Optional[str] = None
     perfil: Optional[PerfilAcesso] = None
     ativo: Optional[bool] = None
 
@@ -40,6 +41,7 @@ class UserOut(BaseModel):
     perfil: PerfilAcesso
     telefone: Optional[str] = None
     foto_url: Optional[str] = None
+    creci: Optional[str] = None
     ativo: bool
     created_at: str
     updated_at: str

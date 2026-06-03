@@ -8,6 +8,7 @@ interface User {
   perfil: "admin" | "corretor";
   foto_url?: string;
   telefone?: string;
+  creci?: string;
   ativo?: boolean;
 }
 

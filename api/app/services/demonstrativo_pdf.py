@@ -19,7 +19,6 @@ local quanto no Docker do Railway.
 from __future__ import annotations
 
 import io
-import os
 from datetime import date
 from decimal import Decimal
 from typing import Optional
@@ -28,32 +27,23 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
 from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 
-# Identidade visual Morabilidade
-OLIVE = colors.HexColor("#585a4f")
-DOURADO = colors.HexColor("#d8cb6a")
-DOURADO_CLARO = colors.HexColor("#fdfaef")
-TEXTO_ESCURO = colors.HexColor("#1f2937")
-TEXTO_CLARO = colors.HexColor("#64748b")
-LINHA = colors.HexColor("#e2e8f0")
-
-MESES_PT = [
-    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
-]
-
-_LOGO_PATH = os.path.join(os.path.dirname(__file__), "..", "assets", "logo.png")
-
-
-def _dec(v) -> Decimal:
-    """Aceita None, str, float, int, Decimal — devolve Decimal."""
-    if v is None:
-        return Decimal("0")
-    if isinstance(v, Decimal):
-        return v
-    return Decimal(str(v))
+# Identidade visual e helpers compartilhados ([pdf_base]).
+from app.services.pdf_base import (
+    DOURADO_CLARO,
+    LINHA,
+    MESES_PT,
+    OLIVE,
+    TEXTO_CLARO,
+    TEXTO_ESCURO,
+    dec as _dec,
+    draw_brand_footer,
+    draw_brand_header,
+    fmt_brl as _fmt_brl,
+    fmt_data as _fmt_data,
+    quebrar_em_linhas as _quebrar_em_linhas,
+)
 
 
 def calcular_total_demonstrativo(contrato: dict) -> Decimal:
@@ -80,18 +70,6 @@ def calcular_total_demonstrativo(contrato: dict) -> Decimal:
 
     total -= _dec(contrato.get("fundo_reserva"))
     return total.quantize(Decimal("0.01"))
-
-
-def _fmt_brl(valor: Decimal | float | int) -> str:
-    """Formata como R$ 1.234,56 (padrão BR)."""
-    v = float(valor)
-    # Truque clássico: format en-US e depois swap , <-> .
-    s = f"{v:,.2f}"
-    return "R$ " + s.replace(",", "X").replace(".", ",").replace("X", ".")
-
-
-def _fmt_data(d: date) -> str:
-    return d.strftime("%d/%m/%Y")
 
 
 def _endereco_curto(imovel: Optional[dict]) -> str:
@@ -124,28 +102,10 @@ def gerar_demonstrativo_pdf(contrato: dict, mes_referencia: date) -> bytes:
 
     # ── Header olive (logo + tagline) ──────────────────────────────────────
     header_h = 36 * mm
-    c.setFillColor(OLIVE)
-    c.rect(0, altura - header_h, largura, header_h, fill=1, stroke=0)
-
-    # Logo (se o arquivo existe). Mantemos o demonstrativo robusto a logo
-    # ausente — em testes ou ambientes mínimos não trava.
-    if os.path.exists(_LOGO_PATH):
-        try:
-            c.drawImage(
-                _LOGO_PATH,
-                15 * mm, altura - header_h + 4 * mm,
-                width=64 * mm, height=28 * mm,
-                preserveAspectRatio=True, mask="auto",
-            )
-        except Exception:
-            # Falha de imagem nunca deve impedir a emissão.
-            pass
-
-    # Tagline à direita
-    c.setFillColor(DOURADO)
-    c.setFont("Helvetica-Bold", 14)
-    c.drawRightString(largura - 15 * mm, altura - header_h / 2 - 1 * mm,
-                      "SIMPLES, EFICIENTE E HUMANIZADA")
+    draw_brand_header(
+        c, largura, altura,
+        header_mm=36, tagline="SIMPLES, EFICIENTE E HUMANIZADA",
+    )
 
     # ── Conteúdo ────────────────────────────────────────────────────────────
     y = altura - header_h - 18 * mm
@@ -334,35 +294,11 @@ def gerar_demonstrativo_pdf(contrato: dict, mes_referencia: date) -> bytes:
         y -= 6 * mm
 
     # ── Footer olive ───────────────────────────────────────────────────────
-    footer_h = 16 * mm
-    c.setFillColor(OLIVE)
-    c.rect(0, 0, largura, footer_h, fill=1, stroke=0)
-    c.setFillColor(colors.white)
-    c.setFont("Helvetica", 11)
-    c.drawString(15 * mm, footer_h / 2 - 2 * mm, "www.morabilidade.com")
-    c.drawRightString(largura - 15 * mm, footer_h / 2 - 2 * mm, "(21) 99772-9990")
+    draw_brand_footer(c, largura)
 
     c.showPage()
     c.save()
     return buffer.getvalue()
-
-
-def _quebrar_em_linhas(texto: str, max_chars: int) -> list[str]:
-    """Quebra simples por palavra. ReportLab não tem reflow nativo no canvas."""
-    palavras = texto.split()
-    linhas: list[str] = []
-    atual = ""
-    for p in palavras:
-        candidato = (atual + " " + p).strip()
-        if len(candidato) <= max_chars:
-            atual = candidato
-        else:
-            if atual:
-                linhas.append(atual)
-            atual = p
-    if atual:
-        linhas.append(atual)
-    return linhas
 
 
 def _ultimo_dia_do_mes(d: date) -> int:
