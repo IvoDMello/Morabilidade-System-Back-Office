@@ -14,26 +14,22 @@ const TIPOS_IMOVEL = [
   { value: "cobertura", label: "Cobertura" },
 ];
 
+const QUARTOS_OPTIONS = [
+  { value: "", label: "Quartos" },
+  { value: "1", label: "1+ quarto" },
+  { value: "2", label: "2+ quartos" },
+  { value: "3", label: "3+ quartos" },
+  { value: "4", label: "4+ quartos" },
+];
+
 const ORDENAR_OPTIONS = [
   { value: "", label: "Mais recentes" },
   { value: "mais_antigo", label: "Mais antigos" },
   { value: "preco_asc", label: "Menor preço" },
   { value: "preco_desc", label: "Maior preço" },
+  { value: "area_desc", label: "Maior área útil" },
+  { value: "area_asc", label: "Menor área útil" },
 ];
-
-const pillStyle = (active: boolean): React.CSSProperties => ({
-  padding: "7px 16px",
-  borderRadius: 100,
-  fontSize: 13,
-  fontFamily: "inherit",
-  fontWeight: active ? 600 : 400,
-  backgroundColor: active ? "#585a4f" : "#fcfcfc",
-  color: active ? "#fcfcfc" : "#585a4f",
-  border: `1.5px solid ${active ? "#585a4f" : "#e4e1d6"}`,
-  cursor: "pointer",
-  whiteSpace: "nowrap" as const,
-  flexShrink: 0,
-});
 
 const selectStyle: React.CSSProperties = {
   appearance: "none",
@@ -60,12 +56,12 @@ export function FiltrosBar({ total: _total, bairros = [] }: Props) {
   const router = useRouter();
   const params = useSearchParams();
 
-  const [tipoNeg, setTipoNeg] = useState(params.get("tipo_negocio") ?? "todos");
   const tipoImovelUrl = params.get("tipo_imovel") ?? "";
   const apenasTerreo = params.get("andar_max") === "1";
   const tipoImovelInicial =
     tipoImovelUrl === "apartamento" && apenasTerreo ? "apartamento_terreo" : tipoImovelUrl;
   const [tipoImovel, setTipoImovel] = useState(tipoImovelInicial);
+  const [dormitorios, setDormitorios] = useState(params.get("dormitorios_min") ?? "");
   const [ordenar, setOrdenar] = useState(params.get("ordenar") ?? "");
   const [codigoInput, setCodigoInput] = useState(params.get("codigo") ?? "");
 
@@ -87,11 +83,6 @@ export function FiltrosBar({ total: _total, bairros = [] }: Props) {
     return `/imoveis?${sp.toString()}`;
   }
 
-  function handleNeg(v: string) {
-    setTipoNeg(v);
-    router.push(buildUrl({ tipo_negocio: v }));
-  }
-
   function handleTipo(v: string) {
     setTipoImovel(v);
     if (v === "apartamento_terreo") {
@@ -99,6 +90,11 @@ export function FiltrosBar({ total: _total, bairros = [] }: Props) {
     } else {
       router.push(buildUrl({ tipo_imovel: v, andar_max: "" }));
     }
+  }
+
+  function handleQuartos(v: string) {
+    setDormitorios(v);
+    router.push(buildUrl({ dormitorios_min: v }));
   }
 
   function handleOrdenar(v: string) {
@@ -126,25 +122,19 @@ export function FiltrosBar({ total: _total, bairros = [] }: Props) {
   }
 
   const hasFilters =
-    (tipoNeg && tipoNeg !== "todos") ||
     !!tipoImovel ||
     bairrosAtuais.length > 0 ||
+    !!dormitorios ||
     !!codigoAtual ||
     !!ordenar;
 
   function handleLimpar() {
-    setTipoNeg("todos");
     setTipoImovel("");
+    setDormitorios("");
     setCodigoInput("");
     setOrdenar("");
     router.push("/imoveis?page=1");
   }
-
-  const negPills = [
-    { v: "todos", l: "Tudo" },
-    { v: "venda", l: "Venda" },
-    { v: "locacao", l: "Locação" },
-  ];
 
   // Só mostra no select os bairros que ainda não estão nos chips.
   const bairrosDisponiveis = bairros.filter((b) => !bairrosAtuais.includes(b));
@@ -177,16 +167,51 @@ export function FiltrosBar({ total: _total, bairros = [] }: Props) {
 
         <div className="w-px h-5 flex-shrink-0" style={{ backgroundColor: "#e4e1d6" }} />
 
-        {negPills.map(({ v, l }) => (
-          <button
-            key={v}
-            onClick={() => handleNeg(v)}
-            className="flex-shrink-0 transition-all duration-150"
-            style={pillStyle(tipoNeg === v)}
-          >
-            {l}
-          </button>
-        ))}
+        {/* Código — input separado (primeiro filtro) */}
+        <div className="relative flex-shrink-0">
+          <Hash
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none"
+            style={{ color: "#6e7063" }}
+          />
+          <input
+            type="text"
+            value={codigoInput}
+            onChange={(e) => setCodigoInput(e.target.value)}
+            onBlur={() => {
+              if (codigoInput.trim().toUpperCase() !== codigoAtual) aplicarCodigo();
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                aplicarCodigo();
+              }
+            }}
+            placeholder="Código"
+            aria-label="Buscar por código"
+            style={{
+              backgroundColor: "#fcfcfc",
+              border: "1.5px solid #e4e1d6",
+              borderRadius: 100,
+              padding: "7px 28px 7px 30px",
+              fontSize: 13,
+              fontFamily: "inherit",
+              color: "#585a4f",
+              outline: "none",
+              width: 140,
+              textTransform: "uppercase",
+            }}
+          />
+          {codigoInput && (
+            <button
+              type="button"
+              onClick={limparCodigo}
+              aria-label="Limpar código"
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-[#e4e1d6]/50"
+            >
+              <X className="w-3 h-3" style={{ color: "#6e7063" }} />
+            </button>
+          )}
+        </div>
 
         <div className="w-px h-5 flex-shrink-0" style={{ backgroundColor: "#e4e1d6" }} />
 
@@ -269,50 +294,24 @@ export function FiltrosBar({ total: _total, bairros = [] }: Props) {
           </span>
         ))}
 
-        {/* Código — input separado */}
+        {/* Quartos (dormitórios mínimos) */}
         <div className="relative flex-shrink-0">
-          <Hash
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none"
+          <select
+            value={dormitorios}
+            onChange={(e) => handleQuartos(e.target.value)}
+            style={selectStyle}
+            aria-label="Número mínimo de quartos"
+          >
+            {QUARTOS_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+          <ChevronDown
+            className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none w-3.5 h-3.5"
             style={{ color: "#6e7063" }}
           />
-          <input
-            type="text"
-            value={codigoInput}
-            onChange={(e) => setCodigoInput(e.target.value)}
-            onBlur={() => {
-              if (codigoInput.trim().toUpperCase() !== codigoAtual) aplicarCodigo();
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                aplicarCodigo();
-              }
-            }}
-            placeholder="Código"
-            aria-label="Buscar por código"
-            style={{
-              backgroundColor: "#fcfcfc",
-              border: "1.5px solid #e4e1d6",
-              borderRadius: 100,
-              padding: "7px 28px 7px 30px",
-              fontSize: 13,
-              fontFamily: "inherit",
-              color: "#585a4f",
-              outline: "none",
-              width: 140,
-              textTransform: "uppercase",
-            }}
-          />
-          {codigoInput && (
-            <button
-              type="button"
-              onClick={limparCodigo}
-              aria-label="Limpar código"
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-[#e4e1d6]/50"
-            >
-              <X className="w-3 h-3" style={{ color: "#6e7063" }} />
-            </button>
-          )}
         </div>
 
         <div className="w-px h-5 flex-shrink-0" style={{ backgroundColor: "#e4e1d6" }} />

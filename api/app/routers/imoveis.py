@@ -237,7 +237,7 @@ def imoveis_disponiveis_publico(
     preco_max: Optional[float] = None,
     condicao: Optional[CondicaoImovel] = None,
     mobiliado: Optional[Mobiliado] = None,
-    ordenar: Optional[str] = Query(default=None, description="preco_asc | preco_desc | mais_antigo | mais_novo"),
+    ordenar: Optional[str] = Query(default=None, description="preco_asc | preco_desc | area_asc | area_desc | mais_antigo | mais_novo"),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
 ):
@@ -265,6 +265,10 @@ def imoveis_disponiveis_publico(
         query = query.order(campo_preco, desc=False, nullsfirst=False)
     elif ordenar == "preco_desc":
         query = query.order(campo_preco, desc=True, nullsfirst=False)
+    elif ordenar == "area_desc":
+        query = query.order("area_util", desc=True, nullsfirst=False)
+    elif ordenar == "area_asc":
+        query = query.order("area_util", desc=False, nullsfirst=False)
     elif ordenar == "mais_antigo":
         query = query.order("created_at", desc=False)
     else:
