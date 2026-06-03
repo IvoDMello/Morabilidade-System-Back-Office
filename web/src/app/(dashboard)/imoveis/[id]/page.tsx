@@ -11,6 +11,7 @@ import { Sparkles } from "lucide-react";
 import { ImovelForm, type ImovelFormData } from "@/components/imoveis/imovel-form";
 import { InteressadosImovel } from "@/components/imoveis/interessados-imovel";
 import { AcompanhamentoImovel } from "@/components/imoveis/acompanhamento-imovel";
+import { FichasImovel } from "@/components/fichas/fichas-imovel";
 import { AudienciaImovel } from "@/components/imoveis/audiencia-imovel";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import type { Imovel, Foto } from "@/types";
@@ -318,7 +319,7 @@ export default function EditarImovelPage({
   const [imovel, setImovel] = useState<Imovel | null>(null);
   const [loadingDados, setLoadingDados] = useState(true);
   const [salvando, setSalvando] = useState(false);
-  const [abaAtiva, setAbaAtiva] = useState<"dados" | "acompanhamento">("dados");
+  const [abaAtiva, setAbaAtiva] = useState<"dados" | "acompanhamento" | "fichas">("dados");
 
   const carregarImovel = useCallback(async () => {
     try {
@@ -434,6 +435,7 @@ export default function EditarImovelPage({
           [
             { key: "dados", label: "Dados do imóvel" },
             { key: "acompanhamento", label: "Acompanhamento" },
+            { key: "fichas", label: "Fichas de visita" },
           ] as const
         ).map((tab) => (
           <button
@@ -505,6 +507,8 @@ export default function EditarImovelPage({
           relatorio30diasEnviadoEm={imovel.relatorio_30dias_enviado_em ?? null}
         />
       )}
+
+      {abaAtiva === "fichas" && <FichasImovel imovelId={imovel.id} />}
     </div>
   );
 }
