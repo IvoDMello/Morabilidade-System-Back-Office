@@ -12,6 +12,7 @@ import { ImovelForm, type ImovelFormData } from "@/components/imoveis/imovel-for
 import { InteressadosImovel } from "@/components/imoveis/interessados-imovel";
 import { AcompanhamentoImovel } from "@/components/imoveis/acompanhamento-imovel";
 import { FichasImovel } from "@/components/fichas/fichas-imovel";
+import { AutorizacaoImovel } from "@/components/fichas/autorizacao-imovel";
 import { AudienciaImovel } from "@/components/imoveis/audiencia-imovel";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import type { Imovel, Foto } from "@/types";
@@ -319,7 +320,7 @@ export default function EditarImovelPage({
   const [imovel, setImovel] = useState<Imovel | null>(null);
   const [loadingDados, setLoadingDados] = useState(true);
   const [salvando, setSalvando] = useState(false);
-  const [abaAtiva, setAbaAtiva] = useState<"dados" | "acompanhamento" | "fichas">("dados");
+  const [abaAtiva, setAbaAtiva] = useState<"dados" | "acompanhamento" | "fichas" | "autorizacao">("dados");
 
   const carregarImovel = useCallback(async () => {
     try {
@@ -436,6 +437,7 @@ export default function EditarImovelPage({
             { key: "dados", label: "Dados do imóvel" },
             { key: "acompanhamento", label: "Acompanhamento" },
             { key: "fichas", label: "Fichas de visita" },
+            { key: "autorizacao", label: "Autorização" },
           ] as const
         ).map((tab) => (
           <button
@@ -509,6 +511,8 @@ export default function EditarImovelPage({
       )}
 
       {abaAtiva === "fichas" && <FichasImovel imovelId={imovel.id} />}
+
+      {abaAtiva === "autorizacao" && <AutorizacaoImovel imovelId={imovel.id} />}
     </div>
   );
 }
