@@ -150,6 +150,29 @@ def upload_bytes_jpeg(contents: bytes, path: str) -> str:
         raise HTTPException(status_code=500, detail=f"Falha no upload: {e}")
 
 
+def upload_pdf_bytes(contents: bytes, path: str) -> str:
+    """Sobe um PDF (bytes) para o storage, sobrescrevendo se já existir, e
+    devolve o `path` salvo. Usado pela ficha de visita assinada — reemissão da
+    mesma ficha deve substituir a versão anterior, por isso `upsert=true`."""
+    try:
+        supabase_admin.storage.from_(BUCKET).upload(
+            path=path,
+            file=contents,
+            file_options={"content-type": "application/pdf", "upsert": "true"},
+        )
+        return path
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Falha no upload do PDF: {e}")
+
+
+def baixar_documento(path: str) -> bytes:
+    """Baixa os bytes de um documento do storage pelo seu path."""
+    try:
+        return supabase_admin.storage.from_(BUCKET).download(path)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Falha ao baixar documento: {e}")
+
+
 async def deletar_foto(url: str) -> None:
     try:
         # Extrai bucket e path da URL pública do Supabase

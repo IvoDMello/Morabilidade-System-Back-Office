@@ -1,0 +1,295 @@
+"""Geração da Ficha / Termo de Visita a Imóvel em PDF (ReportLab).
+
+Dois modos a partir da mesma função:
+- preview (assinada=False): documento em branco para conferência.
+- assinada (assinada=True): com os dados do visitante, a imagem da assinatura e
+  o bloco de trilha de auditoria (IP, data/hora, geolocalização e hash).
+
+A cláusula assinada é versionada e gravada na própria ficha (snapshot) — ver
+`montar_clausula` e a coluna `clausula_texto` na migration 034.
+"""
+from __future__ import annotations
+
+import base64
+import io
+from datetime import datetime
+
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import mm
+from reportlab.lib.utils import ImageReader
+from reportlab.pdfgen import canvas
+
+from app.config import settings
+from app.services.pdf_base import (
+    DOURADO,
+    LINHA,
+    OLIVE,
+    TEXTO_CLARO,
+    TEXTO_ESCURO,
+    draw_brand_footer,
+    draw_brand_header,
+    fmt_brl,
+    quebrar_em_linhas,
+)
+
+CLAUSULA_VERSAO = "v1"
+
+_EXTENSO = {
+    6: "seis", 12: "doze", 18: "dezoito", 24: "vinte e quatro", 36: "trinta e seis",
+}
+
+
+def montar_clausula(prazo_meses: int) -> str:
+    """Texto integral da declaração do visitante (versão `CLAUSULA_VERSAO`).
+
+    Gravado como snapshot na ficha no momento da geração — não deve ser alterado
+    retroativamente para fichas já existentes (integridade probatória)."""
+    extenso = _EXTENSO.get(prazo_meses)
+    prazo_txt = f"{prazo_meses} ({extenso})" if extenso else str(prazo_meses)
+    return (
+        "Declaro, para os devidos fins, que tomei conhecimento e visitei pela "
+        "primeira vez o imóvel acima identificado por intermédio da MORABILIDADE "
+        "e do corretor responsável indicado nesta ficha. Comprometo-me a conduzir "
+        "qualquer proposta, negociação, compra, locação ou intermediação relativa "
+        "a este imóvel exclusivamente por meio da Morabilidade.\n\n"
+        "Reconheço que, caso a aquisição ou locação deste imóvel venha a ocorrer, "
+        "direta ou indiretamente, com o proprietário, com terceiros por mim "
+        f"indicados, ou por outra imobiliária, no prazo de {prazo_txt} meses "
+        "contados desta visita, será devida a comissão de corretagem à "
+        "Morabilidade, por ter sido ela a causa eficiente da aproximação das "
+        "partes, nos termos dos arts. 725 e 727 do Código Civil (Lei nº "
+        "10.406/2002).\n\n"
+        "Declaro ainda que as informações prestadas são verdadeiras e autorizo o "
+        "tratamento dos meus dados pessoais para fins de cadastro e do processo "
+        "de intermediação, nos termos da Lei nº 13.709/2018 (LGPD)."
+    )
+
+
+# ── Helpers de desenho ───────────────────────────────────────────────────────
+
+MARGEM = 15 * mm
+
+
+def _secao(c: canvas.Canvas, largura: float, y: float, titulo: str) -> float:
+    """Faixa olive fina com o título da seção. Devolve o Y abaixo dela."""
+    barra_h = 7 * mm
+    c.setFillColor(OLIVE)
+    c.rect(MARGEM, y - barra_h, largura - 2 * MARGEM, barra_h, fill=1, stroke=0)
+    c.setFillColor(DOURADO)
+    c.setFont("Helvetica-Bold", 10)
+    c.drawString(MARGEM + 3 * mm, y - barra_h + 2 * mm, titulo.upper())
+    return y - barra_h - 6 * mm
+
+
+def _campo(c: canvas.Canvas, x: float, y: float, largura: float, label: str, valor: str) -> None:
+    """Rótulo pequeno em cima + valor + linha de base (estilo formulário)."""
+    c.setFillColor(TEXTO_CLARO)
+    c.setFont("Helvetica", 7)
+    c.drawString(x, y, label.upper())
+    c.setFillColor(TEXTO_ESCURO)
+    c.setFont("Helvetica-Bold", 10)
+    valor = valor or "—"
+    # Trunca para não invadir o campo vizinho.
+    while valor != "—" and c.stringWidth(valor, "Helvetica-Bold", 10) > largura - 2 and len(valor) > 4:
+        valor = valor[:-2]
+    c.drawString(x, y - 4.5 * mm, valor)
+    c.setStrokeColor(LINHA)
+    c.setLineWidth(0.5)
+    c.line(x, y - 6 * mm, x + largura, y - 6 * mm)
+
+
+def _desenhar_qr(c: canvas.Canvas, x: float, y: float, lado: float, conteudo: str) -> None:
+    """QR code (nativo do ReportLab, sem dependência extra)."""
+    try:
+        from reportlab.graphics.barcode import qr
+        from reportlab.graphics.shapes import Drawing
+        from reportlab.graphics import renderPDF
+
+        widget = qr.QrCodeWidget(conteudo)
+        bounds = widget.getBounds()
+        w = bounds[2] - bounds[0]
+        h = bounds[3] - bounds[1]
+        d = Drawing(lado, lado, transform=[lado / w, 0, 0, lado / h, 0, 0])
+        d.add(widget)
+        renderPDF.draw(d, c, x, y)
+    except Exception:
+        # QR é enfeite/rastreio — nunca deve impedir a emissão.
+        pass
+
+
+def _desenhar_assinatura_png(c: canvas.Canvas, data_url: str, x: float, y: float, w: float, h: float) -> bool:
+    """Desenha a imagem da assinatura a partir de um data URL base64. Devolve
+    True se conseguiu desenhar."""
+    if not data_url:
+        return False
+    try:
+        if "," in data_url:
+            data_url = data_url.split(",", 1)[1]
+        raw = base64.b64decode(data_url)
+        img = ImageReader(io.BytesIO(raw))
+        c.drawImage(img, x, y, width=w, height=h, preserveAspectRatio=True, mask="auto")
+        return True
+    except Exception:
+        return False
+
+
+def gerar_ficha_visita_pdf(ficha: dict, assinada: bool = False) -> bytes:
+    """Gera o PDF da ficha de visita e devolve os bytes."""
+    buffer = io.BytesIO()
+    c = canvas.Canvas(buffer, pagesize=A4)
+    largura, altura = A4
+    util = largura - 2 * MARGEM
+
+    y = draw_brand_header(
+        c, largura, altura,
+        header_mm=30, titulo="FICHA / TERMO DE VISITA",
+    )
+
+    # ── Linha de identificação + QR ──────────────────────────────────────────
+    y -= 12 * mm
+    codigo = ficha.get("imovel_codigo") or "—"
+    ficha_num = (ficha.get("id") or "").replace("-", "")[:8].upper() or "—"
+    criada = _fmt_dt(ficha.get("created_at"))
+
+    _campo(c, MARGEM, y, 50 * mm, "Ficha nº", ficha_num)
+    _campo(c, MARGEM + 56 * mm, y, 45 * mm, "Data da visita", criada)
+    _campo(c, MARGEM + 106 * mm, y, 30 * mm, "Código / ref.", codigo)
+
+    # QR no canto superior direito do conteúdo, apontando pro imóvel no site.
+    qr_url = f"{settings.site_url.rstrip('/')}/imoveis/{codigo}" if codigo != "—" else settings.site_url
+    _desenhar_qr(c, largura - MARGEM - 20 * mm, y - 18 * mm, 18 * mm, qr_url)
+
+    y -= 14 * mm
+
+    # ── 1. Dados do imóvel ───────────────────────────────────────────────────
+    y = _secao(c, largura, y, "1. Dados do imóvel")
+    _campo(c, MARGEM, y, util, "Endereço completo", ficha.get("imovel_endereco") or "—")
+    y -= 12 * mm
+    _campo(c, MARGEM, y, 60 * mm, "Bairro", ficha.get("imovel_bairro") or "—")
+    _campo(c, MARGEM + 66 * mm, y, 50 * mm, "Cidade / UF", ficha.get("imovel_cidade") or "—")
+    valor = fmt_brl(ficha["imovel_valor"]) if ficha.get("imovel_valor") is not None else "—"
+    _campo(c, MARGEM + 122 * mm, y, util - 122 * mm, "Valor anunciado", valor)
+    y -= 12 * mm
+    prop = ficha.get("proprietario_nome") or "Imóvel sob intermediação da Morabilidade"
+    _campo(c, MARGEM, y, util, "Proprietário", prop)
+    y -= 14 * mm
+
+    # ── 2. Dados do visitante ────────────────────────────────────────────────
+    y = _secao(c, largura, y, "2. Dados do visitante")
+    _campo(c, MARGEM, y, util, "Nome completo", ficha.get("visitante_nome") or "—")
+    y -= 12 * mm
+    _campo(c, MARGEM, y, 55 * mm, "CPF", ficha.get("visitante_cpf") or "—")
+    _campo(c, MARGEM + 61 * mm, y, 45 * mm, "RG", ficha.get("visitante_rg") or "—")
+    _campo(c, MARGEM + 111 * mm, y, util - 111 * mm, "Telefone / WhatsApp", ficha.get("visitante_telefone") or "—")
+    y -= 12 * mm
+    _campo(c, MARGEM, y, util, "E-mail", ficha.get("visitante_email") or "—")
+    y -= 14 * mm
+
+    # ── 3. Corretor responsável ──────────────────────────────────────────────
+    y = _secao(c, largura, y, "3. Corretor responsável")
+    _campo(c, MARGEM, y, 110 * mm, "Nome do corretor", ficha.get("corretor_nome") or "—")
+    _campo(c, MARGEM + 116 * mm, y, util - 116 * mm, "CRECI nº",
+           ficha.get("corretor_creci") or settings.empresa_creci_corretor)
+    y -= 16 * mm
+
+    # ── 4. Declaração ────────────────────────────────────────────────────────
+    y = _secao(c, largura, y, "4. Declaração do visitante")
+    c.setFillColor(TEXTO_ESCURO)
+    c.setFont("Helvetica", 8.5)
+    clausula = ficha.get("clausula_texto") or montar_clausula(int(ficha.get("prazo_meses") or 12))
+    for paragrafo in clausula.split("\n\n"):
+        for linha in quebrar_em_linhas(paragrafo, 108):
+            c.drawString(MARGEM, y, linha)
+            y -= 4.4 * mm
+        y -= 2 * mm
+    y -= 4 * mm
+
+    # ── Assinaturas ──────────────────────────────────────────────────────────
+    col_w = (util - 10 * mm) / 2
+    base_assinatura = y - 14 * mm
+
+    if assinada:
+        _desenhar_assinatura_png(
+            c, ficha.get("assinante_assinatura_png") or "",
+            MARGEM, base_assinatura, col_w, 14 * mm,
+        )
+    c.setStrokeColor(TEXTO_ESCURO)
+    c.setLineWidth(0.7)
+    c.line(MARGEM, base_assinatura, MARGEM + col_w, base_assinatura)
+    c.line(MARGEM + col_w + 10 * mm, base_assinatura, MARGEM + 2 * col_w + 10 * mm, base_assinatura)
+
+    c.setFillColor(TEXTO_CLARO)
+    c.setFont("Helvetica", 8)
+    c.drawCentredString(MARGEM + col_w / 2, base_assinatura - 4 * mm, "VISITANTE — Assinatura e CPF")
+    c.drawCentredString(MARGEM + col_w + 10 * mm + col_w / 2, base_assinatura - 4 * mm,
+                        "MORABILIDADE / CORRETOR — Assinatura e CRECI")
+
+    # ── Bloco de trilha de auditoria (só assinada) ───────────────────────────
+    if assinada:
+        _bloco_trilha(c, largura, base_assinatura - 12 * mm, ficha)
+    else:
+        c.setFillColor(TEXTO_CLARO)
+        c.setFont("Helvetica-Oblique", 8)
+        c.drawString(MARGEM, base_assinatura - 12 * mm,
+                     "Documento aguardando assinatura eletrônica do visitante.")
+
+    # ── Footer ───────────────────────────────────────────────────────────────
+    rodape_esq = " · ".join(filter(None, [
+        settings.empresa_creci_juridico or settings.empresa_creci_corretor,
+        f"CNPJ {settings.empresa_cnpj}" if settings.empresa_cnpj else None,
+    ])) or "MORABILIDADE — Intermediação imobiliária"
+    draw_brand_footer(c, largura, esquerda=rodape_esq, direita=settings.empresa_telefone)
+
+    c.showPage()
+    c.save()
+    return buffer.getvalue()
+
+
+def _bloco_trilha(c: canvas.Canvas, largura: float, y: float, ficha: dict) -> None:
+    """Caixa com a prova da assinatura eletrônica simples."""
+    linhas = [
+        ("Assinado eletronicamente por", f"{ficha.get('visitante_nome', '')}  ·  CPF {ficha.get('assinante_cpf_confirmado') or ficha.get('visitante_cpf') or '—'}"),
+        ("Data/hora", _fmt_dt(ficha.get("assinada_em"), com_hora=True)),
+        ("IP de origem", ficha.get("assinante_ip") or "—"),
+        ("Geolocalização", ficha.get("assinante_geo") or "não informada"),
+        ("Hash do documento (SHA-256)", ficha.get("documento_hash") or "—"),
+    ]
+    altura_caixa = 6 * mm + len(linhas) * 4.4 * mm + 5 * mm
+    c.setFillColor(colors.HexColor("#fafafa"))
+    c.setStrokeColor(LINHA)
+    c.setLineWidth(0.5)
+    c.rect(MARGEM, y - altura_caixa, largura - 2 * MARGEM, altura_caixa, fill=1, stroke=1)
+
+    yy = y - 5 * mm
+    c.setFillColor(OLIVE)
+    c.setFont("Helvetica-Bold", 8)
+    c.drawString(MARGEM + 3 * mm, yy, "TRILHA DE AUDITORIA — ASSINATURA ELETRÔNICA")
+    yy -= 5 * mm
+    for label, valor in linhas:
+        c.setFillColor(TEXTO_CLARO)
+        c.setFont("Helvetica", 7)
+        c.drawString(MARGEM + 3 * mm, yy, f"{label}:")
+        c.setFillColor(TEXTO_ESCURO)
+        c.setFont("Helvetica", 7)
+        c.drawString(MARGEM + 48 * mm, yy, str(valor))
+        yy -= 4.4 * mm
+
+    c.setFillColor(TEXTO_CLARO)
+    c.setFont("Helvetica-Oblique", 6.5)
+    c.drawString(MARGEM + 3 * mm, yy,
+                 "Assinatura eletrônica nos termos do art. 107 do Código Civil e da Lei nº 14.063/2020.")
+
+
+def _fmt_dt(valor, com_hora: bool = False) -> str:
+    """Formata um ISO timestamp/string para DD/MM/AAAA (+ hora opcional)."""
+    if not valor:
+        return "—"
+    if isinstance(valor, datetime):
+        dt = valor
+    else:
+        try:
+            dt = datetime.fromisoformat(str(valor).replace("Z", "+00:00"))
+        except ValueError:
+            return str(valor)[:10]
+    return dt.strftime("%d/%m/%Y %H:%M") if com_hora else dt.strftime("%d/%m/%Y")

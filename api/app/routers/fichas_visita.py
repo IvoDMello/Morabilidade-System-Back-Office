@@ -1,0 +1,301 @@
+"""Ficha / Termo de Visita a Imóvel — geração, listagem e assinatura eletrônica.
+
+Fluxo:
+1. Corretor cria a ficha (`POST /fichas-visita`) — o sistema monta um snapshot
+   imutável do imóvel/corretor e gera um `token` de assinatura.
+2. O link `/<site>/ficha/<token>` é enviado ao visitante (ex.: WhatsApp).
+3. O visitante abre, confere e assina (`POST /fichas-visita/assinar/<token>`) —
+   capturamos IP, data/hora, geolocalização e o hash dos dados como trilha de
+   auditoria, e geramos o PDF assinado guardado no storage.
+
+Assinatura eletrônica simples, válida entre particulares (art. 107 do Código
+Civil + Lei nº 14.063/2020).
+"""
+import hashlib
+import json
+import secrets
+from datetime import datetime, timedelta, timezone
+from typing import List, Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
+
+from app.auth.dependencies import get_current_user, require_admin
+from app.database import supabase_admin
+from app.limiter import limiter
+from app.schemas.ficha_visita import (
+    FichaVisitaAssinaturaIn,
+    FichaVisitaCreate,
+    FichaVisitaOut,
+    FichaVisitaPublicaView,
+)
+from app.services.ficha_visita_pdf import gerar_ficha_visita_pdf, montar_clausula
+from app.services.storage import baixar_documento, upload_pdf_bytes
+
+router = APIRouter()
+
+TOKEN_VALIDADE_DIAS = 7
+
+
+# ── Helpers ──────────────────────────────────────────────────────────────────
+
+def _montar_endereco(imovel: dict) -> str:
+    partes = [imovel.get("logradouro")]
+    if imovel.get("numero"):
+        partes.append(str(imovel["numero"]))
+    if imovel.get("complemento"):
+        partes.append(str(imovel["complemento"]))
+    return ", ".join(p for p in partes if p)
+
+
+def _ip_do_request(request: Request) -> Optional[str]:
+    """IP real do visitante. Atrás do proxy do Railway o `client.host` é o do
+    proxy — o IP de origem vem no X-Forwarded-For (primeiro da lista)."""
+    fwd = request.headers.get("x-forwarded-for")
+    if fwd:
+        return fwd.split(",")[0].strip()
+    return request.client.host if request.client else None
+
+
+def _hash_documento(ficha: dict) -> str:
+    """SHA-256 sobre os dados essenciais assinados (não sobre o PDF renderizado,
+    que carrega timestamps não determinísticos). Prova a integridade do acordo."""
+    nucleo = {
+        "id": ficha.get("id"),
+        "imovel_codigo": ficha.get("imovel_codigo"),
+        "imovel_endereco": ficha.get("imovel_endereco"),
+        "visitante_nome": ficha.get("visitante_nome"),
+        "cpf": ficha.get("assinante_cpf_confirmado"),
+        "clausula_texto": ficha.get("clausula_texto"),
+        "assinada_em": ficha.get("assinada_em"),
+        "ip": ficha.get("assinante_ip"),
+        "geo": ficha.get("assinante_geo"),
+    }
+    canonico = json.dumps(nucleo, sort_keys=True, ensure_ascii=False)
+    return hashlib.sha256(canonico.encode("utf-8")).hexdigest()
+
+
+def _buscar_ficha(ficha_id: str) -> dict:
+    res = supabase_admin.table("fichas_visita").select("*").eq("id", ficha_id).maybe_single().execute()
+    if not res or not res.data:
+        raise HTTPException(status_code=404, detail="Ficha de visita não encontrada.")
+    return res.data
+
+
+# ── Endpoints autenticados ───────────────────────────────────────────────────
+
+@router.post("", response_model=FichaVisitaOut, status_code=status.HTTP_201_CREATED)
+def criar_ficha(body: FichaVisitaCreate, current_user: dict = Depends(require_admin)):
+    imovel = (
+        supabase_admin.table("imoveis")
+        .select("id, codigo, logradouro, numero, complemento, bairro, cidade, "
+                "valor_venda, valor_locacao, proprietario_id")
+        .eq("id", body.imovel_id)
+        .maybe_single()
+        .execute()
+    )
+    if not imovel or not imovel.data:
+        raise HTTPException(status_code=404, detail="Imóvel não encontrado.")
+    imovel = imovel.data
+
+    # Proprietário (snapshot do nome, se houver vínculo).
+    proprietario_nome = None
+    if imovel.get("proprietario_id"):
+        prop = (
+            supabase_admin.table("clientes")
+            .select("nome_completo")
+            .eq("id", imovel["proprietario_id"])
+            .maybe_single()
+            .execute()
+        )
+        if prop and prop.data:
+            proprietario_nome = prop.data.get("nome_completo")
+
+    # Corretor responsável (default = usuário atual).
+    corretor_id = body.corretor_id or current_user["id"]
+    corretor = (
+        supabase_admin.table("usuarios")
+        .select("nome_completo, creci")
+        .eq("id", corretor_id)
+        .maybe_single()
+        .execute()
+    )
+    corretor_data = corretor.data if corretor and corretor.data else {}
+
+    valor = imovel.get("valor_venda") or imovel.get("valor_locacao")
+    agora = datetime.now(timezone.utc)
+
+    payload = {
+        "imovel_id": imovel["id"],
+        "corretor_id": corretor_id,
+        "cliente_id": body.cliente_id,
+        "created_by": current_user["id"],
+        "visitante_nome": body.visitante_nome.strip(),
+        "visitante_cpf": (body.visitante_cpf or "").strip() or None,
+        "visitante_rg": (body.visitante_rg or "").strip() or None,
+        "visitante_telefone": (body.visitante_telefone or "").strip() or None,
+        "visitante_email": (body.visitante_email or "").strip() or None,
+        "imovel_codigo": imovel.get("codigo"),
+        "imovel_endereco": _montar_endereco(imovel),
+        "imovel_bairro": imovel.get("bairro"),
+        "imovel_cidade": imovel.get("cidade"),
+        "imovel_valor": float(valor) if valor is not None else None,
+        "proprietario_nome": proprietario_nome,
+        "corretor_nome": corretor_data.get("nome_completo"),
+        "corretor_creci": corretor_data.get("creci"),
+        "clausula_texto": montar_clausula(body.prazo_meses),
+        "prazo_meses": body.prazo_meses,
+        "status": "pendente",
+        "token": secrets.token_urlsafe(32),
+        "token_expira_em": (agora + timedelta(days=TOKEN_VALIDADE_DIAS)).isoformat(),
+    }
+
+    res = supabase_admin.table("fichas_visita").insert(payload).execute()
+    return res.data[0]
+
+
+@router.get("", response_model=List[FichaVisitaOut])
+def listar_fichas(
+    imovel_id: Optional[str] = Query(None),
+    cliente_id: Optional[str] = Query(None),
+    status_filtro: Optional[str] = Query(None, alias="status"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    current_user: dict = Depends(get_current_user),
+):
+    q = supabase_admin.table("fichas_visita").select("*")
+    if imovel_id:
+        q = q.eq("imovel_id", imovel_id)
+    if cliente_id:
+        q = q.eq("cliente_id", cliente_id)
+    if status_filtro:
+        q = q.eq("status", status_filtro)
+    inicio = (page - 1) * page_size
+    res = q.order("created_at", desc=True).range(inicio, inicio + page_size - 1).execute()
+    return res.data or []
+
+
+@router.get("/{ficha_id}", response_model=FichaVisitaOut)
+def obter_ficha(ficha_id: str, current_user: dict = Depends(get_current_user)):
+    return _buscar_ficha(ficha_id)
+
+
+@router.get("/{ficha_id}/pdf")
+def baixar_pdf(ficha_id: str, current_user: dict = Depends(get_current_user)):
+    ficha = _buscar_ficha(ficha_id)
+    if ficha.get("status") == "assinada" and ficha.get("pdf_path"):
+        # Serve o PDF guardado — é dele que o hash foi calculado.
+        pdf_bytes = baixar_documento(ficha["pdf_path"])
+    else:
+        # Pendente/cancelada: preview gerado na hora.
+        pdf_bytes = gerar_ficha_visita_pdf(ficha, assinada=False)
+    nome = f"ficha-visita-{ficha.get('imovel_codigo') or ficha_id[:8]}.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{nome}"',
+            "Access-Control-Expose-Headers": "Content-Disposition",
+        },
+    )
+
+
+@router.post("/{ficha_id}/cancelar", response_model=FichaVisitaOut)
+def cancelar_ficha(ficha_id: str, current_user: dict = Depends(require_admin)):
+    ficha = _buscar_ficha(ficha_id)
+    if ficha.get("status") == "assinada":
+        raise HTTPException(status_code=409, detail="Ficha já assinada não pode ser cancelada.")
+    res = (
+        supabase_admin.table("fichas_visita")
+        .update({"status": "cancelada", "updated_at": datetime.now(timezone.utc).isoformat()})
+        .eq("id", ficha_id)
+        .execute()
+    )
+    return res.data[0]
+
+
+# ── Endpoints públicos (assinatura via token) ────────────────────────────────
+
+def _ficha_assinavel(token: str) -> dict:
+    """Busca a ficha pelo token e valida que ainda pode ser assinada."""
+    res = supabase_admin.table("fichas_visita").select("*").eq("token", token).maybe_single().execute()
+    if not res or not res.data:
+        raise HTTPException(status_code=404, detail="Link inválido.")
+    ficha = res.data
+    if ficha.get("status") == "assinada":
+        raise HTTPException(status_code=410, detail="Esta ficha já foi assinada.")
+    if ficha.get("status") == "cancelada":
+        raise HTTPException(status_code=410, detail="Esta ficha foi cancelada.")
+    expira = ficha.get("token_expira_em")
+    if expira:
+        try:
+            if datetime.fromisoformat(str(expira).replace("Z", "+00:00")) < datetime.now(timezone.utc):
+                supabase_admin.table("fichas_visita").update({"status": "expirada"}).eq("id", ficha["id"]).execute()
+                raise HTTPException(status_code=410, detail="O link de assinatura expirou.")
+        except ValueError:
+            pass
+    return ficha
+
+
+@router.get("/assinar/{token}", response_model=FichaVisitaPublicaView)
+@limiter.limit("30/minute")
+def ver_ficha_publica(request: Request, token: str):
+    return _ficha_assinavel(token)
+
+
+@router.post("/assinar/{token}", response_model=FichaVisitaPublicaView)
+@limiter.limit("10/minute")
+def assinar_ficha(request: Request, token: str, body: FichaVisitaAssinaturaIn):
+    ficha = _ficha_assinavel(token)
+    if not body.aceite:
+        raise HTTPException(status_code=400, detail="É necessário aceitar os termos para assinar.")
+
+    agora = datetime.now(timezone.utc)
+    ficha["assinada_em"] = agora.isoformat()
+    ficha["assinante_ip"] = _ip_do_request(request)
+    ficha["assinante_user_agent"] = (request.headers.get("user-agent") or "")[:500]
+    ficha["assinante_geo"] = (body.geo or "").strip() or None
+    ficha["assinante_assinatura_png"] = body.assinatura_png
+    ficha["assinante_cpf_confirmado"] = body.cpf.strip()
+    ficha["documento_hash"] = _hash_documento(ficha)
+
+    # Gera o PDF assinado e guarda no storage.
+    pdf_bytes = gerar_ficha_visita_pdf(ficha, assinada=True)
+    pdf_path = upload_pdf_bytes(pdf_bytes, f"fichas-visita/{ficha['id']}.pdf")
+
+    update = {
+        "status": "assinada",
+        "assinada_em": ficha["assinada_em"],
+        "assinante_ip": ficha["assinante_ip"],
+        "assinante_user_agent": ficha["assinante_user_agent"],
+        "assinante_geo": ficha["assinante_geo"],
+        "assinante_assinatura_png": ficha["assinante_assinatura_png"],
+        "assinante_cpf_confirmado": ficha["assinante_cpf_confirmado"],
+        "documento_hash": ficha["documento_hash"],
+        "pdf_path": pdf_path,
+        "updated_at": agora.isoformat(),
+    }
+    res = supabase_admin.table("fichas_visita").update(update).eq("id", ficha["id"]).execute()
+    return res.data[0]
+
+
+@router.get("/assinar/{token}/pdf")
+@limiter.limit("30/minute")
+def baixar_pdf_publico(request: Request, token: str):
+    """Download público do PDF assinado (logo após assinar, na tela de
+    confirmação). Só funciona quando a ficha já está assinada."""
+    res = supabase_admin.table("fichas_visita").select("*").eq("token", token).maybe_single().execute()
+    if not res or not res.data:
+        raise HTTPException(status_code=404, detail="Link inválido.")
+    ficha = res.data
+    if ficha.get("status") != "assinada" or not ficha.get("pdf_path"):
+        raise HTTPException(status_code=409, detail="Ficha ainda não assinada.")
+    pdf_bytes = baixar_documento(ficha["pdf_path"])
+    nome = f"ficha-visita-{ficha.get('imovel_codigo') or ficha['id'][:8]}.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{nome}"',
+            "Access-Control-Expose-Headers": "Content-Disposition",
+        },
+    )
