@@ -245,7 +245,7 @@ function GaleriaFotos({ imovelId, fotos: fotosProp, onAtualizar }: {
                   <GripVertical className="w-3 h-3" />
                 </div>
 
-                <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition">
+                <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 [@media(hover:none)]:opacity-100 transition">
                   <button
                     type="button"
                     draggable={false}
@@ -267,7 +267,7 @@ function GaleriaFotos({ imovelId, fotos: fotosProp, onAtualizar }: {
                   </button>
                 </div>
 
-                <div className="absolute bottom-1 right-1 flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition">
+                <div className="absolute bottom-1 right-1 flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 transition">
                   <button
                     type="button"
                     draggable={false}
@@ -430,8 +430,8 @@ export default function EditarImovelPage({
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 mb-4 border-b border-slate-200">
+      {/* Tabs — rolagem horizontal no mobile para não estourar a largura */}
+      <div className="flex gap-1 mb-4 border-b border-slate-200 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         {(
           [
             { key: "dados", label: "Dados do imóvel" },
@@ -444,7 +444,7 @@ export default function EditarImovelPage({
             key={tab.key}
             type="button"
             onClick={() => setAbaAtiva(tab.key)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition ${
+            className={`shrink-0 px-4 py-2 text-sm font-medium border-b-2 transition ${
               abaAtiva === tab.key
                 ? "border-[#585a4f] text-[#585a4f]"
                 : "border-transparent text-slate-500 hover:text-slate-700"

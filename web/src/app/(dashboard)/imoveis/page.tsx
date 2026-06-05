@@ -439,7 +439,7 @@ setLoading(true);
             </h1>
           </div>
           <div className="flex items-center gap-1.5 flex-wrap justify-end">
-            <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white">
+            <div className="hidden sm:flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white">
               <button className="p-1.5 bg-slate-100 text-slate-600" title="Lista">
                 <LayoutList className="w-4 h-4" />
               </button>
@@ -454,7 +454,7 @@ setLoading(true);
               title="Baixa todos os imóveis em CSV"
             >
               <Download className="w-4 h-4" />
-              {exportando ? "Exportando..." : "Exportar CSV"}
+              <span className="hidden sm:inline">{exportando ? "Exportando..." : "Exportar CSV"}</span>
             </button>
             {isAdmin && (
               <Link
@@ -478,7 +478,7 @@ setLoading(true);
                   <div className="flex items-stretch px-4 py-4 gap-4">
                     <div className="flex gap-3 shrink-0">
                       <div className="w-1 rounded-full bg-slate-200" />
-                      <div className="w-28 h-24 sm:w-36 sm:h-28 md:w-44 md:h-32 rounded-lg bg-slate-200" />
+                      <div className="hidden sm:block sm:w-36 sm:h-28 md:w-44 md:h-32 rounded-lg bg-slate-200" />
                     </div>
                     <div className="flex-1 min-w-0 space-y-2 py-1">
                       <div className="h-4 bg-slate-200 rounded w-3/4" />
@@ -524,12 +524,13 @@ setLoading(true);
               return (
                 <div
                   key={imovel.id}
-                  className="bg-white rounded-lg border border-slate-200 hover:border-slate-300 hover:shadow-sm transition overflow-hidden"
+                  onClick={() => router.push(`/imoveis/${imovel.id}`)}
+                  className="bg-white rounded-lg border border-slate-200 hover:border-slate-300 hover:shadow-sm transition overflow-hidden cursor-pointer"
                 >
                   {/* Linha de ações */}
                   <div className="flex items-center justify-end gap-1 px-4 pt-3 pb-2 border-b border-slate-50">
                     <button
-                      onClick={() => router.push(`/imoveis/${imovel.id}`)}
+                      onClick={(e) => { e.stopPropagation(); router.push(`/imoveis/${imovel.id}`); }}
                       className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-slate-500 hover:text-[#585a4f] hover:bg-slate-50 rounded-md transition"
                       title={isAdmin ? "Editar" : "Visualizar"}
                     >
@@ -545,7 +546,7 @@ setLoading(true);
                     </button>
                     {isAdmin && (
                       <button
-                        onClick={() => setDeletando({ id: imovel.id, codigo: imovel.codigo })}
+                        onClick={(e) => { e.stopPropagation(); setDeletando({ id: imovel.id, codigo: imovel.codigo }); }}
                         className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition"
                         title="Excluir"
                       >
@@ -556,10 +557,10 @@ setLoading(true);
 
                   {/* Conteúdo do card */}
                   <div className="flex flex-wrap sm:flex-nowrap items-stretch px-4 py-4 gap-4">
-                    {/* Barra de status + foto */}
+                    {/* Barra de status + foto (foto escondida no mobile) */}
                     <div className="flex gap-3 shrink-0">
                       <div className={`w-1 rounded-full self-stretch ${barColor}`} />
-                      <div className="relative w-24 h-20 sm:w-36 sm:h-28 md:w-44 md:h-32 rounded-lg overflow-hidden bg-slate-100 shrink-0">
+                      <div className="relative hidden sm:block sm:w-36 sm:h-28 md:w-44 md:h-32 rounded-lg overflow-hidden bg-slate-100 shrink-0">
                         {imovel.foto_capa ? (
                           <img
                             src={imovel.foto_capa}
@@ -588,6 +589,21 @@ setLoading(true);
 
                     {/* Info do imóvel */}
                     <div className="flex-1 min-w-0">
+                      {/* Chips mobile: código + destaque (no desktop ficam sobre a foto) */}
+                      <div className="flex items-center gap-1.5 mb-1.5 sm:hidden">
+                        <span className="inline-flex items-center bg-slate-800 text-white text-xs px-2 py-0.5 rounded font-mono font-semibold">
+                          {imovel.codigo}
+                        </span>
+                        {imovel.destaque_ordem != null && (
+                          <span
+                            className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded font-bold"
+                            style={{ backgroundColor: "#d8cb6a", color: "#2e302a" }}
+                            title={`Destaque na home — posição ${imovel.destaque_ordem}`}
+                          >
+                            ★ #{imovel.destaque_ordem}
+                          </span>
+                        )}
+                      </div>
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-semibold text-slate-800 leading-tight">
                           {imovel.logradouro}{imovel.numero ? `, ${imovel.numero}` : ""}
