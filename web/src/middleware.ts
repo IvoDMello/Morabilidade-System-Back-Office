@@ -16,7 +16,9 @@ function jwtNaoExpirado(token: string): boolean {
 export function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
 
-  if (/\.(?:png|jpe?g|gif|svg|ico|webp|woff2?)$/.test(pathname)) {
+  // Assets estáticos e o manifest do PWA precisam ser públicos (o navegador
+  // lê o manifest sem cookie de sessão).
+  if (/\.(?:png|jpe?g|gif|svg|ico|webp|woff2?|webmanifest)$/.test(pathname)) {
     return NextResponse.next();
   }
 
