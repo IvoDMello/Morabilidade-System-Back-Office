@@ -76,6 +76,7 @@ class ImovelCreate(BaseModel):
     descricao: Optional[str] = None
     observacoes_internas: Optional[str] = None  # visível para usuários autenticados; oculto no público
     video_url: Optional[str] = None
+    instagram_url: Optional[str] = None  # link do anúncio no Instagram; exibido no site público
     corretor_id: Optional[str] = None
     proprietario_id: Optional[str] = None  # FK para clientes; sincroniza com contratos_locacao
     destaque_ordem: Optional[int] = None  # 1-5 ou None

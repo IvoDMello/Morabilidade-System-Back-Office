@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import {
   ArrowLeft, BedDouble, Bath, Car, Ruler, MapPin,
-  Tag, Building, Calendar, MessageCircle,
+  Tag, Building, Calendar, MessageCircle, Instagram,
 } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -201,9 +201,21 @@ export default async function DetalheImovelPage({ params }: Props) {
                 <MapPin className="w-4 h-4 flex-shrink-0" />
                 {regiao}
               </p>
-              <div className="flex items-center gap-2 mt-3">
+              <div className="flex flex-wrap items-center gap-2 mt-3">
                 <FavoritoButton codigo={imovel.codigo} variant="pill" />
                 <CompartilharButton codigo={imovel.codigo} titulo={tituloPublico} />
+                {imovel.instagram_url && (
+                  <a
+                    href={imovel.instagram_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-white transition hover:opacity-90"
+                    style={{ backgroundColor: "#585a4f" }}
+                  >
+                    <Instagram className="w-3.5 h-3.5" style={{ color: "#d8cb6a" }} />
+                    Ver no Instagram
+                  </a>
+                )}
               </div>
             </div>
           </div>
