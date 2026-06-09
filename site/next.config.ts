@@ -15,6 +15,19 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
+  // Canonicaliza apex -> www. O fix do timeout é no DNS/Vercel (o IP do apex
+  // estava inalcançável); este redirect garante que quem chega no domínio
+  // pelado seja levado pro www, que é o domínio saudável/primário.
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "morabilidade.com" }],
+        destination: "https://www.morabilidade.com/:path*",
+        permanent: true,
+      },
+    ];
+  },
   images: {
     // Loader custom roteia fotos do Supabase pro endpoint de transformação
     // nativa (render/image/public). Tira a Vercel do meio — estávamos
