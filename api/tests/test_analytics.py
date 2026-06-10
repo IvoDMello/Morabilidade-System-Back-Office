@@ -182,6 +182,34 @@ def test_share_canal_nao_whitelist_vira_null(anon_client):
     assert db.insert.call_args.args[0]["canal"] is None
 
 
+# ── /publico/video ────────────────────────────────────────────────────────────
+
+def test_video_grava_clique(anon_client):
+    db = make_db_mock(
+        MagicMock(data=[{"id": "imovel-uuid-1"}]),
+        MagicMock(data=[]),
+    )
+    with patch("app.routers.analytics.supabase_admin", db):
+        res = anon_client.post(
+            "/publico/video",
+            json={"session_id": "session1234", "imovel_codigo": "MB-00001"},
+        )
+    assert res.status_code == 204
+    db.table.assert_called_with("imovel_video_clicks")
+    assert db.insert.call_args.args[0]["imovel_id"] == "imovel-uuid-1"
+
+
+def test_video_codigo_invalido_silencioso(anon_client):
+    db = make_db_mock(MagicMock(data=[]))
+    with patch("app.routers.analytics.supabase_admin", db):
+        res = anon_client.post(
+            "/publico/video",
+            json={"session_id": "session1234", "imovel_codigo": "lixo"},
+        )
+    assert res.status_code == 204
+    db.insert.assert_not_called()
+
+
 # ── /analytics/dashboard (autenticado) ───────────────────────────────────────
 
 def _dashboard_db(kpis_atual=None, kpis_prev=None):

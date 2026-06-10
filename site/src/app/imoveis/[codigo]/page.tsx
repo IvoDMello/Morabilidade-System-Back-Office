@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import {
   ArrowLeft, BedDouble, Bath, Car, Ruler, MapPin,
-  Tag, Building, Calendar, MessageCircle, Instagram,
+  Tag, Building, Calendar, MessageCircle,
 } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -11,6 +11,7 @@ import { Galeria } from "@/components/imoveis/Galeria";
 import { WhatsAppButtonImovel } from "@/components/imoveis/WhatsAppButtonImovel";
 import { FavoritoButton } from "@/components/imoveis/FavoritoButton";
 import { CompartilharButton } from "@/components/imoveis/CompartilharButton";
+import { VideoInstagramButton } from "@/components/imoveis/VideoInstagramButton";
 import MapaRegiaoClient from "@/components/imoveis/MapaRegiaoClient";
 import { getImovel } from "@/lib/api";
 import { geocodificarEndereco } from "@/lib/geocoding";
@@ -91,6 +92,35 @@ export default async function DetalheImovelPage({ params }: Props) {
     imovel.titulo?.trim() ||
     `${labelTipoImovel(imovel.tipo_imovel)} em ${imovel.bairro}, ${imovel.cidade}`;
 
+  // WhatsApp só se o número estiver configurado; senão o CTA cai pro /contato.
+  const whatsappNumero = process.env.NEXT_PUBLIC_WHATSAPP || null;
+
+  // Offers do JSON-LD: venda e/ou locação (locação modelada como aluguel mensal).
+  const offers: Record<string, unknown>[] = [];
+  if (imovel.valor_venda) {
+    offers.push({
+      "@type": "Offer",
+      price: imovel.valor_venda,
+      priceCurrency: "BRL",
+      availability: "https://schema.org/InStock",
+      businessFunction: "http://purl.org/goodrelations/v1#Sell",
+    });
+  }
+  if (imovel.valor_locacao) {
+    offers.push({
+      "@type": "Offer",
+      priceCurrency: "BRL",
+      availability: "https://schema.org/InStock",
+      businessFunction: "http://purl.org/goodrelations/v1#LeaseOut",
+      priceSpecification: {
+        "@type": "UnitPriceSpecification",
+        price: imovel.valor_locacao,
+        priceCurrency: "BRL",
+        unitCode: "MON",
+      },
+    });
+  }
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "RealEstateListing",
@@ -104,15 +134,9 @@ export default async function DetalheImovelPage({ params }: Props) {
       addressRegion: "RJ",
       addressCountry: "BR",
     },
-    ...(imovel.valor_venda && {
-      offers: {
-        "@type": "Offer",
-        price: imovel.valor_venda,
-        priceCurrency: "BRL",
-        availability: "https://schema.org/InStock",
-      },
-    }),
+    ...(offers.length > 0 && { offers: offers.length === 1 ? offers[0] : offers }),
     numberOfRooms: imovel.dormitorios,
+    ...(imovel.banheiros != null && { numberOfBathroomsTotal: imovel.banheiros }),
     floorSize: imovel.area_util
       ? { "@type": "QuantitativeValue", value: imovel.area_util, unitCode: "MTK" }
       : undefined,
@@ -299,28 +323,30 @@ export default async function DetalheImovelPage({ params }: Props) {
                 <p className="text-slate-400 text-sm mb-4">Consulte o valor</p>
               )}
 
-              {/* Botão primário — WhatsApp */}
-              <a
-                href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP ?? "5500000000000"}?text=${encodeURIComponent(`Olá! Tenho interesse no imóvel *${tituloPublico}* (código *${imovel.codigo}*). Pode me dar mais informações?`)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold text-white transition hover:opacity-90"
-                style={{ backgroundColor: "#25D366" }}
-              >
-                <MessageCircle className="w-4 h-4" /> Falar no WhatsApp
-              </a>
-
-              {/* Vídeo do imóvel no Instagram */}
-              {imovel.video_url && (
+              {/* Botão primário — WhatsApp (cai pro /contato se o número não estiver configurado) */}
+              {whatsappNumero ? (
                 <a
-                  href={imovel.video_url}
+                  href={`https://wa.me/${whatsappNumero}?text=${encodeURIComponent(`Olá! Tenho interesse no imóvel *${tituloPublico}* (código *${imovel.codigo}*). Pode me dar mais informações?`)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-3 w-full flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold text-white transition hover:opacity-90"
-                  style={{ background: "linear-gradient(135deg, #3e4037 0%, #585a4f 72%, #d8cb6a 100%)" }}
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold text-white transition hover:opacity-90"
+                  style={{ backgroundColor: "#25D366" }}
                 >
-                  <Instagram className="w-4 h-4" /> Ver vídeo no Instagram
+                  <MessageCircle className="w-4 h-4" /> Falar no WhatsApp
                 </a>
+              ) : (
+                <Link
+                  href={`/contato?imovel=${imovel.codigo}`}
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold text-white transition hover:opacity-90"
+                  style={{ backgroundColor: "#585a4f" }}
+                >
+                  <MessageCircle className="w-4 h-4" /> Falar conosco
+                </Link>
+              )}
+
+              {/* Vídeo do imóvel no Instagram (client component — rastreia o clique) */}
+              {imovel.video_url && (
+                <VideoInstagramButton codigo={imovel.codigo} url={imovel.video_url} />
               )}
 
               <p className="text-xs text-slate-400 text-center mt-3">

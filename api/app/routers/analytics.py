@@ -157,6 +157,26 @@ def track_share(request: Request, body: SharePayload):
     }).execute()
 
 
+class VideoPayload(BaseModel):
+    session_id: str = Field(..., min_length=8, max_length=128)
+    imovel_codigo: str = Field(..., max_length=20)
+
+
+@router.post("/publico/video", status_code=status.HTTP_204_NO_CONTENT, tags=["Analytics"])
+@limiter.limit("120/minute")
+def track_video(request: Request, body: VideoPayload):
+    """Clique no botão 'Ver vídeo no Instagram' da página do imóvel."""
+    imovel_id = _resolve_imovel_id(body.imovel_codigo)
+    if not imovel_id:
+        return  # silencioso: código inválido não derruba o site
+    user_agent = (request.headers.get("user-agent") or "")[:500] or None
+    supabase_admin.table("imovel_video_clicks").insert({
+        "session_id": body.session_id,
+        "imovel_id": imovel_id,
+        "is_bot": _is_bot(user_agent),
+    }).execute()
+
+
 # ── Endpoints autenticados (dashboard interno) ────────────────────────────────
 
 @router.get("/analytics/dashboard", tags=["Analytics"])
@@ -245,10 +265,20 @@ def analytics_imovel(codigo: str, current_user: dict = Depends(get_current_user)
         "analytics_imovel", {"p_imovel_id": imovel_id}
     ).execute()
 
+    # Cliques no botão "Ver vídeo no Instagram" (total, excluindo bots).
+    video = (
+        supabase_admin.table("imovel_video_clicks")
+        .select("id", count="exact")
+        .eq("imovel_id", imovel_id)
+        .eq("is_bot", False)
+        .execute()
+    )
+
     row = (result.data or [{}])[0] if result.data else {}
     return {
         "total_views": row.get("total_views", 0),
         "views_30d": row.get("views_30d", 0),
         "views_7d": row.get("views_7d", 0),
         "sessoes_unicas_30d": row.get("sessoes_unicas_30d", 0),
+        "video_clicks_total": video.count or 0,
     }
