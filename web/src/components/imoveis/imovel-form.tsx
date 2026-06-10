@@ -820,8 +820,8 @@ export function ImovelForm({
           </div>
 
           <div>
-            <Label>Link do vídeo (YouTube / Vimeo)</Label>
-            <input {...register("video_url")} className={inputClass} placeholder="https://..." />
+            <Label>Link do vídeo do Instagram</Label>
+            <input {...register("video_url")} className={inputClass} placeholder="https://www.instagram.com/reel/..." />
             <FieldError message={errors.video_url?.message} />
           </div>
 
