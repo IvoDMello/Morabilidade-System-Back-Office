@@ -62,14 +62,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-function Chip({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
-      {children}
-    </span>
-  );
-}
-
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-start justify-between py-2.5 border-b border-slate-50 last:border-0 gap-4">
@@ -150,10 +142,11 @@ export default async function DetalheImovelPage({ params }: Props) {
           <span className="text-slate-600 font-mono">{imovel.codigo}</span>
         </nav>
 
-        <div className="grid grid-cols-1 md:grid-cols-[3fr_2fr] lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:items-start">
 
-          {/* ── Coluna principal ── */}
-          <div className="lg:col-span-2 space-y-8">
+          {/* ── Galeria + cabeçalho (col. esquerda, topo) ── */}
+          {/* order-1: no mobile vem primeiro; a sidebar (preço + CTAs) aparece logo a seguir. */}
+          <div className="order-1 lg:col-span-2 lg:row-start-1 space-y-6">
 
             {/* Galeria */}
             <Galeria fotos={imovel.fotos} />
@@ -189,28 +182,11 @@ export default async function DetalheImovelPage({ params }: Props) {
                 <CompartilharButton codigo={imovel.codigo} titulo={tituloPublico} />
               </div>
             </div>
+          </div>
 
-            {/* Chips de características */}
-            <div className="flex flex-wrap gap-2">
-              {imovel.dormitorios != null && (
-                <Chip><BedDouble className="w-3.5 h-3.5" /> {imovel.dormitorios} dorm.</Chip>
-              )}
-              {imovel.suites != null && (
-                <Chip><BedDouble className="w-3.5 h-3.5" /> {imovel.suites} suítes</Chip>
-              )}
-              {imovel.banheiros != null && (
-                <Chip><Bath className="w-3.5 h-3.5" /> {imovel.banheiros} banheiros</Chip>
-              )}
-              {imovel.vagas_garagem != null && (
-                <Chip><Car className="w-3.5 h-3.5" /> {imovel.vagas_garagem} vagas</Chip>
-              )}
-              {imovel.area_util != null && (
-                <Chip><Ruler className="w-3.5 h-3.5" /> {imovel.area_util} m² úteis</Chip>
-              )}
-              {imovel.area_total != null && (
-                <Chip><Ruler className="w-3.5 h-3.5" /> {imovel.area_total} m² total</Chip>
-              )}
-            </div>
+          {/* ── Resto da coluna esquerda: descrição, ficha e mapa ── */}
+          {/* order-3: no mobile vem depois da sidebar (preço + CTAs + características). */}
+          <div className="order-3 lg:col-span-2 lg:row-start-2 space-y-8">
 
             {/* Descrição */}
             {imovel.descricao && (
@@ -290,12 +266,12 @@ export default async function DetalheImovelPage({ params }: Props) {
             </div>
           </div>
 
-          {/* ── Sidebar ── */}
-          {/* Sticky no container inteiro pra que card de preço + características
-              acompanhem a rolagem juntos no desktop. No mobile (sidebar abaixo
-              do conteúdo) `sticky` não tem efeito útil, então fica só md+. */}
+          {/* ── Sidebar (preço + CTAs + características) ── */}
+          {/* order-2: no mobile aparece logo após galeria+cabeçalho, antes da
+              descrição. No desktop fica na 3ª coluna, sticky, abrangendo as duas
+              linhas da coluna esquerda. */}
           <div
-            className="space-y-4 md:sticky md:self-start"
+            className="order-2 space-y-4 lg:col-start-3 lg:row-start-1 lg:row-span-2 lg:sticky lg:self-start"
             style={{ top: "clamp(96px, 12vw, 104px)" }}
           >
 
@@ -341,7 +317,7 @@ export default async function DetalheImovelPage({ params }: Props) {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="mt-3 w-full flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold text-white transition hover:opacity-90"
-                  style={{ background: "linear-gradient(135deg, #3e4037 0%, #585a4f 45%, #d8cb6a 100%)" }}
+                  style={{ background: "linear-gradient(135deg, #3e4037 0%, #585a4f 72%, #d8cb6a 100%)" }}
                 >
                   <Instagram className="w-4 h-4" /> Ver vídeo no Instagram
                 </a>
@@ -360,6 +336,13 @@ export default async function DetalheImovelPage({ params }: Props) {
                     <BedDouble className="w-5 h-5 mx-auto mb-1 text-slate-400" />
                     <p className="font-semibold text-slate-700">{imovel.dormitorios}</p>
                     <p className="text-slate-400">Dorms.</p>
+                  </div>
+                )}
+                {imovel.suites != null && (
+                  <div className="bg-white rounded-lg p-3">
+                    <BedDouble className="w-5 h-5 mx-auto mb-1 text-slate-400" />
+                    <p className="font-semibold text-slate-700">{imovel.suites}</p>
+                    <p className="text-slate-400">Suítes</p>
                   </div>
                 )}
                 {imovel.banheiros != null && (
@@ -381,6 +364,13 @@ export default async function DetalheImovelPage({ params }: Props) {
                     <Ruler className="w-5 h-5 mx-auto mb-1 text-slate-400" />
                     <p className="font-semibold text-slate-700">{imovel.area_util}</p>
                     <p className="text-slate-400">m² úteis</p>
+                  </div>
+                )}
+                {imovel.area_total != null && (
+                  <div className="bg-white rounded-lg p-3">
+                    <Ruler className="w-5 h-5 mx-auto mb-1 text-slate-400" />
+                    <p className="font-semibold text-slate-700">{imovel.area_total}</p>
+                    <p className="text-slate-400">m² total</p>
                   </div>
                 )}
               </div>
