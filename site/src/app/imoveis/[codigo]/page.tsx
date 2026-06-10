@@ -341,7 +341,7 @@ export default async function DetalheImovelPage({ params }: Props) {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="mt-3 w-full flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold text-white transition hover:opacity-90"
-                  style={{ background: "linear-gradient(45deg, #3e4037, #585a4f, #6b6d52)" }}
+                  style={{ background: "linear-gradient(135deg, #3e4037 0%, #585a4f 45%, #d8cb6a 100%)" }}
                 >
                   <Instagram className="w-4 h-4" /> Ver vídeo no Instagram
                 </a>
