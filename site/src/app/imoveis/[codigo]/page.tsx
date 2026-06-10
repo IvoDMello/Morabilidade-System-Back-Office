@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import {
   ArrowLeft, BedDouble, Bath, Car, Ruler, MapPin,
-  Tag, Building, Calendar, MessageCircle, Mail,
+  Tag, Building, Calendar, MessageCircle, Mail, Instagram,
 } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -245,21 +245,6 @@ export default async function DetalheImovelPage({ params }: Props) {
               )}
             </div>
 
-            {/* Vídeo */}
-            {imovel.video_url && (
-              <div>
-                <h2 className="font-semibold text-slate-800 mb-3">Vídeo do imóvel</h2>
-                <a
-                  href={imovel.video_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm underline"
-                  style={{ color: "#585a4f" }}
-                >
-                  Assistir ao vídeo →
-                </a>
-              </div>
-            )}
 
             {/* Localização */}
             <div>
@@ -357,6 +342,19 @@ export default async function DetalheImovelPage({ params }: Props) {
               >
                 <Mail className="w-4 h-4" /> Enviar mensagem
               </Link>
+
+              {/* Vídeo do imóvel no Instagram */}
+              {imovel.video_url && (
+                <a
+                  href={imovel.video_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 w-full flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold text-white transition hover:opacity-90"
+                  style={{ background: "linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)" }}
+                >
+                  <Instagram className="w-4 h-4" /> Ver vídeo no Instagram
+                </a>
+              )}
 
               <p className="text-xs text-slate-400 text-center mt-3">
                 Resposta em até 24h úteis
