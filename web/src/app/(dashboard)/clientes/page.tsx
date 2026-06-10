@@ -200,7 +200,7 @@ function ClientesPageInner() {
           <button
             onClick={handleExportar}
             disabled={exportando || total === 0}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg border bg-white border-slate-200 text-slate-600 hover:border-slate-300 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="hidden sm:flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg border bg-white border-slate-200 text-slate-600 hover:border-slate-300 transition disabled:opacity-50 disabled:cursor-not-allowed"
             title="Baixa todos os clientes em CSV"
           >
             <Download className="w-4 h-4" />
@@ -210,7 +210,7 @@ function ClientesPageInner() {
             <>
               <Link
                 href="/clientes/importar"
-                className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg border bg-white border-slate-200 text-slate-600 hover:border-slate-300 transition"
+                className="hidden sm:flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg border bg-white border-slate-200 text-slate-600 hover:border-slate-300 transition"
                 title="Importa clientes de um arquivo CSV"
               >
                 <Upload className="w-4 h-4" />

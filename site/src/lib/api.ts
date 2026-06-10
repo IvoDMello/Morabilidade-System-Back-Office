@@ -113,6 +113,121 @@ export async function getBairros(): Promise<string[]> {
   return res.json();
 }
 
+// ── Ficha de visita (assinatura pública por token) ───────────────────────────
+
+export interface FichaPublica {
+  status: "pendente" | "assinada" | "cancelada" | "expirada";
+  visitante_nome: string;
+  imovel_codigo?: string | null;
+  imovel_endereco?: string | null;
+  imovel_bairro?: string | null;
+  imovel_cidade?: string | null;
+  imovel_valor?: number | null;
+  proprietario_nome?: string | null;
+  corretor_nome?: string | null;
+  corretor_creci?: string | null;
+  clausula_texto: string;
+  prazo_meses: number;
+}
+
+export type FichaErro = "nao_encontrada" | "indisponivel" | "erro";
+
+/** Busca a ficha para assinatura. Lança o status como string em caso de erro
+ * para a página distinguir 404 (link inválido) de 410 (já assinada/expirada). */
+export async function getFichaPublica(token: string): Promise<FichaPublica> {
+  const res = await fetchWithTimeout(
+    `${API_URL}/fichas-visita/assinar/${encodeURIComponent(token)}`,
+    { cache: "no-store" },
+    TIMEOUT_GET_MS,
+  );
+  if (res.status === 404) throw new Error("nao_encontrada");
+  if (res.status === 410) throw new Error("indisponivel");
+  if (!res.ok) throw new Error("erro");
+  return res.json();
+}
+
+export async function assinarFicha(
+  token: string,
+  body: { aceite: boolean; cpf: string; assinatura_png?: string | null; geo?: string | null },
+): Promise<FichaPublica> {
+  const res = await fetchWithTimeout(
+    `${API_URL}/fichas-visita/assinar/${encodeURIComponent(token)}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      cache: "no-store",
+    },
+    TIMEOUT_POST_MS,
+  );
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error((data as { detail?: string }).detail ?? "Não foi possível assinar.");
+  }
+  return res.json();
+}
+
+export function fichaPdfUrl(token: string): string {
+  return `${API_URL}/fichas-visita/assinar/${encodeURIComponent(token)}/pdf`;
+}
+
+// ── Autorização de intermediação (assinatura pública por token) ───────────────
+
+export interface AutorizacaoPublica {
+  status: "pendente" | "assinada" | "cancelada" | "expirada";
+  proprietario_nome: string;
+  imovel_codigo?: string | null;
+  imovel_endereco?: string | null;
+  imovel_bairro?: string | null;
+  imovel_cidade?: string | null;
+  tipo_negocio: "venda" | "locacao" | "ambos";
+  valor_autorizado?: number | null;
+  exclusiva: boolean;
+  comissao_venda_pct?: number | null;
+  comissao_locacao_desc?: string | null;
+  prazo_dias: number;
+  corretor_nome?: string | null;
+  corretor_creci?: string | null;
+  clausula_texto: string;
+}
+
+export async function getAutorizacaoPublica(token: string): Promise<AutorizacaoPublica> {
+  const res = await fetchWithTimeout(
+    `${API_URL}/autorizacoes/assinar/${encodeURIComponent(token)}`,
+    { cache: "no-store" },
+    TIMEOUT_GET_MS,
+  );
+  if (res.status === 404) throw new Error("nao_encontrada");
+  if (res.status === 410) throw new Error("indisponivel");
+  if (!res.ok) throw new Error("erro");
+  return res.json();
+}
+
+export async function assinarAutorizacao(
+  token: string,
+  body: { aceite: boolean; cpf: string; assinatura_png?: string | null; geo?: string | null },
+): Promise<AutorizacaoPublica> {
+  const res = await fetchWithTimeout(
+    `${API_URL}/autorizacoes/assinar/${encodeURIComponent(token)}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      cache: "no-store",
+    },
+    TIMEOUT_POST_MS,
+  );
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error((data as { detail?: string }).detail ?? "Não foi possível assinar.");
+  }
+  return res.json();
+}
+
+export function autorizacaoPdfUrl(token: string): string {
+  return `${API_URL}/autorizacoes/assinar/${encodeURIComponent(token)}/pdf`;
+}
+
 export async function enviarContato(body: {
   nome: string;
   email: string;

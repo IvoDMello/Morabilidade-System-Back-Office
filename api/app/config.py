@@ -20,6 +20,13 @@ class Settings(BaseSettings):
     # URLs públicas usadas em e-mails e templates
     site_url: str = "https://morabilidade.com.br"
 
+    # Dados da empresa para documentos legais (ficha de visita, intermediação).
+    # Placeholders até confirmação do CNPJ/CRECI-J jurídico — sobrescrever via env.
+    empresa_cnpj: str = ""
+    empresa_creci_juridico: str = ""
+    empresa_creci_corretor: str = "CRECI-RJ nº 70411"
+    empresa_telefone: str = "(21) 99772-9990"
+
     # Aplicação
     app_env: str = "development"
     app_secret_key: str

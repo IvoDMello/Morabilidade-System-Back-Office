@@ -69,9 +69,9 @@ export default function LocacoesPage() {
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* Tabs — rolagem horizontal no mobile para não estourar a largura */}
       <div className="border-b border-slate-200 mb-6">
-        <nav className="flex gap-1">
+        <nav className="flex gap-1 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           <TabButton active={tab === "contratos"} onClick={() => setTab("contratos")}>
             <ClipboardList className="w-4 h-4" /> Contratos
           </TabButton>
@@ -114,7 +114,7 @@ function TabButton({
     <button
       onClick={onClick}
       className={cn(
-        "flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition",
+        "flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition shrink-0",
         active
           ? "border-[#585a4f] text-[#585a4f]"
           : "border-transparent text-slate-500 hover:text-slate-700"

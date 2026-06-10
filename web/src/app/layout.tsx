@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
@@ -13,8 +13,25 @@ export const metadata: Metadata = {
   icons: {
     icon: "/favcon_Mora.png",
     shortcut: "/favcon_Mora.png",
-    apple: "/favcon_Mora.png",
+    apple: "/apple-touch-icon.png",
   },
+  // Instalado na tela inicial do iOS, abre em tela cheia (sem barra do Safari).
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Morabilidade",
+  },
+  // Tag legada da Apple (iOS mais antigos) além da moderna mobile-web-app-capable.
+  other: {
+    "apple-mobile-web-app-capable": "yes",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#585a4f",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
