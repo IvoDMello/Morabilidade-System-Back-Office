@@ -103,4 +103,17 @@ def get_relatorios(current_user: dict = Depends(get_current_user)):
     `relatorios_dashboard()` (migration 032) — agregação no Postgres em
     vez de SELECT * + Python."""
     res = supabase_admin.rpc("relatorios_dashboard").execute()
-    return res.data or {}
+    dados = res.data or {}
+    # Cliques no botão "Ver vídeo no Instagram" (total, excluindo bots). Query
+    # barata fora da RPC pra não exigir nova migration do dashboard. Como os
+    # logs são purgados aos 90 dias (migration 036), o total reflete ~90 dias.
+    # Só enriquece quando a RPC trouxe dados (mantém o {} de erro/sem-dados).
+    if dados:
+        video = (
+            supabase_admin.table("imovel_video_clicks")
+            .select("id", count="exact")
+            .eq("is_bot", False)
+            .execute()
+        )
+        dados["video_clicks_total"] = video.count or 0
+    return dados

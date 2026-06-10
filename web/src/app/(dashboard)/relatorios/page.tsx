@@ -14,7 +14,7 @@ import {
   CartesianGrid,
   Legend,
 } from "recharts";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Instagram } from "lucide-react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { RelatoriosTabs } from "@/components/layout/relatorios-tabs";
@@ -30,6 +30,7 @@ interface RelatoriosData {
   clientes_por_mes: Record<string, number>;
   clientes_por_status: Record<string, number>;
   clientes_por_origem: Record<string, number>;
+  video_clicks_total: number;
 }
 
 interface ResumoOportunidades {
@@ -423,6 +424,36 @@ export default function RelatoriosPage() {
       </div>
 
       <RelatoriosTabs />
+
+      {/* Seção: Engajamento no site */}
+      <section>
+        <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+          Engajamento no site
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="bg-white rounded-xl border border-slate-200 p-5 flex items-center gap-4">
+            <div
+              className="w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0"
+              style={{ background: "linear-gradient(135deg, #3e4037 0%, #585a4f 72%, #d8cb6a 100%)" }}
+            >
+              <Instagram className="w-5 h-5 text-white" />
+            </div>
+            <div className="min-w-0">
+              {dados ? (
+                <p className="text-2xl font-bold text-slate-900 leading-tight">
+                  {(dados.video_clicks_total ?? 0).toLocaleString("pt-BR")}
+                </p>
+              ) : (
+                <div className="h-7 w-12 bg-slate-100 rounded animate-pulse" />
+              )}
+              <p className="text-xs text-slate-500 mt-0.5">
+                Cliques em “Ver vídeo no Instagram”
+                <span className="block text-[11px] text-slate-400">últimos 90 dias</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Seção: Imóveis ao longo do tempo */}
       <section>
