@@ -142,6 +142,7 @@ class ImovelListOut(BaseModel):
     destaque_ordem: Optional[int] = None
     proprietario_id: Optional[str] = None
     proprietario: Optional[dict] = None  # {id, nome_completo, telefone} se houver
+    instagram_url: Optional[str] = None  # link do anúncio no Instagram; indicador na listagem
     created_at: str
 
     @field_serializer(

@@ -62,7 +62,7 @@ _LIST_FIELDS = (
     "id, codigo, titulo, tipo_negocio, disponibilidade, cidade, bairro, "
     "logradouro, numero, tipo_imovel, dormitorios, suites, banheiros, "
     "vagas_garagem, area_util, valor_venda, valor_locacao, "
-    "condominio_mensal, iptu_mensal, destaque_ordem, proprietario_id, created_at, "
+    "condominio_mensal, iptu_mensal, destaque_ordem, proprietario_id, instagram_url, created_at, "
     "imovel_fotos(url, ordem), imovel_tags(tags(id, nome, cor)), "
     "proprietario:clientes!proprietario_id(id, nome_completo, telefone, email)"
 )

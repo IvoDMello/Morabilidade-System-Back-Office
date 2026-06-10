@@ -113,6 +113,7 @@ export interface ImovelListOut {
   destaque_ordem?: number | null;
   proprietario_id?: string | null;
   proprietario?: { id?: string; nome_completo: string; telefone?: string; email?: string } | null;
+  instagram_url?: string | null;
   created_at: string;
 }
 

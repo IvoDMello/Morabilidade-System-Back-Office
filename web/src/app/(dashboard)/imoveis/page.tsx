@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   Search, ChevronLeft, ChevronRight, BedDouble, Bath,
   Car, Maximize2, Pencil, Info as InfoIcon,
-  LayoutList, Map, Building2, Trash2, Download, Filter, X,
+  LayoutList, Map, Building2, Trash2, Download, Filter, X, Instagram,
 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
@@ -74,6 +74,18 @@ const TIPO_IMOVEL_LABEL: Record<string, string> = {
 const inputCls =
   "w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-900 " +
   "focus:outline-none focus:ring-2 focus:ring-[#585a4f]/30 focus:border-[#585a4f] placeholder:text-slate-400";
+
+// Checagem de formato (sem rede): o link é um post/reel/tv do Instagram?
+// Posts/reels têm URL permanente — só não detectamos se o post foi apagado lá.
+function instagramLinkValido(url: string): boolean {
+  try {
+    const u = new URL(url.trim());
+    if (!/(^|\.)instagram\.com$/i.test(u.hostname)) return false;
+    return /^\/(p|reel|reels|tv)\/[\w-]+/i.test(u.pathname);
+  } catch {
+    return false;
+  }
+}
 
 // ── Componente principal ──────────────────────────────────────────────────────
 
@@ -529,6 +541,29 @@ setLoading(true);
                 >
                   {/* Linha de ações */}
                   <div className="flex items-center justify-end gap-1 px-4 pt-3 pb-2 border-b border-slate-50">
+                    {imovel.instagram_url && (() => {
+                      const valido = instagramLinkValido(imovel.instagram_url);
+                      return (
+                        <a
+                          href={imovel.instagram_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className={`mr-auto p-1.5 rounded-md transition ${
+                            valido
+                              ? "text-pink-500 hover:bg-pink-50"
+                              : "text-amber-500 hover:bg-amber-50"
+                          }`}
+                          title={
+                            valido
+                              ? "Anúncio no Instagram — abrir post"
+                              : "Link do Instagram preenchido, mas não parece um post válido — verifique"
+                          }
+                        >
+                          <Instagram className="w-3.5 h-3.5" />
+                        </a>
+                      );
+                    })()}
                     <button
                       onClick={(e) => { e.stopPropagation(); router.push(`/imoveis/${imovel.id}`); }}
                       className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-slate-500 hover:text-[#585a4f] hover:bg-slate-50 rounded-md transition"
