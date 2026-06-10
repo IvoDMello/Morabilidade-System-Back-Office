@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import {
   ArrowLeft, BedDouble, Bath, Car, Ruler, MapPin,
-  Tag, Building, Calendar, MessageCircle, Mail, Instagram,
+  Tag, Building, Calendar, MessageCircle, Instagram,
 } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -334,15 +334,6 @@ export default async function DetalheImovelPage({ params }: Props) {
                 <MessageCircle className="w-4 h-4" /> Falar no WhatsApp
               </a>
 
-              {/* Botão secundário — Email */}
-              <Link
-                href={`/contato?imovel=${imovel.codigo}`}
-                className="mt-3 w-full flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold border transition hover:bg-slate-50"
-                style={{ color: "#585a4f", borderColor: "#585a4f" }}
-              >
-                <Mail className="w-4 h-4" /> Enviar mensagem
-              </Link>
-
               {/* Vídeo do imóvel no Instagram */}
               {imovel.video_url && (
                 <a
@@ -350,7 +341,7 @@ export default async function DetalheImovelPage({ params }: Props) {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="mt-3 w-full flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold text-white transition hover:opacity-90"
-                  style={{ background: "linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)" }}
+                  style={{ background: "linear-gradient(45deg, #3e4037, #585a4f, #6b6d52)" }}
                 >
                   <Instagram className="w-4 h-4" /> Ver vídeo no Instagram
                 </a>
