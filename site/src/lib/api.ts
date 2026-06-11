@@ -175,10 +175,11 @@ export function fichaPdfUrl(token: string): string {
 
 export interface AutorizacaoPublica {
   status: "pendente" | "parcial" | "assinada" | "cancelada" | "expirada";
-  /** Quem assina por ESTE link (cada proprietário tem o seu). */
-  signatario_nome: string;
-  ja_assinou: boolean;
-  signatarios: { nome: string; assinou: boolean }[];
+  /** Quem assina por ESTE link (cada proprietário tem o seu).
+   *  Campos ausentes quando a API antiga ainda está no ar (skew de deploy). */
+  signatario_nome?: string;
+  ja_assinou?: boolean;
+  signatarios?: { nome: string; assinou: boolean }[];
   proprietario_nome: string;
   imovel_codigo?: string | null;
   imovel_endereco?: string | null;

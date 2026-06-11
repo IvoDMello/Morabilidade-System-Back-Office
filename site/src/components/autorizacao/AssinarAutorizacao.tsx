@@ -113,7 +113,8 @@ function Confirmacao({ token }: { token: string }) {
 }
 
 function AguardandoDemais({ auth }: { auth: AutorizacaoPublica }) {
-  const pendentes = auth.signatarios.filter((s) => !s.assinou);
+  const signatarios = auth.signatarios ?? [];
+  const pendentes = signatarios.filter((s) => !s.assinou);
   return (
     <div className="bg-white rounded-2xl border border-[#e4e1d6] p-8 text-center">
       <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 bg-emerald-50">
@@ -125,7 +126,7 @@ function AguardandoDemais({ auth }: { auth: AutorizacaoPublica }) {
         Assim que todos assinarem, o documento final fica disponível para download.
       </p>
       <ul className="mt-4 text-sm text-left max-w-xs mx-auto space-y-1.5">
-        {auth.signatarios.map((s) => (
+        {signatarios.map((s) => (
           <li key={s.nome} className="flex items-center gap-2">
             {s.assinou
               ? <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" />
@@ -237,13 +238,13 @@ function Formulario({
       </div>
 
       {/* Co-proprietários (quando há mais de um signatário) */}
-      {auth.signatarios.length > 1 && (
+      {(auth.signatarios ?? []).length > 1 && (
         <div className="bg-white rounded-2xl border border-[#e4e1d6] p-5">
           <p className="text-[11px] font-semibold tracking-wide text-[#585a4f] mb-2 flex items-center gap-1.5">
             <Users className="w-3.5 h-3.5" /> PROPRIETÁRIOS DESTA AUTORIZAÇÃO
           </p>
           <ul className="space-y-1.5 text-sm">
-            {auth.signatarios.map((s) => (
+            {(auth.signatarios ?? []).map((s) => (
               <li key={s.nome} className="flex items-center gap-2">
                 {s.assinou
                   ? <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" />

@@ -130,10 +130,11 @@ export default function AutorizacoesPage() {
 }
 
 function LinhaAutorizacao({ a }: { a: Autorizacao }) {
-  const st = STATUS_STYLE[a.status];
+  const st = STATUS_STYLE[a.status] ?? STATUS_STYLE.pendente;
   const ativa = a.status === "pendente" || a.status === "parcial";
   const v = vigencia(a);
-  const nomes = a.signatarios.length > 0 ? a.signatarios.map((s) => s.nome).join(" · ") : a.proprietario_nome;
+  const sigs = a.signatarios ?? [];
+  const nomes = sigs.length > 0 ? sigs.map((s) => s.nome).join(" · ") : a.proprietario_nome;
   const local = [a.imovel_bairro, a.imovel_cidade].filter(Boolean).join(" · ");
 
   async function baixarPdf() {
@@ -187,9 +188,9 @@ function LinhaAutorizacao({ a }: { a: Autorizacao }) {
         </button>
       </div>
 
-      {ativa && a.signatarios.length > 0 && (
+      {ativa && sigs.length > 0 && (
         <ul className="space-y-1">
-          {a.signatarios.map((s) => <LinhaSignatario key={s.id} s={s} />)}
+          {sigs.map((s) => <LinhaSignatario key={s.id} s={s} />)}
         </ul>
       )}
     </li>

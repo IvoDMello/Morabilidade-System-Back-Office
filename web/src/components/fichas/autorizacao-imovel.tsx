@@ -35,7 +35,8 @@ export interface Autorizacao {
   token: string;
   assinada_em?: string | null;
   created_at: string;
-  signatarios: Signatario[];
+  // Pode faltar na resposta enquanto a API antiga estiver no ar (skew de deploy).
+  signatarios?: Signatario[];
 }
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://morabilidade.com";
@@ -274,10 +275,11 @@ function Lista({ itens, loading, onAtualizar }: { itens: Autorizacao[]; loading:
       ) : (
         <ul className="divide-y divide-slate-100">
           {itens.map((a) => {
-            const st = STATUS_STYLE[a.status];
+            const st = STATUS_STYLE[a.status] ?? STATUS_STYLE.pendente;
             const ativa = a.status === "pendente" || a.status === "parcial";
-            const nomes = a.signatarios.length > 1
-              ? a.signatarios.map((s) => s.nome).join(" · ")
+            const sigs = a.signatarios ?? [];
+            const nomes = sigs.length > 1
+              ? sigs.map((s) => s.nome).join(" · ")
               : a.proprietario_nome;
             return (
               <li key={a.id} className="py-3 space-y-2">
@@ -306,9 +308,9 @@ function Lista({ itens, loading, onAtualizar }: { itens: Autorizacao[]; loading:
                 </div>
 
                 {/* Um link de assinatura por proprietário */}
-                {ativa && (
+                {ativa && sigs.length > 0 && (
                   <ul className="space-y-1">
-                    {a.signatarios.map((s) => <LinhaSignatario key={s.id} s={s} />)}
+                    {sigs.map((s) => <LinhaSignatario key={s.id} s={s} />)}
                   </ul>
                 )}
               </li>
