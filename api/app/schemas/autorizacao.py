@@ -125,8 +125,6 @@ class AutorizacaoPublicaView(BaseModel):
     comissao_venda_pct: Optional[Decimal] = None
     comissao_locacao_desc: Optional[str] = None
     prazo_dias: int
-    corretor_nome: Optional[str] = None
-    corretor_creci: Optional[str] = None
     clausula_texto: str
 
     @field_serializer("valor_autorizado", "comissao_venda_pct")

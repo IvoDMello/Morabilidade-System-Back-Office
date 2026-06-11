@@ -191,8 +191,6 @@ export interface AutorizacaoPublica {
   comissao_venda_pct?: number | null;
   comissao_locacao_desc?: string | null;
   prazo_dias: number;
-  corretor_nome?: string | null;
-  corretor_creci?: string | null;
   clausula_texto: string;
 }
 

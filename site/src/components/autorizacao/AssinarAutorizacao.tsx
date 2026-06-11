@@ -160,17 +160,33 @@ function Formulario({
   const [aceite, setAceite] = useState(false);
   const [geo, setGeo] = useState<string | null>(null);
   const [geoStatus, setGeoStatus] = useState<"idle" | "carregando" | "ok" | "erro">("idle");
+  const [geoMsg, setGeoMsg] = useState<string>("");
   const [assinando, setAssinando] = useState(false);
   const [temTraco, setTemTraco] = useState(false);
   const padRef = useRef<SignaturePadHandle>(null);
 
   const capturarGeo = useCallback(() => {
-    if (!("geolocation" in navigator)) { setGeoStatus("erro"); return; }
+    if (!("geolocation" in navigator)) {
+      setGeoMsg("Seu navegador não suporta geolocalização.");
+      setGeoStatus("erro");
+      return;
+    }
     setGeoStatus("carregando");
     navigator.geolocation.getCurrentPosition(
-      (p) => { setGeo(`${p.coords.latitude.toFixed(5)},${p.coords.longitude.toFixed(5)}`); setGeoStatus("ok"); },
-      () => setGeoStatus("erro"),
-      { enableHighAccuracy: false, timeout: 8000 },
+      (p) => {
+        setGeo(`${p.coords.latitude.toFixed(5)},${p.coords.longitude.toFixed(5)}`);
+        setGeoStatus("ok");
+      },
+      (err) => {
+        if (err.code === 1)
+          setGeoMsg("Permissão negada. Autorize a localização nas configurações do navegador e tente novamente.");
+        else if (err.code === 3)
+          setGeoMsg("Tempo esgotado. Tente novamente em local com melhor sinal de GPS.");
+        else
+          setGeoMsg("Não foi possível obter a localização agora.");
+        setGeoStatus("erro");
+      },
+      { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 },
     );
   }, []);
 
@@ -223,11 +239,6 @@ function Formulario({
             )}
             <Linha label="Prazo" valor={`${auth.prazo_dias} dias`} />
           </div>
-          {auth.corretor_nome && (
-            <p className="text-xs text-[#7a7c72] pt-2">
-              Corretor: {auth.corretor_nome}{auth.corretor_creci ? ` · ${auth.corretor_creci}` : ""}
-            </p>
-          )}
         </div>
       </div>
 
@@ -281,7 +292,7 @@ function Formulario({
         <button type="button" onClick={capturarGeo}
           className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-600 hover:bg-slate-50 transition">
           {geoStatus === "carregando" ? <Loader2 className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
-          {geoStatus === "ok" ? "Localização anexada ✓" : geoStatus === "erro" ? "Não foi possível obter a localização" : "Anexar minha localização (opcional)"}
+          {geoStatus === "ok" ? "Localização anexada ✓" : geoStatus === "erro" ? (geoMsg || "Não foi possível obter a localização") : "Anexar minha localização (opcional)"}
         </button>
 
         <label className="flex items-start gap-3 text-sm text-slate-600 cursor-pointer">
