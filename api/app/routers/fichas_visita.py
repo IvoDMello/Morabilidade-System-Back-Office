@@ -13,6 +13,7 @@ Civil + Lei nº 14.063/2020).
 """
 import hashlib
 import json
+import logging
 import secrets
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional
@@ -28,8 +29,14 @@ from app.schemas.ficha_visita import (
     FichaVisitaOut,
     FichaVisitaPublicaView,
 )
+from app.services.cliente_da_ficha import (
+    atualizar_cadastro_pos_assinatura,
+    vincular_cliente_visitante,
+)
 from app.services.ficha_visita_pdf import gerar_ficha_visita_pdf, montar_clausula
 from app.services.storage import baixar_documento, upload_pdf_bytes
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -88,7 +95,7 @@ def criar_ficha(body: FichaVisitaCreate, current_user: dict = Depends(require_ad
     imovel = (
         supabase_admin.table("imoveis")
         .select("id, codigo, logradouro, numero, complemento, bairro, cidade, "
-                "valor_venda, valor_locacao, proprietario_id")
+                "valor_venda, valor_locacao, tipo_negocio, proprietario_id")
         .eq("id", body.imovel_id)
         .maybe_single()
         .execute()
@@ -149,8 +156,21 @@ def criar_ficha(body: FichaVisitaCreate, current_user: dict = Depends(require_ad
         "token_expira_em": (agora + timedelta(days=TOKEN_VALIDADE_DIAS)).isoformat(),
     }
 
+    # CRM: deduplica/cadastra o visitante como cliente e vincula à ficha.
+    # Best-effort — uma falha aqui não pode impedir a emissão do documento.
+    cliente_novo = False
+    if not payload["cliente_id"]:
+        try:
+            payload["cliente_id"], cliente_novo = vincular_cliente_visitante(
+                payload, imovel, corretor_id
+            )
+        except Exception:
+            logger.exception("Falha ao vincular/cadastrar cliente da ficha de visita.")
+
     res = supabase_admin.table("fichas_visita").insert(payload).execute()
-    return res.data[0]
+    ficha = res.data[0]
+    ficha["cliente_novo"] = cliente_novo
+    return ficha
 
 
 @router.get("", response_model=List[FichaVisitaOut])
@@ -275,7 +295,16 @@ def assinar_ficha(request: Request, token: str, body: FichaVisitaAssinaturaIn):
         "updated_at": agora.isoformat(),
     }
     res = supabase_admin.table("fichas_visita").update(update).eq("id", ficha["id"]).execute()
-    return res.data[0]
+    ficha_assinada = res.data[0]
+
+    # CRM: completa o CPF do cadastro e infere o perfil de busca do cliente a
+    # partir das visitas assinadas. Best-effort — a assinatura já está consumada.
+    try:
+        atualizar_cadastro_pos_assinatura(ficha_assinada)
+    except Exception:
+        logger.exception("Falha ao atualizar cadastro/perfil do cliente após assinatura.")
+
+    return ficha_assinada
 
 
 @router.get("/assinar/{token}/pdf")

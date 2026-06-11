@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 from tests.conftest import make_db_mock
 
 ROUTER = "app.routers.fichas_visita.supabase_admin"
+CRM = "app.services.cliente_da_ficha.supabase_admin"
 
 IMOVEL = {
     "id": "11111111-1111-1111-1111-111111111111",
@@ -56,13 +57,58 @@ def test_criar_ficha_gera_token_e_snapshot(client):
         MagicMock(data=CORRETOR),     # busca corretor (proprietário pulado)
         MagicMock(data=[FICHA_ROW]),  # insert
     )
-    with patch(ROUTER, db):
+    crm = make_db_mock(
+        MagicMock(data=[]),                            # nenhum cliente na base
+        MagicMock(data=[{"id": "cliente-novo-uuid"}]), # cadastro automático
+    )
+    with patch(ROUTER, db), patch(CRM, crm):
         res = client.post("/fichas-visita", json=CRIAR_BODY)
     assert res.status_code == 201
     body = res.json()
     assert body["status"] == "pendente"
     assert body["token"] == "tok_abc123"
     assert body["imovel_codigo"] == "IMO-00042"
+    # Visitante sem cadastro prévio → cliente criado e vinculado à ficha.
+    assert body["cliente_novo"] is True
+    assert db.insert.call_args[0][0]["cliente_id"] == "cliente-novo-uuid"
+
+
+def test_criar_ficha_vincula_cliente_existente_por_cpf(client):
+    db = make_db_mock(
+        MagicMock(data=IMOVEL),
+        MagicMock(data=CORRETOR),
+        MagicMock(data=[FICHA_ROW]),
+    )
+    cliente = {
+        "id": "cliente-existente-uuid",
+        "nome_completo": "João da Silva",
+        "cpf_cnpj": "12345678900",  # mesmo CPF do CRIAR_BODY, sem pontuação
+        "telefone": "(11) 1111-1111",
+        "telefone_secundario": None,
+        "email": None,
+    }
+    crm = make_db_mock(MagicMock(data=[cliente]))
+    with patch(ROUTER, db), patch(CRM, crm):
+        res = client.post("/fichas-visita", json=CRIAR_BODY)
+    assert res.status_code == 201
+    assert res.json()["cliente_novo"] is False
+    assert db.insert.call_args[0][0]["cliente_id"] == "cliente-existente-uuid"
+    crm.insert.assert_not_called()  # deduplicado — nenhum cadastro novo
+
+
+def test_criar_ficha_nao_falha_se_crm_indisponivel(client):
+    """O vínculo com o CRM é best-effort: erro ali não pode barrar a ficha."""
+    db = make_db_mock(
+        MagicMock(data=IMOVEL),
+        MagicMock(data=CORRETOR),
+        MagicMock(data=[FICHA_ROW]),
+    )
+    crm = make_db_mock()
+    crm.execute.side_effect = RuntimeError("supabase fora do ar")
+    with patch(ROUTER, db), patch(CRM, crm):
+        res = client.post("/fichas-visita", json=CRIAR_BODY)
+    assert res.status_code == 201
+    assert res.json()["cliente_novo"] is False
 
 
 def test_criar_ficha_imovel_inexistente(client):
@@ -146,6 +192,41 @@ def test_assinar_sucesso(anon_client):
     assert res.status_code == 200
     assert res.json()["status"] == "assinada"
     up.assert_called_once()  # PDF assinado foi enviado ao storage
+
+
+def test_assinar_atualiza_cadastro_e_perfil_do_cliente(anon_client):
+    """Assinatura de ficha vinculada a cliente: completa o CPF do cadastro e
+    infere a preferência de imóvel a partir das visitas assinadas."""
+    com_cliente = dict(FICHA_ROW, cliente_id="cliente-uuid-1")
+    assinada = dict(com_cliente, status="assinada", assinante_cpf_confirmado="12345678900")
+    db = make_db_mock(
+        MagicMock(data=com_cliente),  # _ficha_assinavel
+        MagicMock(data=[assinada]),   # update da ficha
+    )
+    crm = make_db_mock(
+        MagicMock(data={"cpf_cnpj": None}),                     # cliente sem CPF
+        MagicMock(data=[{}]),                                   # update do CPF
+        MagicMock(data=None),                                   # sem preferência ainda
+        MagicMock(data=[{"imovel_id": IMOVEL["id"]}]),          # fichas assinadas
+        MagicMock(data=[{
+            "id": IMOVEL["id"], "tipo_negocio": "venda", "tipo_imovel": "apartamento",
+            "cidade": "Rio de Janeiro / RJ", "bairro": "Ipanema",
+            "valor_venda": 1850000.0, "valor_locacao": None, "dormitorios": 3,
+        }]),                                                    # imóveis visitados
+        MagicMock(data=[{"id": "pref-1"}]),                     # insert da preferência
+    )
+    with patch(ROUTER, db), patch(CRM, crm), patch(
+        "app.routers.fichas_visita.upload_pdf_bytes", return_value="fichas-visita/x.pdf"
+    ):
+        res = anon_client.post(
+            f"/fichas-visita/assinar/{FICHA_ROW['token']}",
+            json={"aceite": True, "cpf": "12345678900"},
+        )
+    assert res.status_code == 200
+    pref = crm.insert.call_args[0][0]
+    assert pref["origem"] == "ficha_visita"
+    assert pref["cliente_id"] == "cliente-uuid-1"
+    assert pref["tipo_negocio"] == "venda"
 
 
 def test_assinar_sem_aceite_400(anon_client):

@@ -68,6 +68,9 @@ class PreferenciaUpdate(PreferenciaBase):
 class PreferenciaOut(PreferenciaBase):
     id: str
     cliente_id: str
+    # 'manual' = cadastrada pelo corretor; 'ficha_visita' = inferida das fichas
+    # de visita assinadas (recalculada a cada assinatura até virar manual).
+    origem: str = "manual"
     created_at: str
     updated_at: str
 

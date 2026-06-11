@@ -24,6 +24,7 @@ class OrigemLead(str, Enum):
     whatsapp = "whatsapp"
     instagram = "instagram"
     facebook = "facebook"
+    ficha_visita = "ficha_visita"
     outro = "outro"
 
 

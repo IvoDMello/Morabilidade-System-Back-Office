@@ -146,6 +146,9 @@ def upsert_preferencia(
     """Cria ou atualiza a preferência do cliente (upsert por cliente_id)."""
     payload = body.model_dump(exclude_unset=True)
     payload["cliente_id"] = cliente_id
+    # Salvar pelo back-office torna a preferência manual: a inferência via
+    # ficha de visita (services/cliente_da_ficha) deixa de recalculá-la.
+    payload["origem"] = "manual"
 
     existing = (
         supabase_admin.table("cliente_preferencias")

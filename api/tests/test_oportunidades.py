@@ -376,6 +376,20 @@ def test_atualizar_preferencia_quando_ja_existe(client):
     assert res.status_code == 200
 
 
+def test_upsert_preferencia_marca_origem_manual(client):
+    """Salvar pelo back-office converte preferência inferida em manual —
+    a inferência via ficha de visita deixa de recalculá-la."""
+    existing_mock = MagicMock(data={"id": "pref-uuid-1"})
+    update_mock = MagicMock(data=[PREF_DB])
+    db = make_db_mock(existing_mock, update_mock)
+
+    with patch("app.routers.oportunidades.supabase_admin", db):
+        res = client.put("/clientes/cliente-uuid-1/preferencia", json=PREF_PAYLOAD)
+
+    assert res.status_code == 200
+    assert db.update.call_args[0][0]["origem"] == "manual"
+
+
 def test_upsert_preferencia_falha_no_banco_retorna_500(client):
     existing_mock = MagicMock(data=None)
     insert_falhou = MagicMock(data=None)  # insert não retornou dados

@@ -19,6 +19,7 @@ interface Preferencia {
   vagas_garagem_min?: number | null;
   observacoes?: string | null;
   ativa?: boolean;
+  origem?: string;
 }
 
 const inputClass =
@@ -102,6 +103,12 @@ export function PreferenciaForm({ clienteId, onSaved }: Props) {
 
   return (
     <div className="space-y-4">
+      {pref.origem === "ficha_visita" && (
+        <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+          Perfil inferido automaticamente das fichas de visita assinadas — é recalculado a cada nova
+          assinatura. Ao salvar uma edição aqui, ele passa a ser manual e deixa de ser recalculado.
+        </p>
+      )}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className={labelClass}>Tipo de negócio</label>

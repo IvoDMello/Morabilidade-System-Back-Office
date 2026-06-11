@@ -79,18 +79,30 @@ function NovaFicha({ imovelId, onCriada }: { imovelId: string; onCriada: () => v
   async function gerar(e: React.FormEvent) {
     e.preventDefault();
     if (!nome.trim()) { toast.error("Informe o nome do visitante."); return; }
+    if (!telefone.trim()) {
+      toast.error("Informe o WhatsApp do visitante — é por ele que o link é enviado e o cliente cadastrado.");
+      return;
+    }
     setSalvando(true);
     try {
-      const res = await api.post<{ token: string }>("/fichas-visita", {
-        imovel_id: imovelId,
-        visitante_nome: nome.trim(),
-        visitante_cpf: cpf.trim() || null,
-        visitante_telefone: telefone.trim() || null,
-        visitante_email: email.trim() || null,
-      });
+      const res = await api.post<{ token: string; cliente_id?: string | null; cliente_novo?: boolean | null }>(
+        "/fichas-visita",
+        {
+          imovel_id: imovelId,
+          visitante_nome: nome.trim(),
+          visitante_cpf: cpf.trim() || null,
+          visitante_telefone: telefone.trim() || null,
+          visitante_email: email.trim() || null,
+        },
+      );
       // Já copia o link pro corretor mandar.
       try { await navigator.clipboard.writeText(linkAssinatura(res.data.token)); } catch {}
       toast.success("Ficha gerada — link de assinatura copiado.");
+      if (res.data.cliente_novo) {
+        toast.info("Visitante cadastrado automaticamente como cliente.");
+      } else if (res.data.cliente_id) {
+        toast.info("Visitante vinculado a um cliente já cadastrado.");
+      }
       setNome(""); setCpf(""); setTelefone(""); setEmail("");
       onCriada();
     } catch (err) {
@@ -105,7 +117,9 @@ function NovaFicha({ imovelId, onCriada }: { imovelId: string; onCriada: () => v
       <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100">
         <FileSignature className="w-4 h-4 text-[#585a4f]" />
         <h2 className="text-sm font-semibold text-slate-700">Gerar ficha de visita</h2>
-        <span className="text-xs text-slate-400">· o visitante assina pelo celular</span>
+        <span className="text-xs text-slate-400">
+          · o visitante assina pelo celular e entra no cadastro de clientes
+        </span>
       </div>
 
       <form onSubmit={gerar} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
@@ -120,7 +134,7 @@ function NovaFicha({ imovelId, onCriada }: { imovelId: string; onCriada: () => v
           className="border border-slate-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#585a4f]"
         />
         <input
-          type="text" placeholder="WhatsApp" value={telefone}
+          type="text" placeholder="WhatsApp *" value={telefone}
           onChange={(e) => setTelefone(e.target.value)}
           className="border border-slate-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#585a4f]"
         />
