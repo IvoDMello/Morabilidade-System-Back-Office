@@ -1,15 +1,25 @@
 """Schemas da Autorização de Intermediação Imobiliária.
 
-Documento assinado pelo proprietário que autoriza a Morabilidade a intermediar
-a venda/locação do imóvel e fixa a comissão (arts. 722-729 CC). Ver router
-`autorizacoes` e serviço `autorizacao_pdf`.
+Documento assinado pelo(s) proprietário(s) que autoriza a Morabilidade a
+intermediar a venda/locação do imóvel e fixa a comissão (arts. 722-729 CC).
+Suporta múltiplos signatários — cada proprietário recebe o próprio link e a
+autorização só fica 'assinada' quando todos assinarem (migration 038). Ver
+router `autorizacoes` e serviço `autorizacao_pdf`.
 """
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, Field, field_serializer
+
+
+class ProprietarioIn(BaseModel):
+    """Um signatário informado na criação (casal, herdeiros etc.)."""
+    nome: str = Field(..., min_length=2, max_length=200)
+    cpf: Optional[str] = Field(None, max_length=20)
+    telefone: Optional[str] = Field(None, max_length=40)
+    email: Optional[str] = Field(None, max_length=200)
 
 
 class AutorizacaoCreate(BaseModel):
@@ -22,6 +32,10 @@ class AutorizacaoCreate(BaseModel):
     proprietario_email: Optional[str] = Field(None, max_length=200)
     proprietario_endereco: Optional[str] = Field(None, max_length=300)
 
+    # Múltiplos proprietários: quando presente, substitui os campos
+    # proprietario_* acima (o primeiro da lista vira o principal).
+    proprietarios: Optional[List[ProprietarioIn]] = Field(None, max_length=6)
+
     tipo_negocio: str = Field("venda", pattern="^(venda|locacao|ambos)$")
     valor_autorizado: Optional[Decimal] = None
     exclusiva: bool = True
@@ -30,6 +44,18 @@ class AutorizacaoCreate(BaseModel):
     prazo_dias: int = Field(90, ge=1, le=730)
 
     corretor_id: Optional[str] = None
+
+
+class SignatarioOut(BaseModel):
+    id: str
+    ordem: int
+    nome: str
+    cpf: Optional[str] = None
+    telefone: Optional[str] = None
+    email: Optional[str] = None
+    token: str
+    status: str
+    assinada_em: Optional[str] = None
 
 
 class AutorizacaoOut(BaseModel):
@@ -64,14 +90,30 @@ class AutorizacaoOut(BaseModel):
     documento_hash: Optional[str] = None
     created_at: str
 
+    signatarios: List[SignatarioOut] = []
+
     @field_serializer("valor_autorizado", "comissao_venda_pct")
     def _ser_dec(self, v: Optional[Decimal]) -> Optional[float]:
         return float(v) if v is not None else None
 
 
+class SignatarioPublico(BaseModel):
+    """Resumo dos co-signatários mostrado na página pública."""
+    nome: str
+    assinou: bool
+
+
 class AutorizacaoPublicaView(BaseModel):
-    """O que o proprietário vê na página de assinatura."""
+    """O que o proprietário vê na página de assinatura.
+
+    `status` é o da autorização (pendente/parcial/assinada);
+    `signatario_nome`/`ja_assinou` referem-se a quem abriu ESTE link.
+    """
     status: str
+    signatario_nome: str
+    ja_assinou: bool = False
+    signatarios: List[SignatarioPublico] = []
+
     proprietario_nome: str
     imovel_codigo: Optional[str] = None
     imovel_endereco: Optional[str] = None

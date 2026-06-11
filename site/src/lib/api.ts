@@ -174,7 +174,11 @@ export function fichaPdfUrl(token: string): string {
 // ── Autorização de intermediação (assinatura pública por token) ───────────────
 
 export interface AutorizacaoPublica {
-  status: "pendente" | "assinada" | "cancelada" | "expirada";
+  status: "pendente" | "parcial" | "assinada" | "cancelada" | "expirada";
+  /** Quem assina por ESTE link (cada proprietário tem o seu). */
+  signatario_nome: string;
+  ja_assinou: boolean;
+  signatarios: { nome: string; assinou: boolean }[];
   proprietario_nome: string;
   imovel_codigo?: string | null;
   imovel_endereco?: string | null;

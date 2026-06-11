@@ -14,6 +14,7 @@ import {
   BarChart2,
   Sparkles,
   FileSignature,
+  Stamp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/lib/auth-store";
@@ -30,6 +31,7 @@ const navItems = [
   { href: "/clientes", label: "Clientes", icon: Users },
   { href: "/oportunidades", label: "Oportunidades", icon: Sparkles },
   { href: "/locacoes", label: "Adm Locação", icon: FileSignature },
+  { href: "/autorizacoes", label: "Autorizações", icon: Stamp },
   { href: "/tags", label: "Tags", icon: Tags },
   // Relatórios contém as abas internas Portfólio + Audiência (ver
   // components/layout/relatorios-tabs.tsx). Quando estamos em /audiencia,

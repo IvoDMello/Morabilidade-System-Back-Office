@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
-  Loader2, MapPin, Check, Download, ShieldCheck, Stamp, AlertCircle,
+  Loader2, MapPin, Check, Download, ShieldCheck, Stamp, AlertCircle, Clock, Users,
 } from "lucide-react";
 import {
   getAutorizacaoPublica, assinarAutorizacao, autorizacaoPdfUrl, type AutorizacaoPublica,
@@ -15,7 +15,15 @@ type Estado =
   | { fase: "carregando" }
   | { fase: "erro"; tipo: "nao_encontrada" | "indisponivel" | "erro" }
   | { fase: "assinar"; auth: AutorizacaoPublica }
+  // Este signatário já assinou, mas ainda faltam outros proprietários.
+  | { fase: "aguardando"; auth: AutorizacaoPublica }
   | { fase: "assinada"; auth: AutorizacaoPublica };
+
+function faseDe(auth: AutorizacaoPublica): Estado {
+  if (auth.status === "assinada") return { fase: "assinada", auth };
+  if (auth.ja_assinou) return { fase: "aguardando", auth };
+  return { fase: "assinar", auth };
+}
 
 const NEGOCIO: Record<AutorizacaoPublica["tipo_negocio"], string> = {
   venda: "Venda", locacao: "Locação", ambos: "Venda e/ou locação",
@@ -29,7 +37,7 @@ export function AssinarAutorizacao({ token }: { token: string }) {
     getAutorizacaoPublica(token)
       .then((auth) => {
         if (!vivo) return;
-        setEstado(auth.status === "assinada" ? { fase: "assinada", auth } : { fase: "assinar", auth });
+        setEstado(faseDe(auth));
       })
       .catch((err: Error) => {
         if (!vivo) return;
@@ -52,8 +60,9 @@ export function AssinarAutorizacao({ token }: { token: string }) {
         {estado.fase === "carregando" && <Carregando />}
         {estado.fase === "erro" && <Erro tipo={estado.tipo} />}
         {estado.fase === "assinada" && <Confirmacao token={token} />}
+        {estado.fase === "aguardando" && <AguardandoDemais auth={estado.auth} />}
         {estado.fase === "assinar" && (
-          <Formulario token={token} auth={estado.auth} onAssinada={(auth) => setEstado({ fase: "assinada", auth })} />
+          <Formulario token={token} auth={estado.auth} onAssinada={(auth) => setEstado(faseDe(auth))} />
         )}
       </div>
     </main>
@@ -72,7 +81,7 @@ function Erro({ tipo }: { tipo: "nao_encontrada" | "indisponivel" | "erro" }) {
   const msg = tipo === "nao_encontrada"
     ? "Este link de assinatura é inválido."
     : tipo === "indisponivel"
-      ? "Esta autorização já foi assinada, cancelada ou o link expirou."
+      ? "Esta autorização foi cancelada ou o link expirou."
       : "Não foi possível carregar a autorização. Tente novamente em instantes.";
   return (
     <div className="bg-white rounded-2xl border border-[#e4e1d6] p-8 text-center">
@@ -99,6 +108,33 @@ function Confirmacao({ token }: { token: string }) {
       >
         <Download className="w-4 h-4" /> Baixar PDF assinado
       </a>
+    </div>
+  );
+}
+
+function AguardandoDemais({ auth }: { auth: AutorizacaoPublica }) {
+  const pendentes = auth.signatarios.filter((s) => !s.assinou);
+  return (
+    <div className="bg-white rounded-2xl border border-[#e4e1d6] p-8 text-center">
+      <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 bg-emerald-50">
+        <Check className="w-8 h-8 text-emerald-600" />
+      </div>
+      <h2 className="text-xl font-semibold text-slate-800">Sua assinatura foi registrada!</h2>
+      <p className="text-[#7a7c72] mt-2 text-sm">
+        Falta a assinatura de {pendentes.length === 1 ? "1 proprietário" : `${pendentes.length} proprietários`}.
+        Assim que todos assinarem, o documento final fica disponível para download.
+      </p>
+      <ul className="mt-4 text-sm text-left max-w-xs mx-auto space-y-1.5">
+        {auth.signatarios.map((s) => (
+          <li key={s.nome} className="flex items-center gap-2">
+            {s.assinou
+              ? <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+              : <Clock className="w-4 h-4 text-amber-500 flex-shrink-0" />}
+            <span className="text-slate-700 truncate">{s.nome}</span>
+            <span className="text-xs text-[#7a7c72] ml-auto">{s.assinou ? "assinou" : "pendente"}</span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -200,11 +236,36 @@ function Formulario({
         <p className="text-[13px] leading-relaxed text-slate-600 whitespace-pre-line">{auth.clausula_texto}</p>
       </div>
 
+      {/* Co-proprietários (quando há mais de um signatário) */}
+      {auth.signatarios.length > 1 && (
+        <div className="bg-white rounded-2xl border border-[#e4e1d6] p-5">
+          <p className="text-[11px] font-semibold tracking-wide text-[#585a4f] mb-2 flex items-center gap-1.5">
+            <Users className="w-3.5 h-3.5" /> PROPRIETÁRIOS DESTA AUTORIZAÇÃO
+          </p>
+          <ul className="space-y-1.5 text-sm">
+            {auth.signatarios.map((s) => (
+              <li key={s.nome} className="flex items-center gap-2">
+                {s.assinou
+                  ? <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                  : <Clock className="w-4 h-4 text-amber-500 flex-shrink-0" />}
+                <span className="text-slate-700 truncate">
+                  {s.nome}{s.nome === auth.signatario_nome ? " (você)" : ""}
+                </span>
+                <span className="text-xs text-[#7a7c72] ml-auto">{s.assinou ? "assinou" : "pendente"}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="text-[11px] text-[#7a7c72] mt-2">
+            Cada proprietário assina pelo próprio link. O documento fica pronto quando todos assinarem.
+          </p>
+        </div>
+      )}
+
       {/* Assinatura */}
       <div className="bg-white rounded-2xl border border-[#e4e1d6] p-5 space-y-4">
         <div>
           <label className="block text-xs font-medium text-slate-600 mb-1">Proprietário</label>
-          <input value={auth.proprietario_nome} disabled
+          <input value={auth.signatario_nome || auth.proprietario_nome} disabled
             className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-700" />
         </div>
 
