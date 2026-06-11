@@ -22,6 +22,7 @@ from reportlab.pdfgen import canvas
 
 from app.config import settings
 from app.services.pdf_base import (
+    DOURADO,
     LINHA,
     MARGEM,
     OLIVE,
@@ -158,11 +159,22 @@ def gerar_autorizacao_pdf(auth: dict, assinada: bool = False) -> bytes:
         if not primeira:
             _rodape()
             c.showPage()
-        topo = draw_brand_header(
-            c, largura, altura,
-            header_mm=30 if primeira else 16,
-            titulo="AUTORIZAÇÃO DE INTERMEDIAÇÃO" + ("" if primeira else " — CONTINUAÇÃO"),
-        )
+        if primeira:
+            topo = draw_brand_header(
+                c, largura, altura,
+                header_mm=30, titulo="AUTORIZAÇÃO DE INTERMEDIAÇÃO",
+            )
+        else:
+            # Faixa fina sem logo: o logo de marca tem 28mm de altura e
+            # vazaria de um header de continuação compacto.
+            faixa_h = 14 * mm
+            c.setFillColor(OLIVE)
+            c.rect(0, altura - faixa_h, largura, faixa_h, fill=1, stroke=0)
+            c.setFillColor(DOURADO)
+            c.setFont("Helvetica-Bold", 11)
+            c.drawRightString(largura - MARGEM, altura - faixa_h / 2 - 1.3 * mm,
+                              "AUTORIZAÇÃO DE INTERMEDIAÇÃO — CONTINUAÇÃO")
+            topo = altura - faixa_h
         return topo - 12 * mm
 
     def _garantir(y: float, precisa: float) -> float:
@@ -182,8 +194,9 @@ def gerar_autorizacao_pdf(auth: dict, assinada: bool = False) -> bytes:
     campo(c, MARGEM + 56 * mm, y, 45 * mm, "Data", criada)
     campo(c, MARGEM + 106 * mm, y, 30 * mm, "Código / ref.", codigo)
     qr_url = f"{settings.site_url.rstrip('/')}/imoveis/{codigo}" if codigo != "—" else settings.site_url
-    desenhar_qr(c, largura - MARGEM - 20 * mm, y - 18 * mm, 18 * mm, qr_url)
-    y -= 14 * mm
+    # QR alinhado pelo topo com a linha de campos (origem = canto inferior).
+    desenhar_qr(c, largura - MARGEM - 16 * mm, y - 14 * mm, 16 * mm, qr_url)
+    y -= 20 * mm
 
     # ── 1. Imóvel ────────────────────────────────────────────────────────────
     y = _garantir(y, 45 * mm)
