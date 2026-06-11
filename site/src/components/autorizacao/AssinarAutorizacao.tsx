@@ -211,7 +211,7 @@ function Formulario({
             {auth.comissao_locacao_desc && (auth.tipo_negocio === "locacao" || auth.tipo_negocio === "ambos") && (
               <Linha label="Comissão (locação)" valor={auth.comissao_locacao_desc} />
             )}
-            <Linha label="Prazo" valor={`${auth.prazo_dias} dias`} />
+            <Linha label="Vigência" valor={`${auth.prazo_dias} dias a partir da assinatura`} />
           </div>
         </div>
       </div>

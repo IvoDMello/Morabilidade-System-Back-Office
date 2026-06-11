@@ -12,6 +12,7 @@ trilha de auditoria individual. O conteúdo pagina automaticamente.
 from __future__ import annotations
 
 import io
+from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Optional
 
@@ -226,19 +227,44 @@ def gerar_autorizacao_pdf(auth: dict, assinada: bool = False) -> bytes:
     y -= 2 * mm
 
     # ── 3. Condições da intermediação ────────────────────────────────────────
-    y = _garantir(y, 45 * mm)
+    assinada_em_str = auth.get("assinada_em")
+    tem_datas = bool(assinada_em_str)
+    y = _garantir(y, (60 if tem_datas else 45) * mm)
     y = secao(c, largura, y, "3. Condições da intermediação")
-    negocio_lbl = _NEGOCIO.get(auth.get("tipo_negocio", ""), "—").capitalize()
+    tipo = auth.get("tipo_negocio", "venda")
+    negocio_lbl = _NEGOCIO.get(tipo, "—").capitalize()
     valor_lbl = fmt_brl(auth["valor_autorizado"]) if auth.get("valor_autorizado") is not None else "—"
+    prazo_val = auth.get("prazo_dias") or "—"
+
     campo(c, MARGEM, y, 50 * mm, "Negócio", negocio_lbl)
     campo(c, MARGEM + 56 * mm, y, 50 * mm, "Valor autorizado", valor_lbl)
     campo(c, MARGEM + 112 * mm, y, util - 112 * mm, "Exclusividade",
           "Com exclusividade" if auth.get("exclusiva") else "Sem exclusividade")
     y -= 12 * mm
-    campo(c, MARGEM, y, 55 * mm, "Comissão (venda)", _fmt_pct(auth.get("comissao_venda_pct")))
-    campo(c, MARGEM + 61 * mm, y, 60 * mm, "Comissão (locação)", auth.get("comissao_locacao_desc") or "—")
-    campo(c, MARGEM + 126 * mm, y, util - 126 * mm, "Prazo", f"{auth.get('prazo_dias') or '—'} dias")
-    y -= 14 * mm
+
+    if tipo == "ambos":
+        campo(c, MARGEM, y, 50 * mm, "Comissão (venda)", _fmt_pct(auth.get("comissao_venda_pct")))
+        campo(c, MARGEM + 56 * mm, y, 55 * mm, "Comissão (locação)", auth.get("comissao_locacao_desc") or "—")
+        campo(c, MARGEM + 117 * mm, y, util - 117 * mm, "Prazo", f"{prazo_val} dias")
+    elif tipo == "venda":
+        campo(c, MARGEM, y, 70 * mm, "Comissão (venda)", _fmt_pct(auth.get("comissao_venda_pct")))
+        campo(c, MARGEM + 76 * mm, y, util - 76 * mm, "Prazo", f"{prazo_val} dias")
+    else:  # locacao
+        campo(c, MARGEM, y, 100 * mm, "Comissão (locação)", auth.get("comissao_locacao_desc") or "—")
+        campo(c, MARGEM + 106 * mm, y, util - 106 * mm, "Prazo", f"{prazo_val} dias")
+    y -= 12 * mm
+
+    if tem_datas:
+        try:
+            dt_ini = datetime.fromisoformat(str(assinada_em_str).replace("Z", "+00:00"))
+            dt_fim = dt_ini + timedelta(days=int(prazo_val))
+            campo(c, MARGEM, y, 80 * mm, "Início da vigência", dt_ini.strftime("%d/%m/%Y"))
+            campo(c, MARGEM + 86 * mm, y, util - 86 * mm, "Término da vigência", dt_fim.strftime("%d/%m/%Y"))
+            y -= 14 * mm
+        except (ValueError, TypeError):
+            y -= 2 * mm
+    else:
+        y -= 2 * mm
 
     # ── 4. Autorização e declarações ─────────────────────────────────────────
     y = _garantir(y, 30 * mm)
