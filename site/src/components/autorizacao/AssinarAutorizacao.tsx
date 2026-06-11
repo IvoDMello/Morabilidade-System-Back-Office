@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
-  Loader2, MapPin, Check, Download, ShieldCheck, Stamp, AlertCircle, Clock, Users,
+  Loader2, Check, Download, ShieldCheck, Stamp, AlertCircle, Clock, Users,
 } from "lucide-react";
 import {
   getAutorizacaoPublica, assinarAutorizacao, autorizacaoPdfUrl, type AutorizacaoPublica,
@@ -158,37 +158,9 @@ function Formulario({
 }) {
   const [cpf, setCpf] = useState("");
   const [aceite, setAceite] = useState(false);
-  const [geo, setGeo] = useState<string | null>(null);
-  const [geoStatus, setGeoStatus] = useState<"idle" | "carregando" | "ok" | "erro">("idle");
-  const [geoMsg, setGeoMsg] = useState<string>("");
   const [assinando, setAssinando] = useState(false);
   const [temTraco, setTemTraco] = useState(false);
   const padRef = useRef<SignaturePadHandle>(null);
-
-  const capturarGeo = useCallback(() => {
-    if (!("geolocation" in navigator)) {
-      setGeoMsg("Seu navegador não suporta geolocalização.");
-      setGeoStatus("erro");
-      return;
-    }
-    setGeoStatus("carregando");
-    navigator.geolocation.getCurrentPosition(
-      (p) => {
-        setGeo(`${p.coords.latitude.toFixed(5)},${p.coords.longitude.toFixed(5)}`);
-        setGeoStatus("ok");
-      },
-      (err) => {
-        if (err.code === 1)
-          setGeoMsg("Permissão negada. Autorize a localização nas configurações do navegador e tente novamente.");
-        else if (err.code === 3)
-          setGeoMsg("Tempo esgotado. Tente novamente em local com melhor sinal de GPS.");
-        else
-          setGeoMsg("Não foi possível obter a localização agora.");
-        setGeoStatus("erro");
-      },
-      { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 },
-    );
-  }, []);
 
   const cpfDigitos = cpf.replace(/\D/g, "");
   const podeAssinar = aceite && cpfDigitos.length >= 11 && temTraco && !assinando;
@@ -201,7 +173,6 @@ function Formulario({
         aceite: true,
         cpf: cpf.trim(),
         assinatura_png: padRef.current?.toDataURL() ?? null,
-        geo,
       });
       toast.success("Autorização assinada com sucesso!");
       onAssinada(atualizada);
@@ -288,12 +259,6 @@ function Formulario({
         </div>
 
         <SignaturePad ref={padRef} onInkChange={setTemTraco} />
-
-        <button type="button" onClick={capturarGeo}
-          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-600 hover:bg-slate-50 transition">
-          {geoStatus === "carregando" ? <Loader2 className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
-          {geoStatus === "ok" ? "Localização anexada ✓" : geoStatus === "erro" ? (geoMsg || "Não foi possível obter a localização") : "Anexar minha localização (opcional)"}
-        </button>
 
         <label className="flex items-start gap-3 text-sm text-slate-600 cursor-pointer">
           <input type="checkbox" checked={aceite} onChange={(e) => setAceite(e.target.checked)} className="mt-0.5 w-4 h-4 accent-[#585a4f]" />
