@@ -166,7 +166,10 @@ function Formulario({
   const podeAssinar = aceite && cpfDigitos.length >= 11 && temTraco && !assinando;
 
   async function assinar() {
-    if (!podeAssinar) return;
+    if (assinando) return;
+    if (cpfDigitos.length < 11) { toast.error("Preencha o CPF ou CNPJ antes de assinar."); return; }
+    if (!temTraco) { toast.error("Desenhe sua assinatura no campo acima."); return; }
+    if (!aceite) { toast.error("Marque a caixa de aceite para continuar."); return; }
     setAssinando(true);
     try {
       const atualizada = await assinarAutorizacao(token, {
@@ -265,7 +268,7 @@ function Formulario({
           <span>Li e estou de acordo com as condições e declarações acima e autorizo o tratamento dos meus dados (LGPD).</span>
         </label>
 
-        <button type="button" onClick={assinar} disabled={!podeAssinar}
+        <button type="button" onClick={assinar} disabled={assinando}
           className="w-full flex items-center justify-center gap-2 py-3.5 rounded-lg text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
           style={{ backgroundColor: "#585a4f" }}>
           {assinando ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
