@@ -90,10 +90,11 @@ def gerar_ficha_visita_pdf(ficha: dict, assinada: bool = False) -> bytes:
     campo(c, MARGEM + 106 * mm, y, 30 * mm, "Código / ref.", codigo)
 
     # QR no canto superior direito do conteúdo, apontando pro imóvel no site.
+    # Alinhado pelo topo com a linha de campos (origem do QR = canto inferior).
     qr_url = f"{settings.site_url.rstrip('/')}/imoveis/{codigo}" if codigo != "—" else settings.site_url
-    desenhar_qr(c, largura - MARGEM - 20 * mm, y - 18 * mm, 18 * mm, qr_url)
+    desenhar_qr(c, largura - MARGEM - 16 * mm, y - 14 * mm, 16 * mm, qr_url)
 
-    y -= 14 * mm
+    y -= 20 * mm
 
     # ── 1. Dados do imóvel ───────────────────────────────────────────────────
     y = secao(c, largura, y, "1. Dados do imóvel")
