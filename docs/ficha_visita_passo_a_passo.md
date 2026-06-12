@@ -1,8 +1,16 @@
 # Ficha de Visita — passo a passo do corretor
 
-A ficha de visita é o termo digital que o visitante assina pelo celular antes de conhecer o imóvel. Ela protege a comissão (vincula o visitante à corretagem pelo prazo combinado, arts. 725/727 do Código Civil) e, desde junho/2026, **também cadastra o visitante automaticamente como cliente** e monta o perfil de imóvel que ele busca.
+A ficha de visita é o termo digital que o visitante assina pelo celular antes de conhecer o imóvel. Ela protege a comissão (vincula o visitante à corretagem pelo prazo combinado, arts. 725/727 do Código Civil) também cadastra o visitante automaticamente como cliente e monta o perfil de imóvel que ele busca.
 
 ---
+
+## Antes de começar: acessar o painel
+
+1. Abra **https://painel.morabilidade.com.br** (funciona no computador e no navegador do celular).
+2. Entre com o **e-mail e a senha** do seu usuário (cadastrado pelo administrador).
+3. No menu lateral, clique em **"Imóveis"** e abra o imóvel que será visitado.
+
+> Sem acesso? Peça ao administrador para criar seu usuário com perfil de corretor.
 
 ## 1. Gerar a ficha
 
@@ -29,7 +37,7 @@ Na lista de **fichas emitidas**, use o botão de **WhatsApp** ao lado da ficha: 
 2. Lê a declaração e **informa o CPF**.
 3. **Assina com o dedo** na tela e confirma o aceite.
 
-Pronto: o sistema registra data/hora, IP e localização (se autorizada), gera o **PDF assinado** e guarda tudo como prova. O visitante pode baixar o PDF na hora.
+Pronto: o sistema registra data/hora e IP, gera o **PDF assinado** e guarda tudo como prova. O visitante pode baixar o PDF na hora — e se abrir o link de novo depois, vê a confirmação com o botão de download.
 
 ## 4. O que acontece sozinho (sem trabalho manual)
 
