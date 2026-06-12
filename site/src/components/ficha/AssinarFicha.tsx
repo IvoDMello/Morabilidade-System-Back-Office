@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
-  Loader2, MapPin, Check, Download, ShieldCheck, FileSignature, AlertCircle,
+  Loader2, Check, Download, ShieldCheck, FileSignature, AlertCircle,
 } from "lucide-react";
 import {
   getFichaPublica, assinarFicha, fichaPdfUrl, type FichaPublica,
@@ -83,7 +83,7 @@ function Erro({ tipo }: { tipo: "nao_encontrada" | "indisponivel" | "erro" }) {
   const msg = tipo === "nao_encontrada"
     ? "Este link de assinatura é inválido."
     : tipo === "indisponivel"
-      ? "Esta ficha já foi assinada, cancelada ou o link expirou."
+      ? "Esta ficha foi cancelada ou o link expirou."
       : "Não foi possível carregar a ficha. Tente novamente em instantes.";
   return (
     <div className="bg-white rounded-2xl border border-[#e4e1d6] p-8 text-center">
@@ -126,37 +126,23 @@ function Formulario({
 }) {
   const [cpf, setCpf] = useState("");
   const [aceite, setAceite] = useState(false);
-  const [geo, setGeo] = useState<string | null>(null);
-  const [geoStatus, setGeoStatus] = useState<"idle" | "carregando" | "ok" | "erro">("idle");
   const [assinando, setAssinando] = useState(false);
   const [temTraco, setTemTraco] = useState(false);
   const padRef = useRef<SignaturePadHandle>(null);
 
-  const capturarGeo = useCallback(() => {
-    if (!("geolocation" in navigator)) { setGeoStatus("erro"); return; }
-    setGeoStatus("carregando");
-    navigator.geolocation.getCurrentPosition(
-      (p) => {
-        setGeo(`${p.coords.latitude.toFixed(5)},${p.coords.longitude.toFixed(5)}`);
-        setGeoStatus("ok");
-      },
-      () => setGeoStatus("erro"),
-      { enableHighAccuracy: false, timeout: 8000 },
-    );
-  }, []);
-
   const cpfDigitos = cpf.replace(/\D/g, "");
-  const podeAssinar = aceite && cpfDigitos.length >= 11 && temTraco && !assinando;
 
   async function assinar() {
-    if (!podeAssinar) return;
+    if (assinando) return;
+    if (cpfDigitos.length < 11) { toast.error("Preencha o CPF antes de assinar."); return; }
+    if (!temTraco) { toast.error("Desenhe sua assinatura no campo acima."); return; }
+    if (!aceite) { toast.error("Marque a caixa de aceite para continuar."); return; }
     setAssinando(true);
     try {
       const fichaAtualizada = await assinarFicha(token, {
         aceite: true,
         cpf: cpf.trim(),
         assinatura_png: padRef.current?.toDataURL() ?? null,
-        geo,
       });
       toast.success("Ficha assinada com sucesso!");
       onAssinada(fichaAtualizada);
@@ -227,16 +213,6 @@ function Formulario({
 
         <SignaturePad ref={padRef} onInkChange={setTemTraco} />
 
-        {/* Geolocalização (opcional) */}
-        <button
-          type="button"
-          onClick={capturarGeo}
-          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-600 hover:bg-slate-50 transition"
-        >
-          {geoStatus === "carregando" ? <Loader2 className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
-          {geoStatus === "ok" ? "Localização anexada ✓" : geoStatus === "erro" ? "Não foi possível obter a localização" : "Anexar minha localização (opcional)"}
-        </button>
-
         {/* Aceite */}
         <label className="flex items-start gap-3 text-sm text-slate-600 cursor-pointer">
           <input
@@ -251,7 +227,7 @@ function Formulario({
         <button
           type="button"
           onClick={assinar}
-          disabled={!podeAssinar}
+          disabled={assinando}
           className="w-full flex items-center justify-center gap-2 py-3.5 rounded-lg text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
           style={{ backgroundColor: "#585a4f" }}
         >

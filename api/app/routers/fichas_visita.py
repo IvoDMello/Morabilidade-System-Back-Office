@@ -236,13 +236,16 @@ def cancelar_ficha(ficha_id: str, current_user: dict = Depends(require_admin)):
 # ── Endpoints públicos (assinatura via token) ────────────────────────────────
 
 def _ficha_assinavel(token: str) -> dict:
-    """Busca a ficha pelo token e valida que ainda pode ser assinada."""
+    """Busca a ficha pelo token e valida que ainda pode ser exibida/assinada.
+
+    Ficha assinada passa (a página pública mostra a confirmação com o download
+    do PDF) — o POST de assinatura rejeita explicitamente esse caso."""
     res = supabase_admin.table("fichas_visita").select("*").eq("token", token).maybe_single().execute()
     if not res or not res.data:
         raise HTTPException(status_code=404, detail="Link inválido.")
     ficha = res.data
     if ficha.get("status") == "assinada":
-        raise HTTPException(status_code=410, detail="Esta ficha já foi assinada.")
+        return ficha
     if ficha.get("status") == "cancelada":
         raise HTTPException(status_code=410, detail="Esta ficha foi cancelada.")
     expira = ficha.get("token_expira_em")
@@ -266,6 +269,8 @@ def ver_ficha_publica(request: Request, token: str):
 @limiter.limit("10/minute")
 def assinar_ficha(request: Request, token: str, body: FichaVisitaAssinaturaIn):
     ficha = _ficha_assinavel(token)
+    if ficha.get("status") == "assinada":
+        raise HTTPException(status_code=410, detail="Esta ficha já foi assinada.")
     if not body.aceite:
         raise HTTPException(status_code=400, detail="É necessário aceitar os termos para assinar.")
 

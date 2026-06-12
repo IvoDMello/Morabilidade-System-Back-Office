@@ -154,9 +154,31 @@ def test_ver_ficha_token_invalido(anon_client):
     assert res.status_code == 404
 
 
-def test_ver_ficha_ja_assinada_410(anon_client):
+def test_ver_ficha_ja_assinada_mostra_confirmacao(anon_client):
+    """Reabrir o link de uma ficha assinada mostra a confirmação (com download
+    do PDF), não um erro."""
     assinada = dict(FICHA_ROW, status="assinada")
     db = make_db_mock(MagicMock(data=assinada))
+    with patch(ROUTER, db):
+        res = anon_client.get(f"/fichas-visita/assinar/{FICHA_ROW['token']}")
+    assert res.status_code == 200
+    assert res.json()["status"] == "assinada"
+
+
+def test_assinar_duas_vezes_410(anon_client):
+    assinada = dict(FICHA_ROW, status="assinada")
+    db = make_db_mock(MagicMock(data=assinada))
+    with patch(ROUTER, db):
+        res = anon_client.post(
+            f"/fichas-visita/assinar/{FICHA_ROW['token']}",
+            json={"aceite": True, "cpf": "12345678900"},
+        )
+    assert res.status_code == 410
+
+
+def test_ver_ficha_cancelada_410(anon_client):
+    cancelada = dict(FICHA_ROW, status="cancelada")
+    db = make_db_mock(MagicMock(data=cancelada))
     with patch(ROUTER, db):
         res = anon_client.get(f"/fichas-visita/assinar/{FICHA_ROW['token']}")
     assert res.status_code == 410
