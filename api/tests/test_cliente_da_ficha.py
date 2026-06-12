@@ -231,11 +231,72 @@ def test_inferencia_sem_fichas_assinadas_nao_faz_nada():
 
 # ── atualizar_cadastro_pos_assinatura ────────────────────────────────────────
 
-def test_pos_assinatura_sem_cliente_vinculado_nao_toca_no_banco():
-    db = make_db_mock()
+def test_pos_assinatura_sem_contato_nao_cadastra():
+    """Ficha sem cliente vinculado e sem telefone: tenta deduplicar pelo CPF
+    confirmado, mas sem match e sem telefone não há cadastro possível."""
+    db = make_db_mock(
+        MagicMock(data={"tipo_negocio": "venda"}),  # imóvel
+        MagicMock(data=[]),                          # nenhum cliente na base
+    )
+    ficha = {
+        "id": "f1", "cliente_id": None, "imovel_id": IMOVEL_VENDA["id"],
+        "visitante_nome": "João da Silva", "visitante_telefone": None,
+        "assinante_cpf_confirmado": "99988877766",
+    }
     with patch(SERVICE, db):
-        atualizar_cadastro_pos_assinatura({"id": "f1", "cliente_id": None})
-    db.table.assert_not_called()
+        atualizar_cadastro_pos_assinatura(ficha)
+    db.insert.assert_not_called()
+    db.update.assert_not_called()
+
+
+def test_pos_assinatura_cadastra_e_vincula_cliente_novo():
+    """Ficha sem vínculo + telefone informado: cadastra o cliente na assinatura
+    (com o CPF confirmado) e grava o cliente_id na ficha."""
+    db = make_db_mock(
+        MagicMock(data={"tipo_negocio": "locacao"}),            # imóvel
+        MagicMock(data=[]),                                      # nenhum cliente
+        MagicMock(data=[{"id": "cliente-novo-uuid"}]),           # insert cliente
+        MagicMock(data=[{}]),                                    # update ficha.cliente_id
+        MagicMock(data={"cpf_cnpj": "99988877766"}),             # CPF já preenchido
+        MagicMock(data={"id": "pref-1", "origem": "manual"}),    # pref manual → para
+    )
+    ficha = {
+        "id": "f1", "cliente_id": None, "imovel_id": IMOVEL_VENDA["id"],
+        "visitante_nome": "João da Silva",
+        "visitante_telefone": "(21) 98888-7777", "visitante_email": None,
+        "visitante_cpf": None, "corretor_id": CORRETOR_ID,
+        "assinante_cpf_confirmado": "999.888.777-66",
+    }
+    with patch(SERVICE, db):
+        atualizar_cadastro_pos_assinatura(ficha)
+    novo = db.insert.call_args[0][0]
+    assert novo["origem_lead"] == "ficha_visita"
+    assert novo["tipo_cliente"] == "locatario"
+    assert novo["cpf_cnpj"] == "999.888.777-66"  # CPF confirmado na assinatura
+    assert ficha["cliente_id"] == "cliente-novo-uuid"
+
+
+def test_pos_assinatura_vincula_existente_pelo_cpf_confirmado():
+    """O CPF confirmado na assinatura deduplica contra a base mesmo quando a
+    ficha foi gerada sem CPF."""
+    db = make_db_mock(
+        MagicMock(data={"tipo_negocio": "venda"}),               # imóvel
+        MagicMock(data=[CLIENTE_EXISTENTE]),                      # dedup por CPF
+        MagicMock(data=[{}]),                                     # update ficha.cliente_id
+        MagicMock(data={"cpf_cnpj": CLIENTE_EXISTENTE["cpf_cnpj"]}),  # CPF já preenchido
+        MagicMock(data={"id": "pref-1", "origem": "manual"}),     # pref manual → para
+    )
+    ficha = {
+        "id": "f1", "cliente_id": None, "imovel_id": IMOVEL_VENDA["id"],
+        "visitante_nome": "João da Silva",
+        "visitante_telefone": None, "visitante_email": None, "visitante_cpf": None,
+        "corretor_id": CORRETOR_ID,
+        "assinante_cpf_confirmado": "12345678900",
+    }
+    with patch(SERVICE, db):
+        atualizar_cadastro_pos_assinatura(ficha)
+    db.insert.assert_not_called()  # deduplicado — nenhum cadastro novo
+    assert ficha["cliente_id"] == CLIENTE_ID
 
 
 def test_pos_assinatura_completa_cpf_vazio_e_infere_perfil():

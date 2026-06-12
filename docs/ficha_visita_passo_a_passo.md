@@ -1,16 +1,12 @@
-# Ficha de Visita — passo a passo do corretor
 
-A ficha de visita é o termo digital que o visitante assina pelo celular antes de conhecer o imóvel. Ela protege a comissão (vincula o visitante à corretagem pelo prazo combinado, arts. 725/727 do Código Civil) também cadastra o visitante automaticamente como cliente e monta o perfil de imóvel que ele busca.
 
----
 
 ## Antes de começar: acessar o painel
 
-1. Abra **https://painel.morabilidade.com.br** (funciona no computador e no navegador do celular).
-2. Entre com o **e-mail e a senha** do seu usuário (cadastrado pelo administrador).
+1. Abra **https://painel.morabilidade.com** 
+2. Entre com o **e-mail e a senha** do seu usuário 
 3. No menu lateral, clique em **"Imóveis"** e abra o imóvel que será visitado.
 
-> Sem acesso? Peça ao administrador para criar seu usuário com perfil de corretor.
 
 ## 1. Gerar a ficha
 
@@ -18,7 +14,7 @@ A ficha de visita é o termo digital que o visitante assina pelo celular antes d
 2. Entre na aba **"Fichas de visita"**.
 3. Preencha os dados do visitante:
    - **Nome** (obrigatório)
-   - **WhatsApp** (obrigatório — é por ele que o link é enviado e o cliente é cadastrado)
+   - **WhatsApp** (obrigatório — é por ele que o link é enviado e o cliente é cadastrado quando assina)
    - **CPF** (recomendado — ajuda a não duplicar cadastros)
    - **E-mail** (opcional)
 4. Clique em **"Gerar e copiar link"**.
@@ -37,17 +33,16 @@ Na lista de **fichas emitidas**, use o botão de **WhatsApp** ao lado da ficha: 
 2. Lê a declaração e **informa o CPF**.
 3. **Assina com o dedo** na tela e confirma o aceite.
 
-Pronto: o sistema registra data/hora e IP, gera o **PDF assinado** e guarda tudo como prova. O visitante pode baixar o PDF na hora — e se abrir o link de novo depois, vê a confirmação com o botão de download.
+Pronto: o sistema registra data/hora e IP, gera o **PDF assinado** e guarda tudo como prova. O visitante pode baixar o PDF na hora. e se abrir o link de novo depois, vê a confirmação com o botão de download.
 
 ## 4. O que acontece sozinho (sem trabalho manual)
 
-**Na geração da ficha:**
+Tudo acontece **quando o visitante assina** (ficha que nunca é assinada não vira cadastro — a base de clientes só recebe quem realmente visitou):
+
 - O sistema procura o visitante na base de clientes pelo **CPF, telefone ou e-mail**.
 - Se já existe → a ficha é **vinculada ao cadastro existente** (nada é duplicado).
-- Se não existe → o visitante vira um **cliente novo** automaticamente, com origem "ficha de visita" e você como corretor responsável. Um aviso na tela confirma qual dos dois aconteceu.
-
-**Na assinatura:**
-- O CPF confirmado completa o cadastro do cliente (se estava em branco).
+- Se não existe → o visitante vira um **cliente novo** automaticamente, com origem "ficha de visita" e você como corretor responsável.
+- O CPF confirmado na assinatura completa o cadastro (se estava em branco).
 - O sistema monta o **perfil de busca** do cliente a partir de todas as visitas que ele já assinou: tipo de imóvel, cidade, bairros visitados, faixa de valor e dormitórios. Quanto mais visitas, mais preciso o perfil.
 - Esse perfil entra no módulo de **Oportunidades**: quando entrar um imóvel compatível, o cliente aparece como interessado.
 

@@ -85,7 +85,7 @@ function NovaFicha({ imovelId, onCriada }: { imovelId: string; onCriada: () => v
     }
     setSalvando(true);
     try {
-      const res = await api.post<{ token: string; cliente_id?: string | null; cliente_novo?: boolean | null }>(
+      const res = await api.post<{ token: string }>(
         "/fichas-visita",
         {
           imovel_id: imovelId,
@@ -98,11 +98,6 @@ function NovaFicha({ imovelId, onCriada }: { imovelId: string; onCriada: () => v
       // Já copia o link pro corretor mandar.
       try { await navigator.clipboard.writeText(linkAssinatura(res.data.token)); } catch {}
       toast.success("Ficha gerada — link de assinatura copiado.");
-      if (res.data.cliente_novo) {
-        toast.info("Visitante cadastrado automaticamente como cliente.");
-      } else if (res.data.cliente_id) {
-        toast.info("Visitante vinculado a um cliente já cadastrado.");
-      }
       setNome(""); setCpf(""); setTelefone(""); setEmail("");
       onCriada();
     } catch (err) {
@@ -118,7 +113,7 @@ function NovaFicha({ imovelId, onCriada }: { imovelId: string; onCriada: () => v
         <FileSignature className="w-4 h-4 text-[#585a4f]" />
         <h2 className="text-sm font-semibold text-slate-700">Gerar ficha de visita</h2>
         <span className="text-xs text-slate-400">
-          · o visitante assina pelo celular e entra no cadastro de clientes
+          · o visitante assina pelo celular e, ao assinar, entra no cadastro de clientes
         </span>
       </div>
 

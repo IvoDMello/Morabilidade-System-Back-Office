@@ -57,10 +57,6 @@ class FichaVisitaOut(BaseModel):
 
     created_at: str
 
-    # Apenas na resposta da criação (não persiste): True quando o visitante
-    # foi cadastrado automaticamente como cliente novo.
-    cliente_novo: Optional[bool] = None
-
     @field_serializer("imovel_valor")
     def _serializar_valor(self, v: Optional[Decimal]) -> Optional[float]:
         return float(v) if v is not None else None

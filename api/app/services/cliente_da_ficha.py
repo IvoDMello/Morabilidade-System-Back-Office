@@ -1,17 +1,18 @@
 """Integração da Ficha de Visita com o CRM de clientes.
 
-Dois ganchos, ambos best-effort — uma falha aqui nunca pode bloquear o fluxo
-jurídico da ficha (o router envolve as chamadas em try/except):
+Tudo acontece na ASSINATURA da ficha (best-effort — uma falha aqui nunca pode
+bloquear o fluxo jurídico; o router envolve a chamada em try/except):
 
-1. Ao gerar a ficha — `vincular_cliente_visitante`: procura um cliente já
-   cadastrado pelos dados do visitante (CPF → telefone → e-mail) e, se não
-   houver, cadastra um novo lead com origem 'ficha_visita'.
-2. Ao assinar — `atualizar_cadastro_pos_assinatura`: completa o CPF do
-   cadastro com o confirmado na assinatura e infere o perfil de imóvel
-   buscado (cliente_preferencias) agregando todas as fichas assinadas do
-   cliente. A inferência só cria/recalcula preferências com origem
-   'ficha_visita' — preferência manual do corretor nunca é sobrescrita
-   (ver migration 037).
+`atualizar_cadastro_pos_assinatura`:
+1. Se a ficha não tem cliente vinculado, procura um cadastro existente pelos
+   dados do visitante (CPF confirmado → telefone → e-mail) e, não havendo,
+   cadastra um novo lead com origem 'ficha_visita'. Visitante que nunca
+   assina NÃO entra no CRM — evita cadastros mortos de fichas abandonadas.
+2. Completa o CPF do cadastro com o confirmado na assinatura.
+3. Infere o perfil de imóvel buscado (cliente_preferencias) agregando todas
+   as fichas assinadas do cliente. A inferência só cria/recalcula
+   preferências com origem 'ficha_visita' — preferência manual do corretor
+   nunca é sobrescrita (ver migration 037).
 """
 import re
 import unicodedata
@@ -43,7 +44,7 @@ def _mesmo_telefone(a: Optional[str], b: Optional[str]) -> bool:
     return len(da) >= 8 and len(db) >= 8 and da[-8:] == db[-8:]
 
 
-# ── Geração da ficha: dedup/cadastro do visitante ────────────────────────────
+# ── Dedup/cadastro do visitante (chamado na assinatura) ─────────────────────
 
 def _encontrar_cliente(cpf: Optional[str], telefone: Optional[str], email: Optional[str]) -> Optional[dict]:
     """Deduplicação por dado de contato, nunca por nome (homônimos).
@@ -118,11 +119,31 @@ def vincular_cliente_visitante(
 # ── Assinatura: CPF confirmado + perfil inferido ─────────────────────────────
 
 def atualizar_cadastro_pos_assinatura(ficha: dict) -> None:
-    """Após a assinatura: completa o CPF do cadastro (se vazio) e recalcula o
-    perfil de busca inferido das visitas."""
+    """Após a assinatura: vincula/cadastra o cliente (se a ficha ainda não tem
+    vínculo), completa o CPF do cadastro (se vazio) e recalcula o perfil de
+    busca inferido das visitas."""
     cliente_id = ficha.get("cliente_id")
+
     if not cliente_id:
-        return
+        # Cadastro só na assinatura: ficha pendente/expirada não vira cliente.
+        imovel_res = (
+            supabase_admin.table("imoveis")
+            .select("tipo_negocio")
+            .eq("id", ficha.get("imovel_id"))
+            .maybe_single()
+            .execute()
+        )
+        imovel = imovel_res.data if imovel_res and imovel_res.data else {}
+        # O CPF confirmado na assinatura é mais confiável que o informado na geração.
+        payload = dict(ficha)
+        payload["visitante_cpf"] = ficha.get("assinante_cpf_confirmado") or ficha.get("visitante_cpf")
+        cliente_id, _ = vincular_cliente_visitante(payload, imovel, ficha.get("corretor_id"))
+        if not cliente_id:
+            return
+        supabase_admin.table("fichas_visita").update(
+            {"cliente_id": cliente_id}
+        ).eq("id", ficha["id"]).execute()
+        ficha["cliente_id"] = cliente_id
 
     cpf = _so_digitos(ficha.get("assinante_cpf_confirmado"))
     if cpf:
