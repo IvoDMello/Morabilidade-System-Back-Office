@@ -24,7 +24,7 @@ interface Props {
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://morabilidade.com";
 
-function linkAssinatura(token: string) {
+export function linkAssinatura(token: string) {
   return `${SITE_URL.replace(/\/$/, "")}/ficha/${token}`;
 }
 
@@ -34,7 +34,7 @@ function formatDataBR(iso?: string | null) {
   return isNaN(d.getTime()) ? "—" : d.toLocaleDateString("pt-BR");
 }
 
-const STATUS_STYLE: Record<Ficha["status"], { label: string; cls: string }> = {
+export const STATUS_STYLE: Record<Ficha["status"], { label: string; cls: string }> = {
   pendente: { label: "Aguardando assinatura", cls: "bg-amber-50 text-amber-700 border-amber-200" },
   assinada: { label: "Assinada", cls: "bg-emerald-50 text-emerald-700 border-emerald-200" },
   cancelada: { label: "Cancelada", cls: "bg-slate-100 text-slate-500 border-slate-200" },

@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
-  Stamp, Loader2, Download, Copy, Check, MessageCircle, Building2, ChevronLeft, ChevronRight,
+  Stamp, Loader2, Download, Copy, Check, MessageCircle, Building2,
+  ChevronLeft, ChevronRight, FileSignature,
 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
@@ -11,6 +12,7 @@ import {
   type Autorizacao, type Signatario,
   STATUS_STYLE, NEGOCIO_LABEL, linkAssinatura,
 } from "@/components/fichas/autorizacao-imovel";
+import { FichasGerais } from "@/components/fichas/fichas-gerais";
 
 const PAGE_SIZE = 50;
 
@@ -40,6 +42,55 @@ function vigencia(a: Autorizacao): { fim: Date; diasRestantes: number } | null {
 }
 
 export default function AutorizacoesPage() {
+  const [aba, setAba] = useState<"autorizacoes" | "fichas">("autorizacoes");
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        {aba === "autorizacoes"
+          ? <Stamp className="w-5 h-5 text-[#585a4f]" />
+          : <FileSignature className="w-5 h-5 text-[#585a4f]" />}
+        <h1 className="text-lg font-semibold text-slate-800">
+          {aba === "autorizacoes" ? "Autorizações de intermediação" : "Fichas de visita"}
+        </h1>
+      </div>
+      <p className="text-sm text-slate-500 -mt-2">
+        {aba === "autorizacoes"
+          ? <>Contratos de exclusividade assinados pelos proprietários, de todos os imóveis. Para gerar uma nova autorização, abra o imóvel e use a aba &quot;Autorização&quot;.</>
+          : <>Termos de visita de todos os imóveis. Para gerar uma nova ficha, abra o imóvel e use a aba &quot;Fichas de visita&quot;.</>}
+      </p>
+
+      {/* Sub-abas */}
+      <div className="flex gap-1 border-b border-slate-200">
+        <BotaoAba ativo={aba === "autorizacoes"} onClick={() => setAba("autorizacoes")}>
+          <Stamp className="w-3.5 h-3.5" /> Autorizações
+        </BotaoAba>
+        <BotaoAba ativo={aba === "fichas"} onClick={() => setAba("fichas")}>
+          <FileSignature className="w-3.5 h-3.5" /> Fichas de visita
+        </BotaoAba>
+      </div>
+
+      {aba === "autorizacoes" ? <ListaAutorizacoes /> : <FichasGerais />}
+    </div>
+  );
+}
+
+function BotaoAba({
+  ativo, onClick, children,
+}: { ativo: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button onClick={onClick}
+      className={`text-sm px-4 py-2 -mb-px flex items-center gap-1.5 border-b-2 transition ${
+        ativo
+          ? "border-[#585a4f] text-[#585a4f] font-medium"
+          : "border-transparent text-slate-500 hover:text-slate-700"
+      }`}>
+      {children}
+    </button>
+  );
+}
+
+function ListaAutorizacoes() {
   const [itens, setItens] = useState<Autorizacao[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtro, setFiltro] = useState("");
@@ -71,15 +122,6 @@ export default function AutorizacoesPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <Stamp className="w-5 h-5 text-[#585a4f]" />
-        <h1 className="text-lg font-semibold text-slate-800">Autorizações de intermediação</h1>
-      </div>
-      <p className="text-sm text-slate-500 -mt-2">
-        Contratos de exclusividade assinados pelos proprietários, de todos os imóveis.
-        Para gerar uma nova autorização, abra o imóvel e use a aba &quot;Autorização&quot;.
-      </p>
-
       <div className="flex items-center gap-2 flex-wrap">
         {FILTROS.map((f) => (
           <button key={f.key} onClick={() => { setFiltro(f.key); setPage(1); }}

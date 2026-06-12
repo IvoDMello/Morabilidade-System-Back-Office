@@ -86,6 +86,52 @@ def test_listar_fichas(client):
     assert len(res.json()) == 1
 
 
+def test_listar_fichas_filtro_periodo(client):
+    """Datas soltas viram intervalo inclusivo (até = fim do dia)."""
+    db = make_db_mock(MagicMock(data=[FICHA_ROW]))
+    with patch(ROUTER, db):
+        res = client.get("/fichas-visita?de=2026-06-01&ate=2026-06-30")
+    assert res.status_code == 200
+    db.gte.assert_called_with("created_at", "2026-06-01")
+    db.lte.assert_called_with("created_at", "2026-06-30T23:59:59")
+
+
+def test_resumo_por_imovel_agrega_e_ordena(client):
+    """Agrupa fichas por imóvel com contagens; mais visitado primeiro;
+    canceladas fora (filtradas na query via .neq)."""
+    outra = {
+        "imovel_id": "99999999-9999-9999-9999-999999999999",
+        "imovel_codigo": "IMO-00099", "imovel_endereco": "Rua B, 1",
+        "imovel_bairro": "Leblon", "imovel_cidade": "Rio de Janeiro / RJ",
+        "status": "pendente", "created_at": "2026-06-10T10:00:00+00:00",
+        "assinada_em": None,
+    }
+    base = {
+        "imovel_id": IMOVEL["id"], "imovel_codigo": "IMO-00042",
+        "imovel_endereco": "Rua A, 2", "imovel_bairro": "Ipanema",
+        "imovel_cidade": "Rio de Janeiro / RJ", "assinada_em": None,
+    }
+    fichas = [
+        dict(base, status="assinada", created_at="2026-06-01T10:00:00+00:00"),
+        dict(base, status="assinada", created_at="2026-06-05T10:00:00+00:00"),
+        dict(base, status="pendente", created_at="2026-06-08T10:00:00+00:00"),
+        outra,
+    ]
+    db = make_db_mock(MagicMock(data=fichas))
+    with patch(ROUTER, db):
+        res = client.get("/fichas-visita/resumo/por-imovel")
+    assert res.status_code == 200
+    corpo = res.json()
+    assert len(corpo) == 2
+    assert corpo[0]["imovel_codigo"] == "IMO-00042"  # mais visitado primeiro
+    assert corpo[0]["total"] == 3
+    assert corpo[0]["assinadas"] == 2
+    assert corpo[0]["pendentes"] == 1
+    assert corpo[0]["ultima_em"] == "2026-06-08T10:00:00+00:00"
+    assert corpo[1]["total"] == 1
+    db.neq.assert_called_with("status", "cancelada")
+
+
 def test_pdf_pendente_retorna_pdf(client):
     db = make_db_mock(MagicMock(data=FICHA_ROW))  # _buscar_ficha
     with patch(ROUTER, db):

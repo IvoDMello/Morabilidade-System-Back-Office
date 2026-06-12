@@ -160,11 +160,23 @@ def criar_ficha(body: FichaVisitaCreate, current_user: dict = Depends(require_ad
     return res.data[0]
 
 
+def _filtro_periodo(q, de: Optional[str], ate: Optional[str]):
+    """Filtra por created_at. Datas soltas (YYYY-MM-DD) viram intervalo inclusivo."""
+    if de:
+        q = q.gte("created_at", de)
+    if ate:
+        # Data sem hora: inclui o dia inteiro.
+        q = q.lte("created_at", f"{ate}T23:59:59" if len(ate) == 10 else ate)
+    return q
+
+
 @router.get("", response_model=List[FichaVisitaOut])
 def listar_fichas(
     imovel_id: Optional[str] = Query(None),
     cliente_id: Optional[str] = Query(None),
     status_filtro: Optional[str] = Query(None, alias="status"),
+    de: Optional[str] = Query(None, description="Emitidas a partir de (YYYY-MM-DD)"),
+    ate: Optional[str] = Query(None, description="Emitidas até (YYYY-MM-DD)"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     current_user: dict = Depends(get_current_user),
@@ -176,9 +188,56 @@ def listar_fichas(
         q = q.eq("cliente_id", cliente_id)
     if status_filtro:
         q = q.eq("status", status_filtro)
+    q = _filtro_periodo(q, de, ate)
     inicio = (page - 1) * page_size
     res = q.order("created_at", desc=True).range(inicio, inicio + page_size - 1).execute()
     return res.data or []
+
+
+@router.get("/resumo/por-imovel")
+def resumo_por_imovel(
+    de: Optional[str] = Query(None, description="Emitidas a partir de (YYYY-MM-DD)"),
+    ate: Optional[str] = Query(None, description="Emitidas até (YYYY-MM-DD)"),
+    current_user: dict = Depends(get_current_user),
+):
+    """Visitas agregadas por imóvel: total de fichas, quantas assinadas (visitas
+    comprovadas), pendentes e a data da última. Canceladas ficam de fora."""
+    q = (
+        supabase_admin.table("fichas_visita")
+        .select("imovel_id, imovel_codigo, imovel_endereco, imovel_bairro, "
+                "imovel_cidade, status, created_at, assinada_em")
+        .neq("status", "cancelada")
+    )
+    q = _filtro_periodo(q, de, ate)
+    fichas = q.execute().data or []
+
+    por_imovel: dict = {}
+    for f in fichas:
+        chave = f.get("imovel_id")
+        if not chave:
+            continue
+        grupo = por_imovel.setdefault(chave, {
+            "imovel_id": chave,
+            "imovel_codigo": f.get("imovel_codigo"),
+            "imovel_endereco": f.get("imovel_endereco"),
+            "imovel_bairro": f.get("imovel_bairro"),
+            "imovel_cidade": f.get("imovel_cidade"),
+            "total": 0,
+            "assinadas": 0,
+            "pendentes": 0,
+            "ultima_em": None,
+        })
+        grupo["total"] += 1
+        if f.get("status") == "assinada":
+            grupo["assinadas"] += 1
+        elif f.get("status") == "pendente":
+            grupo["pendentes"] += 1
+        criada = f.get("created_at")
+        if criada and (grupo["ultima_em"] is None or criada > grupo["ultima_em"]):
+            grupo["ultima_em"] = criada
+
+    resumo = sorted(por_imovel.values(), key=lambda g: g["total"], reverse=True)
+    return resumo
 
 
 @router.get("/{ficha_id}", response_model=FichaVisitaOut)
