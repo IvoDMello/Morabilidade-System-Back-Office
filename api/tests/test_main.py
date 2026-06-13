@@ -140,24 +140,3 @@ def test_relatorios_acessivel_por_corretor(corretor_client):
     with patch("app.main.supabase_admin", db):
         res = corretor_client.get("/relatorios")
     assert res.status_code == 200
-
-
-# ── Diagnóstico de IP (TEMPORÁRIO — remover com o endpoint, item 5) ───────────
-
-def test_ip_diagnostico_token_errado_retorna_404(anon_client):
-    from app.main import _DIAG_TOKEN
-    assert anon_client.get("/debug/ip-diagnostico").status_code == 404
-    assert anon_client.get("/debug/ip-diagnostico?token=errado").status_code == 404
-    assert _DIAG_TOKEN  # token não vazio (senão compare_digest aceitaria string vazia)
-
-
-def test_ip_diagnostico_token_certo_devolve_cadeia(anon_client):
-    from app.main import _DIAG_TOKEN
-    res = anon_client.get(
-        f"/debug/ip-diagnostico?token={_DIAG_TOKEN}",
-        headers={"X-Forwarded-For": "1.2.3.4, 10.0.0.1"},
-    )
-    assert res.status_code == 200
-    body = res.json()
-    assert body["x_forwarded_for_list"] == ["1.2.3.4", "10.0.0.1"]
-    assert set(body) >= {"client_host", "x_envoy_external_address", "cf_connecting_ip"}

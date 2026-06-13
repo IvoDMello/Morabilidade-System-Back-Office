@@ -1,5 +1,3 @@
-import hmac
-
 import sentry_sdk
 from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -119,29 +117,3 @@ def get_relatorios(current_user: dict = Depends(get_current_user)):
         )
         dados["video_clicks_total"] = video.count or 0
     return dados
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# DIAGNÓSTICO TEMPORÁRIO — REMOVER após calibrar o item 5 (IP de auditoria).
-# Mostra a cadeia de proxy que a API realmente recebe em produção, para decidir
-# de onde extrair o IP real do assinante (X-Envoy-External-Address vs X-Forwarded-For).
-# Acesse pelo 4G do celular: /debug/ip-diagnostico?token=<DIAG_TOKEN>
-# Token na URL (não exige login) porque só ecoa o IP de quem chama — nenhum dado
-# de terceiro. Mesmo assim é gateado para não ficar aberto a varredura.
-_DIAG_TOKEN = "diag_a7f3c9e1b2d4"
-
-
-@app.get("/debug/ip-diagnostico", include_in_schema=False)
-def ip_diagnostico(request: Request, token: str = ""):
-    if not hmac.compare_digest(token, _DIAG_TOKEN):
-        raise HTTPException(status_code=404, detail="Not found")
-    xff = request.headers.get("x-forwarded-for")
-    return {
-        "client_host": request.client.host if request.client else None,
-        "x_forwarded_for": xff,
-        "x_forwarded_for_list": [p.strip() for p in xff.split(",")] if xff else [],
-        "x_real_ip": request.headers.get("x-real-ip"),
-        "x_envoy_external_address": request.headers.get("x-envoy-external-address"),
-        "cf_connecting_ip": request.headers.get("cf-connecting-ip"),  # presente => Cloudflare na frente
-        "forwarded": request.headers.get("forwarded"),  # RFC 7239
-    }

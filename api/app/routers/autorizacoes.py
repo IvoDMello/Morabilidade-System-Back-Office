@@ -26,6 +26,7 @@ from app.schemas.autorizacao import (
     AutorizacaoOut,
     AutorizacaoPublicaView,
 )
+from app.services.assinatura import ip_do_request, montar_endereco, xff_bruto
 from app.services.autorizacao_pdf import gerar_autorizacao_pdf, montar_clausula_autorizacao
 from app.services.storage import baixar_documento, upload_pdf_bytes
 
@@ -37,22 +38,6 @@ TABELA_SIG = "autorizacao_signatarios"
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
-
-def _montar_endereco(imovel: dict) -> str:
-    partes = [imovel.get("logradouro")]
-    if imovel.get("numero"):
-        partes.append(str(imovel["numero"]))
-    if imovel.get("complemento"):
-        partes.append(str(imovel["complemento"]))
-    return ", ".join(p for p in partes if p)
-
-
-def _ip_do_request(request: Request) -> Optional[str]:
-    fwd = request.headers.get("x-forwarded-for")
-    if fwd:
-        return fwd.split(",")[0].strip()
-    return request.client.host if request.client else None
-
 
 def _hash_documento(auth: dict, signatarios: List[dict]) -> str:
     nucleo = {
@@ -217,7 +202,7 @@ def criar_autorizacao(body: AutorizacaoCreate, current_user: dict = Depends(requ
         "proprietario_email": principal["email"],
         "proprietario_endereco": (body.proprietario_endereco or prop.get("endereco") or "").strip() or None,
         "imovel_codigo": imovel.get("codigo"),
-        "imovel_endereco": _montar_endereco(imovel),
+        "imovel_endereco": montar_endereco(imovel),
         "imovel_bairro": imovel.get("bairro"),
         "imovel_cidade": imovel.get("cidade"),
         "imovel_matricula": imovel.get("numero_matricula"),
@@ -389,7 +374,8 @@ def assinar_autorizacao(request: Request, token: str, body: AutorizacaoAssinatur
     trilha = {
         "status": "assinada",
         "assinada_em": agora.isoformat(),
-        "assinante_ip": _ip_do_request(request),
+        "assinante_ip": ip_do_request(request),
+        "assinante_xff": xff_bruto(request),
         "assinante_user_agent": (request.headers.get("user-agent") or "")[:500],
         "assinante_geo": (body.geo or "").strip() or None,
         "assinante_assinatura_png": body.assinatura_png,
@@ -406,6 +392,7 @@ def assinar_autorizacao(request: Request, token: str, body: AutorizacaoAssinatur
         # Espelha a trilha do principal nas colunas legadas da autorização.
         update.update({
             "assinante_ip": trilha["assinante_ip"],
+            "assinante_xff": trilha["assinante_xff"],
             "assinante_user_agent": trilha["assinante_user_agent"],
             "assinante_geo": trilha["assinante_geo"],
             "assinante_assinatura_png": trilha["assinante_assinatura_png"],

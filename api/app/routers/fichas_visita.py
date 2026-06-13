@@ -29,6 +29,7 @@ from app.schemas.ficha_visita import (
     FichaVisitaOut,
     FichaVisitaPublicaView,
 )
+from app.services.assinatura import ip_do_request, montar_endereco, xff_bruto
 from app.services.cliente_da_ficha import atualizar_cadastro_pos_assinatura
 from app.services.ficha_visita_pdf import gerar_ficha_visita_pdf, montar_clausula
 from app.services.storage import baixar_documento, upload_pdf_bytes
@@ -41,24 +42,6 @@ TOKEN_VALIDADE_DIAS = 7
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
-
-def _montar_endereco(imovel: dict) -> str:
-    partes = [imovel.get("logradouro")]
-    if imovel.get("numero"):
-        partes.append(str(imovel["numero"]))
-    if imovel.get("complemento"):
-        partes.append(str(imovel["complemento"]))
-    return ", ".join(p for p in partes if p)
-
-
-def _ip_do_request(request: Request) -> Optional[str]:
-    """IP real do visitante. Atrás do proxy do Railway o `client.host` é o do
-    proxy — o IP de origem vem no X-Forwarded-For (primeiro da lista)."""
-    fwd = request.headers.get("x-forwarded-for")
-    if fwd:
-        return fwd.split(",")[0].strip()
-    return request.client.host if request.client else None
-
 
 def _hash_documento(ficha: dict) -> str:
     """SHA-256 sobre os dados essenciais assinados (não sobre o PDF renderizado,
@@ -139,7 +122,7 @@ def criar_ficha(body: FichaVisitaCreate, current_user: dict = Depends(require_ad
         "visitante_telefone": (body.visitante_telefone or "").strip() or None,
         "visitante_email": (body.visitante_email or "").strip() or None,
         "imovel_codigo": imovel.get("codigo"),
-        "imovel_endereco": _montar_endereco(imovel),
+        "imovel_endereco": montar_endereco(imovel),
         "imovel_bairro": imovel.get("bairro"),
         "imovel_cidade": imovel.get("cidade"),
         "imovel_valor": float(valor) if valor is not None else None,
@@ -334,7 +317,8 @@ def assinar_ficha(request: Request, token: str, body: FichaVisitaAssinaturaIn):
 
     agora = datetime.now(timezone.utc)
     ficha["assinada_em"] = agora.isoformat()
-    ficha["assinante_ip"] = _ip_do_request(request)
+    ficha["assinante_ip"] = ip_do_request(request)
+    ficha["assinante_xff"] = xff_bruto(request)
     ficha["assinante_user_agent"] = (request.headers.get("user-agent") or "")[:500]
     ficha["assinante_geo"] = (body.geo or "").strip() or None
     ficha["assinante_assinatura_png"] = body.assinatura_png
@@ -349,6 +333,7 @@ def assinar_ficha(request: Request, token: str, body: FichaVisitaAssinaturaIn):
         "status": "assinada",
         "assinada_em": ficha["assinada_em"],
         "assinante_ip": ficha["assinante_ip"],
+        "assinante_xff": ficha["assinante_xff"],
         "assinante_user_agent": ficha["assinante_user_agent"],
         "assinante_geo": ficha["assinante_geo"],
         "assinante_assinatura_png": ficha["assinante_assinatura_png"],

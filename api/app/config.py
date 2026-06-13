@@ -32,6 +32,14 @@ class Settings(BaseSettings):
     app_secret_key: str
     cors_origins: str = "http://localhost:3000,http://localhost:3001"
 
+    # Nº de proxies confiáveis na frente da API que ACRESCENTAM ao X-Forwarded-For.
+    # No Railway são 2 (borda + LB interno) — confirmado empiricamente: numa
+    # requisição real o XFF chegou com 2 entradas (cliente, borda). O IP real do
+    # cliente fica em xff[-trusted_proxy_hops]; entradas à esquerda são
+    # controláveis pelo cliente (spoof). Se um CDN (ex.: Cloudflare) entrar na
+    # frente, suba este valor. Usado na trilha de auditoria das assinaturas.
+    trusted_proxy_hops: int = 2
+
     # Monitoramento
     sentry_dsn: str = ""
 
