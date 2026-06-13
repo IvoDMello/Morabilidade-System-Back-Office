@@ -513,3 +513,66 @@ def test_disponiveis_publico_acessivel_sem_autenticacao(anon_client):
         res = anon_client.get("/imoveis/publico/disponiveis")
     assert res.status_code == 200
     assert res.json() == []
+
+
+# ── PII do proprietário NÃO pode vazar nos endpoints públicos (LGPD) ──────────
+
+# Snapshot do join de proprietário tal como o PostgREST devolve.
+_PROPRIETARIO_JOIN = {
+    "id": "cli-1",
+    "nome_completo": "Fulano de Tal",
+    "telefone": "11999998888",
+    "email": "fulano@example.com",
+}
+
+
+def test_disponiveis_publico_nao_vaza_proprietario(anon_client):
+    """O objeto proprietario (nome/telefone/e-mail) é PII de terceiro e não
+    pode aparecer na resposta pública consumida pelo site."""
+    imovel = {**IMOVEL_DB, "proprietario_id": "cli-1", "proprietario": _PROPRIETARIO_JOIN}
+    count_mock = MagicMock(count=1, data=[])
+    data_mock = MagicMock(count=1, data=[imovel])
+    db = make_db_mock(count_mock, data_mock)
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = anon_client.get("/imoveis/publico/disponiveis")
+    assert res.status_code == 200
+    item = res.json()[0]
+    assert item.get("proprietario") is None
+    assert item.get("proprietario_id") is None
+    assert "fulano@example.com" not in res.text
+
+
+def test_destaques_publico_nao_vaza_proprietario(anon_client):
+    imovel = {**IMOVEL_DB, "destaque_ordem": 1,
+              "proprietario_id": "cli-1", "proprietario": _PROPRIETARIO_JOIN}
+    db = make_db_mock(MagicMock(data=[imovel]))
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = anon_client.get("/imoveis/publico/destaques")
+    assert res.status_code == 200
+    item = res.json()[0]
+    assert item.get("proprietario") is None
+    assert item.get("proprietario_id") is None
+    assert "fulano@example.com" not in res.text
+
+
+def test_detalhe_publico_nao_vaza_proprietario_nem_internas(anon_client):
+    """O detalhe público oculta dados internos e o proprietário."""
+    imovel = {
+        **IMOVEL_DB,
+        "proprietario_id": "cli-1",
+        "proprietario": _PROPRIETARIO_JOIN,
+        "observacoes_internas": "segredo",
+        "numero_matricula": "12345",
+    }
+    id_lookup = MagicMock(data={"id": "imovel-uuid-1"})
+    detail = MagicMock(data=imovel)
+    db = make_db_mock(id_lookup, detail)
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = anon_client.get("/imoveis/publico/MB-00001")
+    assert res.status_code == 200
+    body = res.json()
+    assert body.get("proprietario") is None
+    assert body.get("observacoes_internas") is None
+    assert body.get("numero_matricula") is None
+    assert "fulano@example.com" not in res.text
+    assert "segredo" not in res.text

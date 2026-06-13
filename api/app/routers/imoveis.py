@@ -164,9 +164,14 @@ def _transformar_detalhe(raw: dict) -> dict:
 
 
 def _ocultar_internas(imovel: dict, current_user: Optional[dict]) -> dict:
-    """Remove campos internos/documentação se o acesso for público (sem usuário autenticado)."""
+    """Remove campos internos/documentação se o acesso for público (sem usuário autenticado).
+
+    Inclui os dados do proprietário (nome/telefone/e-mail): são PII de terceiros
+    e não podem trafegar nos endpoints públicos consumidos pelo site (LGPD).
+    """
     if not current_user:
-        for campo in ("observacoes_internas", "inscricao_municipal", "rgi", "numero_matricula"):
+        for campo in ("observacoes_internas", "inscricao_municipal", "rgi",
+                      "numero_matricula", "proprietario", "proprietario_id"):
             imovel.pop(campo, None)
     return imovel
 
@@ -275,7 +280,7 @@ def imoveis_disponiveis_publico(
         query = query.order("created_at", desc=True)
 
     result = query.range(offset, offset + page_size - 1).execute()
-    return [_transformar_lista(item) for item in result.data]
+    return [_ocultar_internas(_transformar_lista(item), None) for item in result.data]
 
 
 @router.get("/publico/destaques", response_model=List[ImovelListOut], tags=["Site Público"])
@@ -293,7 +298,7 @@ def imoveis_destaques_publico(request: Request):
         .order("destaque_ordem", desc=False)
         .execute()
     )
-    return [_transformar_lista(item) for item in (result.data or [])]
+    return [_ocultar_internas(_transformar_lista(item), None) for item in (result.data or [])]
 
 
 @router.get("/publico/{codigo}", response_model=ImovelOut, tags=["Site Público"])

@@ -28,12 +28,21 @@ describe("getBairros", () => {
     expect(result).toEqual([]);
   });
 
-  it("retorna lista vazia quando fetch lança erro de rede", async () => {
-    mockFetch.mockRejectedValueOnce(new Error("Network error"));
-    // getBairros não tem try/catch, mas o ok=false path é suficiente aqui.
-    // Se o fetch rejeitar, o chamador (Server Component) trata o erro.
-    // Verificamos apenas que a função chama o endpoint correto.
+  it("propaga o erro quando as duas tentativas de rede falham", async () => {
+    // fetchGetWithRetry retenta uma vez em erro de rede; se ambas falharem,
+    // o erro sobe para o chamador (Server Component) tratar.
+    mockFetch.mockRejectedValue(new Error("Network error"));
     await expect(getBairros()).rejects.toThrow("Network error");
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+  });
+
+  it("recupera no retry quando a primeira tentativa falha", async () => {
+    mockFetch
+      .mockRejectedValueOnce(new Error("Network error"))
+      .mockResolvedValueOnce({ ok: true, json: async () => ["Jardins"] });
+    const result = await getBairros();
+    expect(result).toEqual(["Jardins"]);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
   });
 
   it("chama o endpoint /imoveis/publico/bairros", async () => {
@@ -43,11 +52,11 @@ describe("getBairros", () => {
     expect(url).toContain("/imoveis/publico/bairros");
   });
 
-  it("usa revalidate de 1 hora para cache", async () => {
+  it("usa revalidate de 1 dia para cache (bairros mudam ~nunca)", async () => {
     mockFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
     await getBairros();
     const [, options] = mockFetch.mock.calls[0];
-    expect(options?.next?.revalidate).toBe(3600);
+    expect(options?.next?.revalidate).toBe(86400);
   });
 
   it("retorna lista vazia para array vazio da API", async () => {
