@@ -1,3 +1,6 @@
+import logging
+from contextlib import asynccontextmanager
+
 import sentry_sdk
 from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -31,12 +34,38 @@ from app.auth.router import router as auth_router
 from app.auth.dependencies import get_current_user
 from app.database import supabase_admin
 
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Liga o agendador interno (relatório de 30 dias) com a app.
+
+    Desligado nos testes (`app_env == "test"`) e via `scheduler_enabled=false`.
+    Import preguiçoso pra não puxar o APScheduler quando o scheduler está off.
+    """
+    scheduler_on = settings.app_env != "test" and settings.scheduler_enabled
+    if scheduler_on:
+        from app.scheduler import iniciar_scheduler, parar_scheduler
+        try:
+            iniciar_scheduler(hora=settings.relatorio_30dias_hora)
+        except Exception:  # noqa: BLE001 — o scheduler nunca deve impedir a app de subir
+            logger.exception("Falha ao iniciar o scheduler; seguindo sem ele.")
+            scheduler_on = False
+    try:
+        yield
+    finally:
+        if scheduler_on:
+            parar_scheduler()
+
+
 app = FastAPI(
     title="Morabilidade — API de Gestão Imobiliária",
     description="API interna do sistema de gestão. O site público consome os endpoints públicos para exibir imóveis em tempo real.",
     version="1.0.0",
     docs_url="/docs" if settings.app_env != "production" else None,
     redoc_url="/redoc" if settings.app_env != "production" else None,
+    lifespan=lifespan,
 )
 
 app.state.limiter = limiter

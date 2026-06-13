@@ -300,112 +300,61 @@ def enviar_relatorio_30dias(
     *,
     para: str,
     proprietario_nome: str,
+    proprietario_telefone: str | None,
     codigo_imovel: str,
     endereco: str,
     anunciado_em: str,
-    visitas: list[dict],
-    percepcoes: list[dict],
+    visitas_comprovadas: int,
+    pdf_bytes: bytes,
 ) -> None:
-    """Relatório de 30 dias enviado para acompanhamento interno (futuro: proprietário).
+    """Relatório de 30 dias: resumo curto no corpo + PDF completo em anexo.
 
-    - `visitas`: list of dicts com chaves visitante_nome, data_visita, comentario.
-    - `percepcoes`: list of dicts com chaves texto, created_at.
+    Destino interno por enquanto (futuro: proprietário) — por isso o corpo traz o
+    contato do proprietário, para facilitar o repasse manual. O detalhamento
+    (visitas e análise) vai no PDF gerado por [relatorio_30dias_pdf].
     """
-    nome_safe = html_lib.escape(proprietario_nome.split()[0] if proprietario_nome else "")
+    nome_safe = html_lib.escape(proprietario_nome or "—")
+    telefone_safe = html_lib.escape(proprietario_telefone or "—")
     codigo_safe = html_lib.escape(codigo_imovel)
     endereco_safe = html_lib.escape(endereco or "—")
     anunciado_safe = html_lib.escape(anunciado_em or "—")
 
-    qtd_visitas = len(visitas)
-
-    # Bloco de visitas
-    if visitas:
-        linhas_visitas = "".join(
-            f"""
-            <tr>
-              <td style="padding:8px 12px;border-top:1px solid #e6e6dd;font-size:13px;color:#666;width:110px;">
-                {html_lib.escape(str(v.get("data_visita") or ""))}
-              </td>
-              <td style="padding:8px 12px;border-top:1px solid #e6e6dd;font-size:14px;">
-                <strong>{html_lib.escape(v.get("visitante_nome") or "—")}</strong>
-                {("<div style='color:#666;font-size:13px;margin-top:2px;'>" + html_lib.escape(v.get("comentario") or "") + "</div>") if v.get("comentario") else ""}
-              </td>
-            </tr>"""
-            for v in visitas
-        )
-        bloco_visitas = f"""
-        <h3 style="margin:24px 0 8px;font-size:14px;color:{_OLIVE};text-transform:uppercase;letter-spacing:1px;">
-          Visitas no período
-        </h3>
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
-               style="border-collapse:separate;border-spacing:0;border:1px solid #e6e6dd;border-radius:8px;overflow:hidden;">
-          {linhas_visitas}
-        </table>
-        """
-    else:
-        bloco_visitas = """
-        <h3 style="margin:24px 0 8px;font-size:14px;color:#888;text-transform:uppercase;letter-spacing:1px;">
-          Visitas no período
-        </h3>
-        <p style="margin:0;color:#888;font-size:14px;">
-          Nenhuma visita foi registrada nos últimos 30 dias.
-        </p>
-        """
-
-    # Bloco de percepções (análise interna)
-    if percepcoes:
-        linhas_perc = "".join(
-            f"""
-            <div style="background:#fafaf6;border-left:3px solid {_GOLD};padding:12px 14px;
-                        border-radius:0 8px 8px 0;font-size:14px;line-height:1.6;color:#333;margin-bottom:10px;">
-              {html_lib.escape(p.get("texto") or "").replace(chr(10), "<br>")}
-              <div style="font-size:11px;color:#999;margin-top:6px;">
-                {html_lib.escape((p.get("created_at") or "")[:10])}
-              </div>
-            </div>"""
-            for p in percepcoes
-        )
-        bloco_perc = f"""
-        <h3 style="margin:24px 0 8px;font-size:14px;color:{_OLIVE};text-transform:uppercase;letter-spacing:1px;">
-          Nossa análise
-        </h3>
-        {linhas_perc}
-        """
-    else:
-        bloco_perc = ""
-
     conteudo = f"""
       <h1 style="margin:0 0 12px;font-size:22px;color:{_OLIVE};font-weight:600;">
-        Relatório de 30 dias
+        Relatório de 30 dias — {codigo_safe}
       </h1>
       <p style="margin:0 0 16px;">
-        Olá, {nome_safe}! Faz 30 dias desde que o imóvel <strong>{codigo_safe}</strong>
-        entrou em nosso portfólio. Segue um resumo do período.
+        O imóvel <strong>{codigo_safe}</strong> completou 30 dias em portfólio.
+        Resumo abaixo; o relatório completo (visitas e análise) está no PDF anexo.
       </p>
 
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
              style="border-collapse:separate;border-spacing:0;border:1px solid #e6e6dd;
                     border-radius:8px;overflow:hidden;font-size:14px;">
         <tr>
-          <td style="padding:10px 14px;background:#fafaf6;color:#666;width:140px;font-weight:600;">Imóvel</td>
-          <td style="padding:10px 14px;">{endereco_safe}</td>
+          <td style="padding:10px 14px;background:#fafaf6;color:#666;width:160px;font-weight:600;">Proprietário</td>
+          <td style="padding:10px 14px;">{nome_safe}</td>
+        </tr>
+        <tr>
+          <td style="padding:10px 14px;background:#fafaf6;color:#666;font-weight:600;border-top:1px solid #e6e6dd;">Telefone</td>
+          <td style="padding:10px 14px;border-top:1px solid #e6e6dd;">{telefone_safe}</td>
+        </tr>
+        <tr>
+          <td style="padding:10px 14px;background:#fafaf6;color:#666;font-weight:600;border-top:1px solid #e6e6dd;">Imóvel</td>
+          <td style="padding:10px 14px;border-top:1px solid #e6e6dd;">{endereco_safe}</td>
         </tr>
         <tr>
           <td style="padding:10px 14px;background:#fafaf6;color:#666;font-weight:600;border-top:1px solid #e6e6dd;">Anunciado em</td>
           <td style="padding:10px 14px;border-top:1px solid #e6e6dd;">{anunciado_safe}</td>
         </tr>
         <tr>
-          <td style="padding:10px 14px;background:#fafaf6;color:#666;font-weight:600;border-top:1px solid #e6e6dd;">Visitas no período</td>
-          <td style="padding:10px 14px;border-top:1px solid #e6e6dd;color:{_OLIVE};font-weight:700;">{qtd_visitas}</td>
+          <td style="padding:10px 14px;background:#fafaf6;color:#666;font-weight:600;border-top:1px solid #e6e6dd;">Visitas comprovadas</td>
+          <td style="padding:10px 14px;border-top:1px solid #e6e6dd;color:{_OLIVE};font-weight:700;">{visitas_comprovadas}</td>
         </tr>
       </table>
 
-      {bloco_visitas}
-      {bloco_perc}
-
       <p style="margin:28px 0 0;color:#777;font-size:13px;">
-        Continuamos trabalhando na divulgação do imóvel. Em caso de dúvidas,
-        responda este e-mail.
+        Detalhamento das visitas e da nossa análise no PDF em anexo.
       </p>
     """
     html = _render_template(
@@ -413,7 +362,12 @@ def enviar_relatorio_30dias(
         preheader=f"Resumo dos primeiros 30 dias de {codigo_imovel}.",
         conteudo_html=conteudo,
     )
-    enviar_email(para, f"Relatório 30 dias — {codigo_imovel}", html)
+    enviar_email(
+        para,
+        f"Relatório 30 dias — {codigo_imovel}",
+        html,
+        attachments=[{"filename": f"relatorio-30dias-{codigo_imovel}.pdf", "content": pdf_bytes}],
+    )
 
 
 def enviar_notificacao_lead(

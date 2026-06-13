@@ -9,7 +9,7 @@ import csv
 import hmac
 import io
 import logging
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, File, Header, HTTPException, UploadFile, status
@@ -19,6 +19,8 @@ from app.auth.dependencies import get_current_user, require_admin
 from app.config import settings
 from app.database import supabase_admin
 from app.services.email import enviar_relatorio_30dias
+from app.services.pdf_base import fmt_dt
+from app.services.relatorio_30dias_pdf import gerar_relatorio_30dias_pdf
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -234,17 +236,29 @@ def job_relatorio_30dias(
     """
     if not settings.cron_token or not hmac.compare_digest(x_cron_token, settings.cron_token):
         raise HTTPException(status_code=403, detail="Token inválido.")
+    return processar_relatorios_30dias()
 
-    corte = (datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0))
-    # 30 dias atrás
-    from datetime import timedelta
-    limite = (corte - timedelta(days=30)).isoformat()
+
+def processar_relatorios_30dias() -> dict:
+    """Núcleo do job: varre os candidatos e envia o relatório de cada um.
+
+    Chamado tanto pelo endpoint HTTP (`job_relatorio_30dias`, p/ disparo manual
+    ou cron externo) quanto pelo agendador interno (`app.scheduler`). Idempotente
+    via `relatorio_30dias_enviado_em` — reexecutar não reenvia.
+    """
+    corte = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    # Janela [30, 30+N] dias: pega quem ACABOU de cruzar os 30 dias, não o
+    # histórico antigo. limite_sup = pelo menos 30 dias; limite_inf = no máximo
+    # 30+N dias.
+    limite_sup = (corte - timedelta(days=30)).isoformat()
+    limite_inf = (corte - timedelta(days=30 + settings.relatorio_30dias_janela_dias)).isoformat()
 
     candidatos = (
         supabase_admin.table("imoveis")
-        .select("id, codigo, logradouro, numero, bairro, cidade, created_at")
+        .select("id, codigo, logradouro, numero, bairro, cidade, created_at, proprietario_id")
         .eq("disponibilidade", "disponivel")
-        .lte("created_at", limite)
+        .lte("created_at", limite_sup)
+        .gte("created_at", limite_inf)
         .is_("relatorio_30dias_enviado_em", "null")
         .execute()
         .data or []
@@ -261,6 +275,11 @@ def job_relatorio_30dias(
             logger.exception("Falha ao enviar relatório 30 dias do imóvel %s", imovel.get("codigo"))
             erros.append({"codigo": imovel.get("codigo"), "erro": str(e)})
 
+    if candidatos:
+        logger.info(
+            "Relatório 30 dias: %d candidato(s), %d enviado(s), %d erro(s).",
+            len(candidatos), enviados, len(erros),
+        )
     return {"candidatos": len(candidatos), "enviados": enviados, "erros": erros}
 
 
@@ -268,25 +287,37 @@ def _processar_relatorio(imovel: dict) -> None:
     imovel_id = imovel["id"]
     codigo = imovel["codigo"]
 
-    # Proprietário (apenas para personalizar o cabeçalho; o destinatário é interno)
-    prop_resp = (
-        supabase_admin.table("clientes")
-        .select("nome_completo")
-        .eq("imovel_codigo", codigo)
-        .eq("tipo_cliente", "proprietario")
-        .limit(1)
-        .execute()
-    )
-    proprietario_nome = (prop_resp.data or [{}])[0].get("nome_completo") or "Proprietário(a)"
+    # Proprietário pelo FK do imóvel (migration 024). Nome e telefone vão no
+    # relatório para facilitar o repasse manual (destino interno por enquanto).
+    proprietario_nome = "Proprietário(a)"
+    proprietario_telefone = None
+    if imovel.get("proprietario_id"):
+        prop_resp = (
+            supabase_admin.table("clientes")
+            .select("nome_completo, telefone")
+            .eq("id", imovel["proprietario_id"])
+            .maybe_single()
+            .execute()
+        )
+        if prop_resp and prop_resp.data:
+            proprietario_nome = prop_resp.data.get("nome_completo") or proprietario_nome
+            proprietario_telefone = prop_resp.data.get("telefone")
 
-    visitas = (
-        supabase_admin.table("imovel_visitas")
-        .select("visitante_nome, data_visita, comentario")
+    # Visitas comprovadas = fichas de visita ASSINADAS (substituem o cadastro
+    # manual da aba de acompanhamento, agora aposentado).
+    fichas = (
+        supabase_admin.table("fichas_visita")
+        .select("visitante_nome, assinada_em")
         .eq("imovel_id", imovel_id)
-        .order("data_visita", desc=True)
+        .eq("status", "assinada")
+        .order("assinada_em", desc=True)
         .execute()
         .data or []
     )
+    visitas = [
+        {"nome": f.get("visitante_nome"), "data": f.get("assinada_em")}
+        for f in fichas
+    ]
 
     percepcoes = (
         supabase_admin.table("imovel_percepcoes")
@@ -304,17 +335,29 @@ def _processar_relatorio(imovel: dict) -> None:
         imovel.get("cidade"),
     ]))
 
-    anunciado_em = (imovel.get("created_at") or "")[:10]
+    anunciado_em = fmt_dt(imovel.get("created_at"))
+
+    pdf_bytes = gerar_relatorio_30dias_pdf({
+        "proprietario_nome": proprietario_nome,
+        "proprietario_telefone": proprietario_telefone,
+        "codigo": codigo,
+        "endereco": endereco,
+        "anunciado_em": anunciado_em,
+        "visitas_comprovadas": len(visitas),
+        "visitas": visitas,
+        "percepcoes": percepcoes,
+    })
 
     for destino in RELATORIO_30_DESTINATARIOS:
         enviar_relatorio_30dias(
             para=destino,
             proprietario_nome=proprietario_nome,
+            proprietario_telefone=proprietario_telefone,
             codigo_imovel=codigo,
             endereco=endereco,
             anunciado_em=anunciado_em,
-            visitas=visitas,
-            percepcoes=percepcoes,
+            visitas_comprovadas=len(visitas),
+            pdf_bytes=pdf_bytes,
         )
 
     supabase_admin.table("imoveis").update(

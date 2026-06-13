@@ -48,6 +48,17 @@ class Settings(BaseSettings):
     # interno fica inacessível.
     cron_token: str = ""
 
+    # Agendador interno (APScheduler) que dispara o relatório de 30 dias
+    # diariamente, dentro do próprio processo web. `scheduler_enabled=false`
+    # desliga (kill-switch de ops). Hora no fuso America/Sao_Paulo.
+    scheduler_enabled: bool = True
+    relatorio_30dias_hora: int = 9
+    # Janela de captação: só envia para imóveis que cruzaram os 30 dias nos
+    # últimos N dias (idade entre 30 e 30+N). Mantém o histórico antigo de fora
+    # (evita disparar o portfólio inteiro no 1º run) e dá folga p/ execução
+    # perdida sem reenviar (o flag relatorio_30dias_enviado_em garante 1×).
+    relatorio_30dias_janela_dias: int = 7
+
     @model_validator(mode="after")
     def validate_cors_production(self) -> "Settings":
         if self.app_env == "production" and "localhost" in self.cors_origins:
