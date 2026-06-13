@@ -11,14 +11,11 @@ Fluxo:
 Assinatura eletrônica simples, válida entre particulares (art. 107 do Código
 Civil + Lei nº 14.063/2020).
 """
-import hashlib
-import json
 import logging
-import secrets
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
 from app.auth.dependencies import get_current_user, require_admin
 from app.database import supabase_admin
@@ -29,7 +26,16 @@ from app.schemas.ficha_visita import (
     FichaVisitaOut,
     FichaVisitaPublicaView,
 )
-from app.services.assinatura import ip_do_request, montar_endereco, xff_bruto
+from app.services.assinatura import (
+    expira_em,
+    gerar_token,
+    ip_do_request,
+    montar_endereco,
+    pdf_response,
+    sha256_canonico,
+    token_expirado,
+    xff_bruto,
+)
 from app.services.cliente_da_ficha import atualizar_cadastro_pos_assinatura
 from app.services.ficha_visita_pdf import gerar_ficha_visita_pdf, montar_clausula
 from app.services.storage import baixar_documento, upload_pdf_bytes
@@ -37,8 +43,6 @@ from app.services.storage import baixar_documento, upload_pdf_bytes
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
-
-TOKEN_VALIDADE_DIAS = 7
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -57,8 +61,7 @@ def _hash_documento(ficha: dict) -> str:
         "ip": ficha.get("assinante_ip"),
         "geo": ficha.get("assinante_geo"),
     }
-    canonico = json.dumps(nucleo, sort_keys=True, ensure_ascii=False)
-    return hashlib.sha256(canonico.encode("utf-8")).hexdigest()
+    return sha256_canonico(nucleo)
 
 
 def _buscar_ficha(ficha_id: str) -> dict:
@@ -132,8 +135,8 @@ def criar_ficha(body: FichaVisitaCreate, current_user: dict = Depends(require_ad
         "clausula_texto": montar_clausula(body.prazo_meses),
         "prazo_meses": body.prazo_meses,
         "status": "pendente",
-        "token": secrets.token_urlsafe(32),
-        "token_expira_em": (agora + timedelta(days=TOKEN_VALIDADE_DIAS)).isoformat(),
+        "token": gerar_token(),
+        "token_expira_em": expira_em(agora),
     }
 
     # O vínculo/cadastro do visitante no CRM acontece só na ASSINATURA
@@ -250,14 +253,7 @@ def baixar_pdf(ficha_id: str, current_user: dict = Depends(get_current_user)):
         # Pendente/cancelada: preview gerado na hora.
         pdf_bytes = gerar_ficha_visita_pdf(ficha, assinada=False)
     nome = f"ficha-visita-{ficha.get('imovel_codigo') or ficha_id[:8]}.pdf"
-    return Response(
-        content=pdf_bytes,
-        media_type="application/pdf",
-        headers={
-            "Content-Disposition": f'attachment; filename="{nome}"',
-            "Access-Control-Expose-Headers": "Content-Disposition",
-        },
-    )
+    return pdf_response(pdf_bytes, nome)
 
 
 @router.post("/{ficha_id}/cancelar", response_model=FichaVisitaOut)
@@ -289,14 +285,9 @@ def _ficha_assinavel(token: str) -> dict:
         return ficha
     if ficha.get("status") == "cancelada":
         raise HTTPException(status_code=410, detail="Esta ficha foi cancelada.")
-    expira = ficha.get("token_expira_em")
-    if expira:
-        try:
-            if datetime.fromisoformat(str(expira).replace("Z", "+00:00")) < datetime.now(timezone.utc):
-                supabase_admin.table("fichas_visita").update({"status": "expirada"}).eq("id", ficha["id"]).execute()
-                raise HTTPException(status_code=410, detail="O link de assinatura expirou.")
-        except ValueError:
-            pass
+    if token_expirado(ficha.get("token_expira_em")):
+        supabase_admin.table("fichas_visita").update({"status": "expirada"}).eq("id", ficha["id"]).execute()
+        raise HTTPException(status_code=410, detail="O link de assinatura expirou.")
     return ficha
 
 
@@ -369,11 +360,4 @@ def baixar_pdf_publico(request: Request, token: str):
         raise HTTPException(status_code=409, detail="Ficha ainda não assinada.")
     pdf_bytes = baixar_documento(ficha["pdf_path"])
     nome = f"ficha-visita-{ficha.get('imovel_codigo') or ficha['id'][:8]}.pdf"
-    return Response(
-        content=pdf_bytes,
-        media_type="application/pdf",
-        headers={
-            "Content-Disposition": f'attachment; filename="{nome}"',
-            "Access-Control-Expose-Headers": "Content-Disposition",
-        },
-    )
+    return pdf_response(pdf_bytes, nome)

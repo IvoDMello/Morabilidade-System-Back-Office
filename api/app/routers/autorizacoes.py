@@ -9,13 +9,10 @@ Suporta múltiplos signatários (migration 038): cada proprietário tem o própr
 token/link e trilha individual; a autorização fica 'parcial' enquanto faltar
 assinatura e 'assinada' quando todos assinarem.
 """
-import hashlib
-import json
-import secrets
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from typing import List, Optional, Tuple
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
 from app.auth.dependencies import get_current_user, require_admin
 from app.database import supabase_admin
@@ -26,13 +23,21 @@ from app.schemas.autorizacao import (
     AutorizacaoOut,
     AutorizacaoPublicaView,
 )
-from app.services.assinatura import ip_do_request, montar_endereco, xff_bruto
+from app.services.assinatura import (
+    expira_em,
+    gerar_token,
+    ip_do_request,
+    montar_endereco,
+    pdf_response,
+    sha256_canonico,
+    token_expirado,
+    xff_bruto,
+)
 from app.services.autorizacao_pdf import gerar_autorizacao_pdf, montar_clausula_autorizacao
 from app.services.storage import baixar_documento, upload_pdf_bytes
 
 router = APIRouter()
 
-TOKEN_VALIDADE_DIAS = 7
 TABELA = "autorizacoes_intermediacao"
 TABELA_SIG = "autorizacao_signatarios"
 
@@ -58,8 +63,7 @@ def _hash_documento(auth: dict, signatarios: List[dict]) -> str:
             for s in sorted(signatarios, key=lambda s: s.get("ordem") or 0)
         ],
     }
-    canonico = json.dumps(nucleo, sort_keys=True, ensure_ascii=False)
-    return hashlib.sha256(canonico.encode("utf-8")).hexdigest()
+    return sha256_canonico(nucleo)
 
 
 def _buscar(auth_id: str) -> dict:
@@ -186,7 +190,7 @@ def criar_autorizacao(body: AutorizacaoCreate, current_user: dict = Depends(requ
         prazo_dias=body.prazo_dias,
     )
 
-    tokens = [secrets.token_urlsafe(32) for _ in signatarios_in]
+    tokens = [gerar_token() for _ in signatarios_in]
     principal = signatarios_in[0]
 
     agora = datetime.now(timezone.utc)
@@ -218,7 +222,7 @@ def criar_autorizacao(body: AutorizacaoCreate, current_user: dict = Depends(requ
         "status": "pendente",
         # O token da autorização é o do signatário principal (links legados).
         "token": tokens[0],
-        "token_expira_em": (agora + timedelta(days=TOKEN_VALIDADE_DIAS)).isoformat(),
+        "token_expira_em": expira_em(agora),
     }
 
     res = supabase_admin.table(TABELA).insert(payload).execute()
@@ -284,14 +288,7 @@ def baixar_pdf(auth_id: str, current_user: dict = Depends(get_current_user)):
         auth["signatarios"] = _signatarios_de(auth_id)
         pdf_bytes = gerar_autorizacao_pdf(auth, assinada=False)
     nome = f"autorizacao-{auth.get('imovel_codigo') or auth_id[:8]}.pdf"
-    return Response(
-        content=pdf_bytes,
-        media_type="application/pdf",
-        headers={
-            "Content-Disposition": f'attachment; filename="{nome}"',
-            "Access-Control-Expose-Headers": "Content-Disposition",
-        },
-    )
+    return pdf_response(pdf_bytes, nome)
 
 
 @router.post("/{auth_id}/cancelar", response_model=AutorizacaoOut)
@@ -330,14 +327,9 @@ def _checar_disponivel(auth: dict) -> None:
         raise HTTPException(status_code=410, detail="O link de assinatura expirou.")
     if auth.get("status") == "assinada":
         return
-    expira = auth.get("token_expira_em")
-    if expira:
-        try:
-            if datetime.fromisoformat(str(expira).replace("Z", "+00:00")) < datetime.now(timezone.utc):
-                supabase_admin.table(TABELA).update({"status": "expirada"}).eq("id", auth["id"]).execute()
-                raise HTTPException(status_code=410, detail="O link de assinatura expirou.")
-        except ValueError:
-            pass
+    if token_expirado(auth.get("token_expira_em")):
+        supabase_admin.table(TABELA).update({"status": "expirada"}).eq("id", auth["id"]).execute()
+        raise HTTPException(status_code=410, detail="O link de assinatura expirou.")
 
 
 def _view_publica(sig: dict, auth: dict, signatarios: Optional[List[dict]] = None) -> dict:
@@ -430,11 +422,4 @@ def baixar_pdf_publico(request: Request, token: str):
         raise HTTPException(status_code=409, detail="Autorização ainda não assinada por todos os proprietários.")
     pdf_bytes = baixar_documento(auth["pdf_path"])
     nome = f"autorizacao-{auth.get('imovel_codigo') or auth['id'][:8]}.pdf"
-    return Response(
-        content=pdf_bytes,
-        media_type="application/pdf",
-        headers={
-            "Content-Disposition": f'attachment; filename="{nome}"',
-            "Access-Control-Expose-Headers": "Content-Disposition",
-        },
-    )
+    return pdf_response(pdf_bytes, nome)

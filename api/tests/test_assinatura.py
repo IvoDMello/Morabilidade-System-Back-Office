@@ -1,8 +1,18 @@
-"""Testes dos helpers compartilhados de assinatura (IP real + cadeia de proxy)."""
+"""Testes dos helpers compartilhados de assinatura (IP, proxy, token, hash, PDF)."""
+from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock
 
 from app.services import assinatura
-from app.services.assinatura import ip_do_request, montar_endereco, xff_bruto
+from app.services.assinatura import (
+    expira_em,
+    gerar_token,
+    ip_do_request,
+    montar_endereco,
+    pdf_response,
+    sha256_canonico,
+    token_expirado,
+    xff_bruto,
+)
 
 
 def _request(xff=None, client_host="10.0.0.1"):
@@ -86,3 +96,50 @@ def test_montar_endereco_completo():
 
 def test_montar_endereco_ignora_vazios():
     assert montar_endereco({"logradouro": "Rua A", "numero": None}) == "Rua A"
+
+
+# ── Token de assinatura ───────────────────────────────────────────────────────
+
+def test_gerar_token_unico_e_urlsafe():
+    a, b = gerar_token(), gerar_token()
+    assert a != b
+    assert len(a) >= 32
+    assert all(c.isalnum() or c in "-_" for c in a)
+
+
+def test_expira_em_soma_dias():
+    agora = datetime(2026, 6, 13, 12, 0, tzinfo=timezone.utc)
+    assert expira_em(agora, dias=7) == datetime(2026, 6, 20, 12, 0, tzinfo=timezone.utc).isoformat()
+
+
+def test_token_expirado_cenarios():
+    agora = datetime(2026, 6, 13, 12, 0, tzinfo=timezone.utc)
+    passado = (agora - timedelta(days=1)).isoformat()
+    futuro = (agora + timedelta(days=1)).isoformat()
+    assert token_expirado(passado, agora) is True
+    assert token_expirado(futuro, agora) is False
+    assert token_expirado(None, agora) is False         # sem data não bloqueia
+    assert token_expirado("data-invalida", agora) is False
+    # Aceita sufixo Z (UTC) sem quebrar.
+    assert token_expirado(passado.replace("+00:00", "Z"), agora) is True
+
+
+# ── Hash canônico ─────────────────────────────────────────────────────────────
+
+def test_sha256_canonico_estavel_independe_da_ordem_das_chaves():
+    h1 = sha256_canonico({"a": 1, "b": 2})
+    h2 = sha256_canonico({"b": 2, "a": 1})
+    assert h1 == h2
+    assert len(h1) == 64
+    # Mudar um valor muda o hash.
+    assert sha256_canonico({"a": 1, "b": 3}) != h1
+
+
+# ── Resposta PDF ──────────────────────────────────────────────────────────────
+
+def test_pdf_response_headers_e_corpo():
+    resp = pdf_response(b"%PDF-1.4", "doc.pdf")
+    assert resp.media_type == "application/pdf"
+    assert resp.body == b"%PDF-1.4"
+    assert resp.headers["content-disposition"] == 'attachment; filename="doc.pdf"'
+    assert "Content-Disposition" in resp.headers["access-control-expose-headers"]
