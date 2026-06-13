@@ -283,6 +283,42 @@ def processar_relatorios_30dias() -> dict:
     return {"candidatos": len(candidatos), "enviados": enviados, "erros": erros}
 
 
+@router.post("/{imovel_id}/relatorio-30dias/enviar")
+def enviar_relatorio_manual(
+    imovel_id: str,
+    current_user: dict = Depends(require_admin),
+):
+    """Envia (ou reenvia) o relatório de 30 dias deste imóvel agora, sob demanda.
+
+    Ignora a janela de idade do job automático — serve para testar o fluxo e
+    para mandar uma atualização avulsa. Marca `relatorio_30dias_enviado_em`, então
+    o job automático não reenviará depois.
+    """
+    res = (
+        supabase_admin.table("imoveis")
+        .select("id, codigo, logradouro, numero, bairro, cidade, created_at, proprietario_id")
+        .eq("id", imovel_id)
+        .maybe_single()
+        .execute()
+    )
+    if not res or not res.data:
+        raise HTTPException(status_code=404, detail="Imóvel não encontrado.")
+
+    _processar_relatorio(res.data)
+
+    enviado = (
+        supabase_admin.table("imoveis")
+        .select("relatorio_30dias_enviado_em")
+        .eq("id", imovel_id)
+        .maybe_single()
+        .execute()
+    )
+    return {
+        "status": "enviado",
+        "relatorio_30dias_enviado_em": (enviado.data or {}).get("relatorio_30dias_enviado_em"),
+    }
+
+
 def _processar_relatorio(imovel: dict) -> None:
     imovel_id = imovel["id"]
     codigo = imovel["codigo"]

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Trash2, Plus, MessageSquare, MailCheck } from "lucide-react";
+import { Trash2, Plus, MessageSquare, MailCheck, Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
@@ -31,11 +31,39 @@ function diasDesde(iso: string): number {
   return Math.floor((Date.now() - d.getTime()) / 86_400_000);
 }
 
+/** Data em que o imóvel completa 30 dias (cadastro + 30 dias). */
+function dataDisponivel(iso: string): string {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "—";
+  d.setDate(d.getDate() + 30);
+  return d.toLocaleDateString("pt-BR");
+}
+
 export function AcompanhamentoImovel({ imovelId, createdAt, relatorio30diasEnviadoEm }: Props) {
   const isAdmin = useAuthStore((s) => (s.user?.perfil === "admin" || s.user?.perfil === "corretor"));
 
   const [percepcoes, setPercepcoes] = useState<Percepcao[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Espelha o prop, mas atualiza na hora após um envio manual.
+  const [enviadoEm, setEnviadoEm] = useState<string | null>(relatorio30diasEnviadoEm ?? null);
+  useEffect(() => { setEnviadoEm(relatorio30diasEnviadoEm ?? null); }, [relatorio30diasEnviadoEm]);
+  const [enviando, setEnviando] = useState(false);
+
+  async function enviarRelatorio() {
+    setEnviando(true);
+    try {
+      const res = await api.post<{ relatorio_30dias_enviado_em: string | null }>(
+        `/imoveis/${imovelId}/relatorio-30dias/enviar`,
+      );
+      setEnviadoEm(res.data.relatorio_30dias_enviado_em ?? new Date().toISOString());
+      toast.success("Relatório enviado por e-mail.");
+    } catch {
+      toast.error("Erro ao enviar o relatório.");
+    } finally {
+      setEnviando(false);
+    }
+  }
 
   const carregar = useCallback(async () => {
     if (!isAdmin) {
@@ -60,31 +88,49 @@ export function AcompanhamentoImovel({ imovelId, createdAt, relatorio30diasEnvia
 
   const diasAnunciado = diasDesde(createdAt);
   const dias30Restantes = Math.max(0, 30 - diasAnunciado);
+  const disponivel = diasAnunciado >= 30;
+
+  // Cor do card por estado: enviado = verde, disponível = âmbar, contagem = slate.
+  const cor = enviadoEm
+    ? "bg-emerald-50/60 border-emerald-200 text-emerald-600"
+    : disponivel
+      ? "bg-amber-50/60 border-amber-200 text-amber-600"
+      : "bg-slate-50 border-slate-200 text-slate-500";
 
   return (
     <div className="space-y-4">
       {/* Status do relatório 30 dias */}
-      <div className="bg-amber-50/60 border border-amber-200 rounded-lg p-3 flex items-start gap-3 text-sm">
-        <MailCheck className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
-        <div className="text-slate-700">
-          {relatorio30diasEnviadoEm ? (
+      <div className={`border rounded-lg p-3 flex items-start gap-3 text-sm ${cor}`}>
+        <MailCheck className="w-4 h-4 mt-0.5 shrink-0" />
+        <div className="flex-1 min-w-0 text-slate-700">
+          {enviadoEm ? (
             <>
-              <strong>Relatório de 30 dias enviado</strong> em{" "}
-              {formatDataBR(relatorio30diasEnviadoEm)}.
+              <strong>Relatório de 30 dias enviado</strong> em {formatDataBR(enviadoEm)}.
             </>
-          ) : diasAnunciado >= 30 ? (
+          ) : disponivel ? (
             <>
-              <strong>Relatório de 30 dias pendente</strong> — será disparado
-              automaticamente na próxima execução do job.
+              <strong>Relatório de 30 dias disponível</strong> — será enviado
+              automaticamente no próximo disparo (09:00), ou envie agora.
             </>
           ) : (
             <>
-              Relatório automático será enviado em{" "}
-              <strong>{dias30Restantes} dia{dias30Restantes === 1 ? "" : "s"}</strong>{" "}
-              (30 dias após o cadastro).
+              Faltam <strong>{dias30Restantes} dia{dias30Restantes === 1 ? "" : "s"}</strong>{" "}
+              para o relatório de 30 dias (disponível em {dataDisponivel(createdAt)}).
             </>
           )}
         </div>
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={enviarRelatorio}
+            disabled={enviando}
+            className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-[#585a4f] text-white hover:bg-[#4a4c42] disabled:opacity-60"
+            title="Gera o PDF e envia o relatório por e-mail agora"
+          >
+            {enviando ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+            {enviadoEm ? "Reenviar" : "Enviar agora"}
+          </button>
+        )}
       </div>
 
       {/* Percepções (apenas admin) */}
