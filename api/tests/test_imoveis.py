@@ -1,5 +1,5 @@
 """Testes dos endpoints de imóveis."""
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from tests.conftest import make_db_mock
 
@@ -576,3 +576,119 @@ def test_detalhe_publico_nao_vaza_proprietario_nem_internas(anon_client):
     assert body.get("numero_matricula") is None
     assert "fulano@example.com" not in res.text
     assert "segredo" not in res.text
+
+
+# ── Gestão de fotos (upload / remoção / reordenação / rotação) ────────────────
+
+def test_upload_fotos_sucesso(client):
+    count = MagicMock(count=0, data=[])
+    inserted = MagicMock(data=[{"id": "f1", "url": "https://u/1.jpg", "ordem": 1}])
+    db = make_db_mock(count, inserted)
+    with patch("app.routers.imoveis.supabase_admin", db), \
+         patch("app.routers.imoveis.upload_foto", new=AsyncMock(return_value="https://u/1.jpg")):
+        res = client.post(
+            "/imoveis/imovel-uuid-1/fotos",
+            files=[("fotos", ("a.jpg", b"\xff\xd8\xff", "image/jpeg"))],
+        )
+    assert res.status_code == 201
+    assert res.json()[0]["url"] == "https://u/1.jpg"
+
+
+def test_upload_fotos_excede_limite_de_30(client):
+    count = MagicMock(count=30, data=[])
+    db = make_db_mock(count)
+    with patch("app.routers.imoveis.supabase_admin", db), \
+         patch("app.routers.imoveis.upload_foto", new=AsyncMock(return_value="x")):
+        res = client.post(
+            "/imoveis/imovel-uuid-1/fotos",
+            files=[("fotos", ("a.jpg", b"\xff\xd8\xff", "image/jpeg"))],
+        )
+    assert res.status_code == 400
+    assert "30 fotos" in res.json()["detail"]
+
+
+def test_remover_foto_sucesso(client):
+    foto = MagicMock(data={"id": "f1", "url": "https://x/object/public/media/imoveis/1/a.jpg"})
+    delete_res = MagicMock(data=[])
+    db = make_db_mock(foto, delete_res)
+    deletar = AsyncMock()
+    with patch("app.routers.imoveis.supabase_admin", db), \
+         patch("app.routers.imoveis.deletar_foto", new=deletar):
+        res = client.delete("/imoveis/imovel-uuid-1/fotos/f1")
+    assert res.status_code == 204
+    deletar.assert_awaited_once()
+
+
+def test_remover_foto_nao_encontrada(client):
+    db = make_db_mock(MagicMock(data=None))
+    with patch("app.routers.imoveis.supabase_admin", db), \
+         patch("app.routers.imoveis.deletar_foto", new=AsyncMock()):
+        res = client.delete("/imoveis/imovel-uuid-1/fotos/inexistente")
+    assert res.status_code == 404
+
+
+def test_reordenar_fotos_sucesso(client):
+    existentes = MagicMock(data=[{"id": "a"}, {"id": "b"}])
+    db = make_db_mock(existentes, MagicMock(data=[]), MagicMock(data=[]))
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.patch(
+            "/imoveis/imovel-uuid-1/fotos/ordem",
+            json={"foto_ids": ["b", "a"]},
+        )
+    assert res.status_code == 200
+    assert res.json() == {"atualizadas": 2}
+
+
+def test_reordenar_fotos_lista_vazia(client):
+    db = make_db_mock()
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.patch("/imoveis/imovel-uuid-1/fotos/ordem", json={"foto_ids": []})
+    assert res.status_code == 400
+
+
+def test_reordenar_fotos_ids_duplicados(client):
+    db = make_db_mock()
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.patch(
+            "/imoveis/imovel-uuid-1/fotos/ordem", json={"foto_ids": ["a", "a"]}
+        )
+    assert res.status_code == 400
+    assert "duplicados" in res.json()["detail"].lower()
+
+
+def test_reordenar_fotos_divergente_do_banco(client):
+    existentes = MagicMock(data=[{"id": "a"}, {"id": "b"}])
+    db = make_db_mock(existentes)
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.patch(
+            "/imoveis/imovel-uuid-1/fotos/ordem", json={"foto_ids": ["a", "c"]}
+        )
+    assert res.status_code == 400
+    assert "não corresponde" in res.json()["detail"]
+
+
+def test_rotacionar_foto_sucesso(client):
+    foto = MagicMock(data={"id": "f1", "url": "https://old/a.jpg", "ordem": 2})
+    db = make_db_mock(foto, MagicMock(data=[]))
+    with patch("app.routers.imoveis.supabase_admin", db), \
+         patch("app.routers.imoveis.baixar_e_rotacionar", return_value=b"jpeg"), \
+         patch("app.routers.imoveis.upload_bytes_jpeg", return_value="https://new/a.jpg"), \
+         patch("app.routers.imoveis.deletar_foto", new=AsyncMock()) as deletar:
+        res = client.post(
+            "/imoveis/imovel-uuid-1/fotos/f1/rotacionar", json={"graus": 90}
+        )
+    assert res.status_code == 200
+    body = res.json()
+    assert body["url"] == "https://new/a.jpg"
+    assert body["ordem"] == 2
+    # Apaga o arquivo antigo após trocar o registro.
+    deletar.assert_awaited_with("https://old/a.jpg")
+
+
+def test_rotacionar_foto_nao_encontrada(client):
+    db = make_db_mock(MagicMock(data=None))
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.post(
+            "/imoveis/imovel-uuid-1/fotos/inexistente/rotacionar", json={"graus": 90}
+        )
+    assert res.status_code == 404
