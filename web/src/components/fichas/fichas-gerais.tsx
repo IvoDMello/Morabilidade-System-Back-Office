@@ -8,7 +8,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Loader2, Download, Copy, Check, MessageCircle, Building2,
-  ChevronLeft, ChevronRight, List, BarChart3,
+  ChevronLeft, ChevronRight, ChevronDown, List, BarChart3,
 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
@@ -63,13 +63,15 @@ export function FichasGerais() {
   const [de, setDe] = useState("");
   const [ate, setAte] = useState("");
   const [busca, setBusca] = useState("");
+  const [soDisponiveis, setSoDisponiveis] = useState(false);
 
   const periodo = useMemo(() => {
     const params = new URLSearchParams();
     if (de) params.set("de", de);
     if (ate) params.set("ate", ate);
+    if (soDisponiveis) params.set("apenas_disponiveis", "true");
     return params;
-  }, [de, ate]);
+  }, [de, ate, soDisponiveis]);
 
   return (
     <div className="space-y-4">
@@ -103,6 +105,13 @@ export function FichasGerais() {
           <input type="date" value={ate} onChange={(e) => setAte(e.target.value)}
             className="text-xs border border-slate-200 rounded-md px-2 py-1.5 text-slate-600 focus:outline-none focus:border-[#585a4f]" />
         </div>
+
+        <label className="flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer select-none">
+          <input type="checkbox" checked={soDisponiveis}
+            onChange={(e) => setSoDisponiveis(e.target.checked)}
+            className="w-3.5 h-3.5 accent-[#585a4f]" />
+          Só imóveis disponíveis
+        </label>
       </div>
 
       <input
@@ -201,7 +210,7 @@ function ListaGeral({
   );
 }
 
-function LinhaFicha({ f }: { f: FichaGeral }) {
+function LinhaFicha({ f, compacta = false }: { f: FichaGeral; compacta?: boolean }) {
   const [copiado, setCopiado] = useState(false);
   const st = STATUS_STYLE[f.status] ?? STATUS_STYLE.pendente;
   const ativa = f.status === "pendente";
@@ -242,13 +251,18 @@ function LinhaFicha({ f }: { f: FichaGeral }) {
           <span className={`text-[11px] px-2 py-0.5 rounded-full border ${st.cls}`}>{st.label}</span>
         </div>
         <div className="text-xs text-slate-400 mt-0.5 flex items-center gap-1.5 flex-wrap">
-          <Link href={`/imoveis/${f.imovel_id}`}
-            className="hover:text-[#585a4f] hover:underline flex items-center gap-1">
-            <Building2 className="w-3 h-3" />
-            {f.imovel_codigo ? `${f.imovel_codigo} — ` : ""}{f.imovel_endereco ?? "Imóvel"}
-          </Link>
-          {local && <span>· {local}</span>}
-          <span>· emitida em {formatDataBR(f.created_at)}</span>
+          {!compacta && (
+            <>
+              <Link href={`/imoveis/${f.imovel_id}`}
+                className="hover:text-[#585a4f] hover:underline flex items-center gap-1">
+                <Building2 className="w-3 h-3" />
+                {f.imovel_codigo ? `${f.imovel_codigo} — ` : ""}{f.imovel_endereco ?? "Imóvel"}
+              </Link>
+              {local && <span>· {local}</span>}
+              <span>·</span>
+            </>
+          )}
+          <span>emitida em {formatDataBR(f.created_at)}</span>
           {f.status === "assinada" && f.assinada_em && <span>· assinada em {formatDataBR(f.assinada_em)}</span>}
         </div>
       </div>
@@ -316,40 +330,87 @@ function PorImovel({ periodo, busca }: { periodo: URLSearchParams; busca: string
         </p>
       ) : (
         <ul className="divide-y divide-slate-100">
-          {visiveis.map((r) => {
-            const local = [r.imovel_bairro, r.imovel_cidade].filter(Boolean).join(" · ");
-            return (
-              <li key={r.imovel_id} className="p-4 flex items-center gap-3 flex-wrap">
-                <div className="flex-1 min-w-0">
-                  <Link href={`/imoveis/${r.imovel_id}`}
-                    className="text-sm font-medium text-slate-800 hover:text-[#585a4f] hover:underline flex items-center gap-1.5">
-                    <Building2 className="w-3.5 h-3.5 text-slate-400" />
-                    {r.imovel_codigo ? `${r.imovel_codigo} — ` : ""}{r.imovel_endereco ?? "Imóvel"}
-                  </Link>
-                  <div className="text-xs text-slate-400 mt-0.5">
-                    {local && `${local} · `}última visita em {formatDataBR(r.ultima_em)}
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-[11px] px-2 py-0.5 rounded-full border bg-[#585a4f] text-white border-[#585a4f]">
-                    {r.total} visita{r.total !== 1 ? "s" : ""}
-                  </span>
-                  {r.assinadas > 0 && (
-                    <span className="text-[11px] px-2 py-0.5 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-200">
-                      {r.assinadas} assinada{r.assinadas !== 1 ? "s" : ""}
-                    </span>
-                  )}
-                  {r.pendentes > 0 && (
-                    <span className="text-[11px] px-2 py-0.5 rounded-full border bg-amber-50 text-amber-700 border-amber-200">
-                      {r.pendentes} aguardando
-                    </span>
-                  )}
-                </div>
-              </li>
-            );
-          })}
+          {visiveis.map((r) => (
+            <LinhaImovel key={r.imovel_id} r={r} periodo={periodo} />
+          ))}
         </ul>
       )}
     </div>
+  );
+}
+
+function LinhaImovel({ r, periodo }: { r: ResumoImovel; periodo: URLSearchParams }) {
+  const [aberto, setAberto] = useState(false);
+  const [fichas, setFichas] = useState<FichaGeral[] | null>(null);
+  const local = [r.imovel_bairro, r.imovel_cidade].filter(Boolean).join(" · ");
+
+  // Filtros mudaram → invalida o detalhe já carregado.
+  useEffect(() => { setFichas(null); }, [periodo]);
+
+  // Detalhamento sob demanda: busca as fichas do imóvel na primeira expansão.
+  useEffect(() => {
+    if (!aberto || fichas !== null) return;
+    const params = new URLSearchParams(periodo);
+    params.set("imovel_id", r.imovel_id);
+    params.set("page_size", "100");
+    api.get<FichaGeral[]>(`/fichas-visita?${params}`)
+      .then((res) => setFichas(res.data))
+      .catch(() => {
+        toast.error("Erro ao carregar as fichas deste imóvel.");
+        setFichas([]);
+      });
+  }, [aberto, fichas, periodo, r.imovel_id]);
+
+  return (
+    <li>
+      <button type="button" onClick={() => setAberto((a) => !a)}
+        className="w-full text-left p-4 flex items-center gap-3 flex-wrap hover:bg-slate-50 transition">
+        <ChevronDown className={`w-4 h-4 text-slate-400 flex-shrink-0 transition-transform ${aberto ? "" : "-rotate-90"}`} />
+        <div className="flex-1 min-w-0">
+          <span className="text-sm font-medium text-slate-800 flex items-center gap-1.5">
+            <Building2 className="w-3.5 h-3.5 text-slate-400" />
+            {r.imovel_codigo ? `${r.imovel_codigo} — ` : ""}{r.imovel_endereco ?? "Imóvel"}
+          </span>
+          <span className="block text-xs text-slate-400 mt-0.5">
+            {local && `${local} · `}última visita em {formatDataBR(r.ultima_em)}
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-[11px] px-2 py-0.5 rounded-full border bg-[#585a4f] text-white border-[#585a4f]">
+            {r.total} visita{r.total !== 1 ? "s" : ""}
+          </span>
+          {r.assinadas > 0 && (
+            <span className="text-[11px] px-2 py-0.5 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-200">
+              {r.assinadas} assinada{r.assinadas !== 1 ? "s" : ""}
+            </span>
+          )}
+          {r.pendentes > 0 && (
+            <span className="text-[11px] px-2 py-0.5 rounded-full border bg-amber-50 text-amber-700 border-amber-200">
+              {r.pendentes} aguardando
+            </span>
+          )}
+        </div>
+      </button>
+
+      {aberto && (
+        <div className="pl-10 pr-4 pb-3">
+          {fichas === null ? (
+            <div className="py-3 flex items-center gap-2 text-slate-400 text-xs">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" /> Carregando fichas…
+            </div>
+          ) : fichas.length === 0 ? (
+            <p className="py-3 text-xs text-slate-400 italic">Nenhuma ficha no período.</p>
+          ) : (
+            <ul className="divide-y divide-slate-100 border-l-2 border-slate-100">
+              {fichas.map((f) => <LinhaFicha key={f.id} f={f} compacta />)}
+            </ul>
+          )}
+          <Link href={`/imoveis/${r.imovel_id}`}
+            className="inline-block mt-1 text-xs text-[#585a4f] hover:underline">
+            Abrir imóvel →
+          </Link>
+        </div>
+      )}
+    </li>
   );
 }

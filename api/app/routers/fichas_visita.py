@@ -177,11 +177,17 @@ def listar_fichas(
     status_filtro: Optional[str] = Query(None, alias="status"),
     de: Optional[str] = Query(None, description="Emitidas a partir de (YYYY-MM-DD)"),
     ate: Optional[str] = Query(None, description="Emitidas até (YYYY-MM-DD)"),
+    apenas_disponiveis: bool = Query(False, description="Só fichas de imóveis disponíveis hoje"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     current_user: dict = Depends(get_current_user),
 ):
-    q = supabase_admin.table("fichas_visita").select("*")
+    # O filtro de disponibilidade olha o cadastro ATUAL do imóvel (inner join),
+    # não o snapshot da ficha.
+    colunas = "*, imoveis!inner(disponibilidade)" if apenas_disponiveis else "*"
+    q = supabase_admin.table("fichas_visita").select(colunas)
+    if apenas_disponiveis:
+        q = q.eq("imoveis.disponibilidade", "disponivel")
     if imovel_id:
         q = q.eq("imovel_id", imovel_id)
     if cliente_id:
@@ -198,16 +204,22 @@ def listar_fichas(
 def resumo_por_imovel(
     de: Optional[str] = Query(None, description="Emitidas a partir de (YYYY-MM-DD)"),
     ate: Optional[str] = Query(None, description="Emitidas até (YYYY-MM-DD)"),
+    apenas_disponiveis: bool = Query(False, description="Só imóveis disponíveis hoje"),
     current_user: dict = Depends(get_current_user),
 ):
     """Visitas agregadas por imóvel: total de fichas, quantas assinadas (visitas
     comprovadas), pendentes e a data da última. Canceladas ficam de fora."""
+    colunas = ("imovel_id, imovel_codigo, imovel_endereco, imovel_bairro, "
+               "imovel_cidade, status, created_at, assinada_em")
+    if apenas_disponiveis:
+        colunas += ", imoveis!inner(disponibilidade)"
     q = (
         supabase_admin.table("fichas_visita")
-        .select("imovel_id, imovel_codigo, imovel_endereco, imovel_bairro, "
-                "imovel_cidade, status, created_at, assinada_em")
+        .select(colunas)
         .neq("status", "cancelada")
     )
+    if apenas_disponiveis:
+        q = q.eq("imoveis.disponibilidade", "disponivel")
     q = _filtro_periodo(q, de, ate)
     fichas = q.execute().data or []
 

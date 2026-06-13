@@ -86,6 +86,16 @@ def test_listar_fichas(client):
     assert len(res.json()) == 1
 
 
+def test_listar_fichas_apenas_disponiveis(client):
+    """Filtro olha a disponibilidade ATUAL do imóvel via inner join."""
+    db = make_db_mock(MagicMock(data=[FICHA_ROW]))
+    with patch(ROUTER, db):
+        res = client.get("/fichas-visita?apenas_disponiveis=true")
+    assert res.status_code == 200
+    db.select.assert_called_with("*, imoveis!inner(disponibilidade)")
+    db.eq.assert_any_call("imoveis.disponibilidade", "disponivel")
+
+
 def test_listar_fichas_filtro_periodo(client):
     """Datas soltas viram intervalo inclusivo (até = fim do dia)."""
     db = make_db_mock(MagicMock(data=[FICHA_ROW]))

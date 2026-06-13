@@ -262,11 +262,16 @@ def listar_autorizacoes(
     imovel_id: Optional[str] = Query(None),
     proprietario_id: Optional[str] = Query(None),
     status_filtro: Optional[str] = Query(None, alias="status"),
+    apenas_disponiveis: bool = Query(False, description="Só autorizações de imóveis disponíveis hoje"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     current_user: dict = Depends(get_current_user),
 ):
-    q = supabase_admin.table(TABELA).select("*")
+    # Disponibilidade ATUAL do imóvel (inner join), não o snapshot.
+    colunas = "*, imoveis!inner(disponibilidade)" if apenas_disponiveis else "*"
+    q = supabase_admin.table(TABELA).select(colunas)
+    if apenas_disponiveis:
+        q = q.eq("imoveis.disponibilidade", "disponivel")
     if imovel_id:
         q = q.eq("imovel_id", imovel_id)
     if proprietario_id:

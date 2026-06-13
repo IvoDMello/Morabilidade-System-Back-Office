@@ -94,6 +94,7 @@ function ListaAutorizacoes() {
   const [itens, setItens] = useState<Autorizacao[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtro, setFiltro] = useState("");
+  const [soDisponiveis, setSoDisponiveis] = useState(false);
   const [page, setPage] = useState(1);
 
   const carregar = useCallback(async () => {
@@ -101,6 +102,7 @@ function ListaAutorizacoes() {
     try {
       const params = new URLSearchParams({ page: String(page), page_size: String(PAGE_SIZE) });
       if (filtro) params.set("status", filtro);
+      if (soDisponiveis) params.set("apenas_disponiveis", "true");
       const res = await api.get<Autorizacao[]>(`/autorizacoes?${params}`);
       setItens(res.data);
     } catch {
@@ -108,7 +110,7 @@ function ListaAutorizacoes() {
     } finally {
       setLoading(false);
     }
-  }, [filtro, page]);
+  }, [filtro, soDisponiveis, page]);
 
   useEffect(() => { carregar(); }, [carregar]);
 
@@ -138,6 +140,12 @@ function ListaAutorizacoes() {
             {resumo.vencendo} exclusividade{resumo.vencendo > 1 ? "s" : ""} vencendo em até 15 dias
           </span>
         )}
+        <label className="flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer select-none ml-auto">
+          <input type="checkbox" checked={soDisponiveis}
+            onChange={(e) => { setSoDisponiveis(e.target.checked); setPage(1); }}
+            className="w-3.5 h-3.5 accent-[#585a4f]" />
+          Só imóveis disponíveis
+        </label>
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200">
