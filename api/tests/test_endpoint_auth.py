@@ -30,6 +30,9 @@ PUBLIC_PATTERNS = (
 PUBLIC_EXACT = {
     "/", "/health",
     "/openapi.json", "/docs", "/redoc", "/docs/oauth2-redirect",
+    # TEMP: diagnóstico do item 5 (IP de auditoria). É gateado por token na URL.
+    # REMOVER esta linha junto com o endpoint /debug/ip-diagnostico em main.py.
+    "/debug/ip-diagnostico",
 }
 
 # Endpoints máquina-a-máquina: não usam get_current_user, mas exigem o header
