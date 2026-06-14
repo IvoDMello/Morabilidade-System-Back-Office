@@ -12,7 +12,7 @@ import logging
 from datetime import date, datetime, timedelta, timezone
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, File, Header, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, Header, HTTPException, Response, UploadFile, status
 from pydantic import BaseModel, Field
 
 from app.auth.dependencies import get_current_user, require_admin
@@ -283,6 +283,46 @@ def processar_relatorios_30dias() -> dict:
     return {"candidatos": len(candidatos), "enviados": enviados, "erros": erros}
 
 
+def _buscar_imovel_relatorio(imovel_id: str) -> dict:
+    """Carrega os campos do imóvel necessários ao relatório, ou 404."""
+    res = (
+        supabase_admin.table("imoveis")
+        .select("id, codigo, logradouro, numero, bairro, cidade, created_at, proprietario_id")
+        .eq("id", imovel_id)
+        .maybe_single()
+        .execute()
+    )
+    if not res or not res.data:
+        raise HTTPException(status_code=404, detail="Imóvel não encontrado.")
+    return res.data
+
+
+@router.get("/{imovel_id}/relatorio-30dias/preview")
+def preview_relatorio_30dias(
+    imovel_id: str,
+    current_user: dict = Depends(require_admin),
+):
+    """Gera o PDF do relatório de 30 dias e devolve INLINE, sem enviar e-mail.
+
+    Permite revisar o conteúdo (visitas, percepções, dados do proprietário) antes
+    de disparar o envio. Não marca `relatorio_30dias_enviado_em` — é só leitura.
+    """
+    imovel = _buscar_imovel_relatorio(imovel_id)
+    try:
+        _, pdf_bytes = _montar_relatorio(imovel)
+    except Exception as e:  # noqa: BLE001
+        logger.exception("Falha ao gerar prévia do relatório 30 dias do imóvel %s", imovel.get("codigo"))
+        raise HTTPException(status_code=502, detail=f"Falha ao gerar a prévia: {e}")
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'inline; filename="relatorio-30dias-{imovel["codigo"]}.pdf"',
+            "Access-Control-Expose-Headers": "Content-Disposition",
+        },
+    )
+
+
 @router.post("/{imovel_id}/relatorio-30dias/enviar")
 def enviar_relatorio_manual(
     imovel_id: str,
@@ -294,17 +334,15 @@ def enviar_relatorio_manual(
     para mandar uma atualização avulsa. Marca `relatorio_30dias_enviado_em`, então
     o job automático não reenviará depois.
     """
-    res = (
-        supabase_admin.table("imoveis")
-        .select("id, codigo, logradouro, numero, bairro, cidade, created_at, proprietario_id")
-        .eq("id", imovel_id)
-        .maybe_single()
-        .execute()
-    )
-    if not res or not res.data:
-        raise HTTPException(status_code=404, detail="Imóvel não encontrado.")
+    imovel = _buscar_imovel_relatorio(imovel_id)
 
-    _processar_relatorio(res.data)
+    try:
+        _processar_relatorio(imovel)
+    except HTTPException:
+        raise
+    except Exception as e:  # noqa: BLE001
+        logger.exception("Falha ao enviar relatório 30 dias do imóvel %s", imovel.get("codigo"))
+        raise HTTPException(status_code=502, detail=f"Falha ao enviar o relatório: {e}")
 
     enviado = (
         supabase_admin.table("imoveis")
@@ -319,7 +357,12 @@ def enviar_relatorio_manual(
     }
 
 
-def _processar_relatorio(imovel: dict) -> None:
+def _montar_relatorio(imovel: dict) -> tuple[dict, bytes]:
+    """Coleta os dados do relatório e gera o PDF — SEM efeitos colaterais.
+
+    Não envia e-mail nem marca `relatorio_30dias_enviado_em`; serve tanto para a
+    prévia quanto como primeira etapa do envio real. Devolve `(dados, pdf_bytes)`.
+    """
     imovel_id = imovel["id"]
     codigo = imovel["codigo"]
 
@@ -373,7 +416,7 @@ def _processar_relatorio(imovel: dict) -> None:
 
     anunciado_em = fmt_dt(imovel.get("created_at"))
 
-    pdf_bytes = gerar_relatorio_30dias_pdf({
+    dados = {
         "proprietario_nome": proprietario_nome,
         "proprietario_telefone": proprietario_telefone,
         "codigo": codigo,
@@ -382,20 +425,27 @@ def _processar_relatorio(imovel: dict) -> None:
         "visitas_comprovadas": len(visitas),
         "visitas": visitas,
         "percepcoes": percepcoes,
-    })
+    }
+    pdf_bytes = gerar_relatorio_30dias_pdf(dados)
+    return dados, pdf_bytes
+
+
+def _processar_relatorio(imovel: dict) -> None:
+    """Monta o relatório, envia o e-mail e marca `relatorio_30dias_enviado_em`."""
+    dados, pdf_bytes = _montar_relatorio(imovel)
 
     for destino in RELATORIO_30_DESTINATARIOS:
         enviar_relatorio_30dias(
             para=destino,
-            proprietario_nome=proprietario_nome,
-            proprietario_telefone=proprietario_telefone,
-            codigo_imovel=codigo,
-            endereco=endereco,
-            anunciado_em=anunciado_em,
-            visitas_comprovadas=len(visitas),
+            proprietario_nome=dados["proprietario_nome"],
+            proprietario_telefone=dados["proprietario_telefone"],
+            codigo_imovel=dados["codigo"],
+            endereco=dados["endereco"],
+            anunciado_em=dados["anunciado_em"],
+            visitas_comprovadas=dados["visitas_comprovadas"],
             pdf_bytes=pdf_bytes,
         )
 
     supabase_admin.table("imoveis").update(
         {"relatorio_30dias_enviado_em": datetime.now(timezone.utc).isoformat()}
-    ).eq("id", imovel_id).execute()
+    ).eq("id", imovel["id"]).execute()

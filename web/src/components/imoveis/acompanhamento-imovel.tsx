@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Trash2, Plus, MessageSquare, MailCheck, Send, Loader2 } from "lucide-react";
+import { Trash2, Plus, MessageSquare, MailCheck, Send, Loader2, Eye, X } from "lucide-react";
 import { toast } from "sonner";
-import { api } from "@/lib/api";
+import { api, getErrorMessage } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 
 interface Percepcao {
@@ -50,6 +50,10 @@ export function AcompanhamentoImovel({ imovelId, createdAt, relatorio30diasEnvia
   useEffect(() => { setEnviadoEm(relatorio30diasEnviadoEm ?? null); }, [relatorio30diasEnviadoEm]);
   const [enviando, setEnviando] = useState(false);
 
+  // Prévia: URL do PDF (object URL) e estado de carregamento.
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [gerandoPreview, setGerandoPreview] = useState(false);
+
   async function enviarRelatorio() {
     setEnviando(true);
     try {
@@ -58,12 +62,50 @@ export function AcompanhamentoImovel({ imovelId, createdAt, relatorio30diasEnvia
       );
       setEnviadoEm(res.data.relatorio_30dias_enviado_em ?? new Date().toISOString());
       toast.success("Relatório enviado por e-mail.");
-    } catch {
-      toast.error("Erro ao enviar o relatório.");
+      fecharPreview();
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Erro ao enviar o relatório."));
     } finally {
       setEnviando(false);
     }
   }
+
+  async function abrirPreview() {
+    setGerandoPreview(true);
+    try {
+      const res = await api.get(`/imoveis/${imovelId}/relatorio-30dias/preview`, {
+        responseType: "blob",
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: "application/pdf" }));
+      setPreviewUrl(url);
+    } catch (err) {
+      // Em respostas blob o detalhe vem como Blob; tenta extrair, senão usa fallback.
+      let msg = "Erro ao gerar a prévia do relatório.";
+      const data = (err as { response?: { data?: unknown } })?.response?.data;
+      if (data instanceof Blob) {
+        try {
+          const parsed = JSON.parse(await data.text());
+          if (parsed?.detail) msg = String(parsed.detail);
+        } catch {}
+      } else {
+        msg = getErrorMessage(err, msg);
+      }
+      toast.error(msg);
+    } finally {
+      setGerandoPreview(false);
+    }
+  }
+
+  function fecharPreview() {
+    setPreviewUrl((url) => {
+      if (url) window.URL.revokeObjectURL(url);
+      return null;
+    });
+  }
+
+  useEffect(() => {
+    return () => { if (previewUrl) window.URL.revokeObjectURL(previewUrl); };
+  }, [previewUrl]);
 
   const carregar = useCallback(async () => {
     if (!isAdmin) {
@@ -120,18 +162,84 @@ export function AcompanhamentoImovel({ imovelId, createdAt, relatorio30diasEnvia
           )}
         </div>
         {isAdmin && (
-          <button
-            type="button"
-            onClick={enviarRelatorio}
-            disabled={enviando}
-            className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-[#585a4f] text-white hover:bg-[#4a4c42] disabled:opacity-60"
-            title="Gera o PDF e envia o relatório por e-mail agora"
-          >
-            {enviando ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-            {enviadoEm ? "Reenviar" : "Enviar agora"}
-          </button>
+          <div className="shrink-0 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={abrirPreview}
+              disabled={gerandoPreview || enviando}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border border-[#585a4f]/40 text-[#585a4f] hover:bg-[#585a4f]/5 disabled:opacity-60"
+              title="Gera o PDF e abre uma prévia, sem enviar e-mail"
+            >
+              {gerandoPreview ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Eye className="w-3.5 h-3.5" />}
+              Pré-visualizar
+            </button>
+            <button
+              type="button"
+              onClick={enviarRelatorio}
+              disabled={enviando || gerandoPreview}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-[#585a4f] text-white hover:bg-[#4a4c42] disabled:opacity-60"
+              title="Gera o PDF e envia o relatório por e-mail agora"
+            >
+              {enviando ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+              {enviadoEm ? "Reenviar" : "Enviar agora"}
+            </button>
+          </div>
         )}
       </div>
+
+      {/* Modal de prévia do relatório */}
+      {previewUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={fecharPreview}
+        >
+          <div
+            className="bg-white rounded-xl shadow-xl w-full max-w-3xl h-[85vh] flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+              <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                <Eye className="w-4 h-4 text-[#585a4f]" />
+                Prévia do relatório de 30 dias
+              </div>
+              <button
+                type="button"
+                onClick={fecharPreview}
+                className="text-slate-400 hover:text-slate-600 p-1"
+                title="Fechar"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <iframe src={previewUrl} title="Prévia do relatório" className="flex-1 w-full" />
+
+            <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-slate-100 bg-slate-50">
+              <p className="text-xs text-slate-500">
+                Esta é apenas uma prévia — nenhum e-mail foi enviado ainda.
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={fecharPreview}
+                  className="px-3 py-1.5 rounded-md text-xs font-medium text-slate-600 hover:bg-slate-200"
+                >
+                  Fechar
+                </button>
+                <button
+                  type="button"
+                  onClick={enviarRelatorio}
+                  disabled={enviando}
+                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-md text-xs font-medium bg-[#585a4f] text-white hover:bg-[#4a4c42] disabled:opacity-60"
+                >
+                  {enviando ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                  Enviar por e-mail
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Percepções (apenas admin) */}
       {isAdmin && (
