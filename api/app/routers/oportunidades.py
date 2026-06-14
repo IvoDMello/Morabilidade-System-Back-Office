@@ -206,6 +206,19 @@ def matches_de_um_cliente(cliente_id: str, current_user: dict = Depends(get_curr
         .execute()
     )
 
+    # Imóveis que este cliente já visitou fisicamente (fichas de visita assinadas).
+    # Distingue, na lista de matches, o que veio de visita comprovada do que só
+    # casa com a preferência por outro motivo. A base é pequena e há índice por
+    # cliente_id (idx_fichas_visita_cliente, migration 034).
+    visitados_resp = (
+        supabase_admin.table("fichas_visita")
+        .select("imovel_id")
+        .eq("cliente_id", cliente_id)
+        .eq("status", "assinada")
+        .execute()
+    )
+    visitados = {f["imovel_id"] for f in (visitados_resp.data or []) if f.get("imovel_id")}
+
     matches = []
     for imovel in imoveis_resp.data or []:
         if not _imovel_casa_preferencia(imovel, pref):
@@ -224,6 +237,7 @@ def matches_de_um_cliente(cliente_id: str, current_user: dict = Depends(get_curr
             "dormitorios": imovel.get("dormitorios"),
             "vagas_garagem": imovel.get("vagas_garagem"),
             "foto_capa": foto_capa,
+            "visitado": imovel["id"] in visitados,
             "score": _score_imovel_preferencia(pref),
         })
     matches.sort(key=lambda m: m["score"], reverse=True)

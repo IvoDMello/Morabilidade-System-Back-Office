@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { MessageCircle, Building2, Sparkles } from "lucide-react";
+import { MessageCircle, Building2, Sparkles, MapPinCheck } from "lucide-react";
 import { api } from "@/lib/api";
 import { formatarMoeda } from "@/lib/utils";
 import { whatsappLink } from "@/lib/whatsapp";
@@ -18,6 +18,7 @@ interface Match {
   valor_locacao?: number;
   dormitorios?: number;
   foto_capa?: string;
+  visitado?: boolean;
   score: number;
 }
 
@@ -121,6 +122,15 @@ export function MatchesCliente({ clienteId, clienteNome, clienteTelefone }: Prop
                     <span className="font-mono">{m.codigo}</span> · {TIPO_IMOVEL_LABEL[m.tipo_imovel] ?? m.tipo_imovel}
                   </p>
                   <ScoreDots score={m.score} />
+                  {m.visitado && (
+                    <span
+                      className="inline-flex items-center gap-1 text-xs font-semibold px-1.5 py-0.5 rounded bg-teal-50 text-teal-700 ring-1 ring-teal-200"
+                      title="Cliente já visitou este imóvel (ficha de visita assinada)"
+                    >
+                      <MapPinCheck className="w-3 h-3" />
+                      Visitado
+                    </span>
+                  )}
                 </div>
                 <p className="text-xs text-slate-500">
                   {m.bairro}, {m.cidade}

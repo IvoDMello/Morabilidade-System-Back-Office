@@ -14,6 +14,7 @@ import {
   Filter,
   Users,
   Info,
+  MapPinCheck,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { formatarMoeda } from "@/lib/utils";
@@ -76,6 +77,7 @@ interface Match {
   dormitorios?: number;
   vagas_garagem?: number;
   foto_capa?: string;
+  visitado?: boolean;
   score: number;
 }
 
@@ -542,6 +544,15 @@ export default function OportunidadesPage() {
                               >
                                 {pct}% match
                               </span>
+                              {m.visitado && (
+                                <span
+                                  className="inline-flex items-center gap-1 text-xs font-semibold px-1.5 py-0.5 rounded bg-teal-50 text-teal-700 ring-1 ring-teal-200"
+                                  title="Cliente já visitou este imóvel (ficha de visita assinada)"
+                                >
+                                  <MapPinCheck className="w-3 h-3" />
+                                  Visitado
+                                </span>
+                              )}
                             </div>
                             <p className="text-xs text-slate-500 mt-0.5">
                               {m.bairro}, {m.cidade}

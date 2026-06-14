@@ -513,6 +513,32 @@ def test_matches_foto_capa_e_primeira_foto_ordenada(client):
     assert res.json()[0]["foto_capa"] == "foto1.jpg"
 
 
+def test_matches_marca_imovel_visitado(client):
+    """Imóvel com ficha de visita assinada do cliente vem com visitado=True."""
+    pref_mock = MagicMock(data=PREF_ATIVA)
+    imoveis_mock = MagicMock(data=[IMOVEL_MATCH])
+    # 3ª query: fichas_visita assinadas do cliente (imovel-uuid-1 foi visitado)
+    fichas_mock = MagicMock(data=[{"imovel_id": "imovel-uuid-1"}])
+    db = make_db_mock(pref_mock, imoveis_mock, fichas_mock)
+
+    with patch("app.routers.oportunidades.supabase_admin", db):
+        res = client.get("/clientes/cliente-uuid-1/matches")
+
+    assert res.json()[0]["visitado"] is True
+
+
+def test_matches_sem_visita_marca_nao_visitado(client):
+    pref_mock = MagicMock(data=PREF_ATIVA)
+    imoveis_mock = MagicMock(data=[IMOVEL_MATCH])
+    fichas_mock = MagicMock(data=[])  # cliente não assinou nenhuma ficha
+    db = make_db_mock(pref_mock, imoveis_mock, fichas_mock)
+
+    with patch("app.routers.oportunidades.supabase_admin", db):
+        res = client.get("/clientes/cliente-uuid-1/matches")
+
+    assert res.json()[0]["visitado"] is False
+
+
 def test_matches_exige_autenticacao(anon_client):
     res = anon_client.get("/clientes/cliente-uuid-1/matches")
     assert res.status_code == 403

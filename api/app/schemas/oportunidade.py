@@ -88,6 +88,9 @@ class MatchClienteImovel(BaseModel):
     dormitorios: Optional[int] = None
     vagas_garagem: Optional[int] = None
     foto_capa: Optional[str] = None
+    # True quando o cliente tem ficha de visita assinada para este imóvel —
+    # diferencia visita física comprovada de match só por preferência.
+    visitado: bool = False
     score: int = 0
 
 
