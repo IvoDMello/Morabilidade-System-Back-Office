@@ -5,6 +5,7 @@ import { Trash2, Plus, MessageSquare, MailCheck, Send, Loader2, Eye, X } from "l
 import { toast } from "sonner";
 import { api, getErrorMessage } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 interface Percepcao {
   id: string;
@@ -266,6 +267,8 @@ function SecaoPercepcoes({
 }) {
   const [texto, setTexto] = useState("");
   const [salvando, setSalvando] = useState(false);
+  const [aExcluir, setAExcluir] = useState<string | null>(null);
+  const [excluindo, setExcluindo] = useState(false);
 
   async function adicionar(e: React.FormEvent) {
     e.preventDefault();
@@ -283,14 +286,18 @@ function SecaoPercepcoes({
     }
   }
 
-  async function deletar(id: string) {
-    if (!confirm("Excluir esta anotação?")) return;
+  async function deletar() {
+    if (!aExcluir) return;
+    setExcluindo(true);
     try {
-      await api.delete(`/imoveis/${imovelId}/percepcoes/${id}`);
+      await api.delete(`/imoveis/${imovelId}/percepcoes/${aExcluir}`);
       toast.success("Anotação excluída.");
+      setAExcluir(null);
       onAtualizar();
     } catch {
       toast.error("Erro ao excluir.");
+    } finally {
+      setExcluindo(false);
     }
   }
 
@@ -338,9 +345,10 @@ function SecaoPercepcoes({
               </div>
               <button
                 type="button"
-                onClick={() => deletar(p.id)}
+                onClick={() => setAExcluir(p.id)}
                 className="text-slate-300 hover:text-red-500 p-1"
                 title="Excluir"
+                aria-label="Excluir anotação"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -348,6 +356,15 @@ function SecaoPercepcoes({
           ))}
         </ul>
       )}
+
+      <ConfirmDialog
+        open={aExcluir !== null}
+        onOpenChange={(open) => !open && setAExcluir(null)}
+        title="Excluir anotação"
+        description="Esta anotação de percepção será removida permanentemente."
+        loading={excluindo}
+        onConfirm={deletar}
+      />
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { Loader2, Save, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 interface Preferencia {
   id?: string;
@@ -38,6 +39,8 @@ export function PreferenciaForm({ clienteId, onSaved }: Props) {
   const [loading, setLoading] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [existe, setExiste] = useState(false);
+  const [confirmandoRemocao, setConfirmandoRemocao] = useState(false);
+  const [removendo, setRemovendo] = useState(false);
 
   useEffect(() => {
     api
@@ -86,14 +89,17 @@ export function PreferenciaForm({ clienteId, onSaved }: Props) {
   }
 
   async function remover() {
-    if (!confirm("Remover a preferência deste cliente?")) return;
+    setRemovendo(true);
     try {
       await api.delete(`/clientes/${clienteId}/preferencia`);
       setPref({ ativa: true });
       setExiste(false);
       toast.success("Preferência removida.");
+      setConfirmandoRemocao(false);
     } catch {
       toast.error("Erro ao remover preferência.");
+    } finally {
+      setRemovendo(false);
     }
   }
 
@@ -294,7 +300,7 @@ export function PreferenciaForm({ clienteId, onSaved }: Props) {
           {existe && (
             <button
               type="button"
-              onClick={remover}
+              onClick={() => setConfirmandoRemocao(true)}
               className="flex items-center gap-1.5 px-3 py-2 text-xs text-rose-600 hover:bg-rose-50 rounded-lg transition"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -313,6 +319,16 @@ export function PreferenciaForm({ clienteId, onSaved }: Props) {
           </button>
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmandoRemocao}
+        onOpenChange={setConfirmandoRemocao}
+        title="Remover preferência"
+        description="A preferência de busca deste cliente será removida. Esta ação não pode ser desfeita."
+        confirmLabel="Remover"
+        loading={removendo}
+        onConfirm={remover}
+      />
     </div>
   );
 }
