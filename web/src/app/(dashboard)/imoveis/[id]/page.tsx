@@ -393,6 +393,7 @@ export default function EditarImovelPage({
     area_util: imovel.area_util ?? null,
     valor_venda: imovel.valor_venda ?? null,
     valor_locacao: imovel.valor_locacao ?? null,
+    valor_sob_consulta: imovel.valor_sob_consulta ?? false,
     iptu_mensal: imovel.iptu_mensal ?? null,
     condominio_mensal: imovel.condominio_mensal ?? null,
     inscricao_municipal: imovel.inscricao_municipal ?? "",

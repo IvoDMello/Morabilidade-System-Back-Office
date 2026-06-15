@@ -36,6 +36,7 @@ export interface ImovelCard {
   area_util?: number;
   valor_venda?: number;
   valor_locacao?: number;
+  valor_sob_consulta?: boolean;
   condominio_mensal?: number;
   iptu_mensal?: number;
   foto_capa?: string;
@@ -67,6 +68,7 @@ export interface Imovel {
   area_util?: number;
   valor_venda?: number;
   valor_locacao?: number;
+  valor_sob_consulta?: boolean;
   iptu_mensal?: number;
   condominio_mensal?: number;
   descricao?: string;

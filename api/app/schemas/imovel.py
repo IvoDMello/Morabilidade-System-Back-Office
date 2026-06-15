@@ -68,6 +68,7 @@ class ImovelCreate(BaseModel):
     area_util: Optional[Decimal] = None
     valor_venda: Optional[Decimal] = None
     valor_locacao: Optional[Decimal] = None
+    valor_sob_consulta: bool = False  # esconde os valores no site público ("Sob consulta")
     iptu_mensal: Optional[Decimal] = None
     condominio_mensal: Optional[Decimal] = None
     inscricao_municipal: Optional[str] = None
@@ -135,6 +136,7 @@ class ImovelListOut(BaseModel):
     area_util: Optional[Decimal] = None
     valor_venda: Optional[Decimal] = None
     valor_locacao: Optional[Decimal] = None
+    valor_sob_consulta: bool = False  # esconde os valores no site público ("Sob consulta")
     condominio_mensal: Optional[Decimal] = None
     iptu_mensal: Optional[Decimal] = None
     foto_capa: Optional[str] = None

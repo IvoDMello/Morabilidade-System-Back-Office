@@ -57,6 +57,7 @@ const schema = z.object({
   area_util: optPositive,
   valor_venda: optPositive,
   valor_locacao: optPositive,
+  valor_sob_consulta: z.boolean().default(false),
   iptu_mensal: optPositive,
   condominio_mensal: optPositive,
   inscricao_municipal: z.string().optional(),
@@ -767,6 +768,21 @@ export function ImovelForm({
             />
           </div>
         </div>
+
+        {/* Sob consulta — esconde os valores no site, mantendo-os registrados aqui */}
+        <label className="mt-4 flex items-start gap-2.5 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            {...register("valor_sob_consulta")}
+            className="mt-0.5 h-4 w-4 rounded border-slate-300 accent-[#585a4f]"
+          />
+          <span className="text-sm text-slate-700">
+            Valor sob consulta
+            <span className="block text-xs text-slate-400">
+              Os valores ficam registrados aqui, mas o site exibe “Sob consulta” no lugar do preço.
+            </span>
+          </span>
+        </label>
       </div>
 
       {/* ── 5. Documentação ── */}

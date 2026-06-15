@@ -64,6 +64,7 @@ export interface Imovel {
   area_util?: number;
   valor_venda?: number;
   valor_locacao?: number;
+  valor_sob_consulta?: boolean;
   iptu_mensal?: number;
   condominio_mensal?: number;
   inscricao_municipal?: string;

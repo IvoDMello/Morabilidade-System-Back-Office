@@ -61,7 +61,7 @@ router = APIRouter()
 _LIST_FIELDS = (
     "id, codigo, titulo, tipo_negocio, disponibilidade, cidade, bairro, "
     "logradouro, numero, tipo_imovel, dormitorios, suites, banheiros, "
-    "vagas_garagem, area_util, valor_venda, valor_locacao, "
+    "vagas_garagem, area_util, valor_venda, valor_locacao, valor_sob_consulta, "
     "condominio_mensal, iptu_mensal, destaque_ordem, proprietario_id, instagram_url, created_at, "
     "imovel_fotos(url, ordem), imovel_tags(tags(id, nome, cor)), "
     "proprietario:clientes!proprietario_id(id, nome_completo, telefone, email)"
@@ -173,6 +173,11 @@ def _ocultar_internas(imovel: dict, current_user: Optional[dict]) -> dict:
         for campo in ("observacoes_internas", "inscricao_municipal", "rgi",
                       "numero_matricula", "proprietario", "proprietario_id"):
             imovel.pop(campo, None)
+        # "Sob consulta": os valores reais nunca trafegam no público; o site
+        # usa a flag valor_sob_consulta para exibir "Sob consulta" no lugar.
+        if imovel.get("valor_sob_consulta"):
+            imovel["valor_venda"] = None
+            imovel["valor_locacao"] = None
     return imovel
 
 

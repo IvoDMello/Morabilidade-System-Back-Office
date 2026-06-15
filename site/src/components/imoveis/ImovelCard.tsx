@@ -140,7 +140,9 @@ export function ImovelCard({ imovel }: { imovel: ImovelCardType }) {
               </p>
             </div>
           ) : (
-            <p className="text-sm text-slate-400 italic">Consulte o valor</p>
+            <p className="text-sm text-slate-400 italic">
+              {imovel.valor_sob_consulta ? "Sob consulta" : "Consulte o valor"}
+            </p>
           )}
           <span
             className="text-xs font-medium px-2.5 py-1 rounded-lg"

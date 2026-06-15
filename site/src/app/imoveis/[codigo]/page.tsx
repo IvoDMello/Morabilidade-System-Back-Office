@@ -332,7 +332,9 @@ export default async function DetalheImovelPage({ params }: Props) {
                 </div>
               )}
               {!precoVenda && !precoLocacao && (
-                <p className="text-slate-400 text-sm mb-4">Consulte o valor</p>
+                <p className="text-slate-400 text-sm mb-4">
+                  {imovel.valor_sob_consulta ? "Sob consulta" : "Consulte o valor"}
+                </p>
               )}
 
               {/* Botão primário — WhatsApp (cai pro /contato se o número não estiver configurado) */}
