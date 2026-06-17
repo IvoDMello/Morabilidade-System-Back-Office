@@ -1,0 +1,6 @@
+# Configuracao com segredos — nunca versionar
+config.ps1
+
+# Saidas locais de backup, se alguem rodar apontando pra ca
+*.zip
+*.dump
