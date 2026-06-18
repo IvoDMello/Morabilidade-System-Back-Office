@@ -41,7 +41,7 @@ class AutorizacaoCreate(BaseModel):
     exclusiva: bool = True
     comissao_venda_pct: Optional[Decimal] = Field(Decimal("6"), ge=0, le=100)
     comissao_locacao_desc: Optional[str] = Field("equivalente ao primeiro aluguel", max_length=200)
-    prazo_dias: int = Field(90, ge=1, le=730)
+    prazo_dias: int = Field(180, ge=1, le=730)
 
     corretor_id: Optional[str] = None
 

@@ -98,7 +98,7 @@ function NovaAutorizacao({ imovelId, onCriada }: { imovelId: string; onCriada: (
   const [valor, setValor] = useState("");
   const [exclusiva, setExclusiva] = useState(true);
   const [comissao, setComissao] = useState("6");
-  const [prazo, setPrazo] = useState("90");
+  const [prazo, setPrazo] = useState("180");
   const [props, setProps] = useState<PropRow[]>([rowVazia()]);
   const [salvando, setSalvando] = useState(false);
 
@@ -123,7 +123,7 @@ function NovaAutorizacao({ imovelId, onCriada }: { imovelId: string; onCriada: (
       valor_autorizado: valor.trim() ? Number(valor.replace(/\./g, "").replace(",", ".")) : null,
       exclusiva,
       comissao_venda_pct: comissao.trim() ? Number(comissao.replace(",", ".")) : null,
-      prazo_dias: Number(prazo) || 90,
+      prazo_dias: Number(prazo) || 180,
     };
     if (preenchidos.length > 1) {
       payload.proprietarios = preenchidos.map((p) => ({
