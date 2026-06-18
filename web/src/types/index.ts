@@ -301,3 +301,25 @@ export interface AnexoLocacao {
   url?: string;
   created_at: string;
 }
+
+export type TipoDocumentoImovel =
+  | "contrato"
+  | "matricula"
+  | "iptu"
+  | "escritura"
+  | "planta"
+  | "condominio"
+  | "outro";
+
+export interface DocumentoImovel {
+  id: string;
+  imovel_id: string;
+  tipo: TipoDocumentoImovel;
+  nome_arquivo: string;
+  firebase_path: string;
+  tamanho_bytes?: number;
+  mime_type?: string;
+  uploaded_by?: string;
+  url?: string;
+  created_at: string;
+}

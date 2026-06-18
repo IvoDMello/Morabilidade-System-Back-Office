@@ -1,22 +1,26 @@
 import csv
 import io
+import re
 import unicodedata
 import uuid
 from datetime import date
 from enum import Enum
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, Response, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, Response, UploadFile, status
 from pydantic import BaseModel
 
 from app.auth.dependencies import get_current_user, require_admin
 from app.database import supabase_admin
 from app.limiter import limiter
 from app.schemas.imovel import (
-    CondicaoImovel, Disponibilidade, ImovelCreate, ImovelListOut, ImovelOut,
-    ImovelUpdate, Mobiliado, TipoImovel, TipoNegocio,
+    CondicaoImovel, Disponibilidade, DocumentoImovelOut, ImovelCreate, ImovelListOut,
+    ImovelOut, ImovelUpdate, Mobiliado, TipoDocumentoImovel, TipoImovel, TipoNegocio,
 )
-from app.services.storage import baixar_e_rotacionar, deletar_foto, upload_bytes_jpeg, upload_foto
+from app.services.storage import (
+    baixar_e_rotacionar, deletar_documento, deletar_foto, upload_bytes_jpeg,
+    upload_documento, upload_foto, url_publica_documento,
+)
 
 
 _CAMPOS_EXPORT = [
@@ -570,6 +574,18 @@ async def deletar_imovel(imovel_id: str, current_user: dict = Depends(require_ad
     )
     for foto in (fotos.data or []):
         await deletar_foto(foto["url"])
+
+    # Documentos internos: o registro some por cascade, mas o arquivo no storage
+    # não — limpamos explicitamente para não deixar órfãos no bucket.
+    docs = (
+        supabase_admin.table("imovel_documentos")
+        .select("firebase_path")
+        .eq("imovel_id", imovel_id)
+        .execute()
+    )
+    for doc in (docs.data or []):
+        deletar_documento(doc["firebase_path"])
+
     supabase_admin.table("imoveis").delete().eq("id", imovel_id).execute()
 
 
@@ -719,3 +735,100 @@ async def rotacionar_foto(
 
     await deletar_foto(url_antiga)
     return {"id": foto_id, "url": nova_url, "ordem": foto.data.get("ordem")}
+
+
+# ── Documentos internos do imóvel ─────────────────────────────────────────────
+# Armazenagem interna (contratos, matrícula, IPTU, escritura...). Reusa o
+# storage de documentos das locações: mesmo bucket, signed URL de download.
+
+def _hidratar_documento(raw: dict) -> dict:
+    """Anexa a signed URL de download ao registro antes de devolver."""
+    return {**raw, "url": url_publica_documento(raw["firebase_path"])}
+
+
+def _imovel_existe(imovel_id: str) -> None:
+    res = (
+        supabase_admin.table("imoveis")
+        .select("id")
+        .eq("id", imovel_id)
+        .execute()
+    )
+    if not (res.data or []):
+        raise HTTPException(status_code=404, detail="Imóvel não encontrado.")
+
+
+@router.get("/{imovel_id}/documentos", response_model=List[DocumentoImovelOut])
+def listar_documentos(imovel_id: str, current_user: dict = Depends(get_current_user)):
+    result = (
+        supabase_admin.table("imovel_documentos")
+        .select("*")
+        .eq("imovel_id", imovel_id)
+        .order("created_at", desc=True)
+        .execute()
+    )
+    return [_hidratar_documento(d) for d in (result.data or [])]
+
+
+@router.post(
+    "/{imovel_id}/documentos",
+    response_model=DocumentoImovelOut,
+    status_code=status.HTTP_201_CREATED,
+)
+async def upload_documento_imovel(
+    imovel_id: str,
+    file: UploadFile = File(...),
+    tipo: TipoDocumentoImovel = Form(default=TipoDocumentoImovel.outro),
+    current_user: dict = Depends(require_admin),
+):
+    """Sobe um documento ao Supabase Storage e registra em imovel_documentos.
+    Path inclui UUID para evitar colisão de nomes."""
+    _imovel_existe(imovel_id)
+
+    nome_original = file.filename or "documento"
+    nome_seguro = re.sub(r"[^a-zA-Z0-9._-]+", "_", nome_original)[:80] or "documento"
+    storage_path = f"imoveis/{imovel_id}/documentos/{uuid.uuid4().hex[:12]}-{nome_seguro}"
+
+    info = await upload_documento(file, storage_path)
+
+    registro = {
+        "imovel_id": imovel_id,
+        "tipo": tipo.value,
+        "nome_arquivo": nome_original,
+        "firebase_path": info["firebase_path"],
+        "mime_type": info["mime_type"],
+        "tamanho_bytes": info["tamanho_bytes"],
+        "uploaded_by": current_user["id"],
+    }
+    try:
+        result = supabase_admin.table("imovel_documentos").insert(registro).execute()
+    except Exception as e:
+        # Reverte o upload se o INSERT falhou — evita órfão no storage.
+        deletar_documento(storage_path)
+        raise HTTPException(status_code=500, detail=f"Erro ao registrar documento: {e}")
+
+    return _hidratar_documento(result.data[0])
+
+
+@router.delete(
+    "/{imovel_id}/documentos/{documento_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def deletar_documento_imovel(
+    imovel_id: str,
+    documento_id: str,
+    current_user: dict = Depends(require_admin),
+):
+    """Remove o arquivo do storage e o registro do banco. Idempotente."""
+    existente = (
+        supabase_admin.table("imovel_documentos")
+        .select("*")
+        .eq("id", documento_id)
+        .eq("imovel_id", imovel_id)
+        .execute()
+        .data
+        or []
+    )
+    if not existente:
+        return
+    deletar_documento(existente[0]["firebase_path"])
+    supabase_admin.table("imovel_documentos").delete().eq("id", documento_id).execute()

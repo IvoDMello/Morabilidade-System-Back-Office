@@ -155,6 +155,31 @@ class ImovelListOut(BaseModel):
         return float(v) if v is not None else None
 
 
+# ── Documentos internos do imóvel ────────────────────────────────────────────
+
+class TipoDocumentoImovel(str, Enum):
+    contrato = "contrato"
+    matricula = "matricula"
+    iptu = "iptu"
+    escritura = "escritura"
+    planta = "planta"
+    condominio = "condominio"
+    outro = "outro"
+
+
+class DocumentoImovelOut(BaseModel):
+    id: str
+    imovel_id: str
+    tipo: TipoDocumentoImovel
+    nome_arquivo: str
+    firebase_path: str
+    tamanho_bytes: Optional[int] = None
+    mime_type: Optional[str] = None
+    uploaded_by: Optional[str] = None
+    created_at: Optional[str] = None
+    url: Optional[str] = None  # signed URL resolvida na hora — não persistida.
+
+
 class ImovelFiltros(BaseModel):
     codigo: Optional[str] = None
     tipo_negocio: Optional[TipoNegocio] = None

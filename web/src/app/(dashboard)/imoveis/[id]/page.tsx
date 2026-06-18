@@ -14,6 +14,7 @@ import { AcompanhamentoImovel } from "@/components/imoveis/acompanhamento-imovel
 import { FichasImovel } from "@/components/fichas/fichas-imovel";
 import { AutorizacaoImovel } from "@/components/fichas/autorizacao-imovel";
 import { AudienciaImovel } from "@/components/imoveis/audiencia-imovel";
+import { DocumentosImovel } from "@/components/imoveis/documentos-imovel";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import type { Imovel, Foto } from "@/types";
 
@@ -320,7 +321,7 @@ export default function EditarImovelPage({
   const [imovel, setImovel] = useState<Imovel | null>(null);
   const [loadingDados, setLoadingDados] = useState(true);
   const [salvando, setSalvando] = useState(false);
-  const [abaAtiva, setAbaAtiva] = useState<"dados" | "acompanhamento" | "fichas" | "autorizacao">("dados");
+  const [abaAtiva, setAbaAtiva] = useState<"dados" | "documentos" | "acompanhamento" | "fichas" | "autorizacao">("dados");
 
   const carregarImovel = useCallback(async () => {
     try {
@@ -437,6 +438,7 @@ export default function EditarImovelPage({
         {(
           [
             { key: "dados", label: "Dados do imóvel" },
+            { key: "documentos", label: "Documentos" },
             { key: "acompanhamento", label: "Acompanhamento" },
             { key: "fichas", label: "Fichas de visita" },
             { key: "autorizacao", label: "Autorização" },
@@ -503,6 +505,8 @@ export default function EditarImovelPage({
           </div>
         </>
       )}
+
+      {abaAtiva === "documentos" && <DocumentosImovel imovelId={imovel.id} />}
 
       {abaAtiva === "acompanhamento" && (
         <AcompanhamentoImovel
