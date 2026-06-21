@@ -11,9 +11,13 @@ from __future__ import annotations
 
 import base64
 import io
+import logging
 import os
-from datetime import date, datetime
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+
+logger = logging.getLogger(__name__)
 
 from reportlab.lib import colors
 from reportlab.lib.units import mm
@@ -27,6 +31,24 @@ DOURADO_CLARO = colors.HexColor("#fdfaef")
 TEXTO_ESCURO = colors.HexColor("#1f2937")
 TEXTO_CLARO = colors.HexColor("#64748b")
 LINHA = colors.HexColor("#e2e8f0")
+
+# Fuso usado na apresentação de datas/horas. O banco grava sempre em UTC; aqui
+# convertemos só na hora de imprimir, pra trilha de auditoria bater com o
+# horário local de quem assinou. Se o ambiente não tiver a base IANA (Windows
+# sem o pacote tzdata), caímos num offset fixo de -3h — correto pro Brasil hoje,
+# que não observa mais horário de verão — pra nunca quebrar a geração do PDF.
+try:
+    TZ_BR = ZoneInfo("America/Sao_Paulo")
+except ZoneInfoNotFoundError:
+    TZ_BR = timezone(timedelta(hours=-3))
+    logger.warning(
+        "tzdata indisponível (ZoneInfo 'America/Sao_Paulo' não encontrado); "
+        "usando offset fixo UTC-3. As horas ficam corretas enquanto o Brasil "
+        "não voltar a ter horário de verão. Instale o pacote 'tzdata'."
+    )
+
+# Rótulo do fuso exibido na trilha de auditoria, pra hora não ficar ambígua.
+TZ_BR_LABEL = "horário de Brasília"
 
 MESES_PT = [
     "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -215,6 +237,12 @@ def fmt_dt(valor, com_hora: bool = False) -> str:
             dt = datetime.fromisoformat(str(valor).replace("Z", "+00:00"))
         except ValueError:
             return str(valor)[:10]
+    # Converte pro fuso do Brasil quando o valor é "aware" (timestamptz vindo do
+    # banco). Isso acerta tanto a hora quanto a data — perto da meia-noite o dia
+    # em UTC e no Brasil podem diferir. Strings só-data ("2026-06-18") são naive
+    # e ficam como estão.
+    if dt.tzinfo is not None:
+        dt = dt.astimezone(TZ_BR)
     return dt.strftime("%d/%m/%Y %H:%M") if com_hora else dt.strftime("%d/%m/%Y")
 
 
@@ -226,7 +254,7 @@ def bloco_trilha(
     Usada tanto pela ficha de visita quanto pela autorização."""
     linhas = [
         ("Assinado eletronicamente por", f"{signatario_nome}  ·  CPF {cpf or '—'}"),
-        ("Data/hora", fmt_dt(assinada_em, com_hora=True)),
+        (f"Data/hora ({TZ_BR_LABEL})", fmt_dt(assinada_em, com_hora=True)),
         ("IP de origem", ip or "—"),
         ("Geolocalização", geo or "não informada"),
         ("Hash do documento (SHA-256)", doc_hash or "—"),

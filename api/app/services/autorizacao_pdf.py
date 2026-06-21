@@ -29,6 +29,7 @@ from app.services.pdf_base import (
     OLIVE,
     TEXTO_CLARO,
     TEXTO_ESCURO,
+    TZ_BR_LABEL,
     campo,
     desenhar_assinatura_png,
     desenhar_qr,
@@ -364,7 +365,8 @@ def gerar_autorizacao_pdf(auth: dict, assinada: bool = False) -> bytes:
         yy -= 4.4 * mm
         c.setFont("Helvetica-Oblique", 6.5)
         c.drawString(MARGEM + 3 * mm, yy,
-                     "Assinatura eletrônica nos termos do art. 107 do Código Civil e da Lei nº 14.063/2020.")
+                     f"Datas e horas no {TZ_BR_LABEL}. Assinatura eletrônica nos termos do "
+                     "art. 107 do Código Civil e da Lei nº 14.063/2020.")
     else:
         y = _garantir(y, 10 * mm)
         c.setFillColor(TEXTO_CLARO)

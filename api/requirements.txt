@@ -25,7 +25,10 @@ reportlab==4.2.5
 # Agendador interno (relatório automático de 30 dias) — roda no processo web.
 APScheduler==3.10.4
 # Base IANA de timezones: a imagem python:3.12-slim não inclui, e o ZoneInfo
-# ("America/Sao_Paulo") do scheduler depende dela.
+# ("America/Sao_Paulo") depende dela — usado pelo scheduler e pela conversão de
+# fuso na trilha de auditoria dos PDFs (pdf_base.fmt_dt). Versão fixada: as
+# regras de fuso ficam congeladas nesta release; se o Brasil voltar a adotar
+# horário de verão (ou for preciso outro fuso), atualize este pino.
 tzdata==2024.2
 
 # Rate limiting

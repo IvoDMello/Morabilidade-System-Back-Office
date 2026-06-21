@@ -8,6 +8,7 @@ import {
 import {
   getAutorizacaoPublica, assinarAutorizacao, autorizacaoPdfUrl, type AutorizacaoPublica,
 } from "@/lib/api";
+import { capturarGeo } from "@/lib/geo";
 import { formatarMoeda } from "@/lib/utils";
 import { SignaturePad, type SignaturePadHandle } from "@/components/assinatura/SignaturePad";
 
@@ -161,6 +162,12 @@ function Formulario({
   const [assinando, setAssinando] = useState(false);
   const [temTraco, setTemTraco] = useState(false);
   const padRef = useRef<SignaturePadHandle>(null);
+  // Captura a geo em segundo plano assim que a tela abre, pra não atrasar o
+  // clique em "Assinar". Se o usuário ignorar o prompt, ficamos só com null.
+  const geoRef = useRef<string | null>(null);
+  useEffect(() => {
+    capturarGeo().then((g) => { geoRef.current = g; });
+  }, []);
 
   const cpfDigitos = cpf.replace(/\D/g, "");
   const podeAssinar = aceite && cpfDigitos.length >= 11 && temTraco && !assinando;
@@ -172,10 +179,12 @@ function Formulario({
     if (!aceite) { toast.error("Marque a caixa de aceite para continuar."); return; }
     setAssinando(true);
     try {
+      // Usa a geo já capturada em segundo plano (pode ser null) — sem espera.
       const atualizada = await assinarAutorizacao(token, {
         aceite: true,
         cpf: cpf.trim(),
         assinatura_png: padRef.current?.toDataURL() ?? null,
+        geo: geoRef.current,
       });
       toast.success("Autorização assinada com sucesso!");
       onAssinada(atualizada);

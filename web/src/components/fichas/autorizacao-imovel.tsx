@@ -48,6 +48,16 @@ function formatDataBR(iso?: string | null) {
   return isNaN(d.getTime()) ? "—" : d.toLocaleDateString("pt-BR");
 }
 
+// Para a assinatura, mostramos também a hora (o navegador já converte pro fuso
+// local), batendo com a trilha de auditoria do PDF.
+function formatDataHoraBR(iso?: string | null) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  return isNaN(d.getTime())
+    ? "—"
+    : d.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+}
+
 export const STATUS_STYLE: Record<Autorizacao["status"], { label: string; cls: string }> = {
   pendente: { label: "Aguardando assinatura", cls: "bg-amber-50 text-amber-700 border-amber-200" },
   parcial: { label: "Parcialmente assinada", cls: "bg-sky-50 text-sky-700 border-sky-200" },
@@ -292,7 +302,7 @@ function Lista({ itens, loading, onAtualizar }: { itens: Autorizacao[]; loading:
                     </div>
                     <div className="text-xs text-slate-400 mt-0.5">
                       {NEGOCIO_LABEL[a.tipo_negocio]} · emitida em {formatDataBR(a.created_at)}
-                      {a.status === "assinada" && a.assinada_em && ` · assinada em ${formatDataBR(a.assinada_em)}`}
+                      {a.status === "assinada" && a.assinada_em && ` · assinada em ${formatDataHoraBR(a.assinada_em)}`}
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
@@ -356,7 +366,7 @@ function LinhaSignatario({ s }: { s: Signatario }) {
       <span className="text-xs text-slate-600 flex-1 min-w-0 truncate">{s.nome}</span>
       {assinou ? (
         <span className="text-[11px] px-2 py-0.5 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-200">
-          Assinou {s.assinada_em ? `em ${formatDataBR(s.assinada_em)}` : ""}
+          Assinou {s.assinada_em ? `em ${formatDataHoraBR(s.assinada_em)}` : ""}
         </span>
       ) : (
         <>
