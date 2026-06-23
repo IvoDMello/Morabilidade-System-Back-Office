@@ -18,20 +18,22 @@ export async function POST(
   const { id } = await params;
 
   const API = process.env.BACKOFFICE_API_URL;
-  if (!API) {
+  const INTERNAL_TOKEN = process.env.BACKOFFICE_INTERNAL_TOKEN;
+  if (!API || !INTERNAL_TOKEN) {
     return NextResponse.json(
-      { error: "BACKOFFICE_API_URL não configurada no ambiente." },
+      { error: "Integração com o back-office não configurada (BACKOFFICE_API_URL / BACKOFFICE_INTERNAL_TOKEN)." },
       { status: 500 },
     );
   }
 
+  // Exige apenas que o operador esteja logado no captações; a autenticação na
+  // API do back-office é feita server-to-server pelo token de integração.
   const supabase = await createClient();
   const {
     data: { session },
   } = await supabase.auth.getSession();
-  const token = session?.access_token;
   const userId = session?.user?.id;
-  if (!token) {
+  if (!userId) {
     return NextResponse.json(
       { error: "Sessão expirada. Faça login novamente." },
       { status: 401 },
@@ -59,7 +61,7 @@ export async function POST(
 
   const headers = {
     "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
+    "X-Internal-Token": INTERNAL_TOKEN,
   };
 
   // 1) Proprietário (cliente).

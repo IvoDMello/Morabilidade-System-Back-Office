@@ -8,7 +8,7 @@ from fastapi import (
     APIRouter, Depends, File, HTTPException, Query, Response, UploadFile, status,
 )
 
-from app.auth.dependencies import get_current_user, require_admin
+from app.auth.dependencies import get_current_user, require_admin, require_admin_or_internal
 from app.database import supabase_admin
 from app.schemas.cliente import (
     ClienteCreate, ClienteListOut, ClienteOut, ClienteUpdate, StatusCliente,
@@ -524,7 +524,7 @@ def _buscar_cliente(cliente_id: str) -> dict:
 
 
 @router.post("/", response_model=ClienteOut, status_code=status.HTTP_201_CREATED)
-def criar_cliente(body: ClienteCreate, current_user: dict = Depends(require_admin)):
+def criar_cliente(body: ClienteCreate, current_user: dict = Depends(require_admin_or_internal)):
     data = _normalizar_imovel_codigo(body.model_dump(exclude={"tag_ids"}))
     result = supabase_admin.table("clientes").insert(data).execute()
     novo = result.data[0]

@@ -48,6 +48,13 @@ class Settings(BaseSettings):
     # interno fica inacessível.
     cron_token: str = ""
 
+    # Token compartilhado para chamadas server-to-server de integração (ex.: o
+    # site de captações criando imóvel/proprietário). Quem envia o header
+    # X-Internal-Token com este valor escreve sem precisar de perfil admin —
+    # mas o tráfego normal do painel continua exigindo admin/corretor. Vazio
+    # desliga o atalho de integração.
+    internal_api_token: str = ""
+
     # Agendador interno (APScheduler) que dispara o relatório de 30 dias
     # diariamente, dentro do próprio processo web. `scheduler_enabled=false`
     # desliga (kill-switch de ops). Hora no fuso America/Sao_Paulo.

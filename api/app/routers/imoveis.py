@@ -10,7 +10,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, Response, UploadFile, status
 from pydantic import BaseModel
 
-from app.auth.dependencies import get_current_user, require_admin
+from app.auth.dependencies import get_current_user, require_admin, require_admin_or_internal
 from app.database import supabase_admin
 from app.limiter import limiter
 from app.schemas.imovel import (
@@ -486,7 +486,7 @@ def listar_imoveis(
 
 
 @router.post("/", response_model=ImovelOut, status_code=status.HTTP_201_CREATED)
-def criar_imovel(body: ImovelCreate, current_user: dict = Depends(require_admin)):
+def criar_imovel(body: ImovelCreate, current_user: dict = Depends(require_admin_or_internal)):
     data = body.model_dump(exclude={"tag_ids"})
 
     if not data.get("codigo"):

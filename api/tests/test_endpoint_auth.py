@@ -12,9 +12,9 @@ from fastapi.dependencies.models import Dependant
 from fastapi.routing import APIRoute
 
 from app.main import app
-from app.auth.dependencies import get_current_user, require_admin
+from app.auth.dependencies import get_current_user, require_admin, require_admin_or_internal
 
-AUTH_DEPS = {get_current_user, require_admin}
+AUTH_DEPS = {get_current_user, require_admin, require_admin_or_internal}
 
 # Rotas públicas por design. Cada padrão é um substring do path.
 PUBLIC_PATTERNS = (

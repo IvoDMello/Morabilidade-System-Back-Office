@@ -32,7 +32,7 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.auth.dependencies import get_current_user, require_admin
+from app.auth.dependencies import get_current_user, require_admin, require_admin_or_internal
 
 # ── Usuários de teste ────────────────────────────────────────────────────────
 
@@ -73,6 +73,7 @@ def client():
     """
     app.dependency_overrides[get_current_user] = lambda: ADMIN_USER
     app.dependency_overrides[require_admin] = lambda: ADMIN_USER
+    app.dependency_overrides[require_admin_or_internal] = lambda: ADMIN_USER
     yield TestClient(app)
     app.dependency_overrides.clear()
 
@@ -82,6 +83,7 @@ def admin_client():
     """Alias semântico para `client` — uso explícito quando o teste foca em ações admin-only."""
     app.dependency_overrides[get_current_user] = lambda: ADMIN_USER
     app.dependency_overrides[require_admin] = lambda: ADMIN_USER
+    app.dependency_overrides[require_admin_or_internal] = lambda: ADMIN_USER
     yield TestClient(app)
     app.dependency_overrides.clear()
 
@@ -90,6 +92,7 @@ def admin_client():
 def corretor_client():
     """Cliente autenticado como corretor (mesmas permissões de alteração do admin)."""
     app.dependency_overrides[get_current_user] = lambda: REGULAR_USER
+    app.dependency_overrides[require_admin_or_internal] = lambda: REGULAR_USER
     yield TestClient(app)
     app.dependency_overrides.clear()
 
