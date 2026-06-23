@@ -40,5 +40,10 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/cron|.*\\.(?:svg|png|jpg|webp)$).*)"],
+  // Exclui assets do PWA (manifest e service worker) além dos estáticos — senão
+  // o middleware redireciona /manifest.webmanifest e /sw.js para /login (307) e
+  // o navegador não consegue oferecer a instalação do app.
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|api/cron|manifest.webmanifest|sw.js|.*\\.(?:svg|png|jpg|jpeg|webp|ico)$).*)",
+  ],
 };
