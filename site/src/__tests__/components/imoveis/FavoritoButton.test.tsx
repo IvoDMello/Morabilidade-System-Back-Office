@@ -5,7 +5,7 @@ import { FavoritoButton } from "@/components/imoveis/FavoritoButton";
 const STORAGE_KEY = "mora_favoritos";
 
 describe("FavoritoButton", () => {
-  const sendBeacon = vi.fn(() => true);
+  const sendBeacon = vi.fn((_url: string, _data?: BodyInit) => true);
 
   beforeEach(() => {
     window.localStorage.clear();

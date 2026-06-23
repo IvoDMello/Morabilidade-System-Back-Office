@@ -3,7 +3,7 @@ import { render } from "@testing-library/react";
 import { SearchTracker } from "@/components/analytics/SearchTracker";
 
 describe("SearchTracker", () => {
-  const sendBeacon = vi.fn(() => true);
+  const sendBeacon = vi.fn((_url: string, _data?: BodyInit) => true);
 
   beforeEach(() => {
     sendBeacon.mockClear();

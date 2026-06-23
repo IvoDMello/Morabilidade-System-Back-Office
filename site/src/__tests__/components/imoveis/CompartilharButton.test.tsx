@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { CompartilharButton } from "@/components/imoveis/CompartilharButton";
 
 describe("CompartilharButton", () => {
-  const sendBeacon = vi.fn(() => true);
+  const sendBeacon = vi.fn((_url: string, _data?: BodyInit) => true);
 
   beforeEach(() => {
     sendBeacon.mockClear();
@@ -34,7 +34,7 @@ describe("CompartilharButton", () => {
   });
 
   it("clique em Copiar link envia beacon com canal=copy_link", async () => {
-    const writeText = vi.fn(() => Promise.resolve());
+    const writeText = vi.fn((_text: string) => Promise.resolve());
     vi.stubGlobal("navigator", { sendBeacon, clipboard: { writeText } });
 
     render(<CompartilharButton codigo="MB-00001" titulo="Apto Ipanema" />);

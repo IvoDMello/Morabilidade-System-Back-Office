@@ -34,7 +34,7 @@ describe("sendBeaconJSON", () => {
   });
 
   it("usa navigator.sendBeacon quando disponível", () => {
-    const sendBeacon = vi.fn(() => true);
+    const sendBeacon = vi.fn((_url: string, _data?: BodyInit) => true);
     vi.stubGlobal("navigator", { sendBeacon });
     sendBeaconJSON("/publico/foo", { a: 1 });
     expect(sendBeacon).toHaveBeenCalledOnce();
@@ -44,8 +44,8 @@ describe("sendBeaconJSON", () => {
   });
 
   it("faz fallback pra fetch keepalive quando sendBeacon falha", () => {
-    const sendBeacon = vi.fn(() => false);
-    const fetchMock = vi.fn(() => Promise.resolve(new Response()));
+    const sendBeacon = vi.fn((_url: string, _data?: BodyInit) => false);
+    const fetchMock = vi.fn((_url: string, _init?: RequestInit) => Promise.resolve(new Response()));
     vi.stubGlobal("navigator", { sendBeacon });
     vi.stubGlobal("fetch", fetchMock);
     sendBeaconJSON("/publico/foo", { a: 1 });
