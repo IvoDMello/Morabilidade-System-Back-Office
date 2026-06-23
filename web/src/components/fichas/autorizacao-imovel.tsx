@@ -100,8 +100,8 @@ export function AutorizacaoImovel({ imovelId }: { imovelId: string }) {
 
 const inputCls = "border border-slate-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#585a4f]";
 
-interface PropRow { nome: string; cpf: string; telefone: string }
-const rowVazia = (): PropRow => ({ nome: "", cpf: "", telefone: "" });
+interface PropRow { nome: string; telefone: string }
+const rowVazia = (): PropRow => ({ nome: "", telefone: "" });
 
 function NovaAutorizacao({ imovelId, onCriada }: { imovelId: string; onCriada: () => void }) {
   const [tipo, setTipo] = useState<"venda" | "locacao" | "ambos">("venda");
@@ -121,7 +121,7 @@ function NovaAutorizacao({ imovelId, onCriada }: { imovelId: string; onCriada: (
 
     // Mais de um proprietário exige nome em todas as linhas (cada um recebe o
     // próprio link de assinatura).
-    const preenchidos = props.filter((p) => p.nome.trim() || p.cpf.trim() || p.telefone.trim());
+    const preenchidos = props.filter((p) => p.nome.trim() || p.telefone.trim());
     if (preenchidos.length > 1 && props.some((p) => !p.nome.trim())) {
       toast.error("Informe o nome de todos os proprietários.");
       return;
@@ -138,14 +138,16 @@ function NovaAutorizacao({ imovelId, onCriada }: { imovelId: string; onCriada: (
     if (preenchidos.length > 1) {
       payload.proprietarios = preenchidos.map((p) => ({
         nome: p.nome.trim(),
-        cpf: p.cpf.trim() || null,
+        // CPF não é mais coletado aqui — cada proprietário confirma o seu na
+        // hora de assinar. A API puxa o que tiver do cadastro do imóvel.
+        cpf: null,
         telefone: p.telefone.trim() || null,
       }));
     } else {
       // 1 proprietário (ou nenhum): puxa do imóvel o que faltar.
       const unico = preenchidos[0] ?? props[0];
       payload.proprietario_nome = unico.nome.trim() || null;
-      payload.proprietario_cpf = unico.cpf.trim() || null;
+      payload.proprietario_cpf = null;
       payload.proprietario_telefone = unico.telefone.trim() || null;
     }
 
@@ -202,11 +204,9 @@ function NovaAutorizacao({ imovelId, onCriada }: { imovelId: string; onCriada: (
             <span className="text-xs text-slate-400"> · com 1 proprietário os dados podem ficar vazios (puxa do imóvel); cada um recebe o próprio link</span>
           </p>
           {props.map((p, i) => (
-            <div key={i} className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto] gap-2">
+            <div key={i} className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2">
               <input type="text" placeholder={i === 0 ? "Nome (puxa do imóvel se vazio)" : `Nome do ${i + 1}º proprietário`}
                 value={p.nome} onChange={(e) => setProp(i, { nome: e.target.value })} className={inputCls} />
-              <input type="text" placeholder="CPF/CNPJ" value={p.cpf}
-                onChange={(e) => setProp(i, { cpf: e.target.value })} className={inputCls} />
               <input type="text" placeholder="WhatsApp" value={p.telefone}
                 onChange={(e) => setProp(i, { telefone: e.target.value })} className={inputCls} />
               {i > 0 ? (
