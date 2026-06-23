@@ -95,3 +95,37 @@ jobs:
         env:
           NEXT_PUBLIC_API_URL: http://localhost:8000
         run: npm run build
+
+  captacoes:
+    name: Captações (Next.js)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: captacoes
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: captacoes/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Run tests
+        run: npm test -- --run
+
+      - name: Build
+        env:
+          # Valores dummy só para o `next build` coletar dados das páginas;
+          # os segredos reais vivem no projeto Vercel.
+          NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy_anon_key
+        run: npm run build

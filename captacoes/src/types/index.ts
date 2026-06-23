@@ -1,0 +1,117 @@
+export const STATUSES = [
+  "aguardando_informacoes",
+  "novas",
+  "em_decisao",
+  "pendente_negativa",
+  "negativada",
+  "pendente_agendar_visita",
+  "pendente_agendar_gravacao",
+] as const;
+
+export type Status = (typeof STATUSES)[number];
+
+export const STATUS_LABEL: Record<Status, string> = {
+  aguardando_informacoes: "Aguardando informações",
+  novas: "Novas",
+  em_decisao: "Decisão: aprovar/reprovar",
+  pendente_negativa: "Pendente de negativa",
+  negativada: "Negativada",
+  pendente_agendar_visita: "Pendente agendar visita",
+  pendente_agendar_gravacao: "Pendente agendar gravação",
+};
+
+/** Cor de destaque por coluna (mapa da seção 5 do PRD). */
+export const STATUS_TONE: Record<Status, string> = {
+  aguardando_informacoes: "muted",
+  novas: "primary",
+  em_decisao: "secondary",
+  pendente_negativa: "destructive",
+  negativada: "destructive",
+  pendente_agendar_visita: "positive",
+  pendente_agendar_gravacao: "positive",
+};
+
+export type Decisao = "aprovada" | "reprovada";
+
+/** Critérios de ordenação dentro de cada coluna. */
+export type Ordenacao = "manual" | "recentes" | "antigas" | "valor_desc" | "valor_asc" | "paradas";
+
+export const ORDENACAO_LABEL: Record<Ordenacao, string> = {
+  manual: "Ordem manual",
+  recentes: "Mais recentes",
+  antigas: "Mais antigas",
+  valor_desc: "Maior valor",
+  valor_asc: "Menor valor",
+  paradas: "Paradas há mais tempo",
+};
+
+/** Filtros estruturados aplicados além da busca por texto. */
+export interface Criterios {
+  valorMin: number | null;
+  valorMax: number | null;
+  quartosMin: number | null;
+  soParadas: boolean;
+}
+
+export const CRITERIOS_VAZIO: Criterios = {
+  valorMin: null,
+  valorMax: null,
+  quartosMin: null,
+  soParadas: false,
+};
+
+export interface Captacao {
+  id: string;
+  status: Status;
+  ordem: number;
+  endereco: string;
+  quartos: number | null;
+  suites: number | null;
+  banheiros: number | null;
+  vagas: number | null;
+  metragem: number | null;
+  valor_condominio: number | null;
+  valor_iptu: number | null;
+  valor_venda: number | null;
+  tipo_portaria: string | null;
+  proprietario_nome: string | null;
+  whatsapp: string | null;
+  anuncio_url: string | null;
+  contato_proprietario: string | null;
+  observacoes: string | null;
+  pendencias: string | null;
+  decisao: Decisao | null;
+  decisao_autor: string | null;
+  decisao_em: string | null;
+  visita_concluida: boolean;
+  visita_data: string | null;
+  gravacao_concluida: boolean;
+  gravacao_data: string | null;
+  capa_path: string | null;
+  arquivado_em: string | null;
+  excluido_em: string | null;
+  criado_por: string | null;
+  criado_em: string;
+  atualizado_em: string;
+}
+
+export interface Midia {
+  id: string;
+  captacao_id: string;
+  tipo: "foto" | "video";
+  storage_path: string | null;
+  thumb_path: string | null;
+  url_externa: string | null;
+  ordem: number;
+  criado_em: string;
+}
+
+export interface Documento {
+  id: string;
+  captacao_id: string;
+  storage_path: string;
+  nome_original: string | null;
+  mime_type: string | null;
+  tamanho_bytes: number | null;
+  criado_em: string;
+}

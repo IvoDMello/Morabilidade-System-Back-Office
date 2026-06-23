@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---------------------------------------------------------------------
+   Tokens 60/30/10 — reaproveitados do Morabilidade
+   60% olive (secondary) · 30% dourado (primary) · 10% off-white (background)
+--------------------------------------------------------------------- */
+@layer base {
+  :root {
+    --background: 71 5% 96%;          /* off-white #fcfcfc */
+    --foreground: 71 6% 18%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 71 6% 18%;
+
+    --primary: 53 55% 63%;            /* dourado #d8cb6a */
+    --primary-foreground: 71 6% 18%;
+
+    --secondary: 71 6% 33%;           /* olive #585a4f */
+    --secondary-foreground: 71 5% 96%;
+
+    --muted: 71 6% 90%;
+    --muted-foreground: 71 6% 40%;
+
+    --accent: 53 55% 90%;
+    --accent-foreground: 71 6% 18%;
+
+    --destructive: 0 84% 60%;         /* vermelho */
+    --destructive-foreground: 0 0% 100%;
+
+    --positive: 142 60% 38%;          /* verde — ramo aprovado */
+    --positive-foreground: 0 0% 100%;
+
+    --border: 71 6% 85%;
+    --input: 71 6% 85%;
+    --ring: 53 55% 63%;
+
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * { @apply border-border; }
+  body { @apply bg-background text-foreground; }
+}
+
+/* Respeita usuários que pedem menos movimento (acessibilidade). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

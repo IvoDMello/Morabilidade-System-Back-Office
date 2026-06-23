@@ -1,0 +1,13 @@
+{
+  "name": "Captações · Morabilidade",
+  "short_name": "Captações",
+  "description": "Kanban de captações de imóveis",
+  "start_url": "/board",
+  "display": "standalone",
+  "background_color": "#fcfcfc",
+  "theme_color": "#585a4f",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
