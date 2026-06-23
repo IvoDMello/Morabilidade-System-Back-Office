@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, Phone, RotateCcw, X } from "lucide-react";
+import { Loader2, Phone, Plus, RotateCcw, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { useFormAutosave } from "@/lib/use-form-autosave";
 import type { Cliente, Tag, User } from "@/types";
@@ -207,6 +207,12 @@ export function ImovelForm({
   const [users, setUsers] = useState<User[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [cepLoading, setCepLoading] = useState(false);
+  // Cadastro rápido de proprietário direto na tela do imóvel (só nome + WhatsApp).
+  const [showNovoProp, setShowNovoProp] = useState(false);
+  const [novoPropNome, setNovoPropNome] = useState("");
+  const [novoPropTelefone, setNovoPropTelefone] = useState("");
+  const [novoPropSaving, setNovoPropSaving] = useState(false);
+  const [novoPropErro, setNovoPropErro] = useState<string | null>(null);
   const [iptuPeriodo, setIptuPeriodo] = useState<"mensal" | "anual">("mensal");
   // Valor exibido no input do IPTU. Em modo "anual" representa o anual; em
   // "mensal" representa o mensal — a conversão acontece no handler abaixo
@@ -314,6 +320,41 @@ export function ImovelForm({
       setValue("iptu_mensal", null);
     } else {
       setValue("iptu_mensal", iptuPeriodo === "anual" ? parseFloat((num / 10).toFixed(2)) : num);
+    }
+  }
+
+  async function criarProprietarioRapido() {
+    const nome = novoPropNome.trim();
+    const tel = novoPropTelefone.trim();
+    if (!nome) {
+      setNovoPropErro("Informe o nome do proprietário.");
+      return;
+    }
+    if (!tel) {
+      setNovoPropErro("Informe o WhatsApp do proprietário.");
+      return;
+    }
+    setNovoPropSaving(true);
+    setNovoPropErro(null);
+    try {
+      const { data: novo } = await api.post<Cliente>("/clientes/", {
+        nome_completo: nome,
+        telefone: tel,
+        tipo_cliente: "proprietario",
+      });
+      // Adiciona à lista local e já seleciona — o vínculo com o imóvel é
+      // persistido ao salvar o formulário (envia proprietario_id).
+      setClientes((prev) => [novo, ...prev]);
+      setValue("proprietario_id", novo.id);
+      setNovoPropNome("");
+      setNovoPropTelefone("");
+      setShowNovoProp(false);
+    } catch (err: unknown) {
+      const detail =
+        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      setNovoPropErro(detail || "Não foi possível cadastrar o proprietário.");
+    } finally {
+      setNovoPropSaving(false);
     }
   }
 
@@ -463,7 +504,27 @@ export function ImovelForm({
           </div>
 
           <div className="sm:col-span-2 lg:col-span-2">
-            <Label>Proprietário</Label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-sm font-medium text-slate-700">Proprietário</label>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowNovoProp((v) => !v);
+                  setNovoPropErro(null);
+                }}
+                className="inline-flex items-center gap-1 text-xs font-medium text-[#585a4f] hover:underline"
+              >
+                {showNovoProp ? (
+                  <>
+                    <X className="w-3 h-3" /> Cancelar
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-3 h-3" /> Novo proprietário
+                  </>
+                )}
+              </button>
+            </div>
             <select {...register("proprietario_id")} className={selectClass}>
               <option value="">Nenhum</option>
               {clientes
@@ -497,6 +558,45 @@ export function ImovelForm({
               <p className="mt-1 text-xs text-slate-400">
                 Sincroniza automaticamente com o contrato de locação deste imóvel.
               </p>
+            )}
+
+            {showNovoProp && (
+              <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 space-y-2">
+                <p className="text-xs font-medium text-slate-600">
+                  Cadastro rápido — só nome e WhatsApp. Você pode completar os dados depois em Clientes.
+                </p>
+                <input
+                  type="text"
+                  value={novoPropNome}
+                  onChange={(e) => setNovoPropNome(e.target.value)}
+                  className={inputClass}
+                  placeholder="Nome do proprietário"
+                />
+                <input
+                  type="tel"
+                  value={novoPropTelefone}
+                  onChange={(e) => setNovoPropTelefone(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      criarProprietarioRapido();
+                    }
+                  }}
+                  className={inputClass}
+                  placeholder="WhatsApp (com DDD)"
+                />
+                {novoPropErro && <p className="text-xs text-red-500">{novoPropErro}</p>}
+                <button
+                  type="button"
+                  onClick={criarProprietarioRapido}
+                  disabled={novoPropSaving}
+                  className="flex items-center gap-2 px-4 py-2 text-white text-xs font-medium rounded-lg transition hover:opacity-90 disabled:opacity-60"
+                  style={{ backgroundColor: "#585a4f" }}
+                >
+                  {novoPropSaving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  Cadastrar e vincular
+                </button>
+              </div>
             )}
           </div>
         </div>
