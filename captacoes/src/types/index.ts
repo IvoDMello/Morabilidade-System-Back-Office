@@ -88,6 +88,9 @@ export interface Captacao {
   gravacao_concluida: boolean;
   gravacao_data: string | null;
   capa_path: string | null;
+  imovel_id: string | null;
+  imovel_codigo: string | null;
+  cadastrado_em: string | null;
   arquivado_em: string | null;
   excluido_em: string | null;
   criado_por: string | null;

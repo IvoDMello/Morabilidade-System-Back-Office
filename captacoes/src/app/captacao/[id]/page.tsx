@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EditCaptacao } from "@/components/captacao/EditCaptacao";
 import { DecisaoBox } from "@/components/captacao/DecisaoBox";
+import { CadastrarImovel } from "@/components/captacao/CadastrarImovel";
 import { Agendamento } from "@/components/captacao/Agendamento";
 import { Galeria } from "@/components/captacao/Galeria";
 import { Documentos } from "@/components/captacao/Documentos";
@@ -117,6 +118,34 @@ export default async function CaptacaoPage({ params }: { params: Promise<{ id: s
           </CardHeader>
           <CardContent>
             <DecisaoBox captacao={c} />
+          </CardContent>
+        </Card>
+      )}
+
+      {c.decisao === "aprovada" && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Cadastro no sistema</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {c.imovel_codigo ? (
+              <div className="flex flex-wrap items-center gap-2 text-sm">
+                <Badge variant="positive">Imóvel {c.imovel_codigo}</Badge>
+                <span className="text-muted-foreground">já cadastrado no back-office.</span>
+                {process.env.NEXT_PUBLIC_PAINEL_URL && c.imovel_id && (
+                  <a
+                    href={`${process.env.NEXT_PUBLIC_PAINEL_URL}/imoveis/${c.imovel_id}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-medium text-primary hover:underline"
+                  >
+                    Abrir no painel
+                  </a>
+                )}
+              </div>
+            ) : (
+              <CadastrarImovel captacao={c} />
+            )}
           </CardContent>
         </Card>
       )}
