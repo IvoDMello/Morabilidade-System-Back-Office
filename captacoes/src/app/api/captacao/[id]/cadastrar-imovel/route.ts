@@ -19,11 +19,11 @@ export async function POST(
 
   const API = process.env.BACKOFFICE_API_URL;
   const INTERNAL_TOKEN = process.env.BACKOFFICE_INTERNAL_TOKEN;
-  const faltam = [
-    !API && "BACKOFFICE_API_URL",
-    !INTERNAL_TOKEN && "BACKOFFICE_INTERNAL_TOKEN",
-  ].filter(Boolean);
-  if (faltam.length) {
+  if (!API || !INTERNAL_TOKEN) {
+    const faltam = [
+      !API && "BACKOFFICE_API_URL",
+      !INTERNAL_TOKEN && "BACKOFFICE_INTERNAL_TOKEN",
+    ].filter(Boolean);
     return NextResponse.json(
       { error: `Integração não configurada — variável ausente: ${faltam.join(", ")}.` },
       { status: 500 },
