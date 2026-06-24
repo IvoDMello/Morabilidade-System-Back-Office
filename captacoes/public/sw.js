@@ -3,7 +3,7 @@
 // fontes, imagens). Navegações, API e dados vão sempre à rede — assim nunca
 // servimos HTML autenticado/obsoleto a partir do cache.
 
-const CACHE = "captacoes-static-v1";
+const CACHE = "captacoes-static-v2";
 const PRECACHE = ["/icon-192.png", "/icon-512.png", "/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
