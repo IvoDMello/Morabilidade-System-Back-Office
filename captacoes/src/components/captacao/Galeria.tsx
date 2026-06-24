@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { ImagePlus, Trash2, Video, Star, GripVertical, X } from "lucide-react";
+import { ImagePlus, Trash2, Video, Star, GripVertical, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import {
   DndContext,
@@ -105,24 +105,9 @@ export function Galeria({
   const [enviando, setEnviando] = useState(false);
   const [url, setUrl] = useState("");
   const [capa, setCapa] = useState<string | null>(capaInicial);
-  const [lightbox, setLightbox] = useState<string | null>(null);
-
-  // Esc fecha o lightbox.
-  useEffect(() => {
-    if (!lightbox) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setLightbox(null);
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [lightbox]);
-
-  async function abrirFoto(m: Midia) {
-    if (!m.storage_path) return;
-    try {
-      setLightbox(await signedUrl(m.storage_path));
-    } catch {
-      toast.error("Não foi possível abrir a foto.");
-    }
-  }
+  // Visualizador: índice da foto aberta (entre as fotos) + cache de URLs grandes.
+  const [viewer, setViewer] = useState<number | null>(null);
+  const [fullUrls, setFullUrls] = useState<Record<string, string>>({});
 
   async function definirCapa(thumbPath: string | null) {
     setCapa(thumbPath);
@@ -227,6 +212,58 @@ export function Galeria({
     );
   }
 
+  // Navega entre as fotos do visualizador (com limites).
+  const irPara = useCallback(
+    (i: number) => setViewer((atual) => (atual === null ? null : Math.max(0, Math.min(fotos.length - 1, i)))),
+    [fotos.length]
+  );
+
+  // Carrega a URL grande da foto atual (e das vizinhas) sob demanda, com cache.
+  // O ref evita refetch e impede que a própria escrita de estado redispare o efeito.
+  const carregadas = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (viewer === null) return;
+    const alvos = [viewer, viewer + 1, viewer - 1].filter((i) => i >= 0 && i < fotos.length);
+    (async () => {
+      for (const i of alvos) {
+        const m = fotos[i];
+        if (!m?.storage_path || carregadas.current.has(m.id)) continue;
+        carregadas.current.add(m.id);
+        try {
+          const u = await signedUrl(m.storage_path);
+          setFullUrls((c) => ({ ...c, [m.id]: u }));
+        } catch {
+          carregadas.current.delete(m.id);
+          if (i === viewer) toast.error("Não foi possível abrir a foto.");
+        }
+      }
+    })();
+  }, [viewer, fotos]);
+
+  // Teclado: Esc fecha, setas navegam.
+  useEffect(() => {
+    if (viewer === null) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setViewer(null);
+      else if (e.key === "ArrowRight") irPara(viewer + 1);
+      else if (e.key === "ArrowLeft") irPara(viewer - 1);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [viewer, irPara]);
+
+  // Swipe horizontal no celular.
+  const toqueX = useRef<number | null>(null);
+  function onTouchStart(e: React.TouchEvent) {
+    toqueX.current = e.touches[0].clientX;
+  }
+  function onTouchEnd(e: React.TouchEvent) {
+    if (toqueX.current === null || viewer === null) return;
+    const dx = e.changedTouches[0].clientX - toqueX.current;
+    if (Math.abs(dx) > 40) irPara(viewer + (dx < 0 ? 1 : -1));
+    toqueX.current = null;
+  }
+
   return (
     <div className="space-y-4">
       <div>
@@ -250,7 +287,7 @@ export function Galeria({
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onReorder}>
           <SortableContext items={fotos.map((f) => f.id)} strategy={rectSortingStrategy}>
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-              {fotos.map((m) => (
+              {fotos.map((m, i) => (
                 <SortableFoto
                   key={m.id}
                   m={m}
@@ -258,7 +295,7 @@ export function Galeria({
                   thumb={thumbs[m.id]}
                   onCapa={() => definirCapa(m.thumb_path)}
                   onRemover={() => remover(m)}
-                  onAbrir={() => abrirFoto(m)}
+                  onAbrir={() => setViewer(i)}
                 />
               ))}
             </div>
@@ -284,22 +321,68 @@ export function Galeria({
         </div>
       ))}
 
-      {lightbox && (
+      {viewer !== null && fotos[viewer] && (
         <div
-          onClick={() => setLightbox(null)}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setViewer(null)}
+          onTouchStart={onTouchStart}
+          onTouchEnd={onTouchEnd}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
           role="dialog"
           aria-modal="true"
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={lightbox} alt="" className="max-h-full max-w-full rounded-lg object-contain" />
+          {fullUrls[fotos[viewer].id] ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={fullUrls[fotos[viewer].id]}
+              alt=""
+              onClick={(e) => e.stopPropagation()}
+              className="max-h-full max-w-full select-none rounded-lg object-contain"
+            />
+          ) : (
+            <span className="text-sm text-white/70">Carregando…</span>
+          )}
+
+          {/* Contador */}
+          <span className="absolute left-1/2 top-4 -translate-x-1/2 rounded-full bg-white/10 px-3 py-1 text-sm font-medium text-white">
+            {viewer + 1} / {fotos.length}
+          </span>
+
+          {/* Fechar */}
           <button
-            onClick={() => setLightbox(null)}
+            onClick={() => setViewer(null)}
             aria-label="Fechar"
             className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white outline-none hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-white"
           >
             <X className="h-5 w-5" />
           </button>
+
+          {/* Anterior */}
+          {viewer > 0 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                irPara(viewer - 1);
+              }}
+              aria-label="Foto anterior"
+              className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-2.5 text-white outline-none hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-white"
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </button>
+          )}
+
+          {/* Próxima */}
+          {viewer < fotos.length - 1 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                irPara(viewer + 1);
+              }}
+              aria-label="Próxima foto"
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-2.5 text-white outline-none hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-white"
+            >
+              <ChevronRight className="h-6 w-6" />
+            </button>
+          )}
         </div>
       )}
     </div>
