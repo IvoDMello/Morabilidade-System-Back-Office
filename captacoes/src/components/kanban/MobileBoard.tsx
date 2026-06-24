@@ -98,7 +98,8 @@ function MobileCard({ card, onDecidir }: { card: Captacao; onDecidir: (c: Captac
       <div className="flex items-start justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <StatusBadge status={card.status} />
-          {card.capa_path && (
+          {card.capa_path ? (
+            // Tem fotos: chip abre o visualizador (o anúncio, se houver, vai pro expandir).
             <button
               type="button"
               title="Ver fotos"
@@ -110,6 +111,20 @@ function MobileCard({ card, onDecidir }: { card: Captacao; onDecidir: (c: Captac
             >
               <Images className="h-3.5 w-3.5 text-[#888b7e]" /> Fotos
             </button>
+          ) : (
+            card.anuncio_url && (
+              // Sem fotos, mas tem anúncio: chip abre o link direto.
+              <a
+                href={card.anuncio_url}
+                target="_blank"
+                rel="noreferrer"
+                title="Ver anúncio"
+                onClick={(e) => e.stopPropagation()}
+                className="inline-flex items-center gap-1 rounded-lg border border-[#ece4b8] bg-[#faf7e8] px-2 py-1 text-xs font-medium text-[#9a8d3a] active:brightness-95"
+              >
+                <Link2 className="h-3.5 w-3.5" /> Anúncio
+              </a>
+            )
           )}
         </div>
         <button
@@ -169,7 +184,7 @@ function MobileCard({ card, onDecidir }: { card: Captacao; onDecidir: (c: Captac
               <User className="h-3.5 w-3.5" /> {card.proprietario_nome}
             </p>
           )}
-          {card.anuncio_url && (
+          {card.anuncio_url && card.capa_path && (
             <a
               href={card.anuncio_url}
               target="_blank"
