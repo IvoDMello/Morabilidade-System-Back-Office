@@ -1,212 +1,174 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { BedDouble, Bath, AlertTriangle, MessageCircle, User, ChevronRight, ChevronDown, Link2, Hotel, Ruler, Car, Clock, Calendar, Pin, PinOff, Check, X } from "lucide-react";
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  LayoutGrid,
+  LogOut,
+  Search,
+  X,
+  Plus,
+  ChevronDown,
+  BedDouble,
+  DoorOpen,
+  Bath,
+  Car,
+  Scan,
+  Check,
+  User,
+  Link2,
+} from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { BoardControls } from "@/components/board/BoardControls";
+import { NovaCaptacaoButton } from "@/components/captacao/NovaCaptacaoButton";
 import { cn } from "@/lib/utils";
-import { signedUrl } from "@/lib/storage";
-import { whatsappLink, formatarTelefone, formatBRL, relativo, dataCurta, diasParado } from "@/lib/format";
-import { STATUSES, STATUS_LABEL, STATUS_TONE, type Captacao, type Decisao, type Status } from "@/types";
+import { createClient } from "@/lib/supabase/client";
+import { formatBRL } from "@/lib/format";
+import { useBoard } from "@/stores/board";
+import { STATUS_STYLE, PILL_ORDER } from "@/lib/status-style";
+import type { Captacao, Decisao, Status } from "@/types";
 
-const TONE_DOT: Record<string, string> = {
-  muted: "bg-muted-foreground/40",
-  primary: "bg-primary",
-  secondary: "bg-secondary",
-  destructive: "bg-destructive",
-  positive: "bg-positive",
-};
+type Filtro = "all" | Status;
 
-/** Aba padrão por dispositivo: lembra a última coluna escolhida (ou a fixada). */
-const ABA_KEY = "morab:mobile-aba";
-
-function lerAbaSalva(): Status | null {
-  if (typeof window === "undefined") return null;
-  const v = window.localStorage.getItem(ABA_KEY);
-  return v && STATUSES.includes(v as Status) ? (v as Status) : null;
+/** Iniciais (até 2 letras) para avatares. */
+function iniciais(texto: string): string {
+  const partes = texto.trim().split(/[\s@.]+/).filter(Boolean);
+  if (partes.length === 0) return "?";
+  if (partes.length === 1) return partes[0].slice(0, 2).toUpperCase();
+  return (partes[0][0] + partes[1][0]).toUpperCase();
 }
 
-function MobileCard({
-  card,
-  onMover,
-  onDecidir,
-}: {
-  card: Captacao;
-  onMover: (c: Captacao, s: Status) => void;
-  onDecidir: (c: Captacao, d: Decisao) => void;
-}) {
+function StatusBadge({ status, full = false }: { status: Status; full?: boolean }) {
+  const s = STATUS_STYLE[status];
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold"
+      style={{ backgroundColor: s.bg, color: s.fg }}
+    >
+      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: s.dot }} />
+      {full ? s.label : s.short}
+    </span>
+  );
+}
+
+function MobileCard({ card, onDecidir }: { card: Captacao; onDecidir: (c: Captacao, d: Decisao) => void }) {
   const [aberto, setAberto] = useState(false);
-  const [capaUrl, setCapaUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!card.capa_path || !aberto) return;
-    let ativo = true;
-    signedUrl(card.capa_path, 3600).then((u) => ativo && setCapaUrl(u)).catch(() => {});
-    return () => {
-      ativo = false;
-    };
-  }, [card.capa_path, aberto]);
-
-  const temPendencia = card.status === "aguardando_informacoes" && card.pendencias?.trim();
-  const wa = whatsappLink(card.whatsapp);
-  const parado = diasParado(card.atualizado_em);
-  const alertaParado = card.status === "aguardando_informacoes" && parado >= 3;
-  const agendamento = card.status === "pendente_agendar_visita" || card.status === "pendente_agendar_gravacao";
+  const router = useRouter();
   const naDecisao = card.status === "em_decisao" && !card.decisao;
 
-  // Resumo de cômodos exibido já na linha compacta (sem precisar expandir).
   const specs: { icon: typeof BedDouble; valor: string; title: string }[] = [];
   if (card.quartos != null) specs.push({ icon: BedDouble, valor: String(card.quartos), title: "Quartos" });
-  if (card.suites != null) specs.push({ icon: Hotel, valor: String(card.suites), title: "Suítes" });
+  if (card.suites != null && card.suites > 0) specs.push({ icon: DoorOpen, valor: `${card.suites} suíte`, title: "Suítes" });
   if (card.banheiros != null) specs.push({ icon: Bath, valor: String(card.banheiros), title: "Banheiros" });
-  if (card.vagas != null) specs.push({ icon: Car, valor: String(card.vagas), title: "Vagas" });
-  if (card.metragem != null) specs.push({ icon: Ruler, valor: `${card.metragem}m²`, title: "Metragem" });
+  if (card.vagas != null && card.vagas > 0) specs.push({ icon: Car, valor: String(card.vagas), title: "Vagas" });
+  if (card.metragem != null) specs.push({ icon: Scan, valor: `${card.metragem}m²`, title: "Metragem" });
+
+  function abrirDetalhe() {
+    router.push(`/captacao/${card.id}`);
+  }
 
   return (
-    <Card className={cn("overflow-hidden", temPendencia && "border-l-4 border-l-destructive")}>
-      {/* Linha compacta — já mostra o essencial; toca para expandir */}
-      <button onClick={() => setAberto((v) => !v)} className="flex w-full items-start gap-2 p-3 text-left">
-        <div className="min-w-0 flex-1 space-y-1.5">
-          <div className="flex items-start gap-2">
-            <p className="min-w-0 flex-1 truncate font-medium leading-snug">{card.endereco}</p>
-            {temPendencia && <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />}
-            <ChevronDown className={cn("mt-0.5 h-5 w-5 shrink-0 text-muted-foreground transition-transform", aberto && "rotate-180")} />
-          </div>
+    <Card
+      onClick={abrirDetalhe}
+      className="cursor-pointer space-y-3 rounded-[18px] border-[#e8e9e3] p-[17px] shadow-[0_1px_2px_rgba(46,48,42,0.04),0_10px_24px_-16px_rgba(46,48,42,0.22)] transition-shadow active:shadow-sm"
+    >
+      {/* Linha topo: badge + expandir */}
+      <div className="flex items-start justify-between gap-2">
+        <StatusBadge status={card.status} />
+        <button
+          type="button"
+          aria-label={aberto ? "Recolher" : "Expandir"}
+          onClick={(e) => {
+            e.stopPropagation();
+            setAberto((v) => !v);
+          }}
+          className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-lg bg-[#f3f4f0] text-[#585a4f]"
+        >
+          <ChevronDown className={cn("h-4 w-4 transition-transform", aberto && "rotate-180")} />
+        </button>
+      </div>
 
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            {card.valor_venda != null && (
-              <span className="text-sm font-semibold text-primary">{formatBRL(card.valor_venda)}</span>
-            )}
-            {card.proprietario_nome && (
-              <span className="inline-flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
-                <User className="h-3.5 w-3.5 shrink-0" /> <span className="truncate">{card.proprietario_nome}</span>
-              </span>
-            )}
-          </div>
+      {/* Endereço */}
+      <p className="text-[17px] font-semibold leading-[1.28] text-[#2e302a]">{card.endereco}</p>
 
-          {specs.length > 0 && (
-            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-muted-foreground">
-              {specs.map((s, i) => (
-                <span key={i} className="inline-flex items-center gap-1" title={s.title}>
-                  <s.icon className="h-3.5 w-3.5" /> {s.valor}
-                </span>
-              ))}
+      {/* Specs */}
+      {specs.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          {specs.map((s, i) => (
+            <span
+              key={i}
+              title={s.title}
+              className="inline-flex items-center gap-1 rounded-[9px] border border-[#ebece6] bg-[#f5f6f1] px-2 py-1 text-[13px] text-[#585a4f]"
+            >
+              <s.icon className="h-3.5 w-3.5 text-[#888b7e]" /> {s.valor}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Valores */}
+      {(card.valor_venda != null || card.valor_condominio != null) && (
+        <div className="flex items-end justify-between gap-3 border-t border-[#eef0ea] pt-3">
+          {card.valor_venda != null && (
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-[#9a9c90]">Venda</p>
+              <p className="text-[16.5px] font-bold text-[#3d3f36]">{formatBRL(card.valor_venda)}</p>
             </div>
           )}
-
-          {/* Indicadores rápidos sempre visíveis */}
-          {(card.decisao || alertaParado || agendamento) && (
-            <div className="flex flex-wrap items-center gap-1.5">
-              {card.decisao && (
-                <Badge variant={card.decisao === "aprovada" ? "positive" : "destructive"} className="text-[10px]">
-                  {card.decisao}
-                </Badge>
-              )}
-              {alertaParado && !card.decisao && (
-                <Badge variant="destructive" className="text-[10px]">parada {parado}d</Badge>
-              )}
-              {agendamento && (
-                <>
-                  <Badge variant={card.visita_concluida ? "positive" : "muted"} className="gap-1 text-[10px]">
-                    <Calendar className="h-3 w-3" /> Visita {dataCurta(card.visita_data)}
-                  </Badge>
-                  <Badge variant={card.gravacao_concluida ? "positive" : "muted"} className="gap-1 text-[10px]">
-                    <Calendar className="h-3 w-3" /> Gravação {dataCurta(card.gravacao_data)}
-                  </Badge>
-                </>
-              )}
+          {card.valor_condominio != null && (
+            <div className="text-right">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-[#9a9c90]">Condomínio</p>
+              <p className="text-[14px] font-semibold text-[#6e7063]">{formatBRL(card.valor_condominio)}</p>
             </div>
           )}
         </div>
-      </button>
+      )}
 
-      {/* Ação rápida de decisão — sempre visível na coluna de decisão */}
+      {/* Expandido */}
+      {aberto && (
+        <div className="space-y-2 border-t border-dashed border-[#dcddd6] pt-3">
+          {card.proprietario_nome && (
+            <p className="inline-flex items-center gap-1.5 text-[13px] text-[#6e7063]">
+              <User className="h-3.5 w-3.5" /> {card.proprietario_nome}
+            </p>
+          )}
+          {card.anuncio_url && (
+            <a
+              href={card.anuncio_url}
+              target="_blank"
+              rel="noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="flex items-center gap-1.5 text-[13px] font-medium text-[#9a8d3a]"
+            >
+              <Link2 className="h-3.5 w-3.5" /> Ver anúncio publicado
+            </a>
+          )}
+        </div>
+      )}
+
+      {/* Decisão (versões suaves) — só na coluna de decisão */}
       {naDecisao && (
-        <div className="flex gap-2 border-t px-3 py-2.5">
+        <div className="flex gap-2 border-t border-[#eef0ea] pt-3">
           <button
-            onClick={() => onDecidir(card, "aprovada")}
-            className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-md bg-positive/10 text-sm font-medium text-positive active:bg-positive/20"
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDecidir(card, "aprovada");
+            }}
+            className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border border-[#c3e0cd] bg-[#ecf5ef] text-sm font-semibold text-[#2f6b46] active:brightness-95"
           >
             <Check className="h-4 w-4" /> Aprovar
           </button>
           <button
-            onClick={() => onDecidir(card, "reprovada")}
-            className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-md bg-destructive/10 text-sm font-medium text-destructive active:bg-destructive/20"
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDecidir(card, "reprovada");
+            }}
+            className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border border-[#e6c5c5] bg-[#f7ecec] text-sm font-semibold text-[#9a3b3b] active:brightness-95"
           >
             <X className="h-4 w-4" /> Reprovar
           </button>
-        </div>
-      )}
-
-      {/* Detalhes — só quando expandido */}
-      {aberto && (
-        <div className="space-y-3 border-t px-3 pb-3 pt-3">
-          {capaUrl && (
-            <div className="relative aspect-video w-full overflow-hidden rounded-md bg-muted">
-              <Image src={capaUrl} alt="" fill sizes="100vw" className="object-cover" />
-            </div>
-          )}
-
-          {temPendencia && (
-            <div className="flex items-start gap-1.5 rounded-md bg-destructive/10 p-2 text-xs text-destructive">
-              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              <span>{card.pendencias}</span>
-            </div>
-          )}
-
-          {card.observacoes?.trim() && (
-            <p className="whitespace-pre-wrap text-xs text-muted-foreground">{card.observacoes}</p>
-          )}
-
-          <div className="flex flex-wrap items-center gap-2">
-            {wa && (
-              <a
-                href={wa}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-md bg-positive/10 px-2 py-1 text-xs font-medium text-positive"
-              >
-                <MessageCircle className="h-3.5 w-3.5" /> {formatarTelefone(card.whatsapp)}
-              </a>
-            )}
-            {card.anuncio_url && (
-              <a
-                href={card.anuncio_url}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary"
-              >
-                <Link2 className="h-3.5 w-3.5" /> Anúncio
-              </a>
-            )}
-          </div>
-
-          <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-            <Clock className="h-3 w-3" /> {relativo(card.criado_em)}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <select
-              aria-label="Mover para coluna"
-              value={card.status}
-              onChange={(e) => onMover(card, e.target.value as Status)}
-              className="h-9 flex-1 rounded-md border border-input bg-background px-2 text-xs"
-            >
-              {STATUSES.map((s) => (
-                <option key={s} value={s}>
-                  {STATUS_LABEL[s]}
-                </option>
-              ))}
-            </select>
-            <Link
-              href={`/captacao/${card.id}`}
-              className="inline-flex h-9 items-center gap-1 rounded-md border border-input px-3 text-xs font-medium"
-            >
-              Abrir <ChevronRight className="h-4 w-4" />
-            </Link>
-          </div>
         </div>
       )}
     </Card>
@@ -216,92 +178,174 @@ function MobileCard({
 export function MobileBoard({
   byStatus,
   visiveis,
-  onMover,
   onDecidir,
+  userEmail,
 }: {
   byStatus: Record<Status, Captacao[]>;
   visiveis: (cards: Captacao[]) => Captacao[];
-  onMover: (c: Captacao, s: Status) => void;
   onDecidir: (c: Captacao, d: Decisao) => void;
+  userEmail: string;
 }) {
-  const [aba, setAba] = useState<Status>("aguardando_informacoes");
-  const [fixada, setFixada] = useState<Status | null>(null);
+  const router = useRouter();
+  const { filtro, setFiltro } = useBoard();
+  const [filtro_, setFiltroStatus] = useState<Filtro>("all");
 
-  // Ao abrir: restaura a coluna padrão escolhida neste aparelho.
-  useEffect(() => {
-    const salva = lerAbaSalva();
-    if (salva) {
-      setFixada(salva);
-      setAba(salva);
-    }
-  }, []);
+  const todas = useMemo(() => PILL_ORDER.flatMap((s) => byStatus[s]), [byStatus]);
+  const filtradas = useMemo(() => visiveis(todas), [visiveis, todas]);
+  const counts = useMemo(() => {
+    const m = {} as Record<Status, number>;
+    for (const s of PILL_ORDER) m[s] = 0;
+    for (const c of filtradas) m[c.status] = (m[c.status] ?? 0) + 1;
+    return m;
+  }, [filtradas]);
 
-  function escolherAba(s: Status) {
-    setAba(s);
-    // Se há uma coluna fixada, navegar a outra não muda o padrão.
-    if (!fixada && typeof window !== "undefined") {
-      window.localStorage.setItem(ABA_KEY, s);
-    }
+  const lista = filtro_ === "all" ? filtradas : filtradas.filter((c) => c.status === filtro_);
+
+  async function sair() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.replace("/login");
+    router.refresh();
   }
-
-  function alternarFixar() {
-    if (fixada === aba) {
-      setFixada(null);
-      if (typeof window !== "undefined") window.localStorage.removeItem(ABA_KEY);
-    } else {
-      setFixada(aba);
-      if (typeof window !== "undefined") window.localStorage.setItem(ABA_KEY, aba);
-    }
-  }
-
-  const cards = visiveis(byStatus[aba]);
 
   return (
-    <div className="flex h-full flex-col">
-      {/* abas de status com rolagem horizontal */}
-      <div className="flex items-center gap-2 px-3 pb-3">
-        <div className="flex flex-1 gap-2 overflow-x-auto">
-          {STATUSES.map((s) => {
-            const n = byStatus[s].length;
-            const ativa = s === aba;
-            return (
-              <button
-                key={s}
-                onClick={() => escolherAba(s)}
-                className={cn(
-                  "flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
-                  ativa ? "border-primary bg-primary/10 text-foreground" : "border-border text-muted-foreground"
-                )}
-              >
-                <span className={cn("h-2 w-2 rounded-full", TONE_DOT[STATUS_TONE[s]])} />
-                {STATUS_LABEL[s]}
-                {fixada === s && <Pin className="h-3 w-3 text-primary" />}
-                <span className="rounded-full bg-muted px-1.5 text-[10px]">{n}</span>
-              </button>
-            );
-          })}
+    <div className="relative flex h-full flex-col bg-[#f3f4f0]">
+      {/* Header olive (hero) */}
+      <header
+        className="px-[18px] pb-[22px] pt-[18px] text-[#f3f4f0]"
+        style={{ background: "linear-gradient(150deg,#2c2e28 0%,#585a4f 58%,#454840 100%)" }}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#d8cb6a]">Captações</p>
+            <h1 className="mt-1 font-serif text-[30px] font-semibold leading-none">Seu quadro</h1>
+            <p className="mt-2 inline-flex items-center gap-1.5 text-sm text-[#cfd0c9]">
+              <LayoutGrid className="h-4 w-4" /> {todas.length} no quadro
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <div
+              className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold"
+              style={{ backgroundColor: "#d8cb6a", color: "#3a3408" }}
+              title={userEmail}
+            >
+              {iniciais(userEmail)}
+            </div>
+            <button
+              type="button"
+              onClick={sair}
+              aria-label="Sair"
+              className="flex h-10 w-10 items-center justify-center rounded-full text-[#f3f4f0]/80 hover:bg-white/10"
+            >
+              <LogOut className="h-[18px] w-[18px]" />
+            </button>
+          </div>
         </div>
-        <button
-          onClick={alternarFixar}
-          aria-label={fixada === aba ? "Desafixar coluna padrão" : "Fixar como coluna padrão"}
-          title={fixada === aba ? "Desafixar coluna padrão" : "Abrir sempre nesta coluna"}
-          className={cn(
-            "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition-colors",
-            fixada === aba ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground"
-          )}
-        >
-          {fixada === aba ? <Pin className="h-4 w-4" /> : <PinOff className="h-4 w-4" />}
-        </button>
+
+        {/* Busca */}
+        <div className="mt-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#f3f4f0]/70" />
+            <input
+              value={filtro}
+              onChange={(e) => setFiltro(e.target.value)}
+              placeholder="Buscar por endereço…"
+              className="h-11 w-full rounded-[11px] border border-white/[0.18] bg-white/[0.14] pl-9 pr-9 text-sm text-[#f3f4f0] placeholder:text-[#f3f4f0]/60 outline-none focus:border-white/40"
+            />
+            {filtro.trim() && (
+              <button
+                type="button"
+                onClick={() => setFiltro("")}
+                aria-label="Limpar busca"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-[#f3f4f0]/70 hover:bg-white/10"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* Sub-header sticky: ordenação/filtros + pills */}
+      <div className="sticky top-0 z-10 border-b border-[#e2e3dd] bg-[#f3f4f0]/[0.92] backdrop-blur">
+        <div className="flex items-center justify-between gap-2 px-4 pb-2 pt-3">
+          <BoardControls />
+          <span className="text-xs text-[#9a9c90]">Toque para analisar</span>
+        </div>
+        <div className="flex gap-2 overflow-x-auto px-4 pb-3">
+          <Pill ativo={filtro_ === "all"} onClick={() => setFiltroStatus("all")} label="Todas" count={filtradas.length} />
+          {PILL_ORDER.map((s) => (
+            <Pill
+              key={s}
+              ativo={filtro_ === s}
+              onClick={() => setFiltroStatus(s)}
+              label={STATUS_STYLE[s].short}
+              count={counts[s]}
+              dot={STATUS_STYLE[s].dot}
+            />
+          ))}
+        </div>
       </div>
 
-      <div className="flex-1 space-y-2 overflow-y-auto px-3 pb-4">
-        {cards.map((c) => (
-          <MobileCard key={c.id} card={c} onMover={onMover} onDecidir={onDecidir} />
+      {/* Lista */}
+      <div className="flex-1 space-y-[14px] overflow-y-auto px-4 pb-28 pt-[18px]">
+        {lista.map((c) => (
+          <MobileCard key={c.id} card={c} onDecidir={onDecidir} />
         ))}
-        {cards.length === 0 && (
-          <div className="mt-10 text-center text-sm text-muted-foreground">Nenhuma captação nesta coluna.</div>
+        {lista.length === 0 && (
+          <div className="mt-12 text-center text-sm text-[#9a9c90]">
+            {filtro.trim() ? `Nenhuma captação para “${filtro}”.` : "Nenhuma captação nesta visão."}
+          </div>
         )}
       </div>
+
+      {/* FAB */}
+      <NovaCaptacaoButton
+        trigger={
+          <button
+            type="button"
+            aria-label="Nova captação"
+            className="absolute bottom-[26px] right-[22px] flex h-[60px] w-[60px] items-center justify-center rounded-[20px] shadow-[0_12px_28px_-8px_rgba(157,141,58,0.6)]"
+            style={{ background: "linear-gradient(150deg,#e0d27a,#c5b54a)", color: "#3a3408" }}
+          >
+            <Plus className="h-7 w-7" />
+          </button>
+        }
+      />
     </div>
+  );
+}
+
+function Pill({
+  ativo,
+  onClick,
+  label,
+  count,
+  dot,
+}: {
+  ativo: boolean;
+  onClick: () => void;
+  label: string;
+  count: number;
+  dot?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+        ativo ? "border-[#585a4f] bg-[#585a4f] text-[#f3f4f0]" : "border-[#e2e3dd] bg-white text-[#4a4d43]"
+      )}
+    >
+      <span
+        className="h-2 w-2 rounded-full"
+        style={{ backgroundColor: ativo ? "#f3f4f0" : dot ?? "#b0b2a8" }}
+      />
+      {label}
+      <span className={cn("rounded-full px-1.5 text-[10px]", ativo ? "bg-white/20" : "bg-[#eceee8] text-[#6e7063]")}>
+        {count}
+      </span>
+    </button>
   );
 }

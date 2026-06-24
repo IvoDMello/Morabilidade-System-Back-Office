@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
@@ -21,7 +21,7 @@ import { useBoard } from "@/stores/board";
 import type { CaptacaoInput } from "@/lib/schemas";
 import type { Captacao } from "@/types";
 
-export function NovaCaptacaoButton() {
+export function NovaCaptacaoButton({ trigger }: { trigger?: ReactNode } = {}) {
   const [open, setOpen] = useState(false);
   const [fotos, setFotos] = useState<File[]>([]);
   const [docs, setDocs] = useState<File[]>([]);
@@ -91,9 +91,11 @@ export function NovaCaptacaoButton() {
       }}
     >
       <DialogTrigger asChild>
-        <Button>
-          <Plus className="h-4 w-4" /> <span className="hidden sm:inline">Nova captação</span>
-        </Button>
+        {trigger ?? (
+          <Button>
+            <Plus className="h-4 w-4" /> <span className="hidden sm:inline">Nova captação</span>
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

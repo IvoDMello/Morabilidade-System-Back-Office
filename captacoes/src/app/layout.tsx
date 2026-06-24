@@ -1,10 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Playfair_Display } from "next/font/google";
 import { Toaster } from "sonner";
 import { RegisterSW } from "@/components/pwa/RegisterSW";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"], display: "swap" });
+const inter = Inter({ subsets: ["latin"], display: "swap", variable: "--font-sans" });
+const playfair = Playfair_Display({ subsets: ["latin"], display: "swap", weight: ["500", "600", "700"], variable: "--font-serif" });
 
 export const metadata: Metadata = {
   title: "Captações · Morabilidade",
@@ -24,7 +25,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR" className={inter.className}>
+    <html lang="pt-BR" className={`${inter.variable} ${playfair.variable} ${inter.className}`}>
       <body className="min-h-dvh bg-background text-foreground antialiased">
         {children}
         <RegisterSW />

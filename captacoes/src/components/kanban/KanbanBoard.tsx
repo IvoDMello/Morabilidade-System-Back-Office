@@ -28,7 +28,7 @@ import { filtrarCaptacoes, filtrarPorCriterios } from "@/lib/filter";
 import { ordenarCaptacoes } from "@/lib/sort";
 import { STATUSES, type Captacao, type Decisao, type Status } from "@/types";
 
-export function KanbanBoard({ initial }: { initial: Captacao[] }) {
+export function KanbanBoard({ initial, userEmail }: { initial: Captacao[]; userEmail: string }) {
   const { byStatus, filtro, criterios, ordenacao, setCards, upsert, remove, applyMove, find, setConexao, beginSave, endSave } =
     useBoard();
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -109,17 +109,6 @@ export function KanbanBoard({ initial }: { initial: Captacao[] }) {
     [applyMove, beginSave, endSave]
   );
 
-  // Mobile: move para o fim da coluna de destino.
-  const moverParaFim = useCallback(
-    (card: Captacao, toStatus: Status) => {
-      if (card.status === toStatus) return;
-      const col = byStatus[toStatus];
-      const ordem = orderBetween(col[col.length - 1]?.ordem ?? null, null);
-      persistMove(card, toStatus, ordem);
-    },
-    [byStatus, persistMove]
-  );
-
   // Mobile: aprovar/reprovar direto no card (mesma regra do DecisaoBox).
   const decidir = useCallback(
     (card: Captacao, decisao: Decisao) => {
@@ -190,7 +179,7 @@ export function KanbanBoard({ initial }: { initial: Captacao[] }) {
   if (desktop === null) return <div className="h-full" />;
 
   if (!desktop) {
-    return <MobileBoard byStatus={byStatus} visiveis={visiveis} onMover={moverParaFim} onDecidir={decidir} />;
+    return <MobileBoard byStatus={byStatus} visiveis={visiveis} onDecidir={decidir} userEmail={userEmail} />;
   }
 
   if (semResultado) {

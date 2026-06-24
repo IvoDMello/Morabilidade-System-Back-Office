@@ -15,11 +15,16 @@ export default async function BoardPage() {
 
   const cards = (data ?? []) as Captacao[];
 
+  const userEmail = auth.user?.email ?? "?";
+
   return (
     <main className="flex h-dvh flex-col bg-muted/30">
-      <BoardTopbar userEmail={auth.user?.email ?? "?"} total={cards.length} />
-      <div className="min-h-0 flex-1 pt-4">
-        <KanbanBoard initial={cards} />
+      {/* Desktop usa a topbar clássica; o mobile traz o próprio hero no board. */}
+      <div className="hidden lg:block">
+        <BoardTopbar userEmail={userEmail} total={cards.length} />
+      </div>
+      <div className="min-h-0 flex-1 lg:pt-4">
+        <KanbanBoard initial={cards} userEmail={userEmail} />
       </div>
     </main>
   );
