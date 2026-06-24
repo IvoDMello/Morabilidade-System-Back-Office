@@ -17,6 +17,7 @@ import {
   Check,
   User,
   Link2,
+  Images,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { BoardControls } from "@/components/board/BoardControls";
@@ -72,9 +73,19 @@ function MobileCard({ card, onDecidir }: { card: Captacao; onDecidir: (c: Captac
       onClick={abrirDetalhe}
       className="cursor-pointer space-y-3 rounded-[18px] border-[#e8e9e3] p-[17px] shadow-[0_1px_2px_rgba(46,48,42,0.04),0_10px_24px_-16px_rgba(46,48,42,0.22)] transition-shadow active:shadow-sm"
     >
-      {/* Linha topo: badge + expandir */}
+      {/* Linha topo: badge + indicador de fotos + expandir */}
       <div className="flex items-start justify-between gap-2">
-        <StatusBadge status={card.status} />
+        <div className="flex flex-wrap items-center gap-2">
+          <StatusBadge status={card.status} />
+          {card.capa_path && (
+            <span
+              title="Tem fotos"
+              className="inline-flex items-center gap-1 rounded-lg border border-[#ebece6] bg-[#f5f6f1] px-2 py-1 text-xs font-medium text-[#6e7063]"
+            >
+              <Images className="h-3.5 w-3.5 text-[#888b7e]" /> Fotos
+            </span>
+          )}
+        </div>
         <button
           type="button"
           aria-label={aberto ? "Recolher" : "Expandir"}

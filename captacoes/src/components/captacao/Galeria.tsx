@@ -252,16 +252,31 @@ export function Galeria({
     return () => window.removeEventListener("keydown", onKey);
   }, [viewer, irPara]);
 
-  // Swipe horizontal no celular.
-  const toqueX = useRef<number | null>(null);
+  // Swipe horizontal no celular. `swipou` evita que o toque vire um clique
+  // que fecharia o visualizador logo após arrastar.
+  const toque = useRef<{ x: number; y: number } | null>(null);
+  const swipou = useRef(false);
   function onTouchStart(e: React.TouchEvent) {
-    toqueX.current = e.touches[0].clientX;
+    toque.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    swipou.current = false;
   }
   function onTouchEnd(e: React.TouchEvent) {
-    if (toqueX.current === null || viewer === null) return;
-    const dx = e.changedTouches[0].clientX - toqueX.current;
-    if (Math.abs(dx) > 40) irPara(viewer + (dx < 0 ? 1 : -1));
-    toqueX.current = null;
+    if (toque.current === null || viewer === null) return;
+    const dx = e.changedTouches[0].clientX - toque.current.x;
+    const dy = e.changedTouches[0].clientY - toque.current.y;
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+      swipou.current = true;
+      irPara(viewer + (dx < 0 ? 1 : -1));
+    }
+    toque.current = null;
+  }
+  function fecharSeToque() {
+    // Toque/clique no fundo fecha — mas não logo após um swipe.
+    if (swipou.current) {
+      swipou.current = false;
+      return;
+    }
+    setViewer(null);
   }
 
   return (
@@ -323,10 +338,11 @@ export function Galeria({
 
       {viewer !== null && fotos[viewer] && (
         <div
-          onClick={() => setViewer(null)}
+          onClick={fecharSeToque}
           onTouchStart={onTouchStart}
           onTouchEnd={onTouchEnd}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
+          style={{ touchAction: "none" }}
+          className="fixed inset-0 z-50 flex touch-none items-center justify-center bg-black/90 p-4"
           role="dialog"
           aria-modal="true"
         >
@@ -335,6 +351,7 @@ export function Galeria({
             <img
               src={fullUrls[fotos[viewer].id]}
               alt=""
+              draggable={false}
               onClick={(e) => e.stopPropagation()}
               className="max-h-full max-w-full select-none rounded-lg object-contain"
             />
