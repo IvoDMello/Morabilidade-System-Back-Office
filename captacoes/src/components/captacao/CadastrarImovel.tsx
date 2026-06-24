@@ -17,6 +17,12 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import {
+  type CadastroForm,
+  camposFaltando,
+  formInicial,
+  montarRequest,
+} from "@/lib/cadastro-imovel";
 import type { Captacao } from "@/types";
 
 // Opções espelham os enums do back-office (api/app/schemas/imovel.py).
@@ -43,82 +49,19 @@ const CONDICAO = [
 const SELECT_CLS =
   "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50";
 
-const numToStr = (n: number | null | undefined) => (n == null ? "" : String(n));
-const strToNum = (s: string): number | null => {
-  const t = s.trim();
-  if (!t) return null;
-  const n = Number(t.replace(",", "."));
-  return Number.isFinite(n) ? n : null;
-};
-
-type FormState = {
-  tipo_negocio: string;
-  tipo_imovel: string;
-  condicao: string;
-  cidade: string;
-  bairro: string;
-  logradouro: string;
-  numero: string;
-  complemento: string;
-  dormitorios: string;
-  suites: string;
-  banheiros: string;
-  vagas_garagem: string;
-  area_util: string;
-  valor_venda: string;
-  condominio_mensal: string;
-  iptu_mensal: string;
-  instagram_url: string;
-  prop_nome: string;
-  prop_whatsapp: string;
-};
-
 export function CadastrarImovel({ captacao }: { captacao: Captacao }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const [form, setForm] = useState<FormState>({
-    // obrigatórios da integração — defaults seguros, mas editáveis
-    tipo_negocio: "venda",
-    tipo_imovel: "",
-    condicao: "usado",
-    cidade: "Rio de Janeiro",
-    bairro: "",
-    logradouro: captacao.endereco ?? "",
-    numero: "",
-    complemento: "",
-    // pré-preenchidos a partir da captação
-    dormitorios: numToStr(captacao.quartos),
-    suites: numToStr(captacao.suites),
-    banheiros: numToStr(captacao.banheiros),
-    vagas_garagem: numToStr(captacao.vagas),
-    area_util: numToStr(captacao.metragem),
-    valor_venda: numToStr(captacao.valor_venda),
-    condominio_mensal: numToStr(captacao.valor_condominio),
-    iptu_mensal: numToStr(captacao.valor_iptu),
-    instagram_url: captacao.anuncio_url ?? "",
-    prop_nome: captacao.proprietario_nome ?? "",
-    prop_whatsapp: captacao.whatsapp ?? "",
-  });
+  const [form, setForm] = useState<CadastroForm>(() => formInicial(captacao));
 
   const set =
-    (k: keyof FormState) =>
+    (k: keyof CadastroForm) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
       setForm((f) => ({ ...f, [k]: e.target.value }));
 
-  const faltando = useMemo(() => {
-    const req: [keyof FormState, string][] = [
-      ["tipo_negocio", "Tipo de negócio"],
-      ["tipo_imovel", "Tipo de imóvel"],
-      ["condicao", "Condição"],
-      ["cidade", "Cidade"],
-      ["bairro", "Bairro"],
-      ["logradouro", "Logradouro"],
-      ["prop_nome", "Nome do proprietário"],
-    ];
-    return req.filter(([k]) => !form[k].trim()).map(([, l]) => l);
-  }, [form]);
+  const faltando = useMemo(() => camposFaltando(form), [form]);
 
   async function submit() {
     if (faltando.length) return;
@@ -127,31 +70,7 @@ export function CadastrarImovel({ captacao }: { captacao: Captacao }) {
       const res = await fetch(`/api/captacao/${captacao.id}/cadastrar-imovel`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          proprietario: {
-            nome_completo: form.prop_nome.trim(),
-            telefone: form.prop_whatsapp.trim(),
-          },
-          imovel: {
-            tipo_negocio: form.tipo_negocio,
-            tipo_imovel: form.tipo_imovel,
-            condicao: form.condicao,
-            cidade: form.cidade.trim(),
-            bairro: form.bairro.trim(),
-            logradouro: form.logradouro.trim(),
-            numero: form.numero.trim() || null,
-            complemento: form.complemento.trim() || null,
-            dormitorios: strToNum(form.dormitorios),
-            suites: strToNum(form.suites),
-            banheiros: strToNum(form.banheiros),
-            vagas_garagem: strToNum(form.vagas_garagem),
-            area_util: strToNum(form.area_util),
-            valor_venda: strToNum(form.valor_venda),
-            condominio_mensal: strToNum(form.condominio_mensal),
-            iptu_mensal: strToNum(form.iptu_mensal),
-            instagram_url: form.instagram_url.trim() || null,
-          },
-        }),
+        body: JSON.stringify(montarRequest(form)),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -286,9 +205,6 @@ export function CadastrarImovel({ captacao }: { captacao: Captacao }) {
                 <Input inputMode="decimal" value={form.iptu_mensal} onChange={set("iptu_mensal")} />
               </Campo>
             </div>
-            <Campo label="Link do anúncio (Instagram)">
-              <Input value={form.instagram_url} onChange={set("instagram_url")} />
-            </Campo>
           </section>
 
           {/* Proprietário */}
