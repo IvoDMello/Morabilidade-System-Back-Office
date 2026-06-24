@@ -24,6 +24,7 @@ import { BoardControls } from "@/components/board/BoardControls";
 import { NovaCaptacaoButton } from "@/components/captacao/NovaCaptacaoButton";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
+import { FotosLightbox, type FotoRef } from "@/components/captacao/FotosLightbox";
 import { formatBRL } from "@/lib/format";
 import { useBoard } from "@/stores/board";
 import { STATUS_STYLE, PILL_ORDER } from "@/lib/status-style";
@@ -54,8 +55,28 @@ function StatusBadge({ status, full = false }: { status: Status; full?: boolean 
 
 function MobileCard({ card, onDecidir }: { card: Captacao; onDecidir: (c: Captacao, d: Decisao) => void }) {
   const [aberto, setAberto] = useState(false);
+  const [fotos, setFotos] = useState<FotoRef[] | null>(null);
+  const [viewer, setViewer] = useState<number | null>(null);
   const router = useRouter();
   const naDecisao = card.status === "em_decisao" && !card.decisao;
+
+  // Abre as fotos da captação direto do quadro (busca sob demanda na 1ª vez).
+  async function abrirFotos() {
+    if (fotos) {
+      setViewer(0);
+      return;
+    }
+    const supabase = createClient();
+    const { data } = await supabase
+      .from("midia")
+      .select("id,storage_path,tipo,ordem")
+      .eq("captacao_id", card.id)
+      .eq("tipo", "foto")
+      .order("ordem");
+    const lista = ((data ?? []) as FotoRef[]).filter((f) => f.storage_path);
+    setFotos(lista);
+    if (lista.length > 0) setViewer(0);
+  }
 
   const specs: { icon: typeof BedDouble; valor: string; title: string }[] = [];
   if (card.quartos != null) specs.push({ icon: BedDouble, valor: String(card.quartos), title: "Quartos" });
@@ -78,12 +99,17 @@ function MobileCard({ card, onDecidir }: { card: Captacao; onDecidir: (c: Captac
         <div className="flex flex-wrap items-center gap-2">
           <StatusBadge status={card.status} />
           {card.capa_path && (
-            <span
-              title="Tem fotos"
-              className="inline-flex items-center gap-1 rounded-lg border border-[#ebece6] bg-[#f5f6f1] px-2 py-1 text-xs font-medium text-[#6e7063]"
+            <button
+              type="button"
+              title="Ver fotos"
+              onClick={(e) => {
+                e.stopPropagation();
+                abrirFotos();
+              }}
+              className="inline-flex items-center gap-1 rounded-lg border border-[#ebece6] bg-[#f5f6f1] px-2 py-1 text-xs font-medium text-[#6e7063] active:bg-[#ebece6]"
             >
               <Images className="h-3.5 w-3.5 text-[#888b7e]" /> Fotos
-            </span>
+            </button>
           )}
         </div>
         <button
@@ -182,6 +208,8 @@ function MobileCard({ card, onDecidir }: { card: Captacao; onDecidir: (c: Captac
           </button>
         </div>
       )}
+
+      {fotos && <FotosLightbox fotos={fotos} index={viewer} onClose={() => setViewer(null)} />}
     </Card>
   );
 }

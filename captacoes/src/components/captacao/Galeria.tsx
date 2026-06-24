@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
-import { ImagePlus, Trash2, Video, Star, GripVertical, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { ImagePlus, Trash2, Video, Star, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import {
   DndContext,
@@ -21,6 +21,7 @@ import { createClient } from "@/lib/supabase/client";
 import { uploadFoto, signedUrl } from "@/lib/storage";
 import { videoSchema } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
+import { FotosLightbox } from "./FotosLightbox";
 import type { Midia } from "@/types";
 
 function SortableFoto({
@@ -105,9 +106,8 @@ export function Galeria({
   const [enviando, setEnviando] = useState(false);
   const [url, setUrl] = useState("");
   const [capa, setCapa] = useState<string | null>(capaInicial);
-  // Visualizador: índice da foto aberta (entre as fotos) + cache de URLs grandes.
+  // Visualizador: índice da foto aberta (entre as fotos).
   const [viewer, setViewer] = useState<number | null>(null);
-  const [fullUrls, setFullUrls] = useState<Record<string, string>>({});
 
   async function definirCapa(thumbPath: string | null) {
     setCapa(thumbPath);
@@ -212,73 +212,6 @@ export function Galeria({
     );
   }
 
-  // Navega entre as fotos do visualizador (com limites).
-  const irPara = useCallback(
-    (i: number) => setViewer((atual) => (atual === null ? null : Math.max(0, Math.min(fotos.length - 1, i)))),
-    [fotos.length]
-  );
-
-  // Carrega a URL grande da foto atual (e das vizinhas) sob demanda, com cache.
-  // O ref evita refetch e impede que a própria escrita de estado redispare o efeito.
-  const carregadas = useRef<Set<string>>(new Set());
-  useEffect(() => {
-    if (viewer === null) return;
-    const alvos = [viewer, viewer + 1, viewer - 1].filter((i) => i >= 0 && i < fotos.length);
-    (async () => {
-      for (const i of alvos) {
-        const m = fotos[i];
-        if (!m?.storage_path || carregadas.current.has(m.id)) continue;
-        carregadas.current.add(m.id);
-        try {
-          const u = await signedUrl(m.storage_path);
-          setFullUrls((c) => ({ ...c, [m.id]: u }));
-        } catch {
-          carregadas.current.delete(m.id);
-          if (i === viewer) toast.error("Não foi possível abrir a foto.");
-        }
-      }
-    })();
-  }, [viewer, fotos]);
-
-  // Teclado: Esc fecha, setas navegam.
-  useEffect(() => {
-    if (viewer === null) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setViewer(null);
-      else if (e.key === "ArrowRight") irPara(viewer + 1);
-      else if (e.key === "ArrowLeft") irPara(viewer - 1);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [viewer, irPara]);
-
-  // Swipe horizontal no celular. `swipou` evita que o toque vire um clique
-  // que fecharia o visualizador logo após arrastar.
-  const toque = useRef<{ x: number; y: number } | null>(null);
-  const swipou = useRef(false);
-  function onTouchStart(e: React.TouchEvent) {
-    toque.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-    swipou.current = false;
-  }
-  function onTouchEnd(e: React.TouchEvent) {
-    if (toque.current === null || viewer === null) return;
-    const dx = e.changedTouches[0].clientX - toque.current.x;
-    const dy = e.changedTouches[0].clientY - toque.current.y;
-    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
-      swipou.current = true;
-      irPara(viewer + (dx < 0 ? 1 : -1));
-    }
-    toque.current = null;
-  }
-  function fecharSeToque() {
-    // Toque/clique no fundo fecha — mas não logo após um swipe.
-    if (swipou.current) {
-      swipou.current = false;
-      return;
-    }
-    setViewer(null);
-  }
-
   return (
     <div className="space-y-4">
       <div>
@@ -336,72 +269,7 @@ export function Galeria({
         </div>
       ))}
 
-      {viewer !== null && fotos[viewer] && (
-        <div
-          onClick={fecharSeToque}
-          onTouchStart={onTouchStart}
-          onTouchEnd={onTouchEnd}
-          style={{ touchAction: "none" }}
-          className="fixed inset-0 z-50 flex touch-none items-center justify-center bg-black/90 p-4"
-          role="dialog"
-          aria-modal="true"
-        >
-          {fullUrls[fotos[viewer].id] ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={fullUrls[fotos[viewer].id]}
-              alt=""
-              draggable={false}
-              onClick={(e) => e.stopPropagation()}
-              className="max-h-full max-w-full select-none rounded-lg object-contain"
-            />
-          ) : (
-            <span className="text-sm text-white/70">Carregando…</span>
-          )}
-
-          {/* Contador */}
-          <span className="absolute left-1/2 top-4 -translate-x-1/2 rounded-full bg-white/10 px-3 py-1 text-sm font-medium text-white">
-            {viewer + 1} / {fotos.length}
-          </span>
-
-          {/* Fechar */}
-          <button
-            onClick={() => setViewer(null)}
-            aria-label="Fechar"
-            className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white outline-none hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-white"
-          >
-            <X className="h-5 w-5" />
-          </button>
-
-          {/* Anterior */}
-          {viewer > 0 && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                irPara(viewer - 1);
-              }}
-              aria-label="Foto anterior"
-              className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-2.5 text-white outline-none hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-white"
-            >
-              <ChevronLeft className="h-6 w-6" />
-            </button>
-          )}
-
-          {/* Próxima */}
-          {viewer < fotos.length - 1 && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                irPara(viewer + 1);
-              }}
-              aria-label="Próxima foto"
-              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-2.5 text-white outline-none hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-white"
-            >
-              <ChevronRight className="h-6 w-6" />
-            </button>
-          )}
-        </div>
-      )}
+      <FotosLightbox fotos={fotos} index={viewer} onClose={() => setViewer(null)} />
     </div>
   );
 }
