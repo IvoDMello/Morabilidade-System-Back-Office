@@ -30,12 +30,7 @@ const TIPO_IMOVEL = [
   { v: "cobertura", l: "Cobertura" },
   { v: "casa", l: "Casa" },
   { v: "casa_vila", l: "Casa de vila" },
-  { v: "casa_condominio", l: "Casa em condomínio" },
-  { v: "kitnet", l: "Kitnet" },
-  { v: "sala", l: "Sala" },
-  { v: "loja", l: "Loja" },
-  { v: "galpao", l: "Galpão" },
-  { v: "terreno", l: "Terreno" },
+  { v: "casa_condominio", l: "Casa de condomínio" },
   { v: "outro", l: "Outro" },
 ];
 const CONDICAO = [
