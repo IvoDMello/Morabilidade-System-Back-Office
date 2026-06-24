@@ -136,6 +136,11 @@ describe("montarRequest", () => {
     expect(imovel.valor_venda).toBe(1500000);
   });
 
+  it("cadastra o imóvel como reservado", () => {
+    const { imovel } = montarRequest(completo());
+    expect(imovel.disponibilidade).toBe("reservado");
+  });
+
   it("NÃO envia o link do anúncio nem fotos para o imóvel", () => {
     const { imovel } = montarRequest(completo());
     // anúncio é referência interna (outras imobiliárias) — não vai pro imóvel

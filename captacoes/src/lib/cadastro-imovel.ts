@@ -91,6 +91,8 @@ export function montarRequest(form: CadastroForm) {
       tipo_negocio: form.tipo_negocio,
       tipo_imovel: form.tipo_imovel,
       condicao: form.condicao,
+      // Imóvel vindo de captação entra como "reservado" (ainda não publicável).
+      disponibilidade: "reservado",
       cidade: form.cidade.trim(),
       bairro: form.bairro.trim(),
       logradouro: form.logradouro.trim(),
