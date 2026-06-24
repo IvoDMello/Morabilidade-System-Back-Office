@@ -272,12 +272,17 @@ def _row_para_cliente(row: dict, mapa: dict) -> dict:
             parsed = _parse_renda(valor)
             if parsed is not None:
                 cliente[campo] = parsed
-        elif campo == "status" and valor.lower() in _STATUS_VALIDOS:
-            cliente[campo] = valor.lower()
-        elif campo == "tipo_cliente" and valor.lower() in _TIPOS_VALIDOS:
-            cliente[campo] = valor.lower()
-        elif campo == "origem_lead" and valor.lower() in _ORIGENS_VALIDAS:
-            cliente[campo] = valor.lower()
+        elif campo == "status":
+            # Enum inválido é descartado (não gravado cru), evitando violar o
+            # CHECK do banco e derrubar a linha inteira no insert.
+            if valor.lower() in _STATUS_VALIDOS:
+                cliente[campo] = valor.lower()
+        elif campo == "tipo_cliente":
+            if valor.lower() in _TIPOS_VALIDOS:
+                cliente[campo] = valor.lower()
+        elif campo == "origem_lead":
+            if valor.lower() in _ORIGENS_VALIDAS:
+                cliente[campo] = valor.lower()
         elif campo == "estado":
             cliente[campo] = valor.upper()[:2]
         else:

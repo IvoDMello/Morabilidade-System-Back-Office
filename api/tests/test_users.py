@@ -181,3 +181,86 @@ def test_desativar_usuario_inexistente_retorna_204(admin_client):
         res = admin_client.delete("/usuarios/uuid-inexistente")
 
     assert res.status_code == 204
+
+
+def test_desativar_usuario_ban_falha_ainda_desativa_na_tabela(admin_client):
+    """Falha ao banir no Auth não deve impedir o soft-delete na tabela (204)."""
+    db = make_db_mock(MagicMock(data=[{**USER_DB, "ativo": False}]))
+    db.auth.admin.update_user_by_id.side_effect = Exception("Auth indisponível")
+
+    with patch("app.routers.users.supabase_admin", db):
+        res = admin_client.delete(f"/usuarios/{USER_DB['id']}")
+
+    assert res.status_code == 204
+    db.update.assert_called_with({"ativo": False})
+
+
+# ── POST /usuarios/ — rollback ────────────────────────────────────────────────
+
+def test_criar_usuario_rollback_quando_insert_falha(admin_client):
+    """Se a inserção do perfil falha, o usuário do Auth deve ser removido (rollback)."""
+    auth_mock = MagicMock()
+    auth_mock.user.id = USER_DB["id"]
+
+    db = MagicMock()
+    db.auth.admin.create_user.return_value = auth_mock
+    db.table.return_value = db
+    db.insert.return_value = db
+    db.execute.side_effect = Exception("insert falhou")
+
+    with patch("app.routers.users.supabase_admin", db):
+        res = admin_client.post("/usuarios/", json=USER_PAYLOAD)
+
+    assert res.status_code == 500
+    db.auth.admin.delete_user.assert_called_once_with(USER_DB["id"])
+
+
+# ── PUT /usuarios/me/senha ────────────────────────────────────────────────────
+
+def test_alterar_senha_ok(corretor_client):
+    admin_db = MagicMock()
+    anon_db = MagicMock()
+    with patch("app.routers.users.supabase_admin", admin_db), \
+         patch("app.routers.users.supabase", anon_db):
+        res = corretor_client.put(
+            "/usuarios/me/senha",
+            json={"senha_atual": "antiga123", "nova_senha": "novaSenha123"},
+        )
+    assert res.status_code == 204
+    anon_db.auth.sign_in_with_password.assert_called_once()
+    admin_db.auth.admin.update_user_by_id.assert_called_once()
+
+
+def test_alterar_senha_curta_retorna_400(corretor_client):
+    res = corretor_client.put(
+        "/usuarios/me/senha",
+        json={"senha_atual": "antiga123", "nova_senha": "curta"},
+    )
+    assert res.status_code == 400
+    assert "8 caracteres" in res.json()["detail"]
+
+
+def test_alterar_senha_atual_incorreta_retorna_400(corretor_client):
+    anon_db = MagicMock()
+    anon_db.auth.sign_in_with_password.side_effect = Exception("credenciais inválidas")
+    with patch("app.routers.users.supabase", anon_db):
+        res = corretor_client.put(
+            "/usuarios/me/senha",
+            json={"senha_atual": "errada123", "nova_senha": "novaSenha123"},
+        )
+    assert res.status_code == 400
+    assert "incorreta" in res.json()["detail"]
+
+
+def test_alterar_senha_falha_no_update_retorna_400(corretor_client):
+    admin_db = MagicMock()
+    admin_db.auth.admin.update_user_by_id.side_effect = Exception("erro Auth")
+    anon_db = MagicMock()
+    with patch("app.routers.users.supabase_admin", admin_db), \
+         patch("app.routers.users.supabase", anon_db):
+        res = corretor_client.put(
+            "/usuarios/me/senha",
+            json={"senha_atual": "antiga123", "nova_senha": "novaSenha123"},
+        )
+    assert res.status_code == 400
+    assert "alterar senha" in res.json()["detail"].lower()
