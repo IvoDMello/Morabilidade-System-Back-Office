@@ -49,9 +49,11 @@ _ORIGENS_VALIDAS = {
     "site", "indicacao", "ligacao", "whatsapp", "instagram", "facebook", "outro",
 }
 _TIPOS_NEGOCIO_VALIDOS = {"venda", "locacao", "ambos"}
+# Preferência de cliente aceita também 'apartamento_terreo' (virtual:
+# apartamento + andar 1), que NÃO é um tipo armazenável de imóvel.
 _TIPOS_IMOVEL_VALIDOS = {
-    "casa", "casa_vila", "casa_condominio", "apartamento", "terreno",
-    "sala", "galpao", "loja", "cobertura", "kitnet", "outro",
+    "apartamento", "apartamento_terreo", "casa", "casa_vila",
+    "casa_condominio", "cobertura",
 }
 
 # Aliases (sem acento, minúsculas, separadores normalizados) → campo do banco.

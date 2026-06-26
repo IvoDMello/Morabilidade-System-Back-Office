@@ -17,17 +17,11 @@ class Disponibilidade(str, Enum):
 
 
 class TipoImovel(str, Enum):
+    apartamento = "apartamento"
     casa = "casa"
     casa_vila = "casa_vila"
     casa_condominio = "casa_condominio"
-    apartamento = "apartamento"
-    terreno = "terreno"
-    sala = "sala"
-    galpao = "galpao"
-    loja = "loja"
     cobertura = "cobertura"
-    kitnet = "kitnet"
-    outro = "outro"
 
 
 class Mobiliado(str, Enum):

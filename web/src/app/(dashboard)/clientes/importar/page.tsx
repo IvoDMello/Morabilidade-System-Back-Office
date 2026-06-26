@@ -43,7 +43,7 @@ const CAMPOS_RECONHECIDOS = [
   { campo: "imovel_codigo", aliases: "Código do Imóvel (só para proprietário)" },
   { campo: "— Perfil de oportunidade (opcional) —", aliases: "" },
   { campo: "pref_tipo_negocio", aliases: "Pref Tipo Negócio (venda, locacao, ambos)" },
-  { campo: "pref_tipo_imovel", aliases: "Pref Tipo Imóvel (casa, casa_vila, casa_condominio, apartamento, terreno, sala, galpao, loja, cobertura, kitnet, outro)" },
+  { campo: "pref_tipo_imovel", aliases: "Pref Tipo Imóvel (apartamento, apartamento_terreo, casa, casa_vila, casa_condominio, cobertura)" },
   { campo: "pref_cidade", aliases: "Pref Cidade, Cidade de Interesse" },
   { campo: "pref_bairros", aliases: "Pref Bairros (separados por vírgula, ex: Jardins,Itaim Bibi)" },
   { campo: "pref_valor_min", aliases: "Pref Valor Min, Preço Mínimo, Orçamento Mínimo" },

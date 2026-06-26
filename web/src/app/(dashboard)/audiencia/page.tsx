@@ -195,9 +195,9 @@ function ModalFiltros({
               <option value="">Todos</option>
               <option value="apartamento">Apartamento</option>
               <option value="casa">Casa</option>
-              <option value="cobertura">Cobertura</option>
+              <option value="casa_vila">Casa de vila</option>
               <option value="casa_condominio">Casa de condomínio</option>
-              <option value="galpao">Galpão</option>
+              <option value="cobertura">Cobertura</option>
             </select>
           </div>
           <div>
