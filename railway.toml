@@ -4,7 +4,7 @@ dockerfilePath = "api/Dockerfile"
 
 [deploy]
 # Porta 8000 hardcoded — o proxy público do Railway (Settings → Networking)
-# está configurado pra rotear api.morabilidade.com.br e api.morabilidade.com
+# está configurado pra rotear api.morabilidade.com
 # pra Port 8000. Se a app escutar em outra porta (inclusive 8080 que o Railway
 # injeta via $PORT em runtime), o healthcheck interno até passa, mas todo
 # tráfego externo retorna 502 "Application failed to respond".

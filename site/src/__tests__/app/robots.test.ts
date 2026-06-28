@@ -1,12 +1,12 @@
 import { describe, it, expect, vi } from "vitest";
 
-vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://morabilidade.com.br");
+vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://morabilidade.com");
 
 describe("robots()", () => {
   it("aponta o sitemap para a URL correta", async () => {
     const { default: robots } = await import("@/app/robots");
     const result = robots();
-    expect(result.sitemap).toBe("https://morabilidade.com.br/sitemap.xml");
+    expect(result.sitemap).toBe("https://morabilidade.com/sitemap.xml");
   });
 
   it("permite rastreamento geral ('/')", async () => {

@@ -76,7 +76,7 @@ def _render_template(*, titulo: str, preheader: str, conteudo_html: str) -> str:
             <td style="background:#fafaf6;padding:18px 28px;border-top:1px solid #e6e6dd;
                        font-size:12px;color:#888;text-align:center;">
               <p style="margin:0 0 6px;">
-                <a href="{_SITE_URL}" style="color:{_OLIVE};text-decoration:none;">morabilidade.com.br</a>
+                <a href="{_SITE_URL}" style="color:{_OLIVE};text-decoration:none;">morabilidade.com</a>
                 &nbsp;·&nbsp;
                 <a href="{_INSTAGRAM}" style="color:{_OLIVE};text-decoration:none;">@morabilidade</a>
               </p>

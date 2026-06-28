@@ -9,7 +9,7 @@ interface Props {
   titulo: string;
 }
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://morabilidade.com.br";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://morabilidade.com";
 
 export function CompartilharButton({ codigo, titulo }: Props) {
   const [aberto, setAberto] = useState(false);

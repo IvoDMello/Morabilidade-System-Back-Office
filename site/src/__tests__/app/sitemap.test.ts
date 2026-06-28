@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Deve rodar antes do import do módulo para que process.env seja injetado
-vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://morabilidade.com.br");
+vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://morabilidade.com");
 vi.stubEnv("NEXT_PUBLIC_API_URL", "http://localhost:8000");
 
 const mockImoveis = [
@@ -24,10 +24,10 @@ describe("sitemap()", () => {
     const entries = await sitemap();
     const urls = entries.map((e) => e.url);
 
-    expect(urls).toContain("https://morabilidade.com.br");
-    expect(urls).toContain("https://morabilidade.com.br/imoveis");
-    expect(urls).toContain("https://morabilidade.com.br/sobre");
-    expect(urls).toContain("https://morabilidade.com.br/contato");
+    expect(urls).toContain("https://morabilidade.com");
+    expect(urls).toContain("https://morabilidade.com/imoveis");
+    expect(urls).toContain("https://morabilidade.com/sobre");
+    expect(urls).toContain("https://morabilidade.com/contato");
   });
 
   it("inclui as URLs dos imóveis disponíveis", async () => {
@@ -40,8 +40,8 @@ describe("sitemap()", () => {
     const entries = await sitemap();
     const urls = entries.map((e) => e.url);
 
-    expect(urls).toContain("https://morabilidade.com.br/imoveis/MOR-001");
-    expect(urls).toContain("https://morabilidade.com.br/imoveis/MOR-002");
+    expect(urls).toContain("https://morabilidade.com/imoveis/MOR-001");
+    expect(urls).toContain("https://morabilidade.com/imoveis/MOR-002");
   });
 
   it("define prioridade 1.0 para a homepage", async () => {
@@ -52,7 +52,7 @@ describe("sitemap()", () => {
 
     const { default: sitemap } = await import("@/app/sitemap");
     const entries = await sitemap();
-    const homepage = entries.find((e) => e.url === "https://morabilidade.com.br");
+    const homepage = entries.find((e) => e.url === "https://morabilidade.com");
 
     expect(homepage?.priority).toBe(1.0);
   });
@@ -77,7 +77,7 @@ describe("sitemap()", () => {
     const entries = await sitemap();
     const urls = entries.map((e) => e.url);
 
-    expect(urls).toContain("https://morabilidade.com.br");
+    expect(urls).toContain("https://morabilidade.com");
     expect(urls.some((u) => u.includes("/imoveis/MOR"))).toBe(false);
   });
 

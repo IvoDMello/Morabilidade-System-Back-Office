@@ -14,7 +14,7 @@ HOJE — antes/durante o launch
       Port:     465 (SSL) ou 587 (TLS)
       Username: resend
       Password: sua RESEND_API_KEY
-      Sender:   noreply@morabilidade.com.br
+      Sender:   noreply@morabilidade.com
     O domínio precisa estar verificado no Resend antes (DNS records SPF/DKIM).
     Sem isso: recuperação de senha cai em rate limit do Supabase e em spam.
 
@@ -24,7 +24,7 @@ HOJE — antes/durante o launch
     Rede de segurança barata caso algo escape no go-live.
 
 [ ] Smoke test após o deploy do commit d799ea2
-    [ ] GET https://api.morabilidade.com.br/health -> {"status":"ok"}
+    [ ] GET https://api.morabilidade.com/health -> {"status":"ok"}
     [ ] Login no painel funciona
     [ ] Criar imóvel + upload de foto
     [ ] Foto aparece no site público

@@ -24,7 +24,7 @@ interface Props {
   params: Promise<{ codigo: string }>;
 }
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://morabilidade.com.br";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://morabilidade.com";
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { codigo } = await params;

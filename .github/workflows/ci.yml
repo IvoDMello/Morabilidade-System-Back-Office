@@ -33,7 +33,7 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SUPABASE_JWT_SECRET: ${{ secrets.SUPABASE_JWT_SECRET }}
           RESEND_API_KEY: "test"
-          EMAIL_FROM: "test@morabilidade.com.br"
+          EMAIL_FROM: "test@morabilidade.com"
           APP_SECRET_KEY: "ci_app_secret_key"
           CORS_ORIGINS: "http://localhost:3000"
         run: pytest tests/ -v --cov=app --cov-report=term-missing --cov-fail-under=80

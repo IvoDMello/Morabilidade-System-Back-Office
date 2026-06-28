@@ -3,7 +3,7 @@ import type { ImovelCard } from "@/types";
 
 export const revalidate = 86400; // 24h
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://morabilidade.com.br";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://morabilidade.com";
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 const staticPages: MetadataRoute.Sitemap = [
