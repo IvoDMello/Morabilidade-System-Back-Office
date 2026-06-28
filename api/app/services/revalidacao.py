@@ -21,11 +21,14 @@ def revalidar_imovel(codigo: str | None = None) -> None:
 
     url = settings.site_url.rstrip("/") + "/api/revalidate"
     try:
+        # follow_redirects: o apex (morabilidade.com) faz 307 -> www; sem isso o
+        # POST pararia no redirect e a revalidação nunca rodaria.
         httpx.post(
             url,
             headers={"x-revalidate-secret": secret},
             json={"codigo": codigo} if codigo else {},
             timeout=5.0,
+            follow_redirects=True,
         )
     except Exception as exc:  # rede/timeout/etc — não pode derrubar o save
         logger.warning("Falha ao revalidar site para %s: %s", codigo, exc)
