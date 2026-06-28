@@ -86,7 +86,9 @@ export async function getImoveisDestaques(): Promise<ImovelCard[]> {
 export async function getImovel(codigo: string): Promise<Imovel | null> {
   const res = await fetchGetWithRetry(
     `${API_URL}/imoveis/publico/${codigo}`,
-    { next: { revalidate: 300 } },
+    // 60s é só rede de segurança: o caminho normal é a revalidação on-demand
+    // disparada pelo back-office (POST /api/revalidate) ao salvar o imóvel.
+    { next: { revalidate: 60 } },
   );
   if (res.status === 404) return null;
   if (!res.ok) throw new Error("Erro ao buscar imóvel");
@@ -104,10 +106,13 @@ export async function getTags(): Promise<Tag[]> {
 
 export async function getBairros(): Promise<string[]> {
   // Bairros mudam ~nunca (depende de um novo imóvel em região inédita).
-  // 1 dia de cache reduz pressão sem prejudicar discoverability.
+  // 1 dia de cache reduz pressão sem prejudicar discoverability. A tag
+  // "bairros" permite revalidação on-demand: ao salvar um imóvel, o back-office
+  // purga esta lista na hora — senão um bairro inédito (ex.: Laranjeiras) só
+  // apareceria no filtro após o cache de 1 dia expirar.
   const res = await fetchGetWithRetry(
     `${API_URL}/imoveis/publico/bairros`,
-    { next: { revalidate: 86400 } },
+    { next: { revalidate: 86400, tags: ["bairros"] } },
   );
   if (!res.ok) return [];
   return res.json();

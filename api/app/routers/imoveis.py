@@ -17,6 +17,7 @@ from app.schemas.imovel import (
     CondicaoImovel, Disponibilidade, DocumentoImovelOut, ImovelCreate, ImovelListOut,
     ImovelOut, ImovelUpdate, Mobiliado, TipoDocumentoImovel, TipoImovel, TipoNegocio,
 )
+from app.services.revalidacao import revalidar_imovel
 from app.services.storage import (
     baixar_e_rotacionar, deletar_documento, deletar_foto, upload_bytes_jpeg,
     upload_documento, upload_foto, url_publica_documento,
@@ -512,6 +513,7 @@ def criar_imovel(body: ImovelCreate, current_user: dict = Depends(require_admin_
         tag_links = [{"imovel_id": imovel["id"], "tag_id": tid} for tid in body.tag_ids]
         supabase_admin.table("imovel_tags").insert(tag_links).execute()
 
+    revalidar_imovel(imovel.get("codigo"))
     return _buscar_imovel(imovel["id"])
 
 
@@ -548,11 +550,22 @@ def atualizar_imovel(
             tag_links = [{"imovel_id": imovel_id, "tag_id": tid} for tid in body.tag_ids]
             supabase_admin.table("imovel_tags").insert(tag_links).execute()
 
-    return _buscar_imovel(imovel_id)
+    imovel = _buscar_imovel(imovel_id)
+    revalidar_imovel(imovel.get("codigo"))
+    return imovel
 
 
 @router.delete("/{imovel_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def deletar_imovel(imovel_id: str, current_user: dict = Depends(require_admin)):
+    alvo = (
+        supabase_admin.table("imoveis")
+        .select("codigo")
+        .eq("id", imovel_id)
+        .single()
+        .execute()
+    )
+    codigo = (alvo.data or {}).get("codigo")
+
     contratos_vinculados = (
         supabase_admin.table("contratos_locacao")
         .select("id", count="exact")
@@ -587,6 +600,7 @@ async def deletar_imovel(imovel_id: str, current_user: dict = Depends(require_ad
         deletar_documento(doc["firebase_path"])
 
     supabase_admin.table("imoveis").delete().eq("id", imovel_id).execute()
+    revalidar_imovel(codigo)
 
 
 # ── Fotos ──────────────────────────────────────────────────────────────────────

@@ -14,11 +14,17 @@ class Settings(BaseSettings):
 
     # E-mail
     resend_api_key: str
-    email_from: str = "noreply@morabilidade.com.br"
-    email_contato: str = "contato@morabilidade.com.br"
+    email_from: str = "noreply@morabilidade.com"
+    email_contato: str = "contato@morabilidade.com"
 
     # URLs públicas usadas em e-mails e templates
-    site_url: str = "https://morabilidade.com.br"
+    site_url: str = "https://morabilidade.com"
+
+    # Segredo compartilhado com o site público para revalidação on-demand do
+    # cache ISR (POST {site_url}/api/revalidate). Precisa ser IDÊNTICO ao
+    # REVALIDATE_SECRET no projeto Vercel do site. Vazio desliga a integração
+    # (o site cai de volta no ISR por tempo).
+    site_revalidate_secret: str = ""
 
     # Dados da empresa para documentos legais (ficha de visita, intermediação).
     # Placeholders até confirmação do CNPJ/CRECI-J jurídico — sobrescrever via env.
