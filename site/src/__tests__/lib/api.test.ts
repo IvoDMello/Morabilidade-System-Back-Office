@@ -59,6 +59,13 @@ describe("getBairros", () => {
     expect(options?.next?.revalidate).toBe(86400);
   });
 
+  it("marca a tag 'bairros' para revalidação on-demand", async () => {
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
+    await getBairros();
+    const [, options] = mockFetch.mock.calls[0];
+    expect(options?.next?.tags).toContain("bairros");
+  });
+
   it("retorna lista vazia para array vazio da API", async () => {
     mockFetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
     const result = await getBairros();
