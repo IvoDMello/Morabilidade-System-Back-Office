@@ -608,6 +608,9 @@ def relatorio_repasses(
 
 # ── Demonstrativo de Administração (cobrança da taxa ao proprietário) ─────────
 
+# Taxa de administração padrão aplicada quando o contrato não tem taxa própria.
+TAXA_ADM_PADRAO = Decimal("8")
+
 _SELECT_ADM = (
     "id, aluguel_mensal, taxa_administracao_pct, proprietario_id,"
     " imovel:imoveis(codigo, logradouro, numero, complemento, bairro),"
@@ -653,7 +656,12 @@ def _montar_adm_cobranca(
         loc = ct.get("locatario") or {}
 
         aluguel = Decimal(str(ct.get("aluguel_mensal") or 0))
+        # Taxa do contrato; quando não definida (0/None), aplica 8% como padrão
+        # de administração — a maioria dos contratos ainda não tem a taxa
+        # preenchida. Contratos com taxa própria mantêm a deles.
         taxa_pct = Decimal(str(ct.get("taxa_administracao_pct") or 0))
+        if taxa_pct == 0:
+            taxa_pct = TAXA_ADM_PADRAO
         comissao = (aluguel * taxa_pct / Decimal("100")).quantize(Decimal("0.01"))
 
         if prop_id not in por_prop:
