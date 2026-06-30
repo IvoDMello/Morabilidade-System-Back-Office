@@ -17,6 +17,9 @@ import {
   Loader2,
   Package,
   Wallet,
+  Receipt,
+  Pencil as PencilIcon,
+  Save,
 } from "lucide-react";
 import {
   BarChart,
@@ -37,13 +40,15 @@ import { useAuthStore } from "@/lib/auth-store";
 import { formatarMoeda, cn } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import type {
+  AdmCobrancaResumo,
   AnaliseLocacao,
   ContratoLocacaoListItem,
+  DadosRecebimento,
   RepasseResumo,
   StatusLocacao,
 } from "@/types";
 
-type Tab = "contratos" | "analises" | "demonstrativos" | "repasses";
+type Tab = "contratos" | "analises" | "demonstrativos" | "repasses" | "adm_cobranca";
 
 const STATUS_LABEL: Record<StatusLocacao, { label: string; class: string }> = {
   ativo: { label: "Ativo", class: "bg-emerald-50 text-emerald-700 ring-emerald-200" },
@@ -90,6 +95,12 @@ export default function LocacoesPage() {
           >
             <Wallet className="w-4 h-4" /> Repasses
           </TabButton>
+          <TabButton
+            active={tab === "adm_cobranca"}
+            onClick={() => setTab("adm_cobranca")}
+          >
+            <Receipt className="w-4 h-4" /> Adm. (cobrança)
+          </TabButton>
         </nav>
       </div>
 
@@ -97,6 +108,7 @@ export default function LocacoesPage() {
       {tab === "analises" && <AbaAnalises />}
       {tab === "demonstrativos" && <AbaDemonstrativos />}
       {tab === "repasses" && <AbaRepasses />}
+      {tab === "adm_cobranca" && <AbaAdmCobranca />}
     </div>
   );
 }
@@ -723,6 +735,256 @@ function AbaRepasses() {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+// ── Aba Adm. (cobrança) ─────────────────────────────────────────────────────
+// Demonstrativo de Administração: cobra a taxa de adm. ao proprietário sobre o
+// aluguel cheio de todos os contratos ativos. Modelo distinto do Repasse.
+
+function AbaAdmCobranca() {
+  const isAdmin = useAuthStore((s) => (s.user?.perfil === "admin" || s.user?.perfil === "corretor"));
+  const [mes, setMes] = useState(new Date().toISOString().slice(0, 7));
+  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState<AdmCobrancaResumo | null>(null);
+  const [baixando, setBaixando] = useState<string | null>(null);
+
+  const buscar = useCallback(async (mesRef: string) => {
+    setLoading(true);
+    try {
+      const res = await api.get<AdmCobrancaResumo>("/locacoes/adm-cobranca", {
+        params: { mes: mesRef },
+      });
+      setData(res.data);
+    } catch {
+      toast.error("Erro ao carregar a carteira de administração.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    buscar(mes);
+  }, [mes, buscar]);
+
+  async function baixarPdf(proprietarioId: string, nome: string) {
+    setBaixando(proprietarioId);
+    try {
+      const res = await api.get(
+        `/locacoes/proprietarios/${proprietarioId}/demonstrativo-administracao`,
+        { params: { mes }, responseType: "blob" }
+      );
+      const blob = new Blob([res.data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const slug = nome.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_|_$/g, "").toLowerCase();
+      a.download = `demonstrativo_administracao_${slug}_${mes}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success("Demonstrativo gerado.");
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      toast.error(
+        status === 404
+          ? "Sem contratos ativos para este proprietário."
+          : "Erro ao gerar o demonstrativo."
+      );
+    } finally {
+      setBaixando(null);
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {isAdmin && <DadosRecebimentoCard />}
+
+      <div className="bg-white rounded-xl border border-slate-200 p-5 flex items-end gap-3 flex-wrap">
+        <div>
+          <label className="block text-xs font-medium text-slate-600 mb-1">
+            Mês de competência
+          </label>
+          <input
+            type="month"
+            value={mes}
+            onChange={(e) => setMes(e.target.value)}
+            className="px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white"
+          />
+        </div>
+        {data && data.proprietarios.length > 0 && (
+          <div className="flex-1 grid grid-cols-2 gap-3 min-w-[280px]">
+            <ResumoCard label="Aluguéis administrados" valor={Number(data.total_aluguel)} cor="#585a4f" />
+            <ResumoCard label="Comissão a cobrar" valor={Number(data.total_comissao)} cor="#16a34a" />
+          </div>
+        )}
+      </div>
+
+      {loading ? (
+        <div className="p-12 text-center text-slate-400 text-sm">Carregando...</div>
+      ) : !data || data.proprietarios.length === 0 ? (
+        <div className="bg-white rounded-xl border border-slate-200 p-12 text-center text-slate-400 text-sm">
+          Nenhum contrato ativo com proprietário cadastrado.
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {data.proprietarios.map((prop) => (
+            <div key={prop.proprietario_id} className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+              <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between flex-wrap gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-slate-800">{prop.nome}</p>
+                  <p className="text-xs text-slate-400">
+                    {prop.qtd_imoveis} imóvel{prop.qtd_imoveis !== 1 ? "is" : ""} ·{" "}
+                    Comissão {formatarMoeda(Number(prop.total_comissao))}
+                    {prop.pct_uniforme != null
+                      ? ` (${Number(prop.pct_uniforme).toString().replace(".", ",")}%)`
+                      : " (taxas variadas)"}
+                  </p>
+                </div>
+                {isAdmin && (
+                  <button
+                    onClick={() => baixarPdf(prop.proprietario_id, prop.nome)}
+                    disabled={baixando === prop.proprietario_id}
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg hover:opacity-90 transition disabled:opacity-60"
+                    style={{ backgroundColor: "#585a4f" }}
+                  >
+                    {baixando === prop.proprietario_id ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <FileDown className="w-4 h-4" />
+                    )}
+                    Baixar demonstrativo
+                  </button>
+                )}
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-100 bg-slate-50">
+                      <th className="text-left px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">Imóvel</th>
+                      <th className="hidden sm:table-cell text-left px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">Bairro</th>
+                      <th className="text-right px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">Aluguel</th>
+                      <th className="text-right px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">Comissão</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {prop.itens.map((item) => (
+                      <tr key={item.contrato_id}>
+                        <td className="px-4 py-2.5">
+                          <p className="font-medium text-slate-700">{item.imovel_codigo ?? "—"}</p>
+                          <p className="text-xs text-slate-400 truncate max-w-[300px]">
+                            {item.imovel_endereco ?? "—"}
+                            {item.locatario_nome ? ` · ${item.locatario_nome}` : ""}
+                          </p>
+                        </td>
+                        <td className="hidden sm:table-cell px-4 py-2.5 text-slate-500 text-xs">
+                          {item.bairro ?? "—"}
+                        </td>
+                        <td className="px-4 py-2.5 text-right font-mono text-xs text-slate-700">
+                          {formatarMoeda(Number(item.aluguel))}
+                        </td>
+                        <td className="px-4 py-2.5 text-right font-mono text-xs font-semibold" style={{ color: "#16a34a" }}>
+                          {formatarMoeda(Number(item.comissao))}
+                          <span className="text-slate-400 font-normal">
+                            {" "}({Number(item.taxa_administracao_pct).toString().replace(".", ",")}%)
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DadosRecebimentoCard() {
+  const [dados, setDados] = useState<DadosRecebimento | null>(null);
+  const [editando, setEditando] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+
+  useEffect(() => {
+    api
+      .get<DadosRecebimento>("/configuracoes/dados-recebimento")
+      .then((r) => setDados(r.data))
+      .catch(() => {/* silencioso: card só aparece p/ admin */});
+  }, []);
+
+  async function salvar() {
+    if (!dados) return;
+    setSalvando(true);
+    try {
+      const res = await api.put<DadosRecebimento>("/configuracoes/dados-recebimento", dados);
+      setDados(res.data);
+      setEditando(false);
+      toast.success("Dados de recebimento atualizados.");
+    } catch {
+      toast.error("Erro ao salvar os dados de recebimento.");
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  if (!dados) return null;
+
+  const campos: { key: keyof DadosRecebimento; label: string }[] = [
+    { key: "titular", label: "Titular" },
+    { key: "banco", label: "Banco" },
+    { key: "agencia", label: "Agência" },
+    { key: "conta", label: "Conta" },
+    { key: "pix", label: "PIX" },
+  ];
+
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 p-5">
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <h3 className="text-sm font-semibold text-slate-700">Dados para pagamento</h3>
+          <p className="text-xs text-slate-400">
+            Conta que recebe a taxa — impressa no box do demonstrativo.
+          </p>
+        </div>
+        {!editando ? (
+          <button
+            onClick={() => setEditando(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition"
+          >
+            <PencilIcon className="w-3.5 h-3.5" /> Editar
+          </button>
+        ) : (
+          <button
+            onClick={salvar}
+            disabled={salvando}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white rounded-lg hover:opacity-90 transition disabled:opacity-60"
+            style={{ backgroundColor: "#585a4f" }}
+          >
+            {salvando ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+            Salvar
+          </button>
+        )}
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {campos.map(({ key, label }) => (
+          <div key={key}>
+            <label className="block text-xs font-medium text-slate-500 mb-1">{label}</label>
+            {editando ? (
+              <input
+                value={dados[key]}
+                onChange={(e) => setDados({ ...dados, [key]: e.target.value })}
+                className="w-full px-2.5 py-1.5 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#585a4f]/30"
+              />
+            ) : (
+              <p className="text-sm text-slate-700">{dados[key] || "—"}</p>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

@@ -13,6 +13,9 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Respon
 from app.auth.dependencies import get_current_user, require_admin
 from app.database import supabase_admin
 from app.schemas.locacao import (
+    AdmCobrancaItem,
+    AdmCobrancaProprietario,
+    AdmCobrancaResumo,
     AnexoOut,
     ContratoLocacaoCreate,
     ContratoLocacaoListItem,
@@ -35,6 +38,8 @@ from app.services.demonstrativo_pdf import (
     calcular_total_demonstrativo,
     gerar_demonstrativo_pdf,
 )
+from app.services.demonstrativo_admin_pdf import gerar_demonstrativo_admin_pdf
+from app.services.configuracoes import get_dados_recebimento
 from app.services.audit_log import registrar_audit_locacao
 from app.services.email import enviar_demonstrativo_locacao
 from app.services.storage import (
@@ -598,6 +603,152 @@ def relatorio_repasses(
         total_recebido=total_recebido.quantize(Decimal("0.01")),
         total_taxa=total_taxa.quantize(Decimal("0.01")),
         total_repasse=total_repasse.quantize(Decimal("0.01")),
+    )
+
+
+# ── Demonstrativo de Administração (cobrança da taxa ao proprietário) ─────────
+
+_SELECT_ADM = (
+    "id, aluguel_mensal, taxa_administracao_pct, proprietario_id,"
+    " imovel:imoveis(codigo, logradouro, numero, complemento, bairro),"
+    " proprietario:clientes!proprietario_id(id, nome_completo, email),"
+    " locatario:clientes!locatario_id(nome_completo)"
+)
+
+
+def _endereco_adm(imv: dict) -> str:
+    """'Rua X, 182 — Ap. 701' a partir das colunas do imóvel."""
+    base = imv.get("logradouro") or imv.get("endereco") or ""
+    if imv.get("numero"):
+        base = f"{base}, {imv['numero']}" if base else str(imv["numero"])
+    if imv.get("complemento"):
+        base = f"{base} — {imv['complemento']}" if base else str(imv["complemento"])
+    return base or "—"
+
+
+def _montar_adm_cobranca(
+    mes_ref: date, proprietario_id: Optional[str] = None
+) -> tuple[list[AdmCobrancaProprietario], Decimal, Decimal]:
+    """Agrupa os contratos ATIVOS por proprietário, calculando a comissão
+    (aluguel × taxa_administracao_pct) de cada imóvel. Opcionalmente filtra um
+    único proprietário. O mês entra só como rótulo — a carteira é a vigente."""
+    q = (
+        supabase_admin.table("contratos_locacao")
+        .select(_SELECT_ADM)
+        .eq("status", "ativo")
+    )
+    if proprietario_id:
+        q = q.eq("proprietario_id", proprietario_id)
+    contratos = q.execute().data or []
+
+    por_prop: dict[str, AdmCobrancaProprietario] = {}
+    pcts_por_prop: dict[str, set] = defaultdict(set)
+    total_aluguel = Decimal("0")
+    total_comissao = Decimal("0")
+
+    for ct in contratos:
+        prop = ct.get("proprietario") or {}
+        prop_id = ct["proprietario_id"]
+        imv = ct.get("imovel") or {}
+        loc = ct.get("locatario") or {}
+
+        aluguel = Decimal(str(ct.get("aluguel_mensal") or 0))
+        taxa_pct = Decimal(str(ct.get("taxa_administracao_pct") or 0))
+        comissao = (aluguel * taxa_pct / Decimal("100")).quantize(Decimal("0.01"))
+
+        if prop_id not in por_prop:
+            por_prop[prop_id] = AdmCobrancaProprietario(
+                proprietario_id=prop_id,
+                nome=prop.get("nome_completo") or "—",
+                email=prop.get("email"),
+                qtd_imoveis=0,
+                total_aluguel=Decimal("0"),
+                total_comissao=Decimal("0"),
+                pct_uniforme=None,
+                itens=[],
+            )
+
+        bloco = por_prop[prop_id]
+        bloco.itens.append(AdmCobrancaItem(
+            contrato_id=ct["id"],
+            imovel_codigo=imv.get("codigo"),
+            imovel_endereco=_endereco_adm(imv),
+            bairro=imv.get("bairro"),
+            locatario_nome=loc.get("nome_completo"),
+            aluguel=aluguel,
+            taxa_administracao_pct=taxa_pct,
+            comissao=comissao,
+        ))
+        bloco.qtd_imoveis += 1
+        bloco.total_aluguel += aluguel
+        bloco.total_comissao += comissao
+        pcts_por_prop[prop_id].add(taxa_pct)
+
+        total_aluguel += aluguel
+        total_comissao += comissao
+
+    for prop_id, bloco in por_prop.items():
+        bloco.total_aluguel = bloco.total_aluguel.quantize(Decimal("0.01"))
+        bloco.total_comissao = bloco.total_comissao.quantize(Decimal("0.01"))
+        pcts = pcts_por_prop[prop_id]
+        bloco.pct_uniforme = next(iter(pcts)) if len(pcts) == 1 else None
+        # Ordena os itens por código do imóvel para o PDF sair estável.
+        bloco.itens.sort(key=lambda i: (i.imovel_codigo or ""))
+
+    proprietarios = sorted(por_prop.values(), key=lambda b: b.nome.lower())
+    return (
+        proprietarios,
+        total_aluguel.quantize(Decimal("0.01")),
+        total_comissao.quantize(Decimal("0.01")),
+    )
+
+
+@router.get("/adm-cobranca", response_model=AdmCobrancaResumo)
+def relatorio_adm_cobranca(
+    mes: str = Query(..., description="Mês de competência no formato YYYY-MM"),
+    current_user: dict = Depends(get_current_user),
+):
+    """Carteira de administração por proprietário: aluguel cheio de cada
+    contrato ativo e a comissão (taxa de administração) a cobrar. Base para
+    listar os proprietários e gerar o Demonstrativo de Administração."""
+    mes_ref = _parse_mes(mes)
+    proprietarios, total_aluguel, total_comissao = _montar_adm_cobranca(mes_ref)
+    return AdmCobrancaResumo(
+        mes=mes,
+        proprietarios=proprietarios,
+        total_aluguel=total_aluguel,
+        total_comissao=total_comissao,
+    )
+
+
+@router.get("/proprietarios/{proprietario_id}/demonstrativo-administracao")
+def gerar_demonstrativo_administracao(
+    proprietario_id: str,
+    mes: str = Query(..., description="Mês de competência no formato YYYY-MM"),
+    current_user: dict = Depends(require_admin),
+):
+    """Gera o PDF do Demonstrativo de Administração de um proprietário no mês."""
+    mes_ref = _parse_mes(mes)
+    proprietarios, _, _ = _montar_adm_cobranca(mes_ref, proprietario_id)
+    if not proprietarios:
+        raise HTTPException(
+            status_code=404,
+            detail="Nenhum contrato ativo encontrado para este proprietário.",
+        )
+
+    bloco = proprietarios[0]
+    dados = get_dados_recebimento()
+    pdf_bytes = gerar_demonstrativo_admin_pdf(
+        bloco.model_dump(), mes_ref, dados.model_dump(),
+    )
+    nome_arquivo = f"demonstrativo_administracao_{_slug(bloco.nome)}_{mes_ref.strftime('%Y-%m')}.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{nome_arquivo}"',
+            "Access-Control-Expose-Headers": "Content-Disposition",
+        },
     )
 
 

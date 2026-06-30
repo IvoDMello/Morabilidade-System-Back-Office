@@ -244,6 +244,44 @@ export interface RepasseResumo {
   total_repasse: number;
 }
 
+// Demonstrativo de Administração (cobrança da taxa ao proprietário)
+export interface AdmCobrancaItem {
+  contrato_id: string;
+  imovel_codigo?: string;
+  imovel_endereco?: string;
+  bairro?: string;
+  locatario_nome?: string;
+  aluguel: number;
+  taxa_administracao_pct: number;
+  comissao: number;
+}
+
+export interface AdmCobrancaProprietario {
+  proprietario_id: string;
+  nome: string;
+  email?: string;
+  qtd_imoveis: number;
+  total_aluguel: number;
+  total_comissao: number;
+  pct_uniforme?: number | null;
+  itens: AdmCobrancaItem[];
+}
+
+export interface AdmCobrancaResumo {
+  mes: string;
+  proprietarios: AdmCobrancaProprietario[];
+  total_aluguel: number;
+  total_comissao: number;
+}
+
+export interface DadosRecebimento {
+  titular: string;
+  banco: string;
+  agencia: string;
+  conta: string;
+  pix: string;
+}
+
 export interface ContratoLocacaoListItem {
   id: string;
   status: StatusLocacao;

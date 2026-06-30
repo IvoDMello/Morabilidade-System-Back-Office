@@ -284,3 +284,40 @@ class RepasseResumo(BaseModel):
     total_recebido: Decimal
     total_taxa: Decimal
     total_repasse: Decimal
+
+
+# ── Demonstrativo de Administração (cobrança da taxa ao proprietário) ─────────
+# Modelo distinto do repasse: aqui o proprietário recebe o aluguel direto e
+# PAGA à imobiliária a taxa de administração sobre o aluguel cheio de TODOS os
+# seus contratos ativos, independente de o inquilino ter pago. Base de cálculo =
+# aluguel_mensal × taxa_administracao_pct do contrato.
+
+class AdmCobrancaItem(BaseModel):
+    """Uma linha da carteira administrada: um contrato ativo do proprietário."""
+    contrato_id: str
+    imovel_codigo: Optional[str] = None
+    imovel_endereco: Optional[str] = None
+    bairro: Optional[str] = None
+    locatario_nome: Optional[str] = None
+    aluguel: Decimal
+    taxa_administracao_pct: Decimal
+    comissao: Decimal
+
+
+class AdmCobrancaProprietario(BaseModel):
+    proprietario_id: str
+    nome: str
+    email: Optional[str] = None
+    qtd_imoveis: int
+    total_aluguel: Decimal
+    total_comissao: Decimal
+    # Percentual único quando todos os contratos usam a mesma taxa; None se variam.
+    pct_uniforme: Optional[Decimal] = None
+    itens: list[AdmCobrancaItem]
+
+
+class AdmCobrancaResumo(BaseModel):
+    mes: str
+    proprietarios: list[AdmCobrancaProprietario]
+    total_aluguel: Decimal
+    total_comissao: Decimal
