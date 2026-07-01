@@ -359,8 +359,8 @@ export default async function DetalheImovelPage({ params }: Props) {
               )}
 
               {/* Vídeo do imóvel no Instagram (client component — rastreia o clique) */}
-              {imovel.video_url && (
-                <VideoInstagramButton codigo={imovel.codigo} url={imovel.video_url} />
+              {imovel.instagram_url && (
+                <VideoInstagramButton codigo={imovel.codigo} url={imovel.instagram_url} />
               )}
 
               <p className="text-xs text-slate-400 text-center mt-3">

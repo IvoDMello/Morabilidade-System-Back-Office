@@ -72,7 +72,6 @@ export interface Imovel {
   iptu_mensal?: number;
   condominio_mensal?: number;
   descricao?: string;
-  video_url?: string;
   instagram_url?: string;
   fotos: Foto[];
   tags: Tag[];
