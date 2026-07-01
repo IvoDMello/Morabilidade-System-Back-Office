@@ -71,7 +71,6 @@ export interface Imovel {
   numero_matricula?: string;
   descricao?: string;
   observacoes_internas?: string;
-  video_url?: string;
   instagram_url?: string;
   corretor_id?: string;
   proprietario_id?: string | null;

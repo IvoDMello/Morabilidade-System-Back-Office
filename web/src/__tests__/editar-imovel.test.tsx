@@ -112,7 +112,7 @@ function imovelFixture(overrides = {}) {
     iptu_mensal: null,
     condominio_mensal: null,
     descricao: "",
-    video_url: "",
+    instagram_url: "",
     corretor_id: null,
     destaque_ordem: null,
     tags: [],

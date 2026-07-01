@@ -234,8 +234,9 @@ def test_repasses_agrupa_por_proprietario(client):
     prop = body["proprietarios"][0]
     assert prop["nome"] == "Maria"
     assert prop["total_recebido"] == "8000.00"
-    assert prop["total_taxa"] == "800.00"      # 10% de 8000
-    assert prop["total_repasse"] == "7200.00"
+    # Taxa fixa da operação: 8% independe do campo do contrato (10% aqui).
+    assert prop["total_taxa"] == "640.00"      # 8% de 8000
+    assert prop["total_repasse"] == "7360.00"
     assert len(prop["itens"]) == 2
 
 

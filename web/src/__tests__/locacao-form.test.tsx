@@ -130,17 +130,15 @@ describe("LocacaoForm", () => {
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
-  it("bloqueia taxa de administração > 100", async () => {
-    const onSubmit = vi.fn();
-    const { container } = render(<LocacaoForm onSubmit={onSubmit} />);
+  it("taxa de administração é fixa (8%) e não tem campo editável", async () => {
+    const { container } = render(<LocacaoForm onSubmit={vi.fn()} />);
+    await waitFor(() =>
+      expect(screen.getByRole("option", { name: /MB-001/ })).toBeInTheDocument()
+    );
 
-    await preencherMinimo(container);
-    await userEvent.type(byName(container, "taxa_administracao_pct"), "150");
-    await userEvent.click(screen.getAllByRole("button", { name: "Salvar" })[0]);
-
-    // zod bloqueia — onSubmit nunca é chamado.
-    await new Promise((r) => setTimeout(r, 100));
-    expect(onSubmit).not.toHaveBeenCalled();
+    // O campo editável saiu do form: a taxa é aplicada pelo backend.
+    expect(container.querySelector('[name="taxa_administracao_pct"]')).toBeNull();
+    expect(screen.getByDisplayValue(/8% \(taxa única da operação\)/)).toBeDisabled();
   });
 
   it("preview do total replica a fórmula do backend (aluguel − fundo reserva)", async () => {

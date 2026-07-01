@@ -1,8 +1,12 @@
 """Testes do Demonstrativo de Administração (cobrança da taxa ao proprietário).
 
 Cobre a lógica de agrupamento por proprietário (_montar_adm_cobranca), a taxa
-padrão de 8% quando o contrato não tem taxa própria, a geração do PDF (incluindo
-carteira grande que exige quebra de página) e os endpoints REST.
+única de 8% (campo do contrato é ignorado), a exclusão de contratos já retidos
+no Repasse do mês (anti duplo débito), a geração do PDF (incluindo carteira
+grande que exige quebra de página) e os endpoints REST.
+
+Sequência de executes em _montar_adm_cobranca: 1) pagamentos pagos/parciais da
+competência 2) contratos ativos.
 """
 from datetime import date
 from decimal import Decimal
@@ -39,7 +43,7 @@ def test_agrupa_por_proprietario_e_calcula_comissao():
         _contrato("p1", "Ana", aluguel="2000", taxa="10", codigo="MB-1"),
         _contrato("p2", "Bruno", aluguel="3000", taxa="5", codigo="MB-3"),
     ]
-    db = make_db_mock(MagicMock(data=contratos))
+    db = make_db_mock(MagicMock(data=[]), MagicMock(data=contratos))
     with patch("app.routers.locacoes.supabase_admin", db):
         props, tot_aluguel, tot_comissao = _montar_adm_cobranca(date(2026, 5, 1))
 
@@ -47,45 +51,65 @@ def test_agrupa_por_proprietario_e_calcula_comissao():
     ana = props[0]
     assert ana.qtd_imoveis == 2
     assert ana.total_aluguel == Decimal("3000.00")
-    assert ana.total_comissao == Decimal("300.00")  # 10% de 3000
-    assert ana.pct_uniforme == Decimal("10")
+    # Taxa única de 8% — o campo do contrato (10%) é ignorado.
+    assert ana.total_comissao == Decimal("240.00")
+    assert ana.pct_uniforme == Decimal("8")
     # Itens ordenados por código do imóvel (estabilidade do PDF)
     assert [i.imovel_codigo for i in ana.itens] == ["MB-1", "MB-2"]
 
     assert tot_aluguel == Decimal("6000.00")
-    assert tot_comissao == Decimal("450.00")  # 300 (Ana) + 150 (Bruno)
+    assert tot_comissao == Decimal("480.00")  # 240 (Ana) + 240 (Bruno)
 
 
-def test_taxa_padrao_8pct_quando_contrato_sem_taxa():
+def test_taxa_unica_8pct_mesmo_sem_taxa_no_contrato():
     contratos = [
         _contrato("p1", "Ana", aluguel="1000", taxa="0", codigo="MB-1"),
         _contrato("p1", "Ana", aluguel="1000", taxa=None, codigo="MB-2"),
     ]
-    db = make_db_mock(MagicMock(data=contratos))
+    db = make_db_mock(MagicMock(data=[]), MagicMock(data=contratos))
     with patch("app.routers.locacoes.supabase_admin", db):
         props, _, tot_comissao = _montar_adm_cobranca(date(2026, 5, 1))
 
     assert TAXA_ADM_PADRAO == Decimal("8")
-    # Ambos caem no padrão de 8% → 80 + 80
-    assert tot_comissao == Decimal("160.00")
+    assert tot_comissao == Decimal("160.00")  # 80 + 80
     assert props[0].pct_uniforme == Decimal("8")
 
 
-def test_pct_uniforme_none_quando_taxas_divergem():
+def test_taxas_divergentes_no_contrato_sao_ignoradas():
+    # Campo do contrato (10% / 5%) não importa — 8% fixo em todos.
     contratos = [
         _contrato("p1", "Ana", taxa="10", codigo="MB-1"),
         _contrato("p1", "Ana", taxa="5", codigo="MB-2"),
     ]
-    db = make_db_mock(MagicMock(data=contratos))
+    db = make_db_mock(MagicMock(data=[]), MagicMock(data=contratos))
     with patch("app.routers.locacoes.supabase_admin", db):
         props, _, _ = _montar_adm_cobranca(date(2026, 5, 1))
 
-    assert props[0].pct_uniforme is None
+    assert props[0].pct_uniforme == Decimal("8")
+    assert all(i.taxa_administracao_pct == Decimal("8") for i in props[0].itens)
+
+
+def test_exclui_contrato_ja_retido_no_repasse_do_mes():
+    """Anti duplo débito: aluguel que passou pela imobiliária (pagamento
+    pago/parcial no mês) já teve os 8% retidos no Repasse — sai da cobrança."""
+    contratos = [
+        _contrato("p1", "Ana", aluguel="1000", codigo="MB-1"),
+        _contrato("p1", "Ana", aluguel="2000", codigo="MB-2"),
+    ]
+    pagos = [{"contrato_id": "ct-MB-1"}]  # MB-1 recebido via imobiliária
+    db = make_db_mock(MagicMock(data=pagos), MagicMock(data=contratos))
+    with patch("app.routers.locacoes.supabase_admin", db):
+        props, tot_aluguel, tot_comissao = _montar_adm_cobranca(date(2026, 5, 1))
+
+    assert props[0].qtd_imoveis == 1
+    assert [i.imovel_codigo for i in props[0].itens] == ["MB-2"]
+    assert tot_aluguel == Decimal("2000.00")
+    assert tot_comissao == Decimal("160.00")  # 8% só do MB-2
 
 
 def test_filtra_por_proprietario():
     contratos = [_contrato("p1", "Ana", codigo="MB-1")]
-    db = make_db_mock(MagicMock(data=contratos))
+    db = make_db_mock(MagicMock(data=[]), MagicMock(data=contratos))
     with patch("app.routers.locacoes.supabase_admin", db):
         props, _, _ = _montar_adm_cobranca(date(2026, 5, 1), proprietario_id="p1")
 
@@ -95,7 +119,7 @@ def test_filtra_por_proprietario():
 
 
 def test_sem_contratos_retorna_vazio():
-    db = make_db_mock(MagicMock(data=[]))
+    db = make_db_mock(MagicMock(data=[]), MagicMock(data=[]))
     with patch("app.routers.locacoes.supabase_admin", db):
         props, tot_a, tot_c = _montar_adm_cobranca(date(2026, 5, 1))
     assert props == []
@@ -150,7 +174,7 @@ def test_pdf_sem_pct_uniforme_e_campos_opcionais_vazios():
 
 def test_endpoint_adm_cobranca_retorna_resumo(client):
     contratos = [_contrato("p1", "Ana", aluguel="1000", taxa="10", codigo="MB-1")]
-    db = make_db_mock(MagicMock(data=contratos))
+    db = make_db_mock(MagicMock(data=[]), MagicMock(data=contratos))
     with patch("app.routers.locacoes.supabase_admin", db):
         res = client.get("/locacoes/adm-cobranca?mes=2026-05")
 
@@ -158,7 +182,7 @@ def test_endpoint_adm_cobranca_retorna_resumo(client):
     body = res.json()
     assert body["mes"] == "2026-05"
     assert len(body["proprietarios"]) == 1
-    assert body["total_comissao"] == "100.00"
+    assert body["total_comissao"] == "80.00"  # 8% fixo, ignora os 10% do contrato
 
 
 def test_endpoint_adm_cobranca_mes_invalido(client):
@@ -168,10 +192,11 @@ def test_endpoint_adm_cobranca_mes_invalido(client):
 
 def test_endpoint_demonstrativo_administracao_congela_snapshot(client):
     """Snapshot inexistente → monta a carteira, salva o snapshot e emite o PDF.
-    Sequência de executes: 1) busca snapshot (miss) 2) carteira 3) upsert snapshot."""
+    Sequência: 1) snapshot (miss) 2) pagamentos retidos 3) carteira 4) upsert."""
     contratos = [_contrato("p1", "Ana", codigo="MB-1")]
     db = make_db_mock(
         MagicMock(data=[]),         # _get_admin_snapshot → miss
+        MagicMock(data=[]),         # pagamentos retidos no repasse
         MagicMock(data=contratos),  # _montar_adm_cobranca
         MagicMock(data=[{}]),       # _save_admin_snapshot (upsert)
     )
@@ -207,7 +232,8 @@ def test_endpoint_demonstrativo_administracao_regenerar_ignora_snapshot(client):
     """regenerar=true refaz da carteira mesmo havendo snapshot e regrava."""
     contratos = [_contrato("p1", "Ana", codigo="MB-1")]
     db = make_db_mock(
-        MagicMock(data=contratos),  # _montar (snapshot não é consultado)
+        MagicMock(data=[]),         # pagamentos retidos (snapshot não é consultado)
+        MagicMock(data=contratos),  # _montar_adm_cobranca
         MagicMock(data=[{}]),       # upsert
     )
     from app.schemas.configuracao import DadosRecebimento
@@ -226,6 +252,7 @@ def test_endpoint_demonstrativo_administracao_regenerar_ignora_snapshot(client):
 def test_endpoint_demonstrativo_administracao_sem_contratos_404(client):
     db = make_db_mock(
         MagicMock(data=[]),  # snapshot miss
+        MagicMock(data=[]),  # pagamentos retidos
         MagicMock(data=[]),  # carteira vazia
     )
     with patch("app.routers.locacoes.supabase_admin", db):

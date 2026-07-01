@@ -29,7 +29,7 @@ _CAMPOS_EXPORT = [
     "cidade", "bairro", "logradouro", "numero", "complemento", "cep",
     "dormitorios", "suites", "banheiros", "vagas_garagem", "andar", "mobiliado",
     "ano_construcao", "area_total", "area_util", "valor_venda", "valor_locacao",
-    "iptu_mensal", "condominio_mensal", "video_url", "instagram_url", "descricao", "created_at",
+    "iptu_mensal", "condominio_mensal", "instagram_url", "descricao", "created_at",
 ]
 
 # Caracteres que o Excel/LibreOffice interpretam como início de fórmula. Se um

@@ -6,12 +6,12 @@ clamp do vencimento no mês e o cálculo taxa × valor. Antes cada endpoint
 carregava a própria cópia — qualquer ajuste de regra precisava ser feito em
 dois lugares e era questão de tempo até os PDFs divergirem.
 
-Nota de regra (comportamento atual, preservado aqui):
-- Repasse: usa a taxa do contrato como está (0/None ⇒ nada é descontado).
-- Adm. (cobrança): taxa do contrato, com fallback de TAXA_ADM_PADRAO quando
-  o contrato não tem taxa preenchida.
-Contratos com taxa preenchida aparecem nos DOIS fluxos — cabe à operação usar
-um ou outro por proprietário, não ambos na mesma competência.
+Regra vigente (decisão do Ivo, 01/07/2026): a taxa de administração é FIXA em
+8% (TAXA_ADM_PADRAO) para todos os contratos — o campo taxa_administracao_pct
+do contrato é ignorado nos cálculos. Para não haver cobrança em dobro, o
+Demonstrativo de Administração exclui contratos cujo aluguel do mês passou
+pela imobiliária (pagamento pago/parcial na competência): nesses, os 8% já
+foram retidos no Repasse.
 """
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ from datetime import date, timedelta
 from decimal import Decimal
 from typing import Optional
 
-# Taxa de administração aplicada na cobrança quando o contrato não tem taxa.
+# Taxa de administração única da operação (8% sobre o aluguel).
 TAXA_ADM_PADRAO = Decimal("8")
 
 _MES_RE = re.compile(r"^(\d{4})-(\d{2})$")
@@ -51,16 +51,7 @@ def vencimento_no_mes(dia_vencimento: Optional[int], mes_ref: date, padrao: int 
     return date(mes_ref.year, mes_ref.month, min(dia, ultimo_dia_do_mes(mes_ref)))
 
 
-def taxa_efetiva(taxa_pct, aplicar_padrao: bool) -> Decimal:
-    """Taxa do contrato como Decimal. Com `aplicar_padrao`, 0/None vira
-    TAXA_ADM_PADRAO (regra da cobrança de administração); sem, fica 0
-    (regra do repasse: contrato sem taxa não desconta nada)."""
-    pct = Decimal(str(taxa_pct or 0))
-    if aplicar_padrao and pct == 0:
-        return TAXA_ADM_PADRAO
-    return pct
-
-
-def calcular_taxa(valor, taxa_pct: Decimal) -> Decimal:
-    """Comissão/taxa de administração: valor × pct / 100, em centavos."""
+def calcular_taxa(valor, taxa_pct: Decimal = TAXA_ADM_PADRAO) -> Decimal:
+    """Comissão/taxa de administração: valor × pct / 100, em centavos.
+    Sem `taxa_pct`, usa a taxa única da operação (8%)."""
     return (Decimal(str(valor or 0)) * taxa_pct / Decimal("100")).quantize(_CENT)

@@ -31,7 +31,7 @@ IMOVEL_DB = {
     "iptu_mensal": None,
     "condominio_mensal": None,
     "descricao": "Ótimo apartamento",
-    "video_url": None,
+    "instagram_url": None,
     "corretor_id": None,
     "tag_ids": [],
     "created_at": "2025-01-01T00:00:00+00:00",

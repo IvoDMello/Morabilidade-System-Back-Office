@@ -472,20 +472,15 @@ export function LocacaoForm({
             />
           </Field>
 
-          <Field
-            label="Taxa de administração (%)"
-            hint="Percentual retido pela imobiliária sobre o aluguel pago antes do repasse"
-            error={errors.taxa_administracao_pct?.message}
-          >
+          {/* Taxa de administração: fixa em 8% para toda a operação — o valor
+              é aplicado pelo backend (Repasse e Demonstrativo de Adm.), sem
+              campo editável por contrato. */}
+          <Field label="Taxa de administração" hint="Aplicada automaticamente no repasse e na cobrança de administração">
             <input
-              type="number"
-              step="0.01"
-              min={0}
-              max={100}
-              {...register("taxa_administracao_pct")}
-              className={inputClass}
-              placeholder="0"
-              onWheel={bloquearScroll}
+              type="text"
+              value="8% (taxa única da operação)"
+              disabled
+              className={`${inputClass} bg-slate-50 text-slate-500`}
             />
           </Field>
         </div>

@@ -65,7 +65,6 @@ const schema = z.object({
   numero_matricula: z.string().optional(),
   descricao: z.string().optional(),
   observacoes_internas: z.string().optional(),
-  video_url: z.string().optional(),
   instagram_url: z.string().optional(),
   corretor_id: z.string().optional().nullable(),
   proprietario_id: z.string().optional().nullable(),
@@ -931,14 +930,8 @@ export function ImovelForm({
           </div>
 
           <div>
-            <Label>Link do vídeo do Instagram</Label>
-            <input {...register("video_url")} className={inputClass} placeholder="https://www.instagram.com/reel/..." />
-            <FieldError message={errors.video_url?.message} />
-          </div>
-
-          <div>
-            <Label>Link do anúncio no Instagram</Label>
-            <input {...register("instagram_url")} className={inputClass} placeholder="https://instagram.com/p/..." />
+            <Label>Link do anúncio no Instagram (post ou reel)</Label>
+            <input {...register("instagram_url")} className={inputClass} placeholder="https://www.instagram.com/reel/..." />
             <FieldError message={errors.instagram_url?.message} />
             <p className="mt-1 text-xs text-slate-400">
               Aparece como botão na página do imóvel no site.

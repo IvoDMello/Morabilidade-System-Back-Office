@@ -44,8 +44,6 @@ from app.services.fechamento import (
     TAXA_ADM_PADRAO,
     calcular_taxa,
     parse_mes,
-    taxa_efetiva,
-    ultimo_dia_do_mes,
     vencimento_no_mes,
 )
 from app.services.audit_log import registrar_audit_locacao
@@ -533,9 +531,9 @@ def relatorio_repasses(
         if not c:
             continue
         valor_pago = Decimal(str(p["valor_pago"] or p["valor_devido"] or 0))
-        # Repasse não aplica taxa padrão: contrato sem taxa repassa integral
-        # (a cobrança da taxa, nesse caso, sai pelo Demonstrativo de Adm.).
-        taxa_pct = taxa_efetiva(c.get("taxa_administracao_pct"), aplicar_padrao=False)
+        # Taxa única da operação: 8% fixo, independente do campo do contrato.
+        # Quem teve a taxa retida aqui sai do Demonstrativo de Adm. do mês.
+        taxa_pct = TAXA_ADM_PADRAO
         valor_taxa = calcular_taxa(valor_pago, taxa_pct)
         valor_repasse = (valor_pago - valor_taxa).quantize(Decimal("0.01"))
 
@@ -622,8 +620,24 @@ def _montar_adm_cobranca(
     mes_ref: date, proprietario_id: Optional[str] = None
 ) -> tuple[list[AdmCobrancaProprietario], Decimal, Decimal]:
     """Agrupa os contratos ATIVOS por proprietário, calculando a comissão
-    (aluguel × taxa_administracao_pct) de cada imóvel. Opcionalmente filtra um
-    único proprietário. O mês entra só como rótulo — a carteira é a vigente."""
+    (aluguel × 8%) de cada imóvel. Opcionalmente filtra um único proprietário.
+
+    Anti duplo débito: contratos com pagamento 'pago'/'parcial' na competência
+    tiveram o aluguel recebido pela imobiliária — os 8% já saem retidos no
+    Repasse, então ficam FORA desta cobrança."""
+    # Contratos cuja taxa do mês já foi retida no repasse.
+    ja_retidos = {
+        p["contrato_id"]
+        for p in (
+            supabase_admin.table("locacao_pagamentos")
+            .select("contrato_id")
+            .eq("mes_referencia", mes_ref.isoformat())
+            .in_("status", ["pago", "parcial"])
+            .execute()
+            .data
+            or []
+        )
+    }
     # Pagina em lotes: o Supabase limita a resposta a ~1000 linhas por padrão,
     # então sem paginar a carteira além disso sumiria silenciosamente.
     page_size = 1000
@@ -649,15 +663,16 @@ def _montar_adm_cobranca(
     total_comissao = Decimal("0")
 
     for ct in contratos:
+        if ct["id"] in ja_retidos:
+            continue
         prop = ct.get("proprietario") or {}
         prop_id = ct["proprietario_id"]
         imv = ct.get("imovel") or {}
         loc = ct.get("locatario") or {}
 
         aluguel = Decimal(str(ct.get("aluguel_mensal") or 0))
-        # Cobrança aplica TAXA_ADM_PADRAO quando o contrato não tem taxa —
-        # a maioria dos contratos ainda não tem a taxa preenchida.
-        taxa_pct = taxa_efetiva(ct.get("taxa_administracao_pct"), aplicar_padrao=True)
+        # Taxa única da operação: 8% fixo (campo do contrato é ignorado).
+        taxa_pct = TAXA_ADM_PADRAO
         comissao = calcular_taxa(aluguel, taxa_pct)
 
         if prop_id not in por_prop:

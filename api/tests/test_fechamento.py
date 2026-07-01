@@ -12,7 +12,6 @@ from app.services.fechamento import (
     TAXA_ADM_PADRAO,
     calcular_taxa,
     parse_mes,
-    taxa_efetiva,
     ultimo_dia_do_mes,
     vencimento_no_mes,
 )
@@ -53,22 +52,16 @@ def test_vencimento_sem_dia_usa_padrao():
     assert vencimento_no_mes(0, date(2026, 5, 1)) == date(2026, 5, 5)
 
 
-# ── taxa_efetiva ─────────────────────────────────────────────────────────────
+# ── taxa única ───────────────────────────────────────────────────────────────
 
-def test_taxa_do_contrato_prevalece_nos_dois_fluxos():
-    assert taxa_efetiva(10, aplicar_padrao=True) == Decimal("10")
-    assert taxa_efetiva("7.5", aplicar_padrao=False) == Decimal("7.5")
-
-
-def test_sem_taxa_cobranca_aplica_padrao_e_repasse_nao():
-    # Regra atual: cobrança de adm. usa 8% de fallback; repasse não desconta.
-    for vazio in (None, 0, "0"):
-        assert taxa_efetiva(vazio, aplicar_padrao=True) == TAXA_ADM_PADRAO
-        assert taxa_efetiva(vazio, aplicar_padrao=False) == Decimal("0")
-
-
-def test_taxa_padrao_e_8_pct():
+def test_taxa_unica_da_operacao_e_8_pct():
+    # Regra vigente (01/07/2026): 8% fixo em Repasse e Adm-cobrança;
+    # o campo taxa_administracao_pct do contrato é ignorado.
     assert TAXA_ADM_PADRAO == Decimal("8")
+
+
+def test_calcular_taxa_usa_8_pct_por_padrao():
+    assert calcular_taxa(1000) == Decimal("80.00")
 
 
 # ── calcular_taxa ────────────────────────────────────────────────────────────
