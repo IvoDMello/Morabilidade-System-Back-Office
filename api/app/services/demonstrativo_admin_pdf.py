@@ -34,6 +34,9 @@ from app.services.pdf_base import (
 )
 
 MARGEM = 15 * mm
+# Menor Y em que uma linha da tabela pode começar sem invadir o rodapé (16mm)
+# desenhado por draw_brand_footer. Abaixo disso, quebramos a página.
+LIMITE_INFERIOR = 24 * mm
 
 
 def _primeiro_nome(nome: str) -> str:
@@ -135,23 +138,38 @@ def gerar_demonstrativo_admin_pdf(
     else:
         header_comissao = "COMISSÃO"
 
-    # Cabeçalho da tabela
+    # Cabeçalho da tabela (reutilizado ao quebrar a página)
     head_h = 8 * mm
-    c.setFillColor(colors.HexColor("#f1efe4"))
-    c.rect(MARGEM, y - head_h, largura - 2 * MARGEM, head_h, fill=1, stroke=0)
-    c.setFillColor(TEXTO_CLARO)
-    c.setFont("Helvetica-Bold", 8)
-    base_h = y - head_h + 2.6 * mm
-    c.drawString(x_codigo + 2 * mm, base_h, "CÓDIGO")
-    c.drawString(x_imovel, base_h, "IMÓVEL / LOCATÁRIO")
-    c.drawString(x_bairro, base_h, "BAIRRO")
-    c.drawRightString(x_aluguel_r, base_h, "ALUGUEL")
-    c.drawRightString(x_comissao_r, base_h, header_comissao)
-    y -= head_h
+
+    def _desenhar_cab_tabela(y_cab: float) -> float:
+        c.setFillColor(colors.HexColor("#f1efe4"))
+        c.rect(MARGEM, y_cab - head_h, largura - 2 * MARGEM, head_h, fill=1, stroke=0)
+        c.setFillColor(TEXTO_CLARO)
+        c.setFont("Helvetica-Bold", 8)
+        base = y_cab - head_h + 2.6 * mm
+        c.drawString(x_codigo + 2 * mm, base, "CÓDIGO")
+        c.drawString(x_imovel, base, "IMÓVEL / LOCATÁRIO")
+        c.drawString(x_bairro, base, "BAIRRO")
+        c.drawRightString(x_aluguel_r, base, "ALUGUEL")
+        c.drawRightString(x_comissao_r, base, header_comissao)
+        return y_cab - head_h
+
+    y = _desenhar_cab_tabela(y)
 
     # Linhas
     row_h = 13 * mm
     for it in itens:
+        # Quebra de página quando a próxima linha invadiria o rodapé.
+        if y - row_h < LIMITE_INFERIOR:
+            draw_brand_footer(c, largura)
+            c.showPage()
+            draw_brand_header(c, largura, altura, header_mm=header_mm)
+            c.setFillColor(colors.white)
+            c.setFont("Helvetica-Bold", 12)
+            c.drawRightString(largura - MARGEM, altura - 18 * mm,
+                              "Demonstrativo de Administração (cont.)")
+            y = altura - header_mm * mm - 12 * mm
+            y = _desenhar_cab_tabela(y)
         codigo = it.get("imovel_codigo") or "—"
         endereco = it.get("imovel_endereco") or "—"
         locatario = it.get("locatario_nome") or "—"
@@ -187,6 +205,14 @@ def gerar_demonstrativo_admin_pdf(
         c.setLineWidth(0.5)
         c.line(MARGEM, topo - row_h, largura - MARGEM, topo - row_h)
         y -= row_h
+
+    # Bloco de fechamento (totais + boxes + agradecimento) precisa de ~90mm.
+    # Se não couber na página atual, quebra antes para não invadir o rodapé.
+    if y - 90 * mm < 0:
+        draw_brand_footer(c, largura)
+        c.showPage()
+        draw_brand_header(c, largura, altura, header_mm=header_mm)
+        y = altura - header_mm * mm - 16 * mm
 
     # Linha de totais
     total_aluguel = Decimal(str(bloco.get("total_aluguel") or 0))

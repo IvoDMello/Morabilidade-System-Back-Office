@@ -28,24 +28,14 @@ def get_config(chave: str) -> dict:
 
 
 def set_config(chave: str, valor: dict) -> dict:
-    """Grava (upsert) o valor jsonb de uma chave e devolve o valor salvo."""
-    existente = (
-        supabase_admin.table("configuracoes")
-        .select("chave")
-        .eq("chave", chave)
-        .limit(1)
-        .execute()
-        .data
-        or []
-    )
-    if existente:
-        supabase_admin.table("configuracoes").update({"valor": valor}).eq(
-            "chave", chave
-        ).execute()
-    else:
-        supabase_admin.table("configuracoes").insert(
-            {"chave": chave, "valor": valor}
-        ).execute()
+    """Grava o valor jsonb de uma chave e devolve o valor salvo.
+
+    Upsert nativo em uma só ida ao banco: insere ou, se a chave (PK) já existir,
+    atualiza o valor. Evita a corrida do padrão select-then-insert/update.
+    """
+    supabase_admin.table("configuracoes").upsert(
+        {"chave": chave, "valor": valor}, on_conflict="chave"
+    ).execute()
     return valor
 
 

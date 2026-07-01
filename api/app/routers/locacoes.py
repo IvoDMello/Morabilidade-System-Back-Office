@@ -635,14 +635,24 @@ def _montar_adm_cobranca(
     """Agrupa os contratos ATIVOS por proprietário, calculando a comissão
     (aluguel × taxa_administracao_pct) de cada imóvel. Opcionalmente filtra um
     único proprietário. O mês entra só como rótulo — a carteira é a vigente."""
-    q = (
-        supabase_admin.table("contratos_locacao")
-        .select(_SELECT_ADM)
-        .eq("status", "ativo")
-    )
-    if proprietario_id:
-        q = q.eq("proprietario_id", proprietario_id)
-    contratos = q.execute().data or []
+    # Pagina em lotes: o Supabase limita a resposta a ~1000 linhas por padrão,
+    # então sem paginar a carteira além disso sumiria silenciosamente.
+    page_size = 1000
+    offset = 0
+    contratos: list[dict] = []
+    while True:
+        q = (
+            supabase_admin.table("contratos_locacao")
+            .select(_SELECT_ADM)
+            .eq("status", "ativo")
+        )
+        if proprietario_id:
+            q = q.eq("proprietario_id", proprietario_id)
+        lote = q.range(offset, offset + page_size - 1).execute().data or []
+        contratos.extend(lote)
+        if len(lote) < page_size:
+            break
+        offset += page_size
 
     por_prop: dict[str, AdmCobrancaProprietario] = {}
     pcts_por_prop: dict[str, set] = defaultdict(set)
@@ -729,27 +739,77 @@ def relatorio_adm_cobranca(
     )
 
 
+def _get_admin_snapshot(proprietario_id: str, mes_ref: date) -> Optional[dict]:
+    """Snapshot congelado (bloco + dados de recebimento) daquela competência,
+    ou None se ainda não foi gerado."""
+    res = (
+        supabase_admin.table("demonstrativo_admin_snapshots")
+        .select("dados, dados_recebimento")
+        .eq("proprietario_id", proprietario_id)
+        .eq("mes_referencia", mes_ref.isoformat())
+        .limit(1)
+        .execute()
+        .data
+        or []
+    )
+    return res[0] if res else None
+
+
+def _save_admin_snapshot(
+    proprietario_id: str, mes_ref: date, dados: dict, dados_recebimento: dict
+) -> None:
+    """Congela (upsert) o demonstrativo daquela competência para que reemissões
+    saiam idênticas. A unique (proprietario_id, mes_referencia) garante 1 por mês."""
+    supabase_admin.table("demonstrativo_admin_snapshots").upsert(
+        {
+            "proprietario_id": proprietario_id,
+            "mes_referencia": mes_ref.isoformat(),
+            "dados": dados,
+            "dados_recebimento": dados_recebimento,
+        },
+        on_conflict="proprietario_id,mes_referencia",
+    ).execute()
+
+
 @router.get("/proprietarios/{proprietario_id}/demonstrativo-administracao")
 def gerar_demonstrativo_administracao(
     proprietario_id: str,
     mes: str = Query(..., description="Mês de competência no formato YYYY-MM"),
+    regenerar: bool = Query(
+        False,
+        description="Refaz o snapshot a partir da carteira atual (sobrescreve a "
+        "versão congelada da competência).",
+    ),
     current_user: dict = Depends(require_admin),
 ):
-    """Gera o PDF do Demonstrativo de Administração de um proprietário no mês."""
-    mes_ref = _parse_mes(mes)
-    proprietarios, _, _ = _montar_adm_cobranca(mes_ref, proprietario_id)
-    if not proprietarios:
-        raise HTTPException(
-            status_code=404,
-            detail="Nenhum contrato ativo encontrado para este proprietário.",
-        )
+    """Gera o PDF do Demonstrativo de Administração de um proprietário no mês.
 
-    bloco = proprietarios[0]
-    dados = get_dados_recebimento()
-    pdf_bytes = gerar_demonstrativo_admin_pdf(
-        bloco.model_dump(), mes_ref, dados.model_dump(),
-    )
-    nome_arquivo = f"demonstrativo_administracao_{_slug(bloco.nome)}_{mes_ref.strftime('%Y-%m')}.pdf"
+    Congela na primeira geração: uma 2ª via da mesma competência sai idêntica à
+    original, mesmo que a carteira tenha mudado desde então. Use `regenerar=true`
+    para descartar o snapshot e refazê-lo a partir da carteira vigente."""
+    mes_ref = _parse_mes(mes)
+
+    snap = None if regenerar else _get_admin_snapshot(proprietario_id, mes_ref)
+    if snap:
+        bloco_dict = snap["dados"]
+        dados_rec = snap.get("dados_recebimento") or {}
+        nome = bloco_dict.get("nome") or "—"
+    else:
+        proprietarios, _, _ = _montar_adm_cobranca(mes_ref, proprietario_id)
+        if not proprietarios:
+            raise HTTPException(
+                status_code=404,
+                detail="Nenhum contrato ativo encontrado para este proprietário.",
+            )
+        bloco = proprietarios[0]
+        # mode="json" torna os Decimais serializáveis para o jsonb do snapshot.
+        bloco_dict = bloco.model_dump(mode="json")
+        dados_rec = get_dados_recebimento().model_dump()
+        nome = bloco.nome
+        _save_admin_snapshot(proprietario_id, mes_ref, bloco_dict, dados_rec)
+
+    pdf_bytes = gerar_demonstrativo_admin_pdf(bloco_dict, mes_ref, dados_rec)
+    nome_arquivo = f"demonstrativo_administracao_{_slug(nome)}_{mes_ref.strftime('%Y-%m')}.pdf"
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",
