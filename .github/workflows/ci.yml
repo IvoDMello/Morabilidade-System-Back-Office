@@ -38,6 +38,11 @@ jobs:
           CORS_ORIGINS: "http://localhost:3000"
         run: pytest tests/ -v --cov=app --cov-report=term-missing --cov-fail-under=80
 
+      # Módulos financeiros (repasse/demonstrativos) têm piso próprio, mais
+      # alto que o global: regressão de cobertura aqui muda valor em PDF.
+      - name: Coverage floor — módulos financeiros
+        run: coverage report --fail-under=90 --include="app/services/fechamento.py,app/services/demonstrativo_pdf.py,app/services/demonstrativo_admin_pdf.py,app/routers/locacoes.py"
+
   web:
     name: Admin Panel (Next.js)
     runs-on: ubuntu-latest

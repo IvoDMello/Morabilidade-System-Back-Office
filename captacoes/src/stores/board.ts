@@ -12,6 +12,29 @@ function empty(): ByStatus {
   return Object.fromEntries(STATUSES.map((s) => [s, []])) as unknown as ByStatus;
 }
 
+const FILTRO_STATUS_KEY = "captacoes_filtro_status";
+
+function lerFiltroStatus(): "all" | Status {
+  // sessionStorage sobrevive ao reload (F5 no detalhe) mas não vaza entre
+  // abas/sessões. Guard de window: o módulo também é avaliado no SSR.
+  if (typeof window === "undefined") return "all";
+  try {
+    const v = window.sessionStorage.getItem(FILTRO_STATUS_KEY);
+    if (v && (v === "all" || (STATUSES as readonly string[]).includes(v))) return v as "all" | Status;
+  } catch {
+    // storage bloqueado (modo privado etc.) — segue no padrão.
+  }
+  return "all";
+}
+
+function gravarFiltroStatus(v: "all" | Status): void {
+  try {
+    window.sessionStorage.setItem(FILTRO_STATUS_KEY, v);
+  } catch {
+    // best effort
+  }
+}
+
 function group(cards: Captacao[]): ByStatus {
   const out = empty();
   for (const c of cards) out[c.status].push(c);
@@ -52,8 +75,11 @@ export const useBoard = create<BoardState>((set, get) => ({
   byStatus: empty(),
   filtro: "",
   setFiltro: (filtro) => set({ filtro }),
-  filtroStatus: "all",
-  setFiltroStatus: (filtroStatus) => set({ filtroStatus }),
+  filtroStatus: lerFiltroStatus(),
+  setFiltroStatus: (filtroStatus) => {
+    gravarFiltroStatus(filtroStatus);
+    set({ filtroStatus });
+  },
   criterios: CRITERIOS_VAZIO,
   setCriterios: (c) => set((state) => ({ criterios: { ...state.criterios, ...c } })),
   limparCriterios: () => set({ criterios: CRITERIOS_VAZIO }),

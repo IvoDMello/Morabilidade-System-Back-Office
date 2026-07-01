@@ -323,8 +323,10 @@ def test_demonstrativos_em_lote_mes_invalido(client):
 def test_demonstrativos_em_lote_isola_falha_de_um_contrato(client):
     """Um contrato quebra a geração; os outros continuam.
     Erros vão para um arquivo _erros.txt dentro do ZIP."""
+    # dia_vencimento None deixou de quebrar (vencimento_no_mes assume dia 5);
+    # aluguel inválido continua estourando no cálculo do total.
     contrato_quebrado = {**CONTRATO_DB, "id": "contrato-uuid-2",
-                         "dia_vencimento": None,  # vai falhar no PDF
+                         "aluguel_mensal": "não-é-número",
                          "imovel": {"codigo": "MB-RUIM"}}
     db = make_db_mock(
         MagicMock(data=[CONTRATO_DB, contrato_quebrado]),

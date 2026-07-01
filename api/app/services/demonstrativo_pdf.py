@@ -44,6 +44,7 @@ from app.services.pdf_base import (
     fmt_data as _fmt_data,
     quebrar_em_linhas as _quebrar_em_linhas,
 )
+from app.services.fechamento import vencimento_no_mes
 
 
 def calcular_total_demonstrativo(contrato: dict) -> Decimal:
@@ -225,9 +226,7 @@ def gerar_demonstrativo_pdf(contrato: dict, mes_referencia: date) -> bytes:
     y -= linha_h + 14 * mm
 
     # ── Vencimento + PIX ───────────────────────────────────────────────────
-    dia = min(int(contrato.get("dia_vencimento") or 5),
-              _ultimo_dia_do_mes(mes_referencia))
-    vencimento = date(mes_referencia.year, mes_referencia.month, dia)
+    vencimento = vencimento_no_mes(contrato.get("dia_vencimento"), mes_referencia)
 
     c.setFillColor(TEXTO_ESCURO)
     c.setFont("Helvetica-Bold", 13)
@@ -299,12 +298,3 @@ def gerar_demonstrativo_pdf(contrato: dict, mes_referencia: date) -> bytes:
     c.showPage()
     c.save()
     return buffer.getvalue()
-
-
-def _ultimo_dia_do_mes(d: date) -> int:
-    if d.month == 12:
-        prox = date(d.year + 1, 1, 1)
-    else:
-        prox = date(d.year, d.month + 1, 1)
-    from datetime import timedelta
-    return (prox - timedelta(days=1)).day

@@ -40,6 +40,14 @@ from app.services.demonstrativo_pdf import (
 )
 from app.services.demonstrativo_admin_pdf import gerar_demonstrativo_admin_pdf
 from app.services.configuracoes import get_dados_recebimento
+from app.services.fechamento import (
+    TAXA_ADM_PADRAO,
+    calcular_taxa,
+    parse_mes,
+    taxa_efetiva,
+    ultimo_dia_do_mes,
+    vencimento_no_mes,
+)
 from app.services.audit_log import registrar_audit_locacao
 from app.services.email import enviar_demonstrativo_locacao
 from app.services.storage import (
@@ -341,29 +349,12 @@ def analises_locacao(
 
 # ── Demonstrativos PDF ──────────────────────────────────────────────────────
 
-_MES_RE = re.compile(r"^(\d{4})-(\d{2})$")
-
-
 def _parse_mes(mes_str: str) -> date:
     """Converte 'YYYY-MM' em date(YYYY, MM, 1). Levanta 422 se inválido."""
-    m = _MES_RE.match(mes_str)
-    if not m:
-        raise HTTPException(
-            status_code=422,
-            detail="Parâmetro 'mes' deve estar no formato YYYY-MM (ex: 2026-05).",
-        )
-    ano, mes = int(m.group(1)), int(m.group(2))
-    if not (1 <= mes <= 12):
-        raise HTTPException(status_code=422, detail="Mês inválido.")
-    return date(ano, mes, 1)
-
-
-def _ultimo_dia_do_mes(d: date) -> int:
-    if d.month == 12:
-        prox = date(d.year + 1, 1, 1)
-    else:
-        prox = date(d.year, d.month + 1, 1)
-    return (prox - timedelta(days=1)).day
+    try:
+        return parse_mes(mes_str)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
 
 
 def _upsert_snapshot_pagamento(
@@ -378,8 +369,7 @@ def _upsert_snapshot_pagamento(
     SELECT + INSERT/UPDATE manual — operação rara (mensal) e a unique
     constraint do banco garante consistência mesmo em condição de corrida.
     """
-    venc_dia = min(dia_vencimento, _ultimo_dia_do_mes(mes_ref))
-    vencimento = date(mes_ref.year, mes_ref.month, venc_dia)
+    vencimento = vencimento_no_mes(dia_vencimento, mes_ref)
 
     existente = (
         supabase_admin.table("locacao_pagamentos")
@@ -543,8 +533,10 @@ def relatorio_repasses(
         if not c:
             continue
         valor_pago = Decimal(str(p["valor_pago"] or p["valor_devido"] or 0))
-        taxa_pct = Decimal(str(c.get("taxa_administracao_pct") or 0))
-        valor_taxa = (valor_pago * taxa_pct / Decimal("100")).quantize(Decimal("0.01"))
+        # Repasse não aplica taxa padrão: contrato sem taxa repassa integral
+        # (a cobrança da taxa, nesse caso, sai pelo Demonstrativo de Adm.).
+        taxa_pct = taxa_efetiva(c.get("taxa_administracao_pct"), aplicar_padrao=False)
+        valor_taxa = calcular_taxa(valor_pago, taxa_pct)
         valor_repasse = (valor_pago - valor_taxa).quantize(Decimal("0.01"))
 
         prop = c.get("proprietario") or {}
@@ -608,9 +600,6 @@ def relatorio_repasses(
 
 # ── Demonstrativo de Administração (cobrança da taxa ao proprietário) ─────────
 
-# Taxa de administração padrão aplicada quando o contrato não tem taxa própria.
-TAXA_ADM_PADRAO = Decimal("8")
-
 _SELECT_ADM = (
     "id, aluguel_mensal, taxa_administracao_pct, proprietario_id,"
     " imovel:imoveis(codigo, logradouro, numero, complemento, bairro),"
@@ -666,13 +655,10 @@ def _montar_adm_cobranca(
         loc = ct.get("locatario") or {}
 
         aluguel = Decimal(str(ct.get("aluguel_mensal") or 0))
-        # Taxa do contrato; quando não definida (0/None), aplica 8% como padrão
-        # de administração — a maioria dos contratos ainda não tem a taxa
-        # preenchida. Contratos com taxa própria mantêm a deles.
-        taxa_pct = Decimal(str(ct.get("taxa_administracao_pct") or 0))
-        if taxa_pct == 0:
-            taxa_pct = TAXA_ADM_PADRAO
-        comissao = (aluguel * taxa_pct / Decimal("100")).quantize(Decimal("0.01"))
+        # Cobrança aplica TAXA_ADM_PADRAO quando o contrato não tem taxa —
+        # a maioria dos contratos ainda não tem a taxa preenchida.
+        taxa_pct = taxa_efetiva(ct.get("taxa_administracao_pct"), aplicar_padrao=True)
+        comissao = calcular_taxa(aluguel, taxa_pct)
 
         if prop_id not in por_prop:
             por_prop[prop_id] = AdmCobrancaProprietario(
@@ -870,8 +856,7 @@ def enviar_demonstrativo(
         contrato_id, mes_ref, total, contrato["dia_vencimento"],
     )
     pdf_bytes = gerar_demonstrativo_pdf(contrato, mes_ref)
-    venc_dia = min(contrato["dia_vencimento"], _ultimo_dia_do_mes(mes_ref))
-    vencimento = date(mes_ref.year, mes_ref.month, venc_dia)
+    vencimento = vencimento_no_mes(contrato["dia_vencimento"], mes_ref)
 
     endereco = (contrato.get("imovel") or {}).get("endereco") or ""
     nome_arquivo = _nome_arquivo_pdf(contrato, mes_ref)
