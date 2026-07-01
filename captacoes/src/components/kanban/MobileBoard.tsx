@@ -18,6 +18,7 @@ import {
   User,
   Link2,
   Images,
+  ArrowRightLeft,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { BoardControls } from "@/components/board/BoardControls";
@@ -29,8 +30,6 @@ import { formatBRL } from "@/lib/format";
 import { useBoard } from "@/stores/board";
 import { STATUS_STYLE, PILL_ORDER } from "@/lib/status-style";
 import type { Captacao, Decisao, Status } from "@/types";
-
-type Filtro = "all" | Status;
 
 /** Iniciais (até 2 letras) para avatares. */
 function iniciais(texto: string): string {
@@ -53,7 +52,15 @@ function StatusBadge({ status, full = false }: { status: Status; full?: boolean 
   );
 }
 
-function MobileCard({ card, onDecidir }: { card: Captacao; onDecidir: (c: Captacao, d: Decisao) => void }) {
+function MobileCard({
+  card,
+  onDecidir,
+  onMover,
+}: {
+  card: Captacao;
+  onDecidir: (c: Captacao, d: Decisao) => void;
+  onMover: (c: Captacao, s: Status) => void;
+}) {
   const [aberto, setAberto] = useState(false);
   const [fotos, setFotos] = useState<FotoRef[] | null>(null);
   const [viewer, setViewer] = useState<number | null>(null);
@@ -143,6 +150,13 @@ function MobileCard({ card, onDecidir }: { card: Captacao; onDecidir: (c: Captac
       {/* Endereço */}
       <p className="text-[17px] font-semibold leading-[1.28] text-[#2e302a]">{card.endereco}</p>
 
+      {/* Proprietário (sempre visível) */}
+      {card.proprietario_nome && (
+        <p className="inline-flex items-center gap-1.5 text-[13px] text-[#6e7063]">
+          <User className="h-3.5 w-3.5" /> {card.proprietario_nome}
+        </p>
+      )}
+
       {/* Specs */}
       {specs.length > 0 && (
         <div className="flex flex-wrap items-center gap-2">
@@ -179,11 +193,6 @@ function MobileCard({ card, onDecidir }: { card: Captacao; onDecidir: (c: Captac
       {/* Expandido */}
       {aberto && (
         <div className="space-y-2 border-t border-dashed border-[#dcddd6] pt-3">
-          {card.proprietario_nome && (
-            <p className="inline-flex items-center gap-1.5 text-[13px] text-[#6e7063]">
-              <User className="h-3.5 w-3.5" /> {card.proprietario_nome}
-            </p>
-          )}
           {card.anuncio_url && card.capa_path && (
             <a
               href={card.anuncio_url}
@@ -195,6 +204,29 @@ function MobileCard({ card, onDecidir }: { card: Captacao; onDecidir: (c: Captac
               <Link2 className="h-3.5 w-3.5" /> Ver anúncio publicado
             </a>
           )}
+
+          {/* Mover para outra etapa (equivale ao arrastar do desktop) */}
+          <div className="pt-1">
+            <p className="mb-1.5 inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.04em] text-[#9a9c90]">
+              <ArrowRightLeft className="h-3 w-3" /> Mover para
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {PILL_ORDER.filter((s) => s !== card.status).map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onMover(card, s);
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-[#e2e3dd] bg-white px-2.5 py-1.5 text-xs font-medium text-[#4a4d43] active:bg-[#eceee8]"
+                >
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: STATUS_STYLE[s].dot }} />
+                  {STATUS_STYLE[s].short}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
@@ -233,16 +265,18 @@ export function MobileBoard({
   byStatus,
   visiveis,
   onDecidir,
+  onMover,
   userEmail,
 }: {
   byStatus: Record<Status, Captacao[]>;
   visiveis: (cards: Captacao[]) => Captacao[];
   onDecidir: (c: Captacao, d: Decisao) => void;
+  onMover: (c: Captacao, s: Status) => void;
   userEmail: string;
 }) {
   const router = useRouter();
-  const { filtro, setFiltro } = useBoard();
-  const [filtro_, setFiltroStatus] = useState<Filtro>("all");
+  // Aba de status vem do store: sobrevive à ida ao detalhe e volta ao quadro.
+  const { filtro, setFiltro, filtroStatus: filtro_, setFiltroStatus } = useBoard();
 
   const todas = useMemo(() => PILL_ORDER.flatMap((s) => byStatus[s]), [byStatus]);
   const filtradas = useMemo(() => visiveis(todas), [visiveis, todas]);
@@ -303,7 +337,7 @@ export function MobileBoard({
             <input
               value={filtro}
               onChange={(e) => setFiltro(e.target.value)}
-              placeholder="Buscar por endereço…"
+              placeholder="Endereço, proprietário ou telefone…"
               className="h-11 w-full rounded-[11px] border border-white/[0.18] bg-white/[0.14] pl-9 pr-9 text-sm text-[#f3f4f0] placeholder:text-[#f3f4f0]/60 outline-none focus:border-white/40"
             />
             {filtro.trim() && (
@@ -344,7 +378,7 @@ export function MobileBoard({
       {/* Lista */}
       <div className="flex-1 space-y-[14px] overflow-y-auto px-4 pb-28 pt-[18px]">
         {lista.map((c) => (
-          <MobileCard key={c.id} card={c} onDecidir={onDecidir} />
+          <MobileCard key={c.id} card={c} onDecidir={onDecidir} onMover={onMover} />
         ))}
         {lista.length === 0 && (
           <div className="mt-12 text-center text-sm text-[#9a9c90]">

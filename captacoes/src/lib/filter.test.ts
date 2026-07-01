@@ -35,6 +35,14 @@ describe("filtrarCaptacoes", () => {
   it("filtra por whatsapp", () => {
     expect(filtrarCaptacoes(lista, "98888")).toHaveLength(1);
   });
+  it("filtra pelos últimos dígitos do telefone", () => {
+    expect(filtrarCaptacoes(lista, "7777")).toHaveLength(1);
+  });
+  it("acha telefone com máscara buscando só dígitos", () => {
+    const lst = [card({ endereco: "Rua M", whatsapp: "(11) 98888-7777" })];
+    expect(filtrarCaptacoes(lst, "7777")).toHaveLength(1);
+    expect(filtrarCaptacoes(lst, "8888-77")).toHaveLength(1);
+  });
   it("filtra por observações", () => {
     expect(filtrarCaptacoes(lista, "vista mar")).toHaveLength(1);
   });

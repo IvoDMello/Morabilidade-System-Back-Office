@@ -121,6 +121,17 @@ export function KanbanBoard({ initial, userEmail }: { initial: Captacao[]; userE
     [byStatus, persistMove]
   );
 
+  // Mobile: mover o cartão para outra etapa (vai pro fim da coluna destino).
+  const mover = useCallback(
+    (card: Captacao, toStatus: Status) => {
+      if (toStatus === card.status) return;
+      const col = byStatus[toStatus];
+      const ordem = orderBetween(col[col.length - 1]?.ordem ?? null, null);
+      persistMove(card, toStatus, ordem);
+    },
+    [byStatus, persistMove]
+  );
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 6 } }),
@@ -179,7 +190,7 @@ export function KanbanBoard({ initial, userEmail }: { initial: Captacao[]; userE
   if (desktop === null) return <div className="h-full" />;
 
   if (!desktop) {
-    return <MobileBoard byStatus={byStatus} visiveis={visiveis} onDecidir={decidir} userEmail={userEmail} />;
+    return <MobileBoard byStatus={byStatus} visiveis={visiveis} onDecidir={decidir} onMover={mover} userEmail={userEmail} />;
   }
 
   if (semResultado) {

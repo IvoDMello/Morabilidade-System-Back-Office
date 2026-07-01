@@ -23,6 +23,9 @@ interface BoardState {
   byStatus: ByStatus;
   filtro: string;
   setFiltro: (f: string) => void;
+  /** Pill/aba de status ativa no quadro mobile (persiste ao navegar pro detalhe e voltar). */
+  filtroStatus: "all" | Status;
+  setFiltroStatus: (s: "all" | Status) => void;
   criterios: Criterios;
   setCriterios: (c: Partial<Criterios>) => void;
   limparCriterios: () => void;
@@ -49,6 +52,8 @@ export const useBoard = create<BoardState>((set, get) => ({
   byStatus: empty(),
   filtro: "",
   setFiltro: (filtro) => set({ filtro }),
+  filtroStatus: "all",
+  setFiltroStatus: (filtroStatus) => set({ filtroStatus }),
   criterios: CRITERIOS_VAZIO,
   setCriterios: (c) => set((state) => ({ criterios: { ...state.criterios, ...c } })),
   limparCriterios: () => set({ criterios: CRITERIOS_VAZIO }),

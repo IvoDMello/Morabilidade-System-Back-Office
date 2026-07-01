@@ -82,7 +82,7 @@ export function BoardTopbar({ userEmail, total }: { userEmail: string; total: nu
           <Input
             value={filtro}
             onChange={(e) => setFiltro(e.target.value)}
-            placeholder="Buscar..."
+            placeholder="Endereço, proprietário ou telefone…"
             className="bg-background px-8"
           />
           {filtrando && (
