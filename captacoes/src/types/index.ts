@@ -6,6 +6,7 @@ export const STATUSES = [
   "negativada",
   "pendente_agendar_visita",
   "pendente_agendar_gravacao",
+  "gaveta",
 ] as const;
 
 export type Status = (typeof STATUSES)[number];
@@ -18,6 +19,7 @@ export const STATUS_LABEL: Record<Status, string> = {
   negativada: "Negativada",
   pendente_agendar_visita: "Pendente agendar visita",
   pendente_agendar_gravacao: "Pendente agendar gravação",
+  gaveta: "Gaveta",
 };
 
 /** Cor de destaque por coluna (mapa da seção 5 do PRD). */
@@ -29,6 +31,7 @@ export const STATUS_TONE: Record<Status, string> = {
   negativada: "destructive",
   pendente_agendar_visita: "positive",
   pendente_agendar_gravacao: "positive",
+  gaveta: "muted",
 };
 
 export type Decisao = "aprovada" | "reprovada";
@@ -83,6 +86,9 @@ export interface Captacao {
   decisao: Decisao | null;
   decisao_autor: string | null;
   decisao_em: string | null;
+  em_decisao_desde: string | null;
+  gaveta_motivo: string | null;
+  gaveta_revisao_em: string | null;
   visita_concluida: boolean;
   visita_data: string | null;
   gravacao_concluida: boolean;

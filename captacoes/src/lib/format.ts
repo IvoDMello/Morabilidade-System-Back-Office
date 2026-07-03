@@ -20,6 +20,15 @@ export function dataCurta(iso: string | null): string {
   return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
 }
 
+/** Prazo (em dias) para decidir uma captação na coluna "Decisão". */
+export const PRAZO_DECISAO_DIAS = 5;
+
+/** Dias restantes até `desde + prazo`. 0 = vence hoje; negativo = atrasada. */
+export function diasRestantes(desdeIso: string, prazoDias = PRAZO_DECISAO_DIAS): number {
+  const vence = new Date(desdeIso).getTime() + prazoDias * 86400000;
+  return Math.ceil((vence - Date.now()) / 86400000);
+}
+
 /** Dias parados desde a última atualização. */
 export function diasParado(iso: string): number {
   return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);

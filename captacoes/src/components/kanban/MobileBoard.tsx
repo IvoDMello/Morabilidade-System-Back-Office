@@ -19,6 +19,7 @@ import {
   Link2,
   Images,
   ArrowRightLeft,
+  CalendarDays,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { BoardControls } from "@/components/board/BoardControls";
@@ -26,7 +27,7 @@ import { NovaCaptacaoButton } from "@/components/captacao/NovaCaptacaoButton";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { FotosLightbox, type FotoRef } from "@/components/captacao/FotosLightbox";
-import { formatBRL } from "@/lib/format";
+import { formatBRL, dataCurta, diasRestantes } from "@/lib/format";
 import { useBoard } from "@/stores/board";
 import { STATUS_STYLE, PILL_ORDER } from "@/lib/status-style";
 import type { Captacao, Decisao, Status } from "@/types";
@@ -66,6 +67,11 @@ function MobileCard({
   const [viewer, setViewer] = useState<number | null>(null);
   const router = useRouter();
   const naDecisao = card.status === "em_decisao" && !card.decisao;
+  const prazoDecisao = naDecisao && card.em_decisao_desde ? diasRestantes(card.em_decisao_desde) : null;
+  const revisarGaveta =
+    card.status === "gaveta" && card.gaveta_revisao_em
+      ? new Date(card.gaveta_revisao_em + "T00:00:00").getTime() <= Date.now()
+      : false;
 
   // Abre as fotos da captação direto do quadro (busca sob demanda na 1ª vez).
   async function abrirFotos() {
@@ -105,6 +111,34 @@ function MobileCard({
       <div className="flex items-start justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <StatusBadge status={card.status} />
+          {prazoDecisao != null && (
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold",
+                prazoDecisao <= 0
+                  ? "bg-[#f0e2e2] text-[#7a3434]"
+                  : prazoDecisao <= 2
+                    ? "bg-[#f7ecd9] text-[#8f6320]"
+                    : "bg-[#ebece7] text-[#5f6157]"
+              )}
+            >
+              {prazoDecisao > 0
+                ? `decidir em ${prazoDecisao}d`
+                : prazoDecisao === 0
+                  ? "decidir hoje"
+                  : `atrasada ${-prazoDecisao}d`}
+            </span>
+          )}
+          {card.status === "gaveta" && card.gaveta_revisao_em && (
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold",
+                revisarGaveta ? "bg-[#f0e2e2] text-[#7a3434]" : "bg-[#e9eaf0] text-[#565b72]"
+              )}
+            >
+              {revisarGaveta ? "revisar agora" : `revisar ${dataCurta(card.gaveta_revisao_em)}`}
+            </span>
+          )}
           {card.capa_path ? (
             // Tem fotos: chip abre o visualizador (o anúncio, se houver, vai pro expandir).
             <button
@@ -189,6 +223,16 @@ function MobileCard({
           )}
         </div>
       )}
+
+      {/* Motivo da gaveta (sempre visível na coluna Gaveta) */}
+      {card.status === "gaveta" && card.gaveta_motivo && (
+        <p className="text-[13px] italic text-[#6e7063]">{card.gaveta_motivo}</p>
+      )}
+
+      {/* Data de cadastro */}
+      <p className="inline-flex items-center gap-1.5 text-xs text-[#9a9c90]">
+        <CalendarDays className="h-3.5 w-3.5" /> Cadastrada em {dataCurta(card.criado_em)}
+      </p>
 
       {/* Expandido */}
       {aberto && (

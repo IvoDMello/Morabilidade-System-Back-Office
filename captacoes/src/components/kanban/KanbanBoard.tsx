@@ -17,6 +17,7 @@ import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { Inbox } from "lucide-react";
 import { toast } from "sonner";
 import { KanbanColumn } from "./KanbanColumn";
+import { GavetaDialog } from "./GavetaDialog";
 import { CaptacaoCard } from "./CaptacaoCard";
 import { MobileBoard } from "./MobileBoard";
 import { NovaCaptacaoButton } from "@/components/captacao/NovaCaptacaoButton";
@@ -32,6 +33,8 @@ export function KanbanBoard({ initial, userEmail }: { initial: Captacao[]; userE
   const { byStatus, filtro, criterios, ordenacao, setCards, upsert, remove, applyMove, find, setConexao, beginSave, endSave } =
     useBoard();
   const [activeId, setActiveId] = useState<string | null>(null);
+  // Cartão recém-engavetado aguardando motivo/data de revisão.
+  const [gavetaCard, setGavetaCard] = useState<Captacao | null>(null);
   const desktop = useIsDesktop();
 
   useEffect(() => setCards(initial), [initial, setCards]);
@@ -104,6 +107,9 @@ export function KanbanBoard({ initial, userEmail }: { initial: Captacao[]; userE
       if (error) {
         applyMove(card.id, prevStatus, prevOrdem, decisao ? prevDecisao : undefined);
         toast.error("Não foi possível mover o cartão.");
+      } else if (toStatus === "gaveta" && prevStatus !== "gaveta") {
+        // Engavetou: pede motivo e data de reavaliação (opcionais).
+        setGavetaCard(card);
       }
     },
     [applyMove, beginSave, endSave]
@@ -190,7 +196,12 @@ export function KanbanBoard({ initial, userEmail }: { initial: Captacao[]; userE
   if (desktop === null) return <div className="h-full" />;
 
   if (!desktop) {
-    return <MobileBoard byStatus={byStatus} visiveis={visiveis} onDecidir={decidir} onMover={mover} userEmail={userEmail} />;
+    return (
+      <>
+        <MobileBoard byStatus={byStatus} visiveis={visiveis} onDecidir={decidir} onMover={mover} userEmail={userEmail} />
+        <GavetaDialog key={gavetaCard?.id ?? "none"} card={gavetaCard} onClose={() => setGavetaCard(null)} />
+      </>
+    );
   }
 
   if (semResultado) {
@@ -211,6 +222,7 @@ export function KanbanBoard({ initial, userEmail }: { initial: Captacao[]; userE
         ))}
       </div>
       <DragOverlay>{active ? <CaptacaoCard card={active} overlay /> : null}</DragOverlay>
+      <GavetaDialog key={gavetaCard?.id ?? "none"} card={gavetaCard} onClose={() => setGavetaCard(null)} />
     </DndContext>
   );
 }

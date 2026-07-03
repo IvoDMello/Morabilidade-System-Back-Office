@@ -9,7 +9,7 @@ import { BedDouble, Bath, AlertTriangle, GripVertical, User, Calendar, Clock, Do
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { relativo, dataCurta, diasParado, whatsappLink, formatarTelefone, formatBRL } from "@/lib/format";
+import { relativo, dataCurta, diasParado, diasRestantes, whatsappLink, formatarTelefone, formatBRL } from "@/lib/format";
 import { signedUrl } from "@/lib/storage";
 import type { Captacao } from "@/types";
 
@@ -46,6 +46,15 @@ export function CaptacaoCard({ card, overlay = false }: { card: Captacao; overla
   const parado = diasParado(card.atualizado_em);
   const alertaParado = card.status === "aguardando_informacoes" && parado >= 3;
   const agendamento = card.status === "pendente_agendar_visita" || card.status === "pendente_agendar_gravacao";
+  // Regressiva de decisão: dias até (entrada na coluna + prazo).
+  const prazoDecisao =
+    card.status === "em_decisao" && card.em_decisao_desde && !card.decisao
+      ? diasRestantes(card.em_decisao_desde)
+      : null;
+  const revisarGaveta =
+    card.status === "gaveta" && card.gaveta_revisao_em
+      ? new Date(card.gaveta_revisao_em + "T00:00:00").getTime() <= Date.now()
+      : false;
 
   return (
     <Card
@@ -124,6 +133,34 @@ export function CaptacaoCard({ card, overlay = false }: { card: Captacao; overla
           </div>
         )}
 
+        {prazoDecisao != null && (
+          <div className="mt-2">
+            <Badge
+              variant={prazoDecisao <= 0 ? "destructive" : "muted"}
+              className={cn("gap-1 text-[10px]", prazoDecisao > 0 && prazoDecisao <= 2 && "text-amber-600")}
+            >
+              <Clock className="h-3 w-3" />
+              {prazoDecisao > 0
+                ? `decidir em ${prazoDecisao}d`
+                : prazoDecisao === 0
+                  ? "decidir hoje"
+                  : `decisão atrasada ${-prazoDecisao}d`}
+            </Badge>
+          </div>
+        )}
+
+        {card.status === "gaveta" && (card.gaveta_motivo || card.gaveta_revisao_em) && (
+          <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+            {card.gaveta_motivo && <p className="line-clamp-2 italic">{card.gaveta_motivo}</p>}
+            {card.gaveta_revisao_em && (
+              <Badge variant={revisarGaveta ? "destructive" : "muted"} className="gap-1 text-[10px]">
+                <Calendar className="h-3 w-3" />
+                {revisarGaveta ? "revisar agora" : `revisar em ${dataCurta(card.gaveta_revisao_em)}`}
+              </Badge>
+            )}
+          </div>
+        )}
+
         {agendamento && (
           <div className="mt-2 flex flex-wrap gap-1.5 text-xs">
             <Badge variant={card.visita_concluida ? "positive" : "muted"} className="gap-1">
@@ -137,7 +174,7 @@ export function CaptacaoCard({ card, overlay = false }: { card: Captacao; overla
 
         <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
           <span className="inline-flex items-center gap-1">
-            <Clock className="h-3 w-3" /> {relativo(card.criado_em)}
+            <Calendar className="h-3 w-3" /> {dataCurta(card.criado_em)} · {relativo(card.criado_em)}
           </span>
           {card.decisao && (
             <Badge variant={card.decisao === "aprovada" ? "positive" : "destructive"} className="text-[10px]">
