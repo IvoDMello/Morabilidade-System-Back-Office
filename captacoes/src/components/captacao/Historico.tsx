@@ -6,10 +6,11 @@ interface Evento {
   id: string;
   de_status: Status | null;
   para_status: Status | null;
+  autor: string | null;
   criado_em: string;
 }
 
-export function Historico({ eventos }: { eventos: Evento[] }) {
+export function Historico({ eventos, nomes = {} }: { eventos: Evento[]; nomes?: Record<string, string> }) {
   if (eventos.length === 0) {
     return <p className="text-sm text-muted-foreground">Sem movimentações registradas.</p>;
   }
@@ -24,7 +25,10 @@ export function Historico({ eventos }: { eventos: Evento[] }) {
           </span>
           <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
           <span className="font-medium">{e.para_status ? STATUS_LABEL[e.para_status] : "—"}</span>
-          <span className="ml-auto text-xs text-muted-foreground">{relativo(e.criado_em)}</span>
+          <span className="ml-auto shrink-0 text-right text-xs text-muted-foreground">
+            {e.autor && nomes[e.autor] && <span>{nomes[e.autor]} · </span>}
+            {relativo(e.criado_em)}
+          </span>
         </li>
       ))}
     </ol>

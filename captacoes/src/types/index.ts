@@ -36,6 +36,11 @@ export const STATUS_TONE: Record<Status, string> = {
 
 export type Decisao = "aprovada" | "reprovada";
 
+export const DECISAO_LABEL: Record<Decisao, string> = {
+  aprovada: "Aprovada",
+  reprovada: "Reprovada",
+};
+
 /** Critérios de ordenação dentro de cada coluna. */
 export type Ordenacao = "manual" | "recentes" | "antigas" | "valor_desc" | "valor_asc" | "paradas";
 
@@ -102,6 +107,26 @@ export interface Captacao {
   criado_por: string | null;
   criado_em: string;
   atualizado_em: string;
+}
+
+export interface Perfil {
+  user_id: string;
+  nome: string;
+  atualizado_em: string;
+}
+
+export interface Opiniao {
+  id: string;
+  captacao_id: string;
+  autor: string;
+  texto: string;
+  criado_em: string;
+}
+
+/** Contadores de opiniões por captação (badge do quadro). */
+export interface OpinioesResumo {
+  total: number;
+  naoLidas: number;
 }
 
 export interface Midia {

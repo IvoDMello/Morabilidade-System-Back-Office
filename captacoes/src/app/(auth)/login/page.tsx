@@ -12,6 +12,22 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  async function recuperarSenha() {
+    if (!email.trim()) {
+      toast.error("Informe seu e-mail acima para recuperar a senha.");
+      return;
+    }
+    const supabase = createClient();
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/redefinir-senha`,
+    });
+    if (error) {
+      toast.error("Não foi possível enviar o e-mail de recuperação.");
+      return;
+    }
+    toast.success("Enviamos um link de redefinição para o seu e-mail.");
+  }
+
   async function entrar(e: React.FormEvent) {
     e.preventDefault();
     if (loading) return;
@@ -167,6 +183,14 @@ export default function LoginPage() {
               style={{ backgroundColor: "#585a4f" }}
             >
               {loading ? "Entrando..." : "Entrar"}
+            </button>
+
+            <button
+              type="button"
+              onClick={recuperarSenha}
+              className="w-full text-center text-sm text-slate-500 hover:text-slate-700 transition"
+            >
+              Esqueci minha senha
             </button>
           </form>
 

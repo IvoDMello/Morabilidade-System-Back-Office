@@ -29,8 +29,12 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isLogin = request.nextUrl.pathname.startsWith("/login");
-  if (!user && !isLogin) {
+  // /redefinir-senha precisa ser pública: o link de recuperação chega com um
+  // código na URL que só vira sessão depois que a página carrega no cliente.
+  const isPublica =
+    request.nextUrl.pathname.startsWith("/login") ||
+    request.nextUrl.pathname.startsWith("/redefinir-senha");
+  if (!user && !isPublica) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);

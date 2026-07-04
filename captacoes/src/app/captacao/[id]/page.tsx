@@ -13,9 +13,10 @@ import { Galeria } from "@/components/captacao/Galeria";
 import { Documentos } from "@/components/captacao/Documentos";
 import { ExcluirCaptacao } from "@/components/captacao/ExcluirCaptacao";
 import { Historico } from "@/components/captacao/Historico";
+import { Opinioes } from "@/components/captacao/Opinioes";
 import { createClient } from "@/lib/supabase/server";
 import { STATUS_STYLE } from "@/lib/status-style";
-import type { Captacao, Documento, Midia } from "@/types";
+import type { Captacao, Documento, Midia, Opiniao, Perfil } from "@/types";
 
 export const dynamic = "force-dynamic";
 
@@ -26,13 +27,18 @@ export default async function CaptacaoPage({ params }: { params: Promise<{ id: s
   const { data: captacao } = await supabase.from("captacao").select("*").eq("id", id).single();
   if (!captacao) notFound();
 
-  const [{ data: midias }, { data: docs }, { data: eventos }] = await Promise.all([
-    supabase.from("midia").select("*").eq("captacao_id", id).order("ordem"),
-    supabase.from("documento").select("*").eq("captacao_id", id).order("criado_em"),
-    supabase.from("historico").select("*").eq("captacao_id", id).order("criado_em", { ascending: false }),
-  ]);
+  const [{ data: midias }, { data: docs }, { data: eventos }, { data: opinioes }, { data: perfis }, { data: auth }] =
+    await Promise.all([
+      supabase.from("midia").select("*").eq("captacao_id", id).order("ordem"),
+      supabase.from("documento").select("*").eq("captacao_id", id).order("criado_em"),
+      supabase.from("historico").select("*").eq("captacao_id", id).order("criado_em", { ascending: false }),
+      supabase.from("opiniao").select("*").eq("captacao_id", id).order("criado_em"),
+      supabase.from("perfil").select("*"),
+      supabase.auth.getUser(),
+    ]);
 
   const c = captacao as Captacao;
+  const nomes = Object.fromEntries(((perfis ?? []) as Perfil[]).map((p) => [p.user_id, p.nome]));
   const ramoAgendamento =
     c.status === "pendente_agendar_visita" || c.status === "pendente_agendar_gravacao";
   const st = STATUS_STYLE[c.status];
@@ -127,7 +133,7 @@ export default async function CaptacaoPage({ params }: { params: Promise<{ id: s
             <CardTitle className="font-serif text-lg">Decisão</CardTitle>
           </CardHeader>
           <CardContent>
-            <DecisaoBox captacao={c} />
+            <DecisaoBox captacao={c} autorNome={c.decisao_autor ? nomes[c.decisao_autor] ?? null : null} />
           </CardContent>
         </Card>
       )}
@@ -191,10 +197,24 @@ export default async function CaptacaoPage({ params }: { params: Promise<{ id: s
 
       <Card className="rounded-[18px] border-[#e8e9e3]">
         <CardHeader>
+          <CardTitle className="font-serif text-lg">Opiniões da equipe</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Opinioes
+            captacaoId={c.id}
+            userId={auth.user?.id ?? ""}
+            opinioesIniciais={(opinioes ?? []) as Opiniao[]}
+            perfis={(perfis ?? []) as Perfil[]}
+          />
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-[18px] border-[#e8e9e3]">
+        <CardHeader>
           <CardTitle className="font-serif text-lg">Histórico</CardTitle>
         </CardHeader>
         <CardContent>
-          <Historico eventos={(eventos ?? []) as never} />
+          <Historico eventos={(eventos ?? []) as never} nomes={nomes} />
         </CardContent>
       </Card>
       </div>

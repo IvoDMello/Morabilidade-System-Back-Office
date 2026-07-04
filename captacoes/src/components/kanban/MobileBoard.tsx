@@ -20,6 +20,7 @@ import {
   Images,
   ArrowRightLeft,
   CalendarDays,
+  MessageSquare,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { BoardControls } from "@/components/board/BoardControls";
@@ -30,15 +31,8 @@ import { FotosLightbox, type FotoRef } from "@/components/captacao/FotosLightbox
 import { formatBRL, dataCurta, diasRestantes } from "@/lib/format";
 import { useBoard } from "@/stores/board";
 import { STATUS_STYLE, PILL_ORDER } from "@/lib/status-style";
+import { iniciaisNome } from "@/lib/opinioes";
 import type { Captacao, Decisao, Status } from "@/types";
-
-/** Iniciais (até 2 letras) para avatares. */
-function iniciais(texto: string): string {
-  const partes = texto.trim().split(/[\s@.]+/).filter(Boolean);
-  if (partes.length === 0) return "?";
-  if (partes.length === 1) return partes[0].slice(0, 2).toUpperCase();
-  return (partes[0][0] + partes[1][0]).toUpperCase();
-}
 
 function StatusBadge({ status, full = false }: { status: Status; full?: boolean }) {
   const s = STATUS_STYLE[status];
@@ -63,6 +57,7 @@ function MobileCard({
   onMover: (c: Captacao, s: Status) => void;
 }) {
   const [aberto, setAberto] = useState(false);
+  const opinioes = useBoard((s) => s.opinioes[card.id]);
   const [fotos, setFotos] = useState<FotoRef[] | null>(null);
   const [viewer, setViewer] = useState<number | null>(null);
   const router = useRouter();
@@ -127,6 +122,19 @@ function MobileCard({
                 : prazoDecisao === 0
                   ? "decidir hoje"
                   : `atrasada ${-prazoDecisao}d`}
+            </span>
+          )}
+          {opinioes && opinioes.total > 0 && (
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold",
+                opinioes.naoLidas > 0 ? "bg-[#faf7e8] text-[#857727]" : "bg-[#ebece7] text-[#5f6157]"
+              )}
+            >
+              <MessageSquare className="h-3.5 w-3.5" />
+              {opinioes.naoLidas > 0
+                ? `${opinioes.naoLidas} nova${opinioes.naoLidas > 1 ? "s" : ""}`
+                : opinioes.total}
             </span>
           )}
           {card.status === "gaveta" && card.gaveta_revisao_em && (
@@ -311,16 +319,19 @@ export function MobileBoard({
   onDecidir,
   onMover,
   userEmail,
+  userNome,
 }: {
   byStatus: Record<Status, Captacao[]>;
   visiveis: (cards: Captacao[]) => Captacao[];
   onDecidir: (c: Captacao, d: Decisao) => void;
   onMover: (c: Captacao, s: Status) => void;
   userEmail: string;
+  userNome: string;
 }) {
   const router = useRouter();
   // Aba de status vem do store: sobrevive à ida ao detalhe e volta ao quadro.
-  const { filtro, setFiltro, filtroStatus: filtro_, setFiltroStatus } = useBoard();
+  const { filtro, setFiltro, filtroStatus: filtro_, setFiltroStatus, opinioes } = useBoard();
+  const naoLidas = Object.values(opinioes).reduce((n, o) => n + o.naoLidas, 0);
 
   const todas = useMemo(() => PILL_ORDER.flatMap((s) => byStatus[s]), [byStatus]);
   const filtradas = useMemo(() => visiveis(todas), [visiveis, todas]);
@@ -353,15 +364,20 @@ export function MobileBoard({
             <h1 className="mt-1 font-serif text-[30px] font-semibold leading-none">Seu quadro</h1>
             <p className="mt-2 inline-flex items-center gap-1.5 text-sm text-[#cfd0c9]">
               <LayoutGrid className="h-4 w-4" /> {todas.length} no quadro
+              {naoLidas > 0 && (
+                <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-[#d8cb6a] px-2 py-0.5 text-xs font-bold text-[#3a3408]">
+                  <MessageSquare className="h-3 w-3" /> {naoLidas}
+                </span>
+              )}
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <div
               className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold"
               style={{ backgroundColor: "#d8cb6a", color: "#3a3408" }}
-              title={userEmail}
+              title={`${userNome} · ${userEmail}`}
             >
-              {iniciais(userEmail)}
+              {iniciaisNome(userNome)}
             </div>
             <button
               type="button"

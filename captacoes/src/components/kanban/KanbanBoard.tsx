@@ -26,11 +26,21 @@ import { useIsDesktop } from "@/lib/useIsDesktop";
 import { createClient } from "@/lib/supabase/client";
 import { orderBetween } from "@/lib/order";
 import { filtrarCaptacoes, filtrarPorCriterios } from "@/lib/filter";
-import { ordenarCaptacoes } from "@/lib/sort";
-import { STATUSES, type Captacao, type Decisao, type Status } from "@/types";
+import { fetchOpinioesResumo } from "@/lib/opinioes";
+import { confirmarDecisao, destinoDecisao } from "@/lib/decisao";
+import { ordenarCaptacoes, priorizarRevisaoGaveta } from "@/lib/sort";
+import { STATUSES, STATUS_LABEL, type Captacao, type Decisao, type Status } from "@/types";
 
-export function KanbanBoard({ initial, userEmail }: { initial: Captacao[]; userEmail: string }) {
-  const { byStatus, filtro, criterios, ordenacao, setCards, upsert, remove, applyMove, find, setConexao, beginSave, endSave } =
+export function KanbanBoard({
+  initial,
+  userEmail,
+  userNome,
+}: {
+  initial: Captacao[];
+  userEmail: string;
+  userNome: string;
+}) {
+  const { byStatus, filtro, criterios, ordenacao, setCards, upsert, remove, applyMove, find, setConexao, beginSave, endSave, setOpinioes } =
     useBoard();
   const [activeId, setActiveId] = useState<string | null>(null);
   // Cartão recém-engavetado aguardando motivo/data de revisão.
@@ -69,6 +79,30 @@ export function KanbanBoard({ initial, userEmail }: { initial: Captacao[]; userE
     };
   }, [upsert, remove, setConexao]);
 
+  // Opiniões: contadores no mount, quando o app volta ao foco e a cada
+  // opinião nova publicada via realtime.
+  useEffect(() => {
+    let ativo = true;
+    const carregar = () => fetchOpinioesResumo().then((o) => ativo && setOpinioes(o));
+    carregar();
+    const aoFocar = () => {
+      if (document.visibilityState === "visible") carregar();
+    };
+    document.addEventListener("visibilitychange", aoFocar);
+
+    const supabase = createClient();
+    const canal = supabase
+      .channel("board-opinioes")
+      .on("postgres_changes", { event: "*", schema: "captacoes", table: "opiniao" }, carregar)
+      .subscribe();
+
+    return () => {
+      ativo = false;
+      document.removeEventListener("visibilitychange", aoFocar);
+      supabase.removeChannel(canal);
+    };
+  }, [setOpinioes]);
+
   // Rede do navegador: offline imediato cobre o caso sem internet.
   useEffect(() => {
     const aoMudar = () => setConexao(navigator.onLine ? "conectando" : "offline");
@@ -83,13 +117,21 @@ export function KanbanBoard({ initial, userEmail }: { initial: Captacao[]; userE
 
   const visiveis = useCallback(
     (cards: Captacao[]) =>
-      ordenarCaptacoes(filtrarPorCriterios(filtrarCaptacoes(cards, filtro), criterios), ordenacao),
+      priorizarRevisaoGaveta(
+        ordenarCaptacoes(filtrarPorCriterios(filtrarCaptacoes(cards, filtro), criterios), ordenacao)
+      ),
     [filtro, criterios, ordenacao]
   );
 
   // Núcleo da movimentação: otimista + RPC + rollback. Reusado por DnD e mobile.
   const persistMove = useCallback(
-    async (card: Captacao, toStatus: Status, ordem: number, decisao: Decisao | null = null) => {
+    async (
+      card: Captacao,
+      toStatus: Status,
+      ordem: number,
+      decisao: Decisao | null = null,
+      isUndo = false
+    ) => {
       const prevStatus = card.status;
       const prevOrdem = card.ordem;
       const prevDecisao = card.decisao;
@@ -107,9 +149,24 @@ export function KanbanBoard({ initial, userEmail }: { initial: Captacao[]; userE
       if (error) {
         applyMove(card.id, prevStatus, prevOrdem, decisao ? prevDecisao : undefined);
         toast.error("Não foi possível mover o cartão.");
-      } else if (toStatus === "gaveta" && prevStatus !== "gaveta") {
+        return;
+      }
+      if (toStatus === "gaveta" && prevStatus !== "gaveta") {
         // Engavetou: pede motivo e data de reavaliação (opcionais).
         setGavetaCard(card);
+      }
+      // Desfazer só para movimentações simples: decisões têm o próprio
+      // caminho de reversão ("Mudou de ideia?") no detalhe.
+      if (!isUndo && !decisao && toStatus !== prevStatus) {
+        toast.success(`Movida para "${STATUS_LABEL[toStatus]}".`, {
+          action: {
+            label: "Desfazer",
+            onClick: () => {
+              setGavetaCard(null);
+              persistMove({ ...card, status: toStatus, ordem }, prevStatus, prevOrdem, null, true);
+            },
+          },
+        });
       }
     },
     [applyMove, beginSave, endSave]
@@ -118,7 +175,8 @@ export function KanbanBoard({ initial, userEmail }: { initial: Captacao[]; userE
   // Mobile: aprovar/reprovar direto no card (mesma regra do DecisaoBox).
   const decidir = useCallback(
     (card: Captacao, decisao: Decisao) => {
-      const destino: Status = decisao === "aprovada" ? "pendente_agendar_visita" : "pendente_negativa";
+      if (!confirmarDecisao(card, decisao)) return;
+      const destino: Status = destinoDecisao(decisao);
       const col = byStatus[destino];
       const ordem = orderBetween(col[col.length - 1]?.ordem ?? null, null);
       persistMove(card, destino, ordem, decisao);
@@ -198,7 +256,7 @@ export function KanbanBoard({ initial, userEmail }: { initial: Captacao[]; userE
   if (!desktop) {
     return (
       <>
-        <MobileBoard byStatus={byStatus} visiveis={visiveis} onDecidir={decidir} onMover={mover} userEmail={userEmail} />
+        <MobileBoard byStatus={byStatus} visiveis={visiveis} onDecidir={decidir} onMover={mover} userEmail={userEmail} userNome={userNome} />
         <GavetaDialog key={gavetaCard?.id ?? "none"} card={gavetaCard} onClose={() => setGavetaCard(null)} />
       </>
     );

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { ordenarCaptacoes } from "./sort";
+import { ordenarCaptacoes, priorizarRevisaoGaveta } from "./sort";
 import type { Captacao } from "@/types";
 
 function card(p: Partial<Captacao>): Captacao {
@@ -43,5 +43,31 @@ describe("ordenarCaptacoes", () => {
     const orig = lista.map((c) => c.id);
     ordenarCaptacoes(lista, "valor_desc");
     expect(lista.map((c) => c.id)).toEqual(orig);
+  });
+});
+
+describe("priorizarRevisaoGaveta", () => {
+  it("ordena a gaveta por revisão crescente, sem data no fim", () => {
+    const cards = [
+      card({ id: "a", status: "gaveta", gaveta_revisao_em: null }),
+      card({ id: "b", status: "gaveta", gaveta_revisao_em: "2099-01-01" }),
+      card({ id: "c", status: "gaveta", gaveta_revisao_em: "2020-01-01" }),
+    ];
+    expect(priorizarRevisaoGaveta(cards).map((c) => c.id)).toEqual(["c", "b", "a"]);
+  });
+
+  it("não move cards de outras colunas", () => {
+    const cards = [
+      card({ id: "x", status: "novas" }),
+      card({ id: "a", status: "gaveta", gaveta_revisao_em: "2099-01-01" }),
+      card({ id: "y", status: "em_decisao" }),
+      card({ id: "b", status: "gaveta", gaveta_revisao_em: "2020-01-01" }),
+    ];
+    expect(priorizarRevisaoGaveta(cards).map((c) => c.id)).toEqual(["x", "b", "y", "a"]);
+  });
+
+  it("lista com menos de dois cards de gaveta volta intacta", () => {
+    const cards = [card({ id: "x", status: "novas" }), card({ id: "a", status: "gaveta" })];
+    expect(priorizarRevisaoGaveta(cards)).toBe(cards);
   });
 });

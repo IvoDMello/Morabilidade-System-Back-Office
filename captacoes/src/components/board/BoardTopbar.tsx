@@ -2,10 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Search, LogOut, X } from "lucide-react";
+import { Search, LogOut, X, MessageSquare } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { NovaCaptacaoButton } from "@/components/captacao/NovaCaptacaoButton";
+import { Avatar } from "@/components/Avatar";
 import { LixeiraButton } from "./LixeiraButton";
 import { BoardControls } from "./BoardControls";
 import { SyncIndicator } from "./SyncIndicator";
@@ -14,9 +15,18 @@ import { useBoard } from "@/stores/board";
 import { filtrarCaptacoes, filtrarPorCriterios } from "@/lib/filter";
 import { STATUSES, CRITERIOS_VAZIO } from "@/types";
 
-export function BoardTopbar({ userEmail, total }: { userEmail: string; total: number }) {
+export function BoardTopbar({
+  userEmail,
+  userNome,
+  total,
+}: {
+  userEmail: string;
+  userNome: string;
+  total: number;
+}) {
   const router = useRouter();
-  const { filtro, setFiltro, criterios, byStatus } = useBoard();
+  const { filtro, setFiltro, criterios, byStatus, opinioes } = useBoard();
+  const naoLidas = Object.values(opinioes).reduce((n, o) => n + o.naoLidas, 0);
 
   const temCriterios = JSON.stringify(criterios) !== JSON.stringify(CRITERIOS_VAZIO);
   const filtrando = filtro.trim().length > 0 || temCriterios;
@@ -30,8 +40,6 @@ export function BoardTopbar({ userEmail, total }: { userEmail: string; total: nu
     router.replace("/login");
     router.refresh();
   }
-
-  const iniciais = userEmail.slice(0, 2).toUpperCase();
 
   return (
     <header className="flex flex-wrap items-center gap-2 border-b bg-secondary px-3 py-2.5 text-secondary-foreground sm:gap-3 sm:px-4 sm:py-3">
@@ -53,18 +61,23 @@ export function BoardTopbar({ userEmail, total }: { userEmail: string; total: nu
         <div className="ml-1 sm:border-l sm:border-secondary-foreground/15 sm:pl-3">
           <SyncIndicator />
         </div>
+        {naoLidas > 0 && (
+          <span
+            className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-xs font-bold text-primary-foreground"
+            title={`${naoLidas} opinião(ões) não lida(s) no quadro`}
+          >
+            <MessageSquare className="h-3 w-3" /> {naoLidas}
+          </span>
+        )}
       </div>
 
       {/* Ações: ficam à direita da marca no mobile; busca cai para a linha de baixo */}
       <div className="ml-auto flex items-center gap-1.5 sm:order-last sm:ml-0 sm:gap-2">
         <NovaCaptacaoButton />
         <LixeiraButton />
-        <div
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/90 text-sm font-semibold text-primary-foreground"
-          title={userEmail}
-        >
-          {iniciais}
-        </div>
+        <span title={`${userNome} · ${userEmail}`}>
+          <Avatar nome={userNome} size={36} />
+        </span>
         <Button
           variant="ghost"
           size="icon"

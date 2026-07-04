@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -15,21 +16,40 @@ export function CaptacaoForm({
   submitLabel = "Salvar",
 }: {
   defaultValues?: Partial<CaptacaoInput>;
-  onSubmit: (data: CaptacaoInput) => Promise<void>;
+  /** Retornar false sinaliza falha: o formulário continua marcado como sujo. */
+  onSubmit: (data: CaptacaoInput) => Promise<void | boolean>;
   submitLabel?: string;
 }) {
   const {
     register,
     control,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    reset,
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<CaptacaoInput>({
     resolver: zodResolver(captacaoSchema),
     defaultValues,
   });
 
+  // Alterações não salvas: avisa antes de fechar/recarregar a aba.
+  useEffect(() => {
+    if (!isDirty) return;
+    const avisar = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", avisar);
+    return () => window.removeEventListener("beforeunload", avisar);
+  }, [isDirty]);
+
+  async function submeter(data: CaptacaoInput) {
+    const ok = await onSubmit(data);
+    // Salvou: os valores atuais viram a nova base (limpa o estado "sujo").
+    if (ok !== false) reset(data);
+  }
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(submeter)} className="space-y-4">
       <div className="space-y-1.5">
         <Label htmlFor="endereco">Endereço *</Label>
         <Input id="endereco" {...register("endereco")} />
@@ -119,7 +139,10 @@ export function CaptacaoForm({
         <Textarea id="pendencias" {...register("pendencias")} placeholder="Relevante na coluna 'Aguardando informações'" />
       </div>
 
-      <div className="flex justify-end">
+      <div className="flex items-center justify-end gap-3">
+        {isDirty && !isSubmitting && (
+          <span className="text-xs font-medium text-amber-600">Alterações não salvas</span>
+        )}
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? "Salvando..." : submitLabel}
         </Button>

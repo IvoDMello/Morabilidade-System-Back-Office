@@ -4,9 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, X } from "lucide-react";
 import { toast } from "sonner";
-import { createClient } from "@/lib/supabase/client";
-import { orderBetween } from "@/lib/order";
-import type { Captacao, Decisao, Status } from "@/types";
+import { decidirCaptacao } from "@/lib/decisao";
+import type { Captacao, Decisao } from "@/types";
 
 /**
  * Barra de decisão fixa no rodapé do detalhe (mobile). Mesma regra do DecisaoBox:
@@ -22,16 +21,10 @@ export function DecisaoBar({ captacao }: { captacao: Captacao }) {
 
   async function decidir(decisao: Decisao) {
     setSaving(decisao);
-    const supabase = createClient();
-    const destino: Status = decisao === "aprovada" ? "pendente_agendar_visita" : "pendente_negativa";
-    const { error } = await supabase.rpc("mover_cartao", {
-      p_captacao_id: captacao.id,
-      p_para_status: destino,
-      p_ordem: orderBetween(null, null),
-      p_decisao: decisao,
-    });
+    const resultado = await decidirCaptacao(captacao, decisao);
     setSaving(null);
-    if (error) {
+    if (resultado === "cancelado") return;
+    if (resultado === "erro") {
       toast.error("Não foi possível registrar a decisão.");
       return;
     }

@@ -5,13 +5,14 @@ import Link from "next/link";
 import Image from "next/image";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { BedDouble, Bath, AlertTriangle, GripVertical, User, Calendar, Clock, DoorOpen, MessageCircle, Link2, Hotel, Ruler, Car } from "lucide-react";
+import { BedDouble, Bath, AlertTriangle, GripVertical, User, Calendar, Clock, DoorOpen, MessageCircle, MessageSquare, Link2, Hotel, Ruler, Car } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { relativo, dataCurta, diasParado, diasRestantes, whatsappLink, formatarTelefone, formatBRL } from "@/lib/format";
 import { signedUrl } from "@/lib/storage";
-import type { Captacao } from "@/types";
+import { useBoard } from "@/stores/board";
+import { DECISAO_LABEL, type Captacao } from "@/types";
 
 // cache simples por sessão para não re-assinar a mesma capa a cada render
 const capaCache = new Map<string, string>();
@@ -22,6 +23,7 @@ export function CaptacaoCard({ card, overlay = false }: { card: Captacao; overla
     data: { card },
   });
 
+  const opinioes = useBoard((s) => s.opinioes[card.id]);
   const [capaUrl, setCapaUrl] = useState<string | null>(
     card.capa_path ? capaCache.get(card.capa_path) ?? null : null
   );
@@ -51,6 +53,11 @@ export function CaptacaoCard({ card, overlay = false }: { card: Captacao; overla
     card.status === "em_decisao" && card.em_decisao_desde && !card.decisao
       ? diasRestantes(card.em_decisao_desde)
       : null;
+  // Agendamento vencido: data passou e a etapa não foi concluída.
+  const atrasou = (data: string | null, concluida: boolean) =>
+    !concluida && !!data && new Date(data + "T23:59:59").getTime() < Date.now();
+  const visitaAtrasada = atrasou(card.visita_data, card.visita_concluida);
+  const gravacaoAtrasada = atrasou(card.gravacao_data, card.gravacao_concluida);
   const revisarGaveta =
     card.status === "gaveta" && card.gaveta_revisao_em
       ? new Date(card.gaveta_revisao_em + "T00:00:00").getTime() <= Date.now()
@@ -163,11 +170,19 @@ export function CaptacaoCard({ card, overlay = false }: { card: Captacao; overla
 
         {agendamento && (
           <div className="mt-2 flex flex-wrap gap-1.5 text-xs">
-            <Badge variant={card.visita_concluida ? "positive" : "muted"} className="gap-1">
+            <Badge
+              variant={card.visita_concluida ? "positive" : visitaAtrasada ? "destructive" : "muted"}
+              className="gap-1"
+            >
               <Calendar className="h-3 w-3" /> Visita {dataCurta(card.visita_data)}
+              {visitaAtrasada && " · atrasada"}
             </Badge>
-            <Badge variant={card.gravacao_concluida ? "positive" : "muted"} className="gap-1">
+            <Badge
+              variant={card.gravacao_concluida ? "positive" : gravacaoAtrasada ? "destructive" : "muted"}
+              className="gap-1"
+            >
               <Calendar className="h-3 w-3" /> Gravação {dataCurta(card.gravacao_data)}
+              {gravacaoAtrasada && " · atrasada"}
             </Badge>
           </div>
         )}
@@ -176,9 +191,30 @@ export function CaptacaoCard({ card, overlay = false }: { card: Captacao; overla
           <span className="inline-flex items-center gap-1">
             <Calendar className="h-3 w-3" /> {dataCurta(card.criado_em)} · {relativo(card.criado_em)}
           </span>
+          {opinioes && opinioes.total > 0 && (
+            <span
+              className={cn(
+                "inline-flex items-center gap-1",
+                opinioes.naoLidas > 0 ? "font-semibold text-primary" : "text-muted-foreground"
+              )}
+              title={
+                opinioes.naoLidas > 0
+                  ? `${opinioes.naoLidas} opinião(ões) não lida(s)`
+                  : `${opinioes.total} opinião(ões)`
+              }
+            >
+              <MessageSquare className="h-3 w-3" />
+              {opinioes.total}
+              {opinioes.naoLidas > 0 && (
+                <span className="rounded-full bg-primary px-1.5 text-[9px] font-bold text-primary-foreground">
+                  {opinioes.naoLidas} nova{opinioes.naoLidas > 1 ? "s" : ""}
+                </span>
+              )}
+            </span>
+          )}
           {card.decisao && (
             <Badge variant={card.decisao === "aprovada" ? "positive" : "destructive"} className="text-[10px]">
-              {card.decisao}
+              {DECISAO_LABEL[card.decisao]}
             </Badge>
           )}
           {alertaParado && !card.decisao && (

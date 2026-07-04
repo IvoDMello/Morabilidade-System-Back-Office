@@ -10,15 +10,16 @@ import type { Captacao } from "@/types";
 export function EditCaptacao({ captacao }: { captacao: Captacao }) {
   const router = useRouter();
 
-  async function salvar(data: CaptacaoInput) {
+  async function salvar(data: CaptacaoInput): Promise<boolean> {
     const supabase = createClient();
     const { error } = await supabase.from("captacao").update(data).eq("id", captacao.id);
     if (error) {
       toast.error("Erro ao salvar.");
-      return;
+      return false;
     }
     toast.success("Captação atualizada.");
     router.refresh();
+    return true;
   }
 
   return (

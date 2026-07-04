@@ -60,13 +60,13 @@ export function NovaCaptacaoButton({ trigger }: { trigger?: ReactNode } = {}) {
       if (!error && rows && rows.length > 0) {
         setDuplicadas(rows as Duplicada[]);
         setPendente(data);
-        return;
+        return false;
       }
     }
-    await handleCreate(data);
+    return handleCreate(data);
   }
 
-  async function handleCreate(data: CaptacaoInput) {
+  async function handleCreate(data: CaptacaoInput): Promise<boolean> {
     const supabase = createClient();
     const {
       data: { user },
@@ -83,7 +83,7 @@ export function NovaCaptacaoButton({ trigger }: { trigger?: ReactNode } = {}) {
 
     if (error || !row) {
       toast.error(error?.message ?? "Não foi possível criar a captação.");
-      return;
+      return false;
     }
 
     const id = (row as Captacao).id;
@@ -111,8 +111,11 @@ export function NovaCaptacaoButton({ trigger }: { trigger?: ReactNode } = {}) {
     upsert({ ...(row as Captacao), capa_path: capaPath });
     reset();
     setOpen(false);
-    toast.success("Captação criada.");
+    toast.success("Captação criada.", {
+      action: { label: "Abrir", onClick: () => router.push(`/captacao/${id}`) },
+    });
     router.refresh();
+    return true;
   }
 
   return (

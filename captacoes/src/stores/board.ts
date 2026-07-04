@@ -1,8 +1,8 @@
 "use client";
 
 import { create } from "zustand";
-import type { Captacao, Criterios, Decisao, Ordenacao, Status } from "@/types";
-import { STATUSES, CRITERIOS_VAZIO } from "@/types";
+import type { Captacao, Criterios, Decisao, Ordenacao, OpinioesResumo, Status } from "@/types";
+import { STATUSES, CRITERIOS_VAZIO, ORDENACAO_LABEL } from "@/types";
 
 type ByStatus = Record<Status, Captacao[]>;
 
@@ -13,6 +13,41 @@ function empty(): ByStatus {
 }
 
 const FILTRO_STATUS_KEY = "captacoes_filtro_status";
+const ORDENACAO_KEY = "captacoes_ordenacao";
+const CRITERIOS_KEY = "captacoes_criterios";
+
+/** Leitura/gravação best effort no sessionStorage (SSR e modo privado seguros). */
+function lerStorage(key: string): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.sessionStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function gravarStorage(key: string, valor: string): void {
+  try {
+    window.sessionStorage.setItem(key, valor);
+  } catch {
+    // best effort
+  }
+}
+
+function lerOrdenacao(): Ordenacao {
+  const v = lerStorage(ORDENACAO_KEY);
+  return v && v in ORDENACAO_LABEL ? (v as Ordenacao) : "manual";
+}
+
+function lerCriterios(): Criterios {
+  const v = lerStorage(CRITERIOS_KEY);
+  if (!v) return CRITERIOS_VAZIO;
+  try {
+    return { ...CRITERIOS_VAZIO, ...(JSON.parse(v) as Partial<Criterios>) };
+  } catch {
+    return CRITERIOS_VAZIO;
+  }
+}
 
 function lerFiltroStatus(): "all" | Status {
   // sessionStorage sobrevive ao reload (F5 no detalhe) mas não vaza entre
@@ -63,6 +98,9 @@ interface BoardState {
   salvoEm: number | null;
   beginSave: () => void;
   endSave: (ok: boolean) => void;
+  /** Contadores de opiniões por captação (badge 💬 do quadro). */
+  opinioes: Record<string, OpinioesResumo>;
+  setOpinioes: (o: Record<string, OpinioesResumo>) => void;
   setCards: (cards: Captacao[]) => void;
   upsert: (card: Captacao) => void;
   remove: (id: string) => void;
@@ -80,11 +118,22 @@ export const useBoard = create<BoardState>((set, get) => ({
     gravarFiltroStatus(filtroStatus);
     set({ filtroStatus });
   },
-  criterios: CRITERIOS_VAZIO,
-  setCriterios: (c) => set((state) => ({ criterios: { ...state.criterios, ...c } })),
-  limparCriterios: () => set({ criterios: CRITERIOS_VAZIO }),
-  ordenacao: "manual",
-  setOrdenacao: (ordenacao) => set({ ordenacao }),
+  criterios: lerCriterios(),
+  setCriterios: (c) =>
+    set((state) => {
+      const criterios = { ...state.criterios, ...c };
+      gravarStorage(CRITERIOS_KEY, JSON.stringify(criterios));
+      return { criterios };
+    }),
+  limparCriterios: () => {
+    gravarStorage(CRITERIOS_KEY, JSON.stringify(CRITERIOS_VAZIO));
+    set({ criterios: CRITERIOS_VAZIO });
+  },
+  ordenacao: lerOrdenacao(),
+  setOrdenacao: (ordenacao) => {
+    gravarStorage(ORDENACAO_KEY, ordenacao);
+    set({ ordenacao });
+  },
   conexao: "conectando",
   setConexao: (conexao) => set({ conexao }),
   salvando: 0,
@@ -95,6 +144,8 @@ export const useBoard = create<BoardState>((set, get) => ({
       salvando: Math.max(0, s.salvando - 1),
       salvoEm: ok ? Date.now() : s.salvoEm,
     })),
+  opinioes: {},
+  setOpinioes: (opinioes) => set({ opinioes }),
   setCards: (cards) => set({ byStatus: group(cards) }),
   upsert: (card) =>
     set((state) => {
