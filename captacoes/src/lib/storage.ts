@@ -31,6 +31,26 @@ export async function uploadFoto(captacaoId: string, file: File) {
   return { storage_path: fullPath, thumb_path: thumbPath };
 }
 
+/** Limite de tamanho do vídeo enviado pelo app (o bucket também impõe o dele). */
+export const VIDEO_MAX_MB = 200;
+
+/** Sobe o arquivo de vídeo (gravado no celular) direto ao Storage. */
+export async function uploadVideo(captacaoId: string, file: File) {
+  if (file.size > VIDEO_MAX_MB * 1024 * 1024) {
+    throw new Error(`Vídeo acima de ${VIDEO_MAX_MB} MB. Envie um arquivo menor ou use um link.`);
+  }
+  const supabase = createClient();
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "mp4";
+  const path = pathFor(captacaoId, "videos", ext);
+
+  const { error } = await supabase.storage
+    .from(BUCKET)
+    .upload(path, file, { contentType: file.type || "video/mp4" });
+  if (error) throw error;
+
+  return { storage_path: path };
+}
+
 export async function uploadDocumento(captacaoId: string, file: File) {
   const supabase = createClient();
   const ext = file.name.split(".").pop()?.toLowerCase() ?? "bin";

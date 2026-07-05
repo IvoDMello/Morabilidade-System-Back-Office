@@ -18,7 +18,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
-import { uploadFoto, signedUrl } from "@/lib/storage";
+import { uploadFoto, uploadVideo, signedUrl, VIDEO_MAX_MB } from "@/lib/storage";
 import { videoSchema } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
 import { FotosLightbox } from "./FotosLightbox";
@@ -103,7 +103,10 @@ export function Galeria({
 }) {
   const [midias, setMidias] = useState<Midia[]>(midiasIniciais);
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
+  // URLs assinadas dos vídeos enviados ao Storage (1h: cobre a reprodução).
+  const [videoUrls, setVideoUrls] = useState<Record<string, string>>({});
   const [enviando, setEnviando] = useState(false);
+  const [enviandoVideo, setEnviandoVideo] = useState(false);
   const [url, setUrl] = useState("");
   const [capa, setCapa] = useState<string | null>(capaInicial);
   // Visualizador: índice da foto aberta (entre as fotos).
@@ -124,6 +127,12 @@ export function Galeria({
           .map(async (m) => [m.id, await signedUrl(m.thumb_path!)] as const)
       );
       if (active) setThumbs(Object.fromEntries(entries));
+      const videos = await Promise.all(
+        midias
+          .filter((m) => m.tipo === "video" && m.storage_path)
+          .map(async (m) => [m.id, await signedUrl(m.storage_path!, 3600)] as const)
+      );
+      if (active) setVideoUrls(Object.fromEntries(videos));
     })();
     return () => {
       active = false;
@@ -152,6 +161,29 @@ export function Galeria({
       toast.error("Falha ao enviar foto.");
     } finally {
       setEnviando(false);
+    }
+  }
+
+  async function onVideoFiles(files: FileList | null) {
+    if (!files?.length) return;
+    setEnviandoVideo(true);
+    const supabase = createClient();
+    try {
+      for (const file of Array.from(files)) {
+        const paths = await uploadVideo(captacaoId, file);
+        const { data, error } = await supabase
+          .from("midia")
+          .insert({ captacao_id: captacaoId, tipo: "video", ...paths })
+          .select()
+          .single();
+        if (error) throw error;
+        setMidias((m) => [...m, data as Midia]);
+      }
+      toast.success("Vídeo enviado.");
+    } catch (e) {
+      toast.error(e instanceof Error && e.message ? e.message : "Falha ao enviar vídeo.");
+    } finally {
+      setEnviandoVideo(false);
     }
   }
 
@@ -214,7 +246,7 @@ export function Galeria({
 
   return (
     <div className="space-y-4">
-      <div>
+      <div className="flex flex-wrap gap-2">
         <label className="inline-flex">
           <input
             type="file"
@@ -226,6 +258,29 @@ export function Galeria({
           <Button type="button" variant="outline" asChild disabled={enviando}>
             <span>
               <ImagePlus className="h-4 w-4" /> {enviando ? "Enviando..." : "Adicionar fotos"}
+            </span>
+          </Button>
+        </label>
+        <label className="inline-flex">
+          <input
+            type="file"
+            accept="video/*"
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              onVideoFiles(e.target.files);
+              e.target.value = "";
+            }}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            asChild
+            disabled={enviandoVideo}
+            title={`Vídeo gravado na visita (até ${VIDEO_MAX_MB} MB)`}
+          >
+            <span>
+              <Video className="h-4 w-4" /> {enviandoVideo ? "Enviando vídeo..." : "Adicionar vídeo"}
             </span>
           </Button>
         </label>
@@ -258,16 +313,38 @@ export function Galeria({
         </Button>
       </div>
 
-      {videos.map((m) => (
-        <div key={m.id} className="flex items-center justify-between rounded-md border p-2 text-sm">
-          <a href={m.url_externa!} target="_blank" rel="noreferrer" className="truncate text-primary underline">
-            {m.url_externa}
-          </a>
-          <button onClick={() => remover(m)} aria-label="Remover">
-            <Trash2 className="h-4 w-4 text-muted-foreground" />
-          </button>
-        </div>
-      ))}
+      {videos.map((m) =>
+        m.storage_path ? (
+          // Vídeo enviado ao Storage: player embutido.
+          <div key={m.id} className="overflow-hidden rounded-md border">
+            {videoUrls[m.id] ? (
+              <video src={videoUrls[m.id]} controls preload="metadata" playsInline className="max-h-80 w-full bg-black" />
+            ) : (
+              <div className="flex h-40 items-center justify-center bg-muted text-sm text-muted-foreground">
+                Carregando vídeo...
+              </div>
+            )}
+            <div className="flex items-center justify-between p-2 text-sm">
+              <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                <Video className="h-4 w-4" /> Vídeo da visita
+              </span>
+              <button onClick={() => remover(m)} aria-label="Remover vídeo">
+                <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+              </button>
+            </div>
+          </div>
+        ) : (
+          // Vídeo por link externo (YouTube/Drive).
+          <div key={m.id} className="flex items-center justify-between rounded-md border p-2 text-sm">
+            <a href={m.url_externa!} target="_blank" rel="noreferrer" className="truncate text-primary underline">
+              {m.url_externa}
+            </a>
+            <button onClick={() => remover(m)} aria-label="Remover">
+              <Trash2 className="h-4 w-4 text-muted-foreground" />
+            </button>
+          </div>
+        )
+      )}
 
       <FotosLightbox fotos={fotos} index={viewer} onClose={() => setViewer(null)} />
     </div>
