@@ -87,7 +87,11 @@ describe("maskTelefone", () => {
   it("celular completo", () => expect(maskTelefone("11988887777")).toBe("(11) 98888-7777"));
   it("fixo completo", () => expect(maskTelefone("1133334444")).toBe("(11) 3333-4444"));
   it("remove 55 inicial", () => expect(maskTelefone("5511988887777")).toBe("(11) 98888-7777"));
-  it("trunca excesso", () => expect(maskTelefone("119888877771234")).toBe("(11) 98888-7777"));
+  it("estrangeiro sem + vira +DDI", () => expect(maskTelefone("351 962 620 415")).toBe("+351962620415"));
+  it("estrangeiro com +", () => expect(maskTelefone("+351 962 620 415")).toBe("+351962620415"));
+  it("+55 mantém máscara BR", () => expect(maskTelefone("+5511988887777")).toBe("(11) 98888-7777"));
+  it("trunca excesso estrangeiro em 15 dígitos", () =>
+    expect(maskTelefone("1234567890123456789")).toBe("+123456789012345"));
 });
 
 describe("formatarTelefone", () => {
@@ -96,6 +100,8 @@ describe("formatarTelefone", () => {
   it("remove 55 inicial", () => expect(formatarTelefone("5511988887777")).toBe("(11) 98888-7777"));
   it("retorna original se formato inesperado", () => expect(formatarTelefone("123")).toBe("123"));
   it("null vira vazio", () => expect(formatarTelefone(null)).toBe(""));
+  it("estrangeiro exibe +DDI", () => expect(formatarTelefone("+351962620415")).toBe("+351962620415"));
+  it("estrangeiro sem + ganha +", () => expect(formatarTelefone("351962620415")).toBe("+351962620415"));
 });
 
 describe("dataCurta", () => {

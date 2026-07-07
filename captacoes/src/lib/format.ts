@@ -67,8 +67,22 @@ export function whatsappLink(tel: string | null): string | null {
   return `https://wa.me/${d}`;
 }
 
-/** Máscara progressiva enquanto digita: (11) 98888-7777. */
+/**
+ * Número estrangeiro: começa com "+" (e não é +55) ou tem mais dígitos
+ * que um número BR completo (DDD + 9 dígitos, com ou sem o DDI 55).
+ */
+function ehEstrangeiro(valor: string): boolean {
+  const d = soDigitos(valor);
+  if (/^\s*\+/.test(valor)) return !/^55\d{10,11}$/.test(d);
+  return d.replace(/^55(?=\d{10,11}$)/, "").length > 11;
+}
+
+/**
+ * Máscara progressiva enquanto digita: (11) 98888-7777.
+ * Números estrangeiros ficam sem máscara, no formato +DDI...: +351962620415.
+ */
 export function maskTelefone(valor: string): string {
+  if (ehEstrangeiro(valor)) return "+" + soDigitos(valor).slice(0, 15);
   const d = soDigitos(valor).replace(/^55/, "").slice(0, 11);
   if (d.length <= 2) return d.length ? `(${d}` : "";
   if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
@@ -76,8 +90,9 @@ export function maskTelefone(valor: string): string {
   return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
 }
 
-/** Formata para exibição: (11) 98888-7777. */
+/** Formata para exibição: (11) 98888-7777; estrangeiro vira +351962620415. */
 export function formatarTelefone(tel: string | null): string {
+  if (tel && ehEstrangeiro(tel)) return "+" + soDigitos(tel);
   const d = soDigitos(tel).replace(/^55/, "");
   if (d.length === 11) return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
   if (d.length === 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
