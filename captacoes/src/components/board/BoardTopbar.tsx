@@ -96,7 +96,7 @@ export function BoardTopbar({
             value={filtro}
             onChange={(e) => setFiltro(e.target.value)}
             placeholder="Endereço, proprietário ou telefone…"
-            className="bg-background px-8"
+            className="bg-background px-8 text-foreground"
           />
           {filtrando && (
             <button
