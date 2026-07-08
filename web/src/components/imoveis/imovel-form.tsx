@@ -70,7 +70,7 @@ const schema = z.object({
   proprietario_id: z.string().optional().nullable(),
   destaque_ordem: z.preprocess(
     (v) => (v === "" || v == null ? null : Number(v)),
-    z.number().int().min(1).max(5).nullable().optional()
+    z.number().int().min(1).max(10).nullable().optional()
   ),
   tag_ids: z.array(z.string()).default([]),
 });
@@ -205,6 +205,8 @@ export function ImovelForm({
   const [tags, setTags] = useState<Tag[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
+  // Posições de destaque ocupadas hoje: ordem → código do imóvel ocupante.
+  const [destaquesOcupados, setDestaquesOcupados] = useState<Record<number, string>>({});
   const [cepLoading, setCepLoading] = useState(false);
   // Cadastro rápido de proprietário direto na tela do imóvel (só nome + WhatsApp).
   const [showNovoProp, setShowNovoProp] = useState(false);
@@ -259,6 +261,13 @@ export function ImovelForm({
   useEffect(() => {
     api.get<Tag[]>("/tags/").then((r) => setTags(r.data)).catch(() => {});
     api.get<User[]>("/usuarios/").then((r) => setUsers(r.data)).catch(() => {});
+    api.get<{ ordem: number; codigo: string; id: string }[]>("/imoveis/destaques/ocupacao")
+      .then((r) => {
+        const map: Record<number, string> = {};
+        for (const d of r.data) map[d.ordem] = d.codigo;
+        setDestaquesOcupados(map);
+      })
+      .catch(() => {});
     // O endpoint /clientes/ aceita page_size até 100 (limite do backend).
     // Operação tem ~100 clientes — uma página basta hoje; se crescer, vira combobox com busca.
     api.get<Cliente[]>("/clientes/", { params: { page_size: 100 } })
@@ -492,14 +501,24 @@ export function ImovelForm({
             <Label>Destaque na home</Label>
             <select {...register("destaque_ordem")} className={selectClass}>
               <option value="">Não destacado</option>
-              <option value="1">Posição 1</option>
-              <option value="2">Posição 2</option>
-              <option value="3">Posição 3</option>
-              <option value="4">Posição 4</option>
-              <option value="5">Posição 5</option>
+              {Array.from({ length: 10 }, (_, i) => i + 1).map((pos) => {
+                const ocupante = destaquesOcupados[pos];
+                const sufixo = !ocupante
+                  ? " — livre"
+                  : ocupante === defaultValues?.codigo
+                    ? ` — ${ocupante} (este imóvel)`
+                    : ` — ${ocupante}`;
+                return (
+                  <option key={pos} value={pos}>
+                    {`Posição ${pos}${sufixo}`}
+                  </option>
+                );
+              })}
             </select>
             <p className="mt-1 text-xs text-slate-400">
-              Ao escolher uma posição já em uso, o imóvel anterior perde o destaque.
+              Ao escolher uma posição ocupada, os destaques a partir dela andam uma
+              casa para a direita (1 vira 2, 2 vira 3...). Quem estiver na posição 10
+              sai do destaque.
             </p>
           </div>
 

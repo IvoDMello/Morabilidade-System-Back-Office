@@ -186,23 +186,52 @@ def _ocultar_internas(imovel: dict, current_user: Optional[dict]) -> dict:
     return imovel
 
 
+MAX_DESTAQUES = 10
+
+
 def _liberar_posicao_destaque(posicao: int, exceto_imovel_id: Optional[str] = None) -> None:
     """
-    Garante que `posicao` (1-5) fica vaga: se outro imóvel já a ocupa,
-    seu destaque_ordem vira NULL. Idempotente.
+    Garante que `posicao` (1-10) fica vaga empurrando o bloco contíguo de
+    destaques a partir dela uma casa para a direita (1→2, 2→3, ...).
+    Quem estiver na posição 10 sai do destaque. Idempotente.
+
+    Os updates são feitos linha a linha, da maior posição para a menor,
+    para nunca violar o índice UNIQUE parcial de destaque_ordem.
+    Custo máximo: ~10 updates de 1 linha — só no momento de salvar.
     """
     if posicao is None:
         return
-    if posicao < 1 or posicao > 5:
-        raise HTTPException(status_code=400, detail="Posição de destaque deve ser entre 1 e 5.")
+    if posicao < 1 or posicao > MAX_DESTAQUES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Posição de destaque deve ser entre 1 e {MAX_DESTAQUES}.",
+        )
+
     q = (
         supabase_admin.table("imoveis")
-        .update({"destaque_ordem": None})
-        .eq("destaque_ordem", posicao)
+        .select("id, destaque_ordem")
+        .not_.is_("destaque_ordem", "null")
     )
     if exceto_imovel_id:
         q = q.neq("id", exceto_imovel_id)
-    q.execute()
+    ocupadas = {r["destaque_ordem"]: r["id"] for r in (q.execute().data or [])}
+
+    if posicao not in ocupadas:
+        return
+
+    # Fim do bloco contíguo que precisa andar (para no primeiro buraco).
+    fim = posicao
+    while fim + 1 in ocupadas:
+        fim += 1
+
+    for p in range(fim, posicao - 1, -1):
+        novo = p + 1 if p < MAX_DESTAQUES else None
+        (
+            supabase_admin.table("imoveis")
+            .update({"destaque_ordem": novo})
+            .eq("id", ocupadas[p])
+            .execute()
+        )
 
 
 def _buscar_imovel(imovel_id: str) -> dict:
@@ -298,7 +327,7 @@ def imoveis_disponiveis_publico(
 def imoveis_destaques_publico(request: Request):
     """
     Imóveis selecionados pelo admin para o carrossel da home.
-    Ordenados por destaque_ordem (1-5). Inclui apenas disponíveis.
+    Ordenados por destaque_ordem (1-10). Inclui apenas disponíveis.
     """
     result = (
         supabase_admin.table("imoveis")
@@ -309,6 +338,26 @@ def imoveis_destaques_publico(request: Request):
         .execute()
     )
     return [_ocultar_internas(_transformar_lista(item), None) for item in (result.data or [])]
+
+
+@router.get("/destaques/ocupacao")
+def destaques_ocupacao(current_user: dict = Depends(get_current_user)):
+    """
+    Mapa das posições de destaque ocupadas — usado no formulário do painel
+    para mostrar qual imóvel ocupa cada posição hoje.
+    Retorna [{ordem, codigo, id}] ordenado por posição.
+    """
+    result = (
+        supabase_admin.table("imoveis")
+        .select("id, codigo, destaque_ordem")
+        .not_.is_("destaque_ordem", "null")
+        .order("destaque_ordem", desc=False)
+        .execute()
+    )
+    return [
+        {"ordem": r["destaque_ordem"], "codigo": r["codigo"], "id": r["id"]}
+        for r in (result.data or [])
+    ]
 
 
 @router.get("/publico/{codigo}", response_model=ImovelOut, tags=["Site Público"])

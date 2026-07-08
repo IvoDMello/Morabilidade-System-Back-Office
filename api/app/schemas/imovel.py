@@ -73,7 +73,7 @@ class ImovelCreate(BaseModel):
     instagram_url: Optional[str] = None  # link do anúncio/vídeo no Instagram; exibido no site público
     corretor_id: Optional[str] = None
     proprietario_id: Optional[str] = None  # FK para clientes; sincroniza com contratos_locacao
-    destaque_ordem: Optional[int] = None  # 1-5 ou None
+    destaque_ordem: Optional[int] = None  # 1-10 ou None
     tag_ids: Optional[List[str]] = []
 
 
