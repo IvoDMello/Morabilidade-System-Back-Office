@@ -254,6 +254,7 @@ export function ImovelForm({
   const selectedTagIds = watch("tag_ids") ?? [];
   const descricaoValue = watch("descricao");
   const proprietarioId = watch("proprietario_id");
+  const corretorId = watch("corretor_id");
 
   useEffect(() => {
     api.get<Tag[]>("/tags/").then((r) => setTags(r.data)).catch(() => {});
@@ -524,7 +525,14 @@ export function ImovelForm({
                 )}
               </button>
             </div>
-            <select {...register("proprietario_id")} className={selectClass}>
+            {/* value controlado: os clientes chegam por fetch depois que o RHF já
+                aplicou o defaultValue, e um <select> não-controlado cai na primeira
+                option ("Nenhum") quando as options são renderizadas depois. */}
+            <select
+              {...register("proprietario_id")}
+              value={proprietarioId ?? ""}
+              className={selectClass}
+            >
               <option value="">Nenhum</option>
               {clientes
                 // Mantém o proprietário atual mesmo que não seja tipo_cliente='proprietario'
@@ -953,7 +961,13 @@ export function ImovelForm({
 
           <div>
             <Label>Corretor responsável</Label>
-            <select {...register("corretor_id")} className={selectClass}>
+            {/* value controlado pelo mesmo motivo do select de proprietário:
+                a lista de usuários chega por fetch depois do defaultValue. */}
+            <select
+              {...register("corretor_id")}
+              value={corretorId ?? ""}
+              className={selectClass}
+            >
               <option value="">Nenhum</option>
               {users.map((u) => (
                 <option key={u.id} value={u.id}>

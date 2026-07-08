@@ -39,6 +39,7 @@ export function DocumentosImovel({ imovelId }: Props) {
   const [documentos, setDocumentos] = useState<DocumentoImovel[]>([]);
   const [loading, setLoading] = useState(true);
   const [enviando, setEnviando] = useState(false);
+  const [progressoEnvio, setProgressoEnvio] = useState<{ atual: number; total: number } | null>(null);
   const [tipoSelecionado, setTipoSelecionado] = useState<TipoDocumentoImovel>("contrato");
   const inputFileRef = useRef<HTMLInputElement>(null);
   const [deletando, setDeletando] = useState<DocumentoImovel | null>(null);
@@ -70,48 +71,64 @@ export function DocumentosImovel({ imovelId }: Props) {
   ];
   const TAMANHO_MAX = 10 * 1024 * 1024;
 
-  async function enviarArquivo(arquivo: File) {
-    if (arquivo.size > TAMANHO_MAX) {
-      toast.error("Arquivo excede 10 MB.");
-      return;
-    }
-    if (arquivo.type && !TIPOS_ACEITOS.includes(arquivo.type)) {
-      toast.error("Tipo de arquivo não permitido. Use PDF, JPG, PNG, DOC ou DOCX.");
-      return;
-    }
+  async function enviarArquivos(arquivos: File[]) {
+    if (arquivos.length === 0) return;
     setEnviando(true);
+    let enviados = 0;
+    const erros: string[] = [];
     try {
-      const form = new FormData();
-      form.append("file", arquivo);
-      form.append("tipo", tipoSelecionado);
-      await api.post(`/imoveis/${imovelId}/documentos`, form, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      toast.success("Documento enviado.");
-      buscar();
-    } catch (err: unknown) {
-      const msg =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
-        "Erro ao enviar arquivo.";
-      toast.error(msg);
+      for (let i = 0; i < arquivos.length; i++) {
+        const arquivo = arquivos[i];
+        setProgressoEnvio({ atual: i + 1, total: arquivos.length });
+        if (arquivo.size > TAMANHO_MAX) {
+          erros.push(`${arquivo.name}: excede 10 MB`);
+          continue;
+        }
+        if (arquivo.type && !TIPOS_ACEITOS.includes(arquivo.type)) {
+          erros.push(`${arquivo.name}: tipo não permitido`);
+          continue;
+        }
+        try {
+          const form = new FormData();
+          form.append("file", arquivo);
+          form.append("tipo", tipoSelecionado);
+          await api.post(`/imoveis/${imovelId}/documentos`, form, {
+            headers: { "Content-Type": "multipart/form-data" },
+          });
+          enviados++;
+        } catch (err: unknown) {
+          const msg =
+            (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
+            "erro ao enviar";
+          erros.push(`${arquivo.name}: ${msg}`);
+        }
+      }
+      if (enviados > 0) {
+        toast.success(
+          enviados === 1 ? "Documento enviado." : `${enviados} documentos enviados.`
+        );
+        buscar();
+      }
+      erros.forEach((e) => toast.error(e));
     } finally {
       setEnviando(false);
+      setProgressoEnvio(null);
       if (inputFileRef.current) inputFileRef.current.value = "";
     }
   }
 
   async function handleSelecionarArquivo(e: React.ChangeEvent<HTMLInputElement>) {
-    const arquivo = e.target.files?.[0];
-    if (!arquivo) return;
-    await enviarArquivo(arquivo);
+    const arquivos = Array.from(e.target.files ?? []);
+    if (arquivos.length === 0) return;
+    await enviarArquivos(arquivos);
   }
 
   function handleDrop(e: React.DragEvent<HTMLDivElement>) {
     e.preventDefault();
     setArrastando(false);
     if (!isAdmin || enviando) return;
-    const arquivo = e.dataTransfer.files?.[0];
-    if (arquivo) enviarArquivo(arquivo);
+    const arquivos = Array.from(e.dataTransfer.files ?? []);
+    if (arquivos.length > 0) enviarArquivos(arquivos);
   }
 
   async function handleDeletar() {
@@ -160,10 +177,15 @@ export function DocumentosImovel({ imovelId }: Props) {
               ) : (
                 <Upload className="w-3.5 h-3.5" />
               )}
-              {enviando ? "Enviando..." : "Enviar arquivo"}
+              {enviando
+                ? progressoEnvio && progressoEnvio.total > 1
+                  ? `Enviando ${progressoEnvio.atual}/${progressoEnvio.total}...`
+                  : "Enviando..."
+                : "Enviar arquivos"}
               <input
                 ref={inputFileRef}
                 type="file"
+                multiple
                 onChange={handleSelecionarArquivo}
                 disabled={enviando}
                 accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,application/pdf,image/jpeg,image/png,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -192,7 +214,7 @@ export function DocumentosImovel({ imovelId }: Props) {
           <Upload className="w-5 h-5 mx-auto mb-1.5" />
           {arrastando
             ? "Solte para enviar"
-            : "Arraste um arquivo aqui ou clique para selecionar"}
+            : "Arraste arquivos aqui ou clique para selecionar"}
         </div>
       )}
 
