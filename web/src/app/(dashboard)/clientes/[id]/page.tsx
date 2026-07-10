@@ -115,7 +115,14 @@ export default function EditarClientePage({ params }: { params: Promise<{ id: st
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <div className="flex-1 min-w-0">
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 truncate">Editar cliente</h1>
+          <div className="flex items-center gap-2 min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 truncate">Editar cliente</h1>
+            {cliente.codigo && (
+              <span className="text-xs font-mono text-slate-500 bg-slate-100 border border-slate-200 rounded px-2 py-0.5 shrink-0">
+                {cliente.codigo}
+              </span>
+            )}
+          </div>
           <p className="text-slate-500 text-sm truncate">{cliente.email || cliente.telefone}</p>
         </div>
       </div>

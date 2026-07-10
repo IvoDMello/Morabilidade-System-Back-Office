@@ -6,16 +6,25 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { api, getErrorMessage } from "@/lib/api";
+import { useAuthStore } from "@/lib/auth-store";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 interface Ficha {
   id: string;
   visitante_nome: string;
   visitante_telefone?: string | null;
+  corretor_nome?: string | null;
   status: "pendente" | "assinada" | "cancelada" | "expirada";
   token: string;
   assinada_em?: string | null;
   created_at: string;
+}
+
+interface CorretorOption {
+  id: string;
+  nome_completo: string;
+  creci?: string | null;
+  ativo?: boolean;
 }
 
 interface Props {
@@ -70,11 +79,23 @@ export function FichasImovel({ imovelId }: Props) {
 // ── Formulário de geração ────────────────────────────────────────────────────
 
 function NovaFicha({ imovelId, onCriada }: { imovelId: string; onCriada: () => void }) {
+  const user = useAuthStore((s) => s.user);
+  const isAdmin = user?.perfil === "admin";
   const [nome, setNome] = useState("");
   const [cpf, setCpf] = useState("");
   const [telefone, setTelefone] = useState("");
   const [email, setEmail] = useState("");
+  // Só admin escolhe o corretor responsável; corretor emite em nome próprio.
+  const [corretorId, setCorretorId] = useState("");
+  const [corretores, setCorretores] = useState<CorretorOption[]>([]);
   const [salvando, setSalvando] = useState(false);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    api.get<CorretorOption[]>("/usuarios/")
+      .then((res) => setCorretores(res.data.filter((u) => u.ativo !== false)))
+      .catch(() => {});
+  }, [isAdmin]);
 
   async function gerar(e: React.FormEvent) {
     e.preventDefault();
@@ -93,6 +114,7 @@ function NovaFicha({ imovelId, onCriada }: { imovelId: string; onCriada: () => v
           visitante_cpf: cpf.trim() || null,
           visitante_telefone: telefone.trim() || null,
           visitante_email: email.trim() || null,
+          corretor_id: corretorId || null,
         },
       );
       // Já copia o link pro corretor mandar.
@@ -136,8 +158,23 @@ function NovaFicha({ imovelId, onCriada }: { imovelId: string; onCriada: () => v
         <input
           type="email" placeholder="E-mail (opcional)" value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="lg:col-span-3 border border-slate-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#585a4f]"
+          className={`${isAdmin ? "lg:col-span-1" : "lg:col-span-3"} border border-slate-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#585a4f]`}
         />
+        {isAdmin && (
+          <select
+            value={corretorId}
+            onChange={(e) => setCorretorId(e.target.value)}
+            title="Corretor responsável — é o nome/CRECI que sai no documento assinado"
+            className="lg:col-span-2 border border-slate-200 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:border-[#585a4f]"
+          >
+            <option value="">Corretor responsável: eu ({user?.nome_completo})</option>
+            {corretores.filter((c) => c.id !== user?.id).map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.nome_completo}{c.creci ? ` — CRECI ${c.creci}` : " — sem CRECI"}
+              </option>
+            ))}
+          </select>
+        )}
         <button
           type="submit" disabled={salvando}
           className="bg-[#585a4f] text-white text-sm px-4 py-2 rounded-md hover:opacity-90 disabled:opacity-60 flex items-center justify-center gap-1.5"
@@ -239,6 +276,7 @@ function ListaFichas({
                   </div>
                   <div className="text-xs text-slate-400 mt-0.5">
                     Emitida em {formatDataBR(f.created_at)}
+                    {f.corretor_nome && ` · corretor: ${f.corretor_nome}`}
                     {f.status === "assinada" && f.assinada_em && ` · assinada em ${formatDataBR(f.assinada_em)}`}
                   </div>
                 </div>

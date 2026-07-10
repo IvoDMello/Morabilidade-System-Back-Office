@@ -20,7 +20,7 @@ router = APIRouter()
 # ── Constantes compartilhadas ────────────────────────────────────────────────
 
 _CAMPOS_EXPORT = [
-    "nome_completo", "email", "telefone", "cpf_cnpj", "data_nascimento",
+    "codigo", "nome_completo", "email", "telefone", "cpf_cnpj", "data_nascimento",
     "telefone_secundario", "instagram", "endereco", "cidade", "estado", "pais",
     "profissao_empresa", "origem_lead", "status", "tipo_cliente",
     "renda_aproximada", "como_conheceu", "observacoes", "imovel_codigo",
@@ -44,6 +44,8 @@ def _csv_safe(valor) -> str:
 
 
 _STATUS_VALIDOS = {"ativo", "em_negociacao", "inativo", "concluido"}
+# Canais do histórico de contato (cliente_notas.tipo_contato, migration 048).
+_TIPOS_CONTATO_VALIDOS = {"nota", "ligacao", "whatsapp", "email", "visita", "presencial"}
 _TIPOS_VALIDOS = {"comprador", "locatario", "proprietario", "investidor"}
 _ORIGENS_VALIDAS = {
     "site", "indicacao", "ligacao", "whatsapp", "instagram", "facebook", "outro",
@@ -312,7 +314,9 @@ def listar_clientes(
 
     def _aplicar(q):
         if nome:
-            q = q.ilike("nome_completo", f"%{nome}%")
+            # O campo de busca aceita nome ou código do cliente (CLI-0001).
+            termo = nome.replace(",", " ").strip()
+            q = q.or_(f"nome_completo.ilike.%{termo}%,codigo.ilike.%{termo}%")
         if email:
             q = q.ilike("email", f"%{email}%")
         if status:
@@ -328,7 +332,7 @@ def listar_clientes(
     offset = (page - 1) * page_size
     result = (
         _aplicar(supabase_admin.table("clientes")
-                 .select("id, nome_completo, email, telefone, status, tipo_cliente, "
+                 .select("id, codigo, nome_completo, email, telefone, status, tipo_cliente, "
                          "origem_lead, imovel_codigo, observacoes, created_at, "
                          "cliente_tags(tags(id, nome, cor))"))
         .order("created_at", desc=True)
@@ -577,7 +581,7 @@ def deletar_cliente(cliente_id: str, current_user: dict = Depends(require_admin)
 def listar_notas(cliente_id: str, current_user: dict = Depends(get_current_user)):
     result = (
         supabase_admin.table("cliente_notas")
-        .select("id, conteudo, autor_nome, created_at")
+        .select("id, conteudo, tipo_contato, autor_nome, created_at")
         .eq("cliente_id", cliente_id)
         .order("created_at", desc=True)
         .execute()
@@ -594,9 +598,16 @@ def criar_nota(
     conteudo = (body.get("conteudo") or "").strip()
     if not conteudo:
         raise HTTPException(status_code=422, detail="conteudo não pode ser vazio.")
+    tipo_contato = (body.get("tipo_contato") or "nota").strip().lower()
+    if tipo_contato not in _TIPOS_CONTATO_VALIDOS:
+        raise HTTPException(
+            status_code=422,
+            detail=f"tipo_contato inválido. Use um de: {', '.join(sorted(_TIPOS_CONTATO_VALIDOS))}.",
+        )
     record = {
         "cliente_id": cliente_id,
         "conteudo": conteudo,
+        "tipo_contato": tipo_contato,
         "autor_id": current_user["id"],
         "autor_nome": current_user.get("nome_completo") or current_user.get("email", ""),
     }

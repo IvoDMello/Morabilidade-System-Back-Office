@@ -126,6 +126,7 @@ export type OrigemLead =
 
 export interface Cliente {
   id: string;
+  codigo?: string;
   nome_completo: string;
   email?: string;
   telefone: string;

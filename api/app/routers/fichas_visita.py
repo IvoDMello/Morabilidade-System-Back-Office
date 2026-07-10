@@ -100,16 +100,35 @@ def criar_ficha(body: FichaVisitaCreate, current_user: dict = Depends(require_ad
         if prop and prop.data:
             proprietario_nome = prop.data.get("nome_completo")
 
-    # Corretor responsável (default = usuário atual).
+    # Corretor responsável (default = usuário atual). A ficha é um documento
+    # jurídico de corretagem: o corretor precisa existir, estar ativo e ter
+    # nome + CRECI — senão o PDF assinado sairia sem identificação válida.
     corretor_id = body.corretor_id or current_user["id"]
+    if corretor_id != current_user["id"] and current_user.get("perfil") != "admin":
+        raise HTTPException(
+            status_code=403,
+            detail="Somente administradores podem emitir ficha em nome de outro corretor.",
+        )
     corretor = (
         supabase_admin.table("usuarios")
-        .select("nome_completo, creci")
+        .select("nome_completo, creci, ativo")
         .eq("id", corretor_id)
         .maybe_single()
         .execute()
     )
     corretor_data = corretor.data if corretor and corretor.data else {}
+    if not (corretor_data.get("nome_completo") or "").strip():
+        raise HTTPException(status_code=400, detail="Corretor responsável não encontrado.")
+    if not corretor_data.get("ativo", True):
+        raise HTTPException(status_code=400, detail="O corretor responsável está com a conta desativada.")
+    if not (corretor_data.get("creci") or "").strip():
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "O corretor responsável não tem CRECI cadastrado. "
+                "Preencha o CRECI no perfil do usuário antes de gerar a ficha."
+            ),
+        )
 
     valor = imovel.get("valor_venda") or imovel.get("valor_locacao")
     agora = datetime.now(timezone.utc)

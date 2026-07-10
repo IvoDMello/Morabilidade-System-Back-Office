@@ -138,6 +138,40 @@ def test_criar_nota_conteudo_trimado(client):
     assert inserted["conteudo"] == "Nota sem espaços extras"
 
 
+def test_criar_nota_sem_tipo_vira_nota(client):
+    """Compatibilidade: chamadas antigas sem tipo_contato gravam 'nota'."""
+    db = make_db_mock(MagicMock(data=[NOTA_DB]))
+    with patch("app.routers.clientes.supabase_admin", db):
+        client.post(
+            f"/clientes/{CLIENTE_ID}/notas",
+            json={"conteudo": "Sem tipo"},
+        )
+    inserted = db.insert.call_args.args[0]
+    assert inserted["tipo_contato"] == "nota"
+
+
+def test_criar_nota_com_tipo_contato(client):
+    nota = {**NOTA_DB, "tipo_contato": "whatsapp"}
+    db = make_db_mock(MagicMock(data=[nota]))
+    with patch("app.routers.clientes.supabase_admin", db):
+        res = client.post(
+            f"/clientes/{CLIENTE_ID}/notas",
+            json={"conteudo": "Mandei os imóveis no zap.", "tipo_contato": "WhatsApp"},
+        )
+    assert res.status_code == 201
+    inserted = db.insert.call_args.args[0]
+    assert inserted["tipo_contato"] == "whatsapp"  # normalizado p/ minúsculas
+
+
+def test_criar_nota_tipo_contato_invalido_422(client):
+    res = client.post(
+        f"/clientes/{CLIENTE_ID}/notas",
+        json={"conteudo": "x", "tipo_contato": "pombo-correio"},
+    )
+    assert res.status_code == 422
+    assert "tipo_contato" in res.json()["detail"]
+
+
 def test_criar_nota_exige_autenticacao(anon_client):
     res = anon_client.post(
         f"/clientes/{CLIENTE_ID}/notas",

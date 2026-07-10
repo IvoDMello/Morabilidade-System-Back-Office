@@ -78,6 +78,63 @@ def test_criar_ficha_imovel_inexistente(client):
     assert res.status_code == 404
 
 
+def test_criar_ficha_corretor_nao_emite_em_nome_de_outro(corretor_client):
+    """Perfil corretor só emite ficha em nome próprio; escolher outro corretor
+    é privilégio de admin."""
+    db = make_db_mock(MagicMock(data=IMOVEL))
+    body = dict(CRIAR_BODY, corretor_id="33333333-3333-3333-3333-333333333333")
+    with patch(ROUTER, db):
+        res = corretor_client.post("/fichas-visita", json=body)
+    assert res.status_code == 403
+
+
+def test_criar_ficha_admin_emite_em_nome_de_outro(client):
+    db = make_db_mock(
+        MagicMock(data=IMOVEL),
+        MagicMock(data=CORRETOR),
+        MagicMock(data=[FICHA_ROW]),
+    )
+    body = dict(CRIAR_BODY, corretor_id="33333333-3333-3333-3333-333333333333")
+    with patch(ROUTER, db):
+        res = client.post("/fichas-visita", json=body)
+    assert res.status_code == 201
+
+
+def test_criar_ficha_corretor_inexistente_400(client):
+    """Sem corretor válido não há documento: o PDF sairia sem nome/CRECI."""
+    db = make_db_mock(
+        MagicMock(data=IMOVEL),
+        MagicMock(data=None),  # corretor não encontrado
+    )
+    body = dict(CRIAR_BODY, corretor_id="33333333-3333-3333-3333-333333333333")
+    with patch(ROUTER, db):
+        res = client.post("/fichas-visita", json=body)
+    assert res.status_code == 400
+    assert "não encontrado" in res.json()["detail"].lower()
+
+
+def test_criar_ficha_corretor_sem_creci_400(client):
+    db = make_db_mock(
+        MagicMock(data=IMOVEL),
+        MagicMock(data={"nome_completo": "Sem Creci", "creci": None, "ativo": True}),
+    )
+    with patch(ROUTER, db):
+        res = client.post("/fichas-visita", json=CRIAR_BODY)
+    assert res.status_code == 400
+    assert "creci" in res.json()["detail"].lower()
+
+
+def test_criar_ficha_corretor_inativo_400(client):
+    db = make_db_mock(
+        MagicMock(data=IMOVEL),
+        MagicMock(data={"nome_completo": "Ex Corretor", "creci": "CRECI 1", "ativo": False}),
+    )
+    with patch(ROUTER, db):
+        res = client.post("/fichas-visita", json=CRIAR_BODY)
+    assert res.status_code == 400
+    assert "desativada" in res.json()["detail"].lower()
+
+
 def test_listar_fichas(client):
     db = make_db_mock(MagicMock(data=[FICHA_ROW]))
     with patch(ROUTER, db):

@@ -85,6 +85,8 @@ class TagSimples(BaseModel):
 
 class ClienteOut(ClienteCreate):
     id: str
+    # Optional para tolerar leitura antes da migration 047 rodar.
+    codigo: Optional[str] = None
     created_at: str
     updated_at: str
     tags: List[TagSimples] = []
@@ -92,6 +94,7 @@ class ClienteOut(ClienteCreate):
 
 class ClienteListOut(BaseModel):
     id: str
+    codigo: Optional[str] = None
     nome_completo: str
     email: Optional[str] = None
     telefone: Optional[str] = None

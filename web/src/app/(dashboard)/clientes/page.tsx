@@ -12,6 +12,7 @@ import type { Cliente } from "@/types";
 
 interface ClienteListItem {
   id: string;
+  codigo?: string;
   nome_completo: string;
   email?: string;
   telefone: string;
@@ -237,7 +238,7 @@ function ClientesPageInner() {
                 value={filtros.nome}
                 onChange={(e) => setFiltros((f) => ({ ...f, nome: e.target.value }))}
                 className={inputClass}
-                placeholder="Buscar por nome"
+                placeholder="Buscar por nome ou código (CLI-0001)"
               />
             </div>
             <div>
@@ -364,7 +365,14 @@ function ClientesPageInner() {
                   return (
                     <tr key={c.id} className="hover:bg-slate-50/60 transition">
                       <td className="px-4 py-3">
-                        <p className="font-medium text-slate-800">{c.nome_completo}</p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-medium text-slate-800">{c.nome_completo}</p>
+                          {c.codigo && (
+                            <span className="text-[10px] font-mono text-slate-400 bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5">
+                              {c.codigo}
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs text-slate-400 mt-0.5">{c.email || c.telefone}</p>
                         {c.email && c.telefone && <p className="sm:hidden text-xs text-slate-400">{c.telefone}</p>}
                         {c.tags && c.tags.length > 0 && (

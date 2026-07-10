@@ -237,7 +237,7 @@ def test_exportar_clientes_csv(client):
     # cabeçalho + 1 linha
     assert len(linhas) == 2
     # Delimitador ';' (Excel PT-BR friendly)
-    assert linhas[0].startswith("nome_completo;email;telefone")
+    assert linhas[0].startswith("codigo;nome_completo;email;telefone")
     assert "Maria Oliveira" in linhas[1]
 
 
