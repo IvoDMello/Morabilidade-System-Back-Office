@@ -89,10 +89,18 @@ export function CaptacaoCard({ card, overlay = false }: { card: Captacao; overla
             <Image src={capaUrl} alt="" fill sizes="280px" className="object-cover" />
           </div>
         )}
-        <p className="font-medium leading-snug">{card.endereco}</p>
+        <p className="font-medium leading-snug">
+          {card.endereco}
+          {card.unidade && <span className="text-muted-foreground"> · ap {card.unidade}</span>}
+        </p>
+        {card.bairro && <p className="text-xs text-muted-foreground">{card.bairro}</p>}
 
-        {card.valor_venda != null && (
-          <p className="mt-1 text-sm font-semibold text-primary">{formatBRL(card.valor_venda)}</p>
+        {(card.valor_venda != null || card.valor_aluguel != null) && (
+          <p className="mt-1 text-sm font-semibold text-primary">
+            {card.valor_venda != null && formatBRL(card.valor_venda)}
+            {card.valor_venda != null && card.valor_aluguel != null && " · "}
+            {card.valor_aluguel != null && `${formatBRL(card.valor_aluguel)}/mês`}
+          </p>
         )}
 
         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">

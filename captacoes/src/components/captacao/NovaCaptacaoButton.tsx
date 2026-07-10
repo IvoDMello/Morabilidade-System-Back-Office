@@ -48,20 +48,21 @@ export function NovaCaptacaoButton({ trigger }: { trigger?: ReactNode } = {}) {
     setPendente(null);
   }
 
-  /** Antes de criar: procura captações com o mesmo telefone ou anúncio. */
+  /** Antes de criar: procura captações com o mesmo telefone, anúncio ou endereço. */
   async function handleSubmit(data: CaptacaoInput) {
-    if (data.whatsapp || data.anuncio_url) {
-      const supabase = createClient();
-      const { data: rows, error } = await supabase.rpc("buscar_duplicadas", {
-        p_whatsapp: data.whatsapp ?? null,
-        p_anuncio_url: data.anuncio_url ?? null,
-      });
-      // Checagem é best effort: se a RPC falhar, não bloqueia o cadastro.
-      if (!error && rows && rows.length > 0) {
-        setDuplicadas(rows as Duplicada[]);
-        setPendente(data);
-        return false;
-      }
+    const supabase = createClient();
+    const { data: rows, error } = await supabase.rpc("buscar_duplicadas", {
+      p_whatsapp: data.whatsapp ?? null,
+      p_anuncio_url: data.anuncio_url ?? null,
+      p_endereco: data.endereco ?? null,
+    });
+    // Checagem é best effort: se a RPC falhar, avisa mas não bloqueia o cadastro.
+    if (error) {
+      toast.warning("Não foi possível checar duplicadas — confira o quadro manualmente.");
+    } else if (rows && rows.length > 0) {
+      setDuplicadas(rows as Duplicada[]);
+      setPendente(data);
+      return false;
     }
     return handleCreate(data);
   }

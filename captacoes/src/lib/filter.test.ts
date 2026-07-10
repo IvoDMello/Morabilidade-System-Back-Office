@@ -52,6 +52,14 @@ describe("filtrarCaptacoes", () => {
   it("sem correspondência retorna vazio", () => {
     expect(filtrarCaptacoes(lista, "inexistente")).toHaveLength(0);
   });
+  it("busca pela unidade (nº do apartamento)", () => {
+    const lst = [card({ endereco: "Rua M", unidade: "302" })];
+    expect(filtrarCaptacoes(lst, "302")).toHaveLength(1);
+  });
+  it("busca pelo bairro", () => {
+    const lst = [card({ endereco: "Rua M", bairro: "Leblon" })];
+    expect(filtrarCaptacoes(lst, "leblon")).toHaveLength(1);
+  });
   it("ignora campos nulos sem quebrar", () => {
     expect(() => filtrarCaptacoes([card({ endereco: "Z" })], "z")).not.toThrow();
   });

@@ -177,7 +177,10 @@ export function CadastrarImovel({ captacao }: { captacao: Captacao }) {
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Da captação (revise)
             </p>
-            <div className="grid gap-3 sm:grid-cols-5">
+            <div className="grid gap-3 sm:grid-cols-6">
+              <Campo label="Andar">
+                <Input inputMode="numeric" value={form.andar} onChange={set("andar")} />
+              </Campo>
               <Campo label="Quartos">
                 <Input inputMode="numeric" value={form.dormitorios} onChange={set("dormitorios")} />
               </Campo>
@@ -194,9 +197,12 @@ export function CadastrarImovel({ captacao }: { captacao: Captacao }) {
                 <Input inputMode="decimal" value={form.area_util} onChange={set("area_util")} />
               </Campo>
             </div>
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-4">
               <Campo label="Valor de venda (R$)">
                 <Input inputMode="decimal" value={form.valor_venda} onChange={set("valor_venda")} />
+              </Campo>
+              <Campo label="Valor de locação (R$)">
+                <Input inputMode="decimal" value={form.valor_locacao} onChange={set("valor_locacao")} />
               </Campo>
               <Campo label="Condomínio (R$)">
                 <Input inputMode="decimal" value={form.condominio_mensal} onChange={set("condominio_mensal")} />
@@ -205,6 +211,9 @@ export function CadastrarImovel({ captacao }: { captacao: Captacao }) {
                 <Input inputMode="decimal" value={form.iptu_mensal} onChange={set("iptu_mensal")} />
               </Campo>
             </div>
+            <Campo label="Observações internas (não aparecem no site)">
+              <Input value={form.observacoes_internas} onChange={set("observacoes_internas")} />
+            </Campo>
           </section>
 
           {/* Proprietário */}

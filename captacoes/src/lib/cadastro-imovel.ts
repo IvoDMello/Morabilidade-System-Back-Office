@@ -18,14 +18,17 @@ export type CadastroForm = {
   logradouro: string;
   numero: string;
   complemento: string;
+  andar: string;
   dormitorios: string;
   suites: string;
   banheiros: string;
   vagas_garagem: string;
   area_util: string;
   valor_venda: string;
+  valor_locacao: string;
   condominio_mensal: string;
   iptu_mensal: string;
+  observacoes_internas: string;
   prop_nome: string;
   prop_whatsapp: string;
 };
@@ -40,25 +43,35 @@ export const strToNum = (s: string): number | null => {
   return Number.isFinite(n) ? n : null;
 };
 
+/** Tipo de negócio inferido dos valores informados na captação. */
+export function tipoNegocioInicial(c: Captacao): string {
+  if (c.valor_aluguel != null && c.valor_venda != null) return "ambos";
+  if (c.valor_aluguel != null) return "locacao";
+  return "venda";
+}
+
 /** Estado inicial do formulário a partir da captação (defaults seguros, editáveis). */
 export function formInicial(c: Captacao): CadastroForm {
   return {
-    tipo_negocio: "venda",
+    tipo_negocio: tipoNegocioInicial(c),
     tipo_imovel: "",
     condicao: "usado",
     cidade: "Rio de Janeiro",
-    bairro: "",
+    bairro: c.bairro ?? "",
     logradouro: c.endereco ?? "",
     numero: "",
-    complemento: "",
+    complemento: c.unidade ? `Apto ${c.unidade}` : "",
+    andar: numToStr(c.andar),
     dormitorios: numToStr(c.quartos),
     suites: numToStr(c.suites),
     banheiros: numToStr(c.banheiros),
     vagas_garagem: numToStr(c.vagas),
     area_util: numToStr(c.metragem),
     valor_venda: numToStr(c.valor_venda),
+    valor_locacao: numToStr(c.valor_aluguel),
     condominio_mensal: numToStr(c.valor_condominio),
     iptu_mensal: numToStr(c.valor_iptu),
+    observacoes_internas: c.tipo_portaria ? `Portaria: ${c.tipo_portaria}` : "",
     prop_nome: c.proprietario_nome ?? "",
     prop_whatsapp: c.whatsapp ?? "",
   };
@@ -98,14 +111,17 @@ export function montarRequest(form: CadastroForm) {
       logradouro: form.logradouro.trim(),
       numero: form.numero.trim() || null,
       complemento: form.complemento.trim() || null,
+      andar: strToNum(form.andar),
       dormitorios: strToNum(form.dormitorios),
       suites: strToNum(form.suites),
       banheiros: strToNum(form.banheiros),
       vagas_garagem: strToNum(form.vagas_garagem),
       area_util: strToNum(form.area_util),
       valor_venda: strToNum(form.valor_venda),
+      valor_locacao: strToNum(form.valor_locacao),
       condominio_mensal: strToNum(form.condominio_mensal),
       iptu_mensal: strToNum(form.iptu_mensal),
+      observacoes_internas: form.observacoes_internas.trim() || null,
     },
   };
 }

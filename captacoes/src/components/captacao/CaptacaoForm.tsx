@@ -50,10 +50,27 @@ export function CaptacaoForm({
 
   return (
     <form onSubmit={handleSubmit(submeter)} className="space-y-4">
-      <div className="space-y-1.5">
-        <Label htmlFor="endereco">Endereço *</Label>
-        <Input id="endereco" {...register("endereco")} />
-        {errors.endereco && <p className="text-xs text-destructive">{errors.endereco.message}</p>}
+      <div className="grid grid-cols-[1fr_120px] gap-3">
+        <div className="space-y-1.5">
+          <Label htmlFor="endereco">Endereço *</Label>
+          <Input id="endereco" {...register("endereco")} />
+          {errors.endereco && <p className="text-xs text-destructive">{errors.endereco.message}</p>}
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="unidade">Apto / unidade</Label>
+          <Input id="unidade" placeholder="302" {...register("unidade")} />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-[1fr_120px] gap-3">
+        <div className="space-y-1.5">
+          <Label htmlFor="bairro">Bairro</Label>
+          <Input id="bairro" {...register("bairro")} />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="andar">Andar</Label>
+          <Input id="andar" type="number" min={0} {...register("andar")} />
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -108,10 +125,14 @@ export function CaptacaoForm({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="space-y-1.5">
           <Label htmlFor="valor_venda">Valor de venda (R$)</Label>
           <Input id="valor_venda" inputMode="decimal" placeholder="0,00" {...register("valor_venda")} />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="valor_aluguel">Aluguel pedido (R$)</Label>
+          <Input id="valor_aluguel" inputMode="decimal" placeholder="0,00" {...register("valor_aluguel")} />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="valor_condominio">Condomínio (R$)</Label>

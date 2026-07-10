@@ -63,7 +63,9 @@ export default async function CaptacaoPage({ params }: { params: Promise<{ id: s
         </span>
         <h1 className="mt-3 font-serif text-[25px] font-semibold leading-[1.18] tracking-[-0.01em] text-[#2e302a]">
           {c.endereco}
+          {c.unidade && <span className="text-[#7a7d70]"> · ap {c.unidade}</span>}
         </h1>
+        {c.bairro && <p className="mt-1 text-sm text-[#7a7d70]">{c.bairro}</p>}
         {(c.proprietario_nome || c.whatsapp || c.anuncio_url) && (
           <div className="mt-3 flex flex-wrap items-center gap-2">
             {c.whatsapp && whatsappLink(c.whatsapp) ? (
@@ -101,11 +103,15 @@ export default async function CaptacaoPage({ params }: { params: Promise<{ id: s
 
       <div className="space-y-[14px] px-4 py-[18px]">
 
-      {(c.valor_venda != null || c.valor_condominio != null || c.valor_iptu != null) && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      {(c.valor_venda != null || c.valor_aluguel != null || c.valor_condominio != null || c.valor_iptu != null) && (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div className="rounded-lg border bg-card p-3">
             <p className="text-xs text-muted-foreground">Venda</p>
             <p className="text-base font-semibold text-primary">{formatBRL(c.valor_venda)}</p>
+          </div>
+          <div className="rounded-lg border bg-card p-3">
+            <p className="text-xs text-muted-foreground">Aluguel</p>
+            <p className="text-base font-semibold text-primary">{formatBRL(c.valor_aluguel)}</p>
           </div>
           <div className="rounded-lg border bg-card p-3">
             <p className="text-xs text-muted-foreground">Condomínio</p>

@@ -71,6 +71,30 @@ describe("formInicial", () => {
     expect(f.prop_whatsapp).toBe("21988886666");
   });
 
+  it("bairro, andar e aluguel pré-preenchem os campos do imóvel", () => {
+    const f = formInicial(captacao({ endereco: "Rua X", bairro: "Leblon", andar: 4, valor_aluguel: 5000 }));
+    expect(f.bairro).toBe("Leblon");
+    expect(f.andar).toBe("4");
+    expect(f.valor_locacao).toBe("5000");
+  });
+
+  it("tipo de negócio segue os valores informados", () => {
+    expect(formInicial(captacao({ endereco: "X", valor_venda: 1 })).tipo_negocio).toBe("venda");
+    expect(formInicial(captacao({ endereco: "X", valor_aluguel: 1 })).tipo_negocio).toBe("locacao");
+    expect(formInicial(captacao({ endereco: "X", valor_venda: 1, valor_aluguel: 1 })).tipo_negocio).toBe("ambos");
+    expect(formInicial(captacao({ endereco: "X" })).tipo_negocio).toBe("venda");
+  });
+
+  it("tipo de portaria vira observação interna", () => {
+    expect(formInicial(captacao({ endereco: "X", tipo_portaria: "24h" })).observacoes_internas).toBe("Portaria: 24h");
+    expect(formInicial(captacao({ endereco: "X" })).observacoes_internas).toBe("");
+  });
+
+  it("unidade pré-preenche o complemento", () => {
+    expect(formInicial(captacao({ endereco: "Rua X", unidade: "302" })).complemento).toBe("Apto 302");
+    expect(formInicial(captacao({ endereco: "Rua X", unidade: null })).complemento).toBe("");
+  });
+
   it("lida com captação sem dados (campos nulos)", () => {
     const f = formInicial(captacao({ endereco: "" }));
     expect(f.logradouro).toBe("");
@@ -157,6 +181,19 @@ describe("montarRequest", () => {
     expect(imovel.numero).toBeNull();
     expect(imovel.complemento).toBeNull();
     expect(imovel.iptu_mensal).toBeNull();
+  });
+
+  it("envia andar, valor de locação e observações internas", () => {
+    const f = { ...completo(), andar: "4", valor_locacao: "5000", observacoes_internas: "Portaria: 24h" };
+    const { imovel } = montarRequest(f);
+    expect(imovel.andar).toBe(4);
+    expect(imovel.valor_locacao).toBe(5000);
+    expect(imovel.observacoes_internas).toBe("Portaria: 24h");
+  });
+
+  it("observações internas vazias vão como null", () => {
+    const { imovel } = montarRequest({ ...completo(), observacoes_internas: "  " });
+    expect(imovel.observacoes_internas).toBeNull();
   });
 
   it("faz trim de texto antes de enviar", () => {

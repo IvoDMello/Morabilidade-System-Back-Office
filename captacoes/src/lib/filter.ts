@@ -6,7 +6,7 @@ export const DIAS_PARADO = 3;
 
 /**
  * Filtra captações por um termo de busca (case-insensitive) contra
- * endereço, proprietário, WhatsApp, tipo de portaria e observações.
+ * endereço, unidade, bairro, proprietário, WhatsApp, tipo de portaria e observações.
  * Termos numéricos também casam contra os dígitos do WhatsApp (ex.: os
  * 4 últimos do telefone), ignorando máscara/formatação.
  * Termo vazio retorna a lista inteira.
@@ -16,7 +16,7 @@ export function filtrarCaptacoes(cards: Captacao[], termo: string): Captacao[] {
   if (!t) return cards;
   const tDigits = t.replace(/\D/g, "");
   return cards.filter((c) => {
-    const textual = [c.endereco, c.proprietario_nome, c.whatsapp, c.tipo_portaria, c.observacoes]
+    const textual = [c.endereco, c.unidade, c.bairro, c.proprietario_nome, c.whatsapp, c.tipo_portaria, c.observacoes]
       .filter(Boolean)
       .some((v) => v!.toLowerCase().includes(t));
     if (textual) return true;

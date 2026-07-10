@@ -26,6 +26,9 @@ export function EditCaptacao({ captacao }: { captacao: Captacao }) {
     <CaptacaoForm
       defaultValues={{
         endereco: captacao.endereco,
+        unidade: captacao.unidade,
+        bairro: captacao.bairro,
+        andar: captacao.andar,
         quartos: captacao.quartos,
         suites: captacao.suites,
         banheiros: captacao.banheiros,
@@ -36,6 +39,7 @@ export function EditCaptacao({ captacao }: { captacao: Captacao }) {
         whatsapp: captacao.whatsapp,
         anuncio_url: captacao.anuncio_url,
         valor_venda: captacao.valor_venda,
+        valor_aluguel: captacao.valor_aluguel,
         valor_condominio: captacao.valor_condominio,
         valor_iptu: captacao.valor_iptu,
         observacoes: captacao.observacoes,

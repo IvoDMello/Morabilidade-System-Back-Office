@@ -30,6 +30,9 @@ const urlOpcional = z.preprocess(
 
 export const captacaoSchema = z.object({
   endereco: z.string().min(1, "Endereço é obrigatório"),
+  unidade: z.string().max(60).nullable().optional(),
+  bairro: z.string().max(120).nullable().optional(),
+  andar: numeroOpcional,
   quartos: numeroOpcional,
   suites: numeroOpcional,
   banheiros: numeroOpcional,
@@ -44,6 +47,7 @@ export const captacaoSchema = z.object({
     .refine((v) => !v || v.replace(/\D/g, "").length >= 10, "WhatsApp inválido (inclua DDD)"),
   anuncio_url: urlOpcional,
   valor_venda: moedaOpcional,
+  valor_aluguel: moedaOpcional,
   valor_condominio: moedaOpcional,
   valor_iptu: moedaOpcional,
   observacoes: z.string().nullable().optional(),

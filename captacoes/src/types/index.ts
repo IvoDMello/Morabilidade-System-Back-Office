@@ -73,6 +73,9 @@ export interface Captacao {
   status: Status;
   ordem: number;
   endereco: string;
+  unidade: string | null;
+  bairro: string | null;
+  andar: number | null;
   quartos: number | null;
   suites: number | null;
   banheiros: number | null;
@@ -81,11 +84,11 @@ export interface Captacao {
   valor_condominio: number | null;
   valor_iptu: number | null;
   valor_venda: number | null;
+  valor_aluguel: number | null;
   tipo_portaria: string | null;
   proprietario_nome: string | null;
   whatsapp: string | null;
   anuncio_url: string | null;
-  contato_proprietario: string | null;
   observacoes: string | null;
   pendencias: string | null;
   decisao: Decisao | null;
