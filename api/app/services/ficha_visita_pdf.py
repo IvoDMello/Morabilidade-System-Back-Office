@@ -122,9 +122,12 @@ def gerar_ficha_visita_pdf(ficha: dict, assinada: bool = False) -> bytes:
 
     # ── 3. Corretor responsável ──────────────────────────────────────────────
     y = secao(c, largura, y, "3. Corretor responsável")
-    campo(c, MARGEM, y, 110 * mm, "Nome do corretor", ficha.get("corretor_nome") or "—")
-    campo(c, MARGEM + 116 * mm, y, util - 116 * mm, "CRECI nº",
-          ficha.get("corretor_creci") or settings.empresa_creci_corretor)
+    if ficha.get("ocultar_creci"):
+        campo(c, MARGEM, y, util, "Nome do corretor", ficha.get("corretor_nome") or "—")
+    else:
+        campo(c, MARGEM, y, 110 * mm, "Nome do corretor", ficha.get("corretor_nome") or "—")
+        campo(c, MARGEM + 116 * mm, y, util - 116 * mm, "CRECI nº",
+              ficha.get("corretor_creci") or settings.empresa_creci_corretor)
     y -= 16 * mm
 
     # ── 4. Declaração ────────────────────────────────────────────────────────
@@ -157,7 +160,9 @@ def gerar_ficha_visita_pdf(ficha: dict, assinada: bool = False) -> bytes:
     c.setFont("Helvetica", 8)
     c.drawCentredString(MARGEM + col_w / 2, base_assinatura - 4 * mm, "VISITANTE — Assinatura e CPF")
     c.drawCentredString(MARGEM + col_w + 10 * mm + col_w / 2, base_assinatura - 4 * mm,
-                        "MORABILIDADE / CORRETOR — Assinatura e CRECI")
+                        "MORABILIDADE / CORRETOR — Assinatura"
+                        if ficha.get("ocultar_creci")
+                        else "MORABILIDADE / CORRETOR — Assinatura e CRECI")
 
     # ── Bloco de trilha de auditoria (só assinada) ───────────────────────────
     if assinada:

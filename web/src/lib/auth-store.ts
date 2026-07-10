@@ -9,6 +9,7 @@ interface User {
   foto_url?: string;
   telefone?: string;
   creci?: string;
+  ocultar_creci_ficha?: boolean;
   ativo?: boolean;
 }
 

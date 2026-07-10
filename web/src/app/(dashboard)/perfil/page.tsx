@@ -28,6 +28,7 @@ export default function PerfilPage() {
   const [nome, setNome] = useState(user?.nome_completo ?? "");
   const [telefone, setTelefone] = useState(user?.telefone ?? "");
   const [creci, setCreci] = useState(user?.creci ?? "");
+  const [ocultarCreci, setOcultarCreci] = useState(user?.ocultar_creci_ficha ?? false);
   const [salvandoPerfil, setSalvandoPerfil] = useState(false);
 
   const [senhaAtual, setSenhaAtual] = useState("");
@@ -40,7 +41,7 @@ export default function PerfilPage() {
     if (!nome.trim()) { toast.error("Nome é obrigatório."); return; }
     setSalvandoPerfil(true);
     try {
-      const res = await api.put("/usuarios/me", { nome_completo: nome.trim(), telefone: telefone || null, creci: creci.trim() || null });
+      const res = await api.put("/usuarios/me", { nome_completo: nome.trim(), telefone: telefone || null, creci: creci.trim() || null, ocultar_creci_ficha: ocultarCreci });
       setUser(res.data);
       toast.success("Perfil atualizado com sucesso!");
     } catch {
@@ -133,6 +134,15 @@ export default function PerfilPage() {
                 placeholder="CRECI-RJ nº 00000"
               />
               <p className="mt-1 text-[11px] text-slate-400">Usado para preencher a ficha de visita automaticamente.</p>
+              <label className="mt-2 flex items-center gap-2 text-xs text-slate-600 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={ocultarCreci}
+                  onChange={(e) => setOcultarCreci(e.target.checked)}
+                  className="h-3.5 w-3.5 rounded border-slate-300"
+                />
+                Não exibir meu CRECI na ficha de visita
+              </label>
             </div>
           </div>
           <div className="flex justify-end pt-2">

@@ -111,7 +111,7 @@ def criar_ficha(body: FichaVisitaCreate, current_user: dict = Depends(require_ad
         )
     corretor = (
         supabase_admin.table("usuarios")
-        .select("nome_completo, creci, ativo")
+        .select("nome_completo, creci, ativo, ocultar_creci_ficha")
         .eq("id", corretor_id)
         .maybe_single()
         .execute()
@@ -121,7 +121,9 @@ def criar_ficha(body: FichaVisitaCreate, current_user: dict = Depends(require_ad
         raise HTTPException(status_code=400, detail="Corretor responsável não encontrado.")
     if not corretor_data.get("ativo", True):
         raise HTTPException(status_code=400, detail="O corretor responsável está com a conta desativada.")
-    if not (corretor_data.get("creci") or "").strip():
+    # Com a flag "ocultar CRECI" ativa o número não é exibido nem exigido.
+    ocultar_creci = bool(corretor_data.get("ocultar_creci_ficha"))
+    if not ocultar_creci and not (corretor_data.get("creci") or "").strip():
         raise HTTPException(
             status_code=400,
             detail=(
@@ -150,7 +152,8 @@ def criar_ficha(body: FichaVisitaCreate, current_user: dict = Depends(require_ad
         "imovel_valor": float(valor) if valor is not None else None,
         "proprietario_nome": proprietario_nome,
         "corretor_nome": corretor_data.get("nome_completo"),
-        "corretor_creci": corretor_data.get("creci"),
+        "corretor_creci": None if ocultar_creci else corretor_data.get("creci"),
+        "ocultar_creci": ocultar_creci,
         "clausula_texto": montar_clausula(body.prazo_meses),
         "prazo_meses": body.prazo_meses,
         "status": "pendente",
