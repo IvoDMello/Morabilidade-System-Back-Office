@@ -40,6 +40,8 @@ export interface ImovelCard {
   condominio_mensal?: number;
   iptu_mensal?: number;
   foto_capa?: string;
+  /** Até 6 primeiras fotos — mini-carrossel no card (API antiga pode não enviar). */
+  fotos?: string[];
   tags: Tag[];
   created_at: string;
 }

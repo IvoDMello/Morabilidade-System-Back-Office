@@ -1,9 +1,9 @@
 import Link from "next/link";
-import Image from "next/image";
 import { BedDouble, Ruler, MapPin } from "lucide-react";
 import type { ImovelCard as ImovelCardType } from "@/types";
 import { formatarMoeda, labelTipoImovel, labelTipoNegocio } from "@/lib/utils";
 import { FavoritoButton } from "./FavoritoButton";
+import { CardFotoCarousel } from "./CardFotoCarousel";
 
 export function ImovelCard({ imovel }: { imovel: ImovelCardType }) {
   function preco(): string | null {
@@ -34,11 +34,9 @@ export function ImovelCard({ imovel }: { imovel: ImovelCardType }) {
       {/* Foto — formato vertical (padrão Instagram) */}
       <div className="relative aspect-[3/4] bg-slate-100 overflow-hidden">
         {imovel.foto_capa ? (
-          <Image
-            src={imovel.foto_capa}
+          <CardFotoCarousel
+            fotos={imovel.fotos?.length ? imovel.fotos : [imovel.foto_capa]}
             alt={`${labelTipoImovel(imovel.tipo_imovel)} em ${imovel.bairro}, ${imovel.cidade}`}
-            fill
-            className="object-cover object-center group-hover:scale-105 transition-transform duration-500"
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           />
         ) : (
@@ -49,7 +47,7 @@ export function ImovelCard({ imovel }: { imovel: ImovelCardType }) {
         )}
 
         {/* Overlay gradient */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
         {/* Badge negócio (substituído pela tag "Vendido" quando aplicada) */}
         {tagVendido ? (

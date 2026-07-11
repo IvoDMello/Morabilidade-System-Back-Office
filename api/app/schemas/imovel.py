@@ -133,6 +133,7 @@ class ImovelListOut(BaseModel):
     condominio_mensal: Optional[Decimal] = None
     iptu_mensal: Optional[Decimal] = None
     foto_capa: Optional[str] = None
+    fotos: List[str] = []  # até 6 primeiras fotos, para o carrossel do card no site
     tags: List[dict] = []
     destaque_ordem: Optional[int] = None
     proprietario_id: Optional[str] = None

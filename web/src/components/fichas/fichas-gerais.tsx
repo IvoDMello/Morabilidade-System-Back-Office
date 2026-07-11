@@ -225,7 +225,7 @@ function LinhaFicha({ f, compacta = false }: { f: FichaGeral; compacta?: boolean
   }
 
   function whatsapp() {
-    const msg = `Olá, ${f.visitante_nome}! Segue a ficha de visita da Morabilidade para você assinar: ${linkAssinatura(f.token)}`;
+    const msg = `Olá, ${f.visitante_nome}!\n\nPara adiantarmos os preparativos da sua visita, estou encaminhando nossa ficha de visita.\n\nÉ necessário apenas preencher o campo do CPF. A assinatura pode ser feita diretamente na tela do celular, com o próprio dedo, podendo ser inclusive uma rubrica.\n\n${linkAssinatura(f.token)}\n\nFico à disposição. Até breve!`;
     let digits = (f.visitante_telefone ?? "").replace(/\D/g, "");
     if (digits && digits.length <= 11) digits = "55" + digits;
     window.open(digits ? `https://wa.me/${digits}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");

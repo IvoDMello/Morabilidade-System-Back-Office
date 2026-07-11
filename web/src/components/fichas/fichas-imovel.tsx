@@ -209,7 +209,7 @@ function ListaFichas({
 
   function enviarWhatsApp(ficha: Ficha) {
     const link = linkAssinatura(ficha.token);
-    const msg = `Olá, ${ficha.visitante_nome}! Segue a ficha de visita da Morabilidade para você assinar: ${link}`;
+    const msg = `Olá, ${ficha.visitante_nome}!\n\nPara adiantarmos os preparativos da sua visita, estou encaminhando nossa ficha de visita.\n\nÉ necessário apenas preencher o campo do CPF. A assinatura pode ser feita diretamente na tela do celular, com o próprio dedo, podendo ser inclusive uma rubrica.\n\n${link}\n\nFico à disposição. Até breve!`;
     let digits = (ficha.visitante_telefone ?? "").replace(/\D/g, "");
     if (digits && digits.length <= 11) digits = "55" + digits;
     const url = digits

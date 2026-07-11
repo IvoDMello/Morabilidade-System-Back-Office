@@ -1,8 +1,8 @@
 import Link from "next/link";
-import Image from "next/image";
 import { MapPin, BedDouble, Ruler } from "lucide-react";
 import type { ImovelCard } from "@/types";
 import { formatarMoeda, labelTipoImovel, labelTipoNegocio } from "@/lib/utils";
+import { CardFotoCarousel } from "@/components/imoveis/CardFotoCarousel";
 
 export function DestCard({ imovel }: { imovel: ImovelCard }) {
   const isVenda = imovel.tipo_negocio === "venda" || imovel.tipo_negocio === "ambos";
@@ -41,11 +41,9 @@ export function DestCard({ imovel }: { imovel: ImovelCard }) {
         style={{ paddingTop: "65%", backgroundColor: "#e0ddd4" }}
       >
         {imovel.foto_capa ? (
-          <Image
-            src={imovel.foto_capa}
+          <CardFotoCarousel
+            fotos={imovel.fotos?.length ? imovel.fotos : [imovel.foto_capa]}
             alt={`${labelTipoImovel(imovel.tipo_imovel)} em ${imovel.bairro}`}
-            fill
-            className="object-cover object-center group-hover:scale-105 transition-transform duration-500"
             sizes="(max-width: 640px) 75vw, 320px"
           />
         ) : (
