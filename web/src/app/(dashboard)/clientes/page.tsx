@@ -171,17 +171,17 @@ function ClientesPageInner() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Clientes</h1>
           <p className="text-slate-500 text-sm">
             {loading ? "Carregando..." : `${total} cliente${total !== 1 ? "s" : ""} cadastrado${total !== 1 ? "s" : ""}`}
           </p>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2">
           <button
             onClick={() => setFiltrosAbertos((v) => !v)}
-            className={`flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg border transition ${
+            className={`flex flex-1 sm:flex-none items-center justify-center gap-1.5 px-3 py-2.5 sm:py-2 text-sm rounded-lg border transition ${
               filtrosAbertos || temFiltrosAtivos
                 ? "border-[#585a4f]/40 text-[#585a4f] bg-[#585a4f]/5"
                 : "bg-white border-slate-200 text-slate-600 hover:border-slate-300"
@@ -219,7 +219,7 @@ function ClientesPageInner() {
               </Link>
               <Link
                 href="/clientes/novo"
-                className="px-4 py-2 text-white text-sm font-medium rounded-lg transition hover:opacity-90"
+                className="flex flex-1 sm:flex-none items-center justify-center px-4 py-2.5 sm:py-2 text-white text-sm font-medium rounded-lg transition hover:opacity-90 whitespace-nowrap"
                 style={{ backgroundColor: "#585a4f" }}
               >
                 + Novo cliente
@@ -288,7 +288,19 @@ function ClientesPageInner() {
 
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
         {loading ? (
-          <div className="overflow-x-auto animate-pulse">
+          <>
+          <div className="sm:hidden divide-y divide-slate-100 animate-pulse">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="px-4 py-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="h-4 bg-slate-200 rounded w-36" />
+                  <div className="h-5 bg-slate-200 rounded-full w-16" />
+                </div>
+                <div className="h-3 bg-slate-100 rounded w-28 mt-2" />
+              </div>
+            ))}
+          </div>
+          <div className="hidden sm:block overflow-x-auto animate-pulse">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50">
@@ -330,6 +342,7 @@ function ClientesPageInner() {
               </tbody>
             </table>
           </div>
+          </>
         ) : clientes.length === 0 ? (
           <div className="p-16 text-center">
             <Users className="w-10 h-10 text-slate-200 mx-auto mb-3" />
@@ -347,7 +360,72 @@ function ClientesPageInner() {
             )}
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          {/* Mobile: lista em cards (a tabela vira layout a partir de sm) */}
+          <ul className="sm:hidden divide-y divide-slate-100">
+            {clientes.map((c) => {
+              const disp = c.status ? STATUS_LABEL[c.status] : null;
+              return (
+                <li key={c.id}>
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => router.push(`/clientes/${c.id}`)}
+                    onKeyDown={(e) => { if (e.key === "Enter") router.push(`/clientes/${c.id}`); }}
+                    className="w-full px-4 py-3.5 flex items-start gap-3 active:bg-slate-50 transition cursor-pointer"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <p className="font-medium text-slate-800 truncate">{c.nome_completo}</p>
+                        {disp && (
+                          <span className={`inline-flex flex-shrink-0 items-center px-2 py-0.5 rounded-full text-[11px] font-medium ring-1 ${disp.class}`}>
+                            {disp.label}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-400 mt-1 truncate">
+                        {c.codigo && <span className="font-mono text-slate-400">{c.codigo} · </span>}
+                        {c.telefone || c.email || "—"}
+                        {c.tipo_cliente && (
+                          <span> · {TIPO_CLIENTE_LABEL[c.tipo_cliente] ?? c.tipo_cliente}</span>
+                        )}
+                      </p>
+                      {c.tags && c.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1.5">
+                          {c.tags.map((t) => (
+                            <span
+                              key={t.id}
+                              className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium text-white"
+                              style={{ backgroundColor: t.cor ?? "#94a3b8" }}
+                            >
+                              {t.nome}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-0.5 -mr-1.5">
+                      {isAdmin && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeletando({ id: c.id, nome: c.nome_completo });
+                          }}
+                          className="p-2.5 text-slate-300 active:text-red-600 active:bg-red-50 rounded-md transition"
+                          title="Excluir"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                      <ChevronRight className="w-4 h-4 text-slate-300 mt-2.5" />
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50">
@@ -452,18 +530,24 @@ function ClientesPageInner() {
               </tbody>
             </table>
           </div>
+          </>
         )}
 
         {!loading && total > PAGE_SIZE && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100 bg-slate-50">
             <p className="text-xs text-slate-500">
-              Mostrando {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)} de {total}
+              <span className="hidden sm:inline">
+                Mostrando {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)} de {total}
+              </span>
+              <span className="sm:hidden">
+                Página {page} de {totalPages}
+              </span>
             </p>
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="p-1.5 rounded-md text-slate-500 hover:bg-slate-200 disabled:opacity-30 transition"
+                className="p-2.5 sm:p-1.5 rounded-md text-slate-500 hover:bg-slate-200 disabled:opacity-30 transition"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -473,7 +557,7 @@ function ClientesPageInner() {
                   <button
                     key={pg}
                     onClick={() => setPage(pg)}
-                    className="w-7 h-7 text-xs rounded-md transition font-medium text-slate-600 hover:bg-slate-200"
+                    className="hidden sm:block w-7 h-7 text-xs rounded-md transition font-medium text-slate-600 hover:bg-slate-200"
                     style={pg === page ? { backgroundColor: "#585a4f", color: "#fff" } : undefined}
                   >
                     {pg}
@@ -483,7 +567,7 @@ function ClientesPageInner() {
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className="p-1.5 rounded-md text-slate-500 hover:bg-slate-200 disabled:opacity-30 transition"
+                className="p-2.5 sm:p-1.5 rounded-md text-slate-500 hover:bg-slate-200 disabled:opacity-30 transition"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>

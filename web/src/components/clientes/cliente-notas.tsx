@@ -105,8 +105,8 @@ export function ClienteNotas({ clienteId }: { clienteId: string }) {
       {/* Formulário de novo registro */}
       <form onSubmit={handleSubmit} className="mb-5">
         <div className="flex flex-col gap-2">
-          {/* Canal do contato */}
-          <div className="flex flex-wrap gap-1.5">
+          {/* Canal do contato — fita rolável no mobile, wrap no desktop */}
+          <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 sm:pb-0 sm:flex-wrap sm:overflow-visible [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {ORDEM_TIPOS.map((t) => {
               const cfg = TIPOS[t];
               const Icone = cfg.icon;
@@ -116,14 +116,14 @@ export function ClienteNotas({ clienteId }: { clienteId: string }) {
                   key={t}
                   type="button"
                   onClick={() => setTipo(t)}
-                  className={`flex items-center gap-1 px-2.5 py-1 text-xs rounded-full border transition ${
+                  className={`flex flex-shrink-0 items-center gap-1.5 px-3 py-1.5 sm:px-2.5 sm:py-1 text-xs rounded-full border transition ${
                     ativo
                       ? "text-white border-transparent"
                       : "bg-white text-slate-500 border-slate-200 hover:border-slate-300"
                   }`}
                   style={ativo ? { backgroundColor: cfg.cor } : undefined}
                 >
-                  <Icone className="w-3 h-3" />
+                  <Icone className="w-3.5 h-3.5 sm:w-3 sm:h-3" />
                   {cfg.label}
                 </button>
               );
@@ -136,16 +136,17 @@ export function ClienteNotas({ clienteId }: { clienteId: string }) {
             onKeyDown={(e) => {
               if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) handleSubmit(e);
             }}
-            placeholder="Registre uma interação, follow-up ou observação... (Ctrl+Enter para salvar)"
+            placeholder="Registre uma interação, follow-up ou observação..."
             rows={3}
             className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-lg bg-white text-slate-900 resize-none
               focus:outline-none focus:ring-2 focus:ring-[#585a4f]/30 focus:border-[#585a4f] placeholder:text-slate-400"
           />
-          <div className="flex justify-end">
+          <div className="flex items-center justify-between gap-3 sm:justify-end">
+            <p className="hidden sm:block text-[11px] text-slate-300 mr-auto">Ctrl+Enter para salvar</p>
             <button
               type="submit"
               disabled={salvando || !texto.trim()}
-              className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white rounded-lg transition hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex w-full sm:w-auto items-center justify-center gap-1.5 px-4 py-2.5 sm:py-2 text-sm font-medium text-white rounded-lg transition hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
               style={{ backgroundColor: "#585a4f" }}
             >
               {salvando ? (
@@ -161,12 +162,12 @@ export function ClienteNotas({ clienteId }: { clienteId: string }) {
 
       {/* Filtro por canal */}
       {notas.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1.5 mb-4">
-          <span className="text-xs text-slate-400 mr-1">Mostrar:</span>
+        <div className="flex items-center gap-1.5 mb-4 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 sm:pb-0 sm:flex-wrap sm:overflow-visible [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <span className="text-xs text-slate-400 mr-1 flex-shrink-0">Mostrar:</span>
           <button
             type="button"
             onClick={() => setFiltro("")}
-            className={`px-2 py-0.5 text-xs rounded-full border transition ${
+            className={`flex-shrink-0 whitespace-nowrap px-2.5 py-1 sm:px-2 sm:py-0.5 text-xs rounded-full border transition ${
               filtro === ""
                 ? "bg-slate-700 text-white border-transparent"
                 : "bg-white text-slate-500 border-slate-200 hover:border-slate-300"
@@ -182,7 +183,7 @@ export function ClienteNotas({ clienteId }: { clienteId: string }) {
                 key={t}
                 type="button"
                 onClick={() => setFiltro(filtro === t ? "" : t)}
-                className={`px-2 py-0.5 text-xs rounded-full border transition ${
+                className={`flex-shrink-0 whitespace-nowrap px-2.5 py-1 sm:px-2 sm:py-0.5 text-xs rounded-full border transition ${
                   filtro === t
                     ? "text-white border-transparent"
                     : "bg-white text-slate-500 border-slate-200 hover:border-slate-300"
@@ -255,7 +256,7 @@ export function ClienteNotas({ clienteId }: { clienteId: string }) {
                     <button
                       onClick={() => handleDeletar(nota.id)}
                       disabled={deletandoId === nota.id}
-                      className="p-1 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition rounded disabled:opacity-30"
+                      className="p-2 sm:p-1 text-slate-300 hover:text-red-500 sm:opacity-0 sm:group-hover:opacity-100 transition rounded disabled:opacity-30"
                       title="Remover registro"
                     >
                       {deletandoId === nota.id ? (

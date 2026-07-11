@@ -142,7 +142,7 @@ export default function EditarClientePage({ params }: { params: Promise<{ id: st
           <h2 className="text-sm font-semibold text-slate-700">
             Preferências de imóvel
           </h2>
-          <span className="text-xs text-slate-400">
+          <span className="hidden md:inline text-xs text-slate-400">
             · o que este cliente está procurando
           </span>
         </div>
@@ -154,7 +154,7 @@ export default function EditarClientePage({ params }: { params: Promise<{ id: st
         <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100">
           <Sparkles className="w-4 h-4 text-amber-500" />
           <h2 className="text-sm font-semibold text-slate-700">Oportunidades</h2>
-          <span className="text-xs text-slate-400">
+          <span className="hidden md:inline text-xs text-slate-400">
             · imóveis disponíveis que casam com a preferência
           </span>
         </div>
@@ -169,9 +169,9 @@ export default function EditarClientePage({ params }: { params: Promise<{ id: st
       {/* Notas / histórico de atividade */}
       <div className="mt-4 bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
         <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100">
-          <MessageSquare className="w-4 h-4 text-slate-400" />
-          <h2 className="text-sm font-semibold text-slate-700">Notas &amp; Atividade</h2>
-          <span className="text-xs text-slate-400">
+          <MessageSquare className="w-4 h-4 text-slate-400 flex-shrink-0" />
+          <h2 className="text-sm font-semibold text-slate-700 whitespace-nowrap">Notas &amp; Atividade</h2>
+          <span className="hidden md:inline text-xs text-slate-400">
             · histórico de interações com este cliente
           </span>
         </div>
