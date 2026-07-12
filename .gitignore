@@ -76,3 +76,6 @@ design_handoff_morabilidade/
 # ========================
 api/scripts/demonstrativo_administracao_*
 
+
+# PDFs gerados/exportados com dados de clientes — nunca versionar
+/*.pdf

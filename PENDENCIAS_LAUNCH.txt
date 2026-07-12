@@ -1,6 +1,17 @@
 PENDÊNCIAS PÓS-HARDENING — Launch 22/05/2026
 ==============================================
 
+STATUS em 11/07/2026 (auditoria):
+  [x] Plano Supabase        -> Pro ativo, backups diários 7d (sem PITR)
+  [x] npm audit site/web    -> Next 15.5.18+ nos três apps Next
+  [x] CI roda tsc --noEmit  -> typecheck agora bloqueia (jobs web/site/captacoes)
+  [—] Object Versioning Firebase -> obsoleto: fotos migraram p/ Supabase Storage.
+      ATENÇÃO: o backup diário do Supabase NÃO cobre Storage — criar proteção
+      equivalente (backup do bucket `media` ou soft-delete).
+  [ ] Rotacionar/revogar chave Firebase -> AINDA PENDENTE. Se o Firebase não é
+      mais usado, revogar a service account e remover FIREBASE_CREDENTIALS_JSON
+      do Railway (custo zero agora).
+
 Commit aplicado: d799ea2 (já em origin/main)
 
 

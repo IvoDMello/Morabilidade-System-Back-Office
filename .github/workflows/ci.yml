@@ -26,6 +26,16 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt -r requirements-dev.txt
 
+      # Migrations são aplicadas manualmente no Supabase; número duplicado
+      # (já aconteceu com 045) confunde a ordem e o controle do que foi rodado.
+      - name: Migrations — número duplicado
+        run: |
+          dups=$(ls migrations/*.sql | sed 's|.*/||; s/_.*//' | sort | uniq -d)
+          if [ -n "$dups" ]; then
+            echo "Número de migration duplicado: $dups"
+            exit 1
+          fi
+
       - name: Run tests
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -86,9 +96,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
+          cache: npm
+          cache-dependency-path: site/package-lock.json
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Type check
         run: npx tsc --noEmit
@@ -120,6 +132,14 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Migrations — número duplicado
+        run: |
+          dups=$(ls supabase/migrations/*.sql | sed 's|.*/||; s/_.*//' | sort | uniq -d)
+          if [ -n "$dups" ]; then
+            echo "Número de migration duplicado: $dups"
+            exit 1
+          fi
 
       - name: Type check
         run: npx tsc --noEmit

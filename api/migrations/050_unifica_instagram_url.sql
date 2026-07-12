@@ -1,3 +1,7 @@
+-- Originalmente numerada 045 (e já APLICADA em produção com esse número) —
+-- renumerada para 050 porque colidia com 045_demonstrativo_admin_snapshots.sql.
+-- NÃO precisa rodar de novo (é idempotente de todo modo: IF EXISTS no DROP).
+--
 -- Unifica os dois campos de link do Instagram em um só (instagram_url).
 -- video_url (botão "Ver vídeo no Instagram" no site) e instagram_url (pill no site
 -- + indicador rosa na listagem do painel) guardavam o mesmo tipo de link.

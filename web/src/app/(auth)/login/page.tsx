@@ -21,7 +21,6 @@ type LoginForm = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const router = useRouter();
   const setUser = useAuthStore((s) => s.setUser);
-  const setToken = useAuthStore((s) => s.setToken);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -52,8 +51,9 @@ export default function LoginPage() {
         return;
       }
 
+      // O access_token não chega ao browser — vive no cookie httpOnly setado
+      // pela rota /api/auth/login; o proxy /api/[...path] o injeta na API.
       setUser(json.user);
-      if (json.access_token) setToken(json.access_token);
 
       // Avisa o AuthProvider para armar o timer de refresh proativo.
       if (typeof window !== "undefined" && typeof json.expires_in === "number") {
