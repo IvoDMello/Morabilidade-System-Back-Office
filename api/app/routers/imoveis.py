@@ -159,7 +159,14 @@ def _transformar_lista(raw: dict) -> dict:
     tags_raw = raw.pop("imovel_tags", None) or []
     tags = [t["tags"] for t in tags_raw if t.get("tags")]
     proprietario = _normalizar_proprietario(raw)
-    return {**raw, "foto_capa": foto_capa, "fotos": fotos_card, "tags": tags, "proprietario": proprietario}
+    return {
+        **raw,
+        "foto_capa": foto_capa,
+        "fotos": fotos_card,
+        "total_fotos": len(fotos),
+        "tags": tags,
+        "proprietario": proprietario,
+    }
 
 
 def _transformar_detalhe(raw: dict) -> dict:

@@ -43,6 +43,7 @@ export function DestCard({ imovel }: { imovel: ImovelCard }) {
         {imovel.foto_capa ? (
           <CardFotoCarousel
             fotos={imovel.fotos?.length ? imovel.fotos : [imovel.foto_capa]}
+            totalFotos={imovel.total_fotos}
             alt={`${labelTipoImovel(imovel.tipo_imovel)} em ${imovel.bairro}`}
             sizes="(max-width: 640px) 75vw, 320px"
           />

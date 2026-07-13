@@ -36,6 +36,7 @@ export function ImovelCard({ imovel }: { imovel: ImovelCardType }) {
         {imovel.foto_capa ? (
           <CardFotoCarousel
             fotos={imovel.fotos?.length ? imovel.fotos : [imovel.foto_capa]}
+            totalFotos={imovel.total_fotos}
             alt={`${labelTipoImovel(imovel.tipo_imovel)} em ${imovel.bairro}, ${imovel.cidade}`}
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           />

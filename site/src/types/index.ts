@@ -42,6 +42,8 @@ export interface ImovelCard {
   foto_capa?: string;
   /** Até 6 primeiras fotos — mini-carrossel no card (API antiga pode não enviar). */
   fotos?: string[];
+  /** Total de fotos do imóvel — usado para o aviso "ver todas" no card (API antiga pode não enviar). */
+  total_fotos?: number;
   tags: Tag[];
   created_at: string;
 }
