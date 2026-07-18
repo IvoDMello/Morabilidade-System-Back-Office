@@ -13,7 +13,7 @@ router = APIRouter()
 
 # User-agents que devemos ignorar pra não inflar métricas.
 # Cobre crawlers (Google, Bing), previews de redes sociais (WhatsApp, Facebook,
-# Twitter, LinkedIn) e ferramentas de automação. Mantemos amplo de propósito —
+# Twitter, LinkedIn) e ferramentas de automação. Mantemos amplo de propósito
 # preferimos perder algumas visitas reais a poluir o dashboard com bots.
 _BOT_RE = re.compile(
     r"bot|crawler|spider|slurp|bingpreview|facebookexternalhit|"
@@ -42,7 +42,7 @@ class TrackPayload(BaseModel):
 def track_page_view(request: Request, body: TrackPayload):
     """
     Recebe um evento de visualização do site público.
-    Chamado via navigator.sendBeacon no client — fire-and-forget.
+    Chamado via navigator.sendBeacon no client, fire-and-forget.
 
     Privacidade: não armazenamos IP. user_agent fica truncado em 500 chars.
     Bots conhecidos são marcados is_bot=true (mas ainda inseridos, pra debug).

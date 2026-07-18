@@ -87,7 +87,7 @@ def gerar_demonstrativo_admin_pdf(
     c.setFont("Helvetica", 11)
     c.drawRightString(largura - MARGEM, altura - 22 * mm, f"Competência: {mes_label}")
 
-    nome = bloco.get("nome") or "—"
+    nome = bloco.get("nome") or "-"
     pnome = _primeiro_nome(nome)
     itens = bloco.get("itens") or []
     qtd = len(itens)
@@ -109,7 +109,7 @@ def gerar_demonstrativo_admin_pdf(
     )
     c.drawString(MARGEM, y, intro)
     y -= 5 * mm
-    c.drawString(MARGEM, y, "Qualquer dúvida, é só chamar — estamos por aqui.")
+    c.drawString(MARGEM, y, "Qualquer dúvida, é só chamar, estamos por aqui.")
     y -= 12 * mm
 
     # ── Título da seção ──────────────────────────────────────────────────────
@@ -170,10 +170,10 @@ def gerar_demonstrativo_admin_pdf(
                               "Demonstrativo de Administração (cont.)")
             y = altura - header_mm * mm - 12 * mm
             y = _desenhar_cab_tabela(y)
-        codigo = it.get("imovel_codigo") or "—"
-        endereco = it.get("imovel_endereco") or "—"
-        locatario = it.get("locatario_nome") or "—"
-        bairro = it.get("bairro") or "—"
+        codigo = it.get("imovel_codigo") or "-"
+        endereco = it.get("imovel_endereco") or "-"
+        locatario = it.get("locatario_nome") or "-"
+        bairro = it.get("bairro") or "-"
         aluguel = Decimal(str(it.get("aluguel") or 0))
         comissao = Decimal(str(it.get("comissao") or 0))
 
@@ -234,7 +234,7 @@ def gerar_demonstrativo_admin_pdf(
     box_w = (largura - 2 * MARGEM - gap) / 2
     box_y = y - box_h
 
-    # Box esquerdo — Dados para pagamento (contorno)
+    # Box esquerdo: Dados para pagamento (contorno)
     c.setStrokeColor(LINHA)
     c.setLineWidth(0.8)
     c.roundRect(MARGEM, box_y, box_w, box_h, 4 * mm, fill=0, stroke=1)
@@ -246,7 +246,7 @@ def gerar_demonstrativo_admin_pdf(
     by -= 6 * mm
     c.setFillColor(TEXTO_ESCURO)
     c.setFont("Helvetica-Bold", 11)
-    c.drawString(bx, by, _truncar(c, dados_recebimento.get("titular") or "—",
+    c.drawString(bx, by, _truncar(c, dados_recebimento.get("titular") or "-",
                                   "Helvetica-Bold", 11, box_w - 12 * mm))
     by -= 7 * mm
     for label, valor in (
@@ -265,7 +265,7 @@ def gerar_demonstrativo_admin_pdf(
         c.drawString(bx + 20 * mm, by, str(valor))
         by -= 5.5 * mm
 
-    # Box direito — Resumo do mês (olive preenchido)
+    # Box direito: Resumo do mês (olive preenchido)
     rx0 = MARGEM + box_w + gap
     c.setFillColor(OLIVE)
     c.roundRect(rx0, box_y, box_w, box_h, 4 * mm, fill=1, stroke=0)

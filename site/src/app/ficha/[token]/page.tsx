@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { AssinarFicha } from "@/components/ficha/AssinarFicha";
 
 export const metadata: Metadata = {
-  title: "Ficha de Visita — Morabilidade",
-  // Documento privado por token — não deve ser indexado.
+  title: "Ficha de Visita: Morabilidade",
+  // Documento privado por token, não deve ser indexado.
   robots: { index: false, follow: false },
 };
 

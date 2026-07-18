@@ -63,7 +63,7 @@ class FichaVisitaOut(BaseModel):
 
 
 class FichaVisitaPublicaView(BaseModel):
-    """O que o visitante vê na página de assinatura — sem ids internos."""
+    """O que o visitante vê na página de assinatura, sem ids internos."""
     status: str
     visitante_nome: str
     imovel_codigo: Optional[str] = None
@@ -87,7 +87,7 @@ class FichaVisitaAssinaturaIn(BaseModel):
     no servidor (não confiáveis se viessem do cliente)."""
     aceite: bool
     cpf: str = Field(..., min_length=11, max_length=20)
-    # Data URL (image/png base64) do traço da assinatura no canvas — opcional.
+    # Data URL (image/png base64) do traço da assinatura no canvas, opcional.
     assinatura_png: Optional[str] = Field(None, max_length=2_000_000)
-    # "lat,lng" capturado via navigator.geolocation, com consentimento — opcional.
+    # "lat,lng" capturado via navigator.geolocation, com consentimento, opcional.
     geo: Optional[str] = Field(None, max_length=120)

@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     site_revalidate_secret: str = ""
 
     # Dados da empresa para documentos legais (ficha de visita, intermediação).
-    # Placeholders até confirmação do CNPJ/CRECI-J jurídico — sobrescrever via env.
+    # Placeholders até confirmação do CNPJ/CRECI-J jurídico, sobrescrever via env.
     empresa_cnpj: str = ""
     empresa_creci_juridico: str = ""
     empresa_creci_corretor: str = "CRECI-RJ nº 70411"
@@ -39,7 +39,7 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:3000,http://localhost:3001"
 
     # Nº de proxies confiáveis na frente da API que ACRESCENTAM ao X-Forwarded-For.
-    # No Railway são 2 (borda + LB interno) — confirmado empiricamente: numa
+    # No Railway são 2 (borda + LB interno), confirmado empiricamente: numa
     # requisição real o XFF chegou com 2 entradas (cliente, borda). O IP real do
     # cliente fica em xff[-trusted_proxy_hops]; entradas à esquerda são
     # controláveis pelo cliente (spoof). Se um CDN (ex.: Cloudflare) entrar na
@@ -56,7 +56,7 @@ class Settings(BaseSettings):
 
     # Token compartilhado para chamadas server-to-server de integração (ex.: o
     # site de captações criando imóvel/proprietário). Quem envia o header
-    # X-Internal-Token com este valor escreve sem precisar de perfil admin —
+    # X-Internal-Token com este valor escreve sem precisar de perfil admin
     # mas o tráfego normal do painel continua exigindo admin/corretor. Vazio
     # desliga o atalho de integração.
     internal_api_token: str = ""

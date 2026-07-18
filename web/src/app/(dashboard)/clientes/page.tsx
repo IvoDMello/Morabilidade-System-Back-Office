@@ -385,7 +385,7 @@ function ClientesPageInner() {
                       </div>
                       <p className="text-xs text-slate-400 mt-1 truncate">
                         {c.codigo && <span className="font-mono text-slate-400">{c.codigo} · </span>}
-                        {c.telefone || c.email || "—"}
+                        {c.telefone || c.email || "-"}
                         {c.tipo_cliente && (
                           <span> · {TIPO_CLIENTE_LABEL[c.tipo_cliente] ?? c.tipo_cliente}</span>
                         )}
@@ -470,7 +470,7 @@ function ClientesPageInner() {
 
                       <td className="hidden md:table-cell px-4 py-3">
                         <span className="text-slate-600">
-                          {c.tipo_cliente ? TIPO_CLIENTE_LABEL[c.tipo_cliente] ?? c.tipo_cliente : "—"}
+                          {c.tipo_cliente ? TIPO_CLIENTE_LABEL[c.tipo_cliente] ?? c.tipo_cliente : "-"}
                         </span>
                         {c.tipo_cliente === "proprietario" && (
                           <p className="text-xs text-slate-400 mt-0.5 font-mono">
@@ -485,7 +485,7 @@ function ClientesPageInner() {
                             {disp.label}
                           </span>
                         ) : (
-                          <span className="text-slate-400">—</span>
+                          <span className="text-slate-400">-</span>
                         )}
                       </td>
 
@@ -498,7 +498,7 @@ function ClientesPageInner() {
                             {c.observacoes}
                           </p>
                         ) : (
-                          <span className="text-slate-300 text-xs">—</span>
+                          <span className="text-slate-300 text-xs">-</span>
                         )}
                       </td>
 

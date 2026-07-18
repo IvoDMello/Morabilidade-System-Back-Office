@@ -123,7 +123,7 @@ export function Galeria({ fotos }: { fotos: Foto[] }) {
 
   return (
     <div className="space-y-3">
-      {/* Foto principal — carrossel com transição */}
+      {/* Foto principal, carrossel com transição */}
       <div
         className="relative w-full max-w-md mx-auto aspect-[3/4] rounded-xl overflow-hidden bg-slate-100 group select-none"
         style={{ maxHeight: "min(75vh, 700px)", touchAction: "pan-y" }}
@@ -141,7 +141,7 @@ export function Galeria({ fotos }: { fotos: Foto[] }) {
           }}
         >
           {fotos.map((foto, i) => {
-            // Carrega antecipadamente a foto ativa e suas vizinhas — evita o
+            // Carrega antecipadamente a foto ativa e suas vizinhas, evita o
             // delay de fetch quando o usuário clica em "próxima".
             const eager = i === ativa || i === proxIdx || i === antIdx;
             return (
@@ -161,7 +161,7 @@ export function Galeria({ fotos }: { fotos: Foto[] }) {
           })}
         </div>
 
-        {/* Botão de zoom — abre lightbox */}
+        {/* Botão de zoom, abre lightbox */}
         <button
           onClick={abrirLightbox}
           className="absolute top-2 right-2 w-9 h-9 flex items-center justify-center rounded-full bg-black/55 text-white shadow-md ring-1 ring-white/20 hover:bg-black/75 hover:scale-105 transition focus:outline-none focus:ring-2 focus:ring-[#d8cb6a]"
@@ -226,7 +226,7 @@ export function Galeria({ fotos }: { fotos: Foto[] }) {
         </div>
       )}
 
-      {/* Lightbox — pinch-zoom nativo do browser */}
+      {/* Lightbox, pinch-zoom nativo do browser */}
       {lightbox && (
         <div
           className="fixed inset-0 z-[100] bg-black/95 animate-fade-in"
@@ -244,14 +244,14 @@ export function Galeria({ fotos }: { fotos: Foto[] }) {
             <X className="w-7 h-7" strokeWidth={2.5} />
           </button>
 
-          {/* Spinner enquanto a imagem carrega — sobreposto, mas escondido sem layout shift */}
+          {/* Spinner enquanto a imagem carrega, sobreposto, mas escondido sem layout shift */}
           {imgCarregando && (
             <div className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none">
               <Loader2 className="w-10 h-10 text-white/70 animate-spin" />
             </div>
           )}
 
-          {/* Imagem ativa — next/image otimizado. O backdrop pai mantém o click-to-close;
+          {/* Imagem ativa, next/image otimizado. O backdrop pai mantém o click-to-close;
               o wrapper interno tem `pointer-events-none` exceto na própria imagem para
               que clicar fora da foto feche o lightbox. */}
           <div
@@ -279,7 +279,7 @@ export function Galeria({ fotos }: { fotos: Foto[] }) {
             </div>
           </div>
 
-          {/* Preload das vizinhas (off-screen / invisível) — quando o usuário
+          {/* Preload das vizinhas (off-screen / invisível), quando o usuário
               navegar, as imagens já estarão no cache do browser. */}
           {fotos.length > 1 && (
             <div aria-hidden className="hidden">

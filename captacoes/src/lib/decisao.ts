@@ -18,7 +18,7 @@ export function confirmarDecisao(captacao: Captacao, decisao: Decisao): boolean 
   if (decisao === "reprovada" && captacao.decisao === "aprovada" && captacao.imovel_codigo) {
     return window.confirm(
       `Esta captação já foi cadastrada como imóvel ${captacao.imovel_codigo}. ` +
-        "Reprovar aqui não remove o imóvel do sistema — só muda o status da captação. Continuar?"
+        "Reprovar aqui não remove o imóvel do sistema, só muda o status da captação. Continuar?"
     );
   }
   return true;

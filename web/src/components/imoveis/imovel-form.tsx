@@ -39,6 +39,7 @@ const schema = z.object({
   dormitorios: optInt,
   suites: optInt,
   banheiros: optInt,
+  lavabos: optInt,
   vagas_garagem: optInt,
   mobiliado: z.preprocess(
     (v) => (v === "" ? null : v),
@@ -216,7 +217,7 @@ export function ImovelForm({
   const [novoPropErro, setNovoPropErro] = useState<string | null>(null);
   const [iptuPeriodo, setIptuPeriodo] = useState<"mensal" | "anual">("mensal");
   // Valor exibido no input do IPTU. Em modo "anual" representa o anual; em
-  // "mensal" representa o mensal — a conversão acontece no handler abaixo
+  // "mensal" representa o mensal, a conversão acontece no handler abaixo
   // antes de persistir em `iptu_mensal` no form.
   const [iptuValor, setIptuValor] = useState<number | null>(
     defaultValues?.iptu_mensal != null ? defaultValues.iptu_mensal : null
@@ -269,7 +270,7 @@ export function ImovelForm({
       })
       .catch(() => {});
     // O endpoint /clientes/ aceita page_size até 100 (limite do backend).
-    // Operação tem ~100 clientes — uma página basta hoje; se crescer, vira combobox com busca.
+    // Operação tem ~100 clientes, uma página basta hoje; se crescer, vira combobox com busca.
     api.get<Cliente[]>("/clientes/", { params: { page_size: 100 } })
       .then((r) => setClientes(r.data))
       .catch((err) => {
@@ -351,7 +352,7 @@ export function ImovelForm({
         telefone: tel,
         tipo_cliente: "proprietario",
       });
-      // Adiciona à lista local e já seleciona — o vínculo com o imóvel é
+      // Adiciona à lista local e já seleciona, o vínculo com o imóvel é
       // persistido ao salvar o formulário (envia proprietario_id).
       setClientes((prev) => [novo, ...prev]);
       setValue("proprietario_id", novo.id);
@@ -435,7 +436,7 @@ export function ImovelForm({
         </div>
       )}
 
-      {/* Botão de salvar no topo (atalho — evita rolar até o final) */}
+      {/* Botão de salvar no topo (atalho, evita rolar até o final) */}
       <div className="flex justify-end">{submitButton}</div>
 
       {/* ── 1. Identificação ── */}
@@ -504,10 +505,10 @@ export function ImovelForm({
               {Array.from({ length: 10 }, (_, i) => i + 1).map((pos) => {
                 const ocupante = destaquesOcupados[pos];
                 const sufixo = !ocupante
-                  ? " — livre"
+                  ? ", livre"
                   : ocupante === defaultValues?.codigo
-                    ? ` — ${ocupante} (este imóvel)`
-                    : ` — ${ocupante}`;
+                    ? `, ${ocupante} (este imóvel)`
+                    : `, ${ocupante}`;
                 return (
                   <option key={pos} value={pos}>
                     {`Posição ${pos}${sufixo}`}
@@ -556,7 +557,7 @@ export function ImovelForm({
               {clientes
                 // Mantém o proprietário atual mesmo que não seja tipo_cliente='proprietario'
                 // (ex: foi reclassificado). Caso contrário, oferece apenas proprietários ou
-                // clientes sem tipo definido — evita poluir o select com locatários/investidores.
+                // clientes sem tipo definido, evita poluir o select com locatários/investidores.
                 .filter(
                   (c) =>
                     c.id === proprietarioId ||
@@ -589,7 +590,7 @@ export function ImovelForm({
             {showNovoProp && (
               <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 space-y-2">
                 <p className="text-xs font-medium text-slate-600">
-                  Cadastro rápido — só nome e WhatsApp. Você pode completar os dados depois em Clientes.
+                  Cadastro rápido, só nome e WhatsApp. Você pode completar os dados depois em Clientes.
                 </p>
                 <input
                   type="text"
@@ -714,6 +715,11 @@ export function ImovelForm({
           </div>
 
           <div>
+            <Label>Lavabos</Label>
+            <input type="number" min={0} {...register("lavabos")} className={inputClass} placeholder="0" />
+          </div>
+
+          <div>
             <Label>Vagas na garagem</Label>
             <input type="number" min={0} {...register("vagas_garagem")} className={inputClass} placeholder="0" />
           </div>
@@ -730,7 +736,7 @@ export function ImovelForm({
 
           <div>
             <Label>Andar</Label>
-            <input type="number" min={0} {...register("andar")} className={inputClass} placeholder="—" />
+            <input type="number" min={0} {...register("andar")} className={inputClass} placeholder="-" />
             <p className="mt-1 text-xs text-slate-400">
               Térreo = <strong>1</strong> (usado pelo filtro &quot;Apenas térreo&quot; do site).
             </p>
@@ -889,7 +895,7 @@ export function ImovelForm({
           </div>
         </div>
 
-        {/* Sob consulta — esconde os valores no site, mantendo-os registrados aqui */}
+        {/* Sob consulta, esconde os valores no site, mantendo-os registrados aqui */}
         <label className="mt-4 flex items-start gap-2.5 cursor-pointer select-none">
           <input
             type="checkbox"
@@ -971,7 +977,7 @@ export function ImovelForm({
               {...register("observacoes_internas")}
               rows={3}
               className={inputClass + " resize-y"}
-              placeholder="Notas internas da equipe — não aparecem no site público."
+              placeholder="Notas internas da equipe, não aparecem no site público."
             />
             <p className="mt-1 text-xs text-amber-600">
               Visível para a equipe (admins e corretores). Não aparece no site público.

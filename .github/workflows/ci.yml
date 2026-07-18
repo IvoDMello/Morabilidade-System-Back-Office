@@ -28,7 +28,7 @@ jobs:
 
       # Migrations são aplicadas manualmente no Supabase; número duplicado
       # (já aconteceu com 045) confunde a ordem e o controle do que foi rodado.
-      - name: Migrations — número duplicado
+      - name: Migrations, número duplicado
         run: |
           dups=$(ls migrations/*.sql | sed 's|.*/||; s/_.*//' | sort | uniq -d)
           if [ -n "$dups" ]; then
@@ -50,7 +50,7 @@ jobs:
 
       # Módulos financeiros (repasse/demonstrativos) têm piso próprio, mais
       # alto que o global: regressão de cobertura aqui muda valor em PDF.
-      - name: Coverage floor — módulos financeiros
+      - name: Coverage floor, módulos financeiros
         run: coverage report --fail-under=90 --include="app/services/fechamento.py,app/services/demonstrativo_pdf.py,app/services/demonstrativo_admin_pdf.py,app/routers/locacoes.py"
 
   web:
@@ -133,7 +133,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Migrations — número duplicado
+      - name: Migrations, número duplicado
         run: |
           dups=$(ls supabase/migrations/*.sql | sed 's|.*/||; s/_.*//' | sort | uniq -d)
           if [ -n "$dups" ]; then

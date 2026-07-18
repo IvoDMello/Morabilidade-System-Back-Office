@@ -8,7 +8,7 @@
 -- 3. valor_aluguel: captações para locação não tinham onde registrar o
 --    valor pedido (só havia valor_venda).
 -- 4. contato_proprietario: coluna legada sem uso em formulário algum
---    (substituída por proprietario_nome + whatsapp) — removida.
+--    (substituída por proprietario_nome + whatsapp), removida.
 -- 5. buscar_duplicadas ganha comparação por endereço normalizado:
 --    duas captações do mesmo imóvel com telefones diferentes (ex.:
 --    proprietário e corretor parceiro) passavam despercebidas.

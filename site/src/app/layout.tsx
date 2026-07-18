@@ -17,7 +17,7 @@ const playfair = Playfair_Display({
 
 export const metadata: Metadata = {
   title: {
-    default: "Morabilidade — Imóveis para Venda e Locação",
+    default: "Morabilidade: Imóveis para Venda e Locação",
     template: "%s | Morabilidade",
   },
   description:

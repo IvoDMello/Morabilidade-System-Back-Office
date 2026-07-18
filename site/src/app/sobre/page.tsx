@@ -8,7 +8,7 @@ import { Footer } from "@/components/layout/Footer";
 export const metadata: Metadata = {
   title: "Sobre nós",
   description:
-    "Conheça a Morabilidade — imobiliária 100% digital, presente no Instagram e WhatsApp, conectando pessoas ao imóvel certo com agilidade e transparência.",
+    "Conheça a Morabilidade, imobiliária 100% digital, presente no Instagram e WhatsApp, conectando pessoas ao imóvel certo com agilidade e transparência.",
 };
 
 const diferenciais = [

@@ -1,6 +1,6 @@
 "use client";
 
-// Listagem geral de fichas de visita (todos os imóveis) — sub-aba da página
+// Listagem geral de fichas de visita (todos os imóveis), sub-aba da página
 // /autorizacoes. Duas visões: a lista de fichas e o agregado de visitas por
 // imóvel. A geração de novas fichas continua na aba do imóvel.
 
@@ -52,9 +52,9 @@ const FILTROS: { key: string; label: string }[] = [
 ];
 
 function formatDataBR(iso?: string | null) {
-  if (!iso) return "—";
+  if (!iso) return "-";
   const d = new Date(iso);
-  return isNaN(d.getTime()) ? "—" : d.toLocaleDateString("pt-BR");
+  return isNaN(d.getTime()) ? "-" : d.toLocaleDateString("pt-BR");
 }
 
 export function FichasGerais() {
@@ -256,7 +256,7 @@ function LinhaFicha({ f, compacta = false }: { f: FichaGeral; compacta?: boolean
               <Link href={`/imoveis/${f.imovel_id}`}
                 className="hover:text-[#585a4f] hover:underline flex items-center gap-1">
                 <Building2 className="w-3 h-3" />
-                {f.imovel_codigo ? `${f.imovel_codigo} — ` : ""}{f.imovel_endereco ?? "Imóvel"}
+                {f.imovel_codigo ? `${f.imovel_codigo}: ` : ""}{f.imovel_endereco ?? "Imóvel"}
               </Link>
               {local && <span>· {local}</span>}
               <span>·</span>
@@ -369,7 +369,7 @@ function LinhaImovel({ r, periodo }: { r: ResumoImovel; periodo: URLSearchParams
         <div className="flex-1 min-w-0">
           <span className="text-sm font-medium text-slate-800 flex items-center gap-1.5">
             <Building2 className="w-3.5 h-3.5 text-slate-400" />
-            {r.imovel_codigo ? `${r.imovel_codigo} — ` : ""}{r.imovel_endereco ?? "Imóvel"}
+            {r.imovel_codigo ? `${r.imovel_codigo}: ` : ""}{r.imovel_endereco ?? "Imóvel"}
           </span>
           <span className="block text-xs text-slate-400 mt-0.5">
             {local && `${local} · `}última visita em {formatDataBR(r.ultima_em)}

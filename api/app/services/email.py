@@ -81,7 +81,7 @@ def _render_template(*, titulo: str, preheader: str, conteudo_html: str) -> str:
                 <a href="{_INSTAGRAM}" style="color:{_OLIVE};text-decoration:none;">@morabilidade</a>
               </p>
               <p style="margin:0;color:#aaa;">
-                Imobiliária 100% digital — atendimento por WhatsApp e Instagram.
+                Imobiliária 100% digital, atendimento por WhatsApp e Instagram.
               </p>
             </td>
           </tr>
@@ -105,7 +105,7 @@ def enviar_email(
 ) -> None:
     """Envia um e-mail transacional via Resend.
 
-    attachments (opcional) — lista de dicts no formato do Resend:
+    attachments (opcional), lista de dicts no formato do Resend:
         [{"filename": "demonstrativo.pdf", "content": <bytes>}]
     Bytes são convertidos para a representação aceita pelo SDK.
     """
@@ -184,11 +184,11 @@ def enviar_confirmacao_contato(nome_visitante: str, email_visitante: str) -> Non
       </table>
     """
     html = _render_template(
-        titulo="Recebemos seu contato — Morabilidade",
+        titulo="Recebemos seu contato: Morabilidade",
         preheader="Obrigada! Nossa equipe vai te responder em breve.",
         conteudo_html=conteudo,
     )
-    enviar_email(email_visitante, "Recebemos seu contato — Morabilidade", html)
+    enviar_email(email_visitante, "Recebemos seu contato: Morabilidade", html)
 
 
 def enviar_recuperacao_senha(email: str, link: str) -> None:
@@ -233,11 +233,11 @@ def enviar_recuperacao_senha(email: str, link: str) -> None:
       </div>
     """
     html = _render_template(
-        titulo="Redefinição de senha — Morabilidade",
+        titulo="Redefinição de senha: Morabilidade",
         preheader="Clique no link para criar uma nova senha. Válido por 1 hora.",
         conteudo_html=conteudo,
     )
-    enviar_email(email, "Redefinição de senha — Morabilidade", html)
+    enviar_email(email, "Redefinição de senha: Morabilidade", html)
 
 
 def enviar_demonstrativo_locacao(
@@ -284,13 +284,13 @@ def enviar_demonstrativo_locacao(
       </p>
     """
     html = _render_template(
-        titulo=f"Demonstrativo {mes_label} — Morabilidade",
+        titulo=f"Demonstrativo {mes_label}: Morabilidade",
         preheader=f"Total a pagar {total_brl} · vencimento {vencimento_brl}.",
         conteudo_html=conteudo,
     )
     enviar_email(
         para,
-        f"Demonstrativo {mes_label} — Morabilidade",
+        f"Demonstrativo {mes_label}: Morabilidade",
         html,
         attachments=[{"filename": nome_arquivo, "content": pdf_bytes}],
     )
@@ -309,19 +309,19 @@ def enviar_relatorio_30dias(
 ) -> None:
     """Relatório de 30 dias: resumo curto no corpo + PDF completo em anexo.
 
-    Destino interno por enquanto (futuro: proprietário) — por isso o corpo traz o
+    Destino interno por enquanto (futuro: proprietário), por isso o corpo traz o
     contato do proprietário, para facilitar o repasse manual. O detalhamento
     (visitas e análise) vai no PDF gerado por [relatorio_30dias_pdf].
     """
-    nome_safe = html_lib.escape(proprietario_nome or "—")
-    telefone_safe = html_lib.escape(proprietario_telefone or "—")
+    nome_safe = html_lib.escape(proprietario_nome or "-")
+    telefone_safe = html_lib.escape(proprietario_telefone or "-")
     codigo_safe = html_lib.escape(codigo_imovel)
-    endereco_safe = html_lib.escape(endereco or "—")
-    anunciado_safe = html_lib.escape(anunciado_em or "—")
+    endereco_safe = html_lib.escape(endereco or "-")
+    anunciado_safe = html_lib.escape(anunciado_em or "-")
 
     conteudo = f"""
       <h1 style="margin:0 0 12px;font-size:22px;color:{_OLIVE};font-weight:600;">
-        Relatório de 30 dias — {codigo_safe}
+        Relatório de 30 dias, {codigo_safe}
       </h1>
       <p style="margin:0 0 16px;">
         O imóvel <strong>{codigo_safe}</strong> completou 30 dias em portfólio.
@@ -358,13 +358,13 @@ def enviar_relatorio_30dias(
       </p>
     """
     html = _render_template(
-        titulo=f"Relatório 30 dias — {codigo_imovel}",
+        titulo=f"Relatório 30 dias, {codigo_imovel}",
         preheader=f"Resumo dos primeiros 30 dias de {codigo_imovel}.",
         conteudo_html=conteudo,
     )
     enviar_email(
         para,
-        f"Relatório 30 dias — {codigo_imovel}",
+        f"Relatório 30 dias, {codigo_imovel}",
         html,
         attachments=[{"filename": f"relatorio-30dias-{codigo_imovel}.pdf", "content": pdf_bytes}],
     )
@@ -376,7 +376,7 @@ def enviar_notificacao_lead(
     """Notificação interna para a equipe quando um lead chega pelo site."""
     nome_safe = html_lib.escape(nome)
     email_safe = html_lib.escape(email)
-    telefone_safe = html_lib.escape(telefone) if telefone else "—"
+    telefone_safe = html_lib.escape(telefone) if telefone else "-"
     mensagem_safe = html_lib.escape(mensagem).replace("\n", "<br>")
 
     conteudo = f"""

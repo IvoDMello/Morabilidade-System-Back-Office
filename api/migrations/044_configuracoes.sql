@@ -2,7 +2,7 @@
 -- Tabela genérica de configurações chave/valor da imobiliária.
 --
 -- Motivação: o "Demonstrativo de Administração" (cobrança da taxa de adm. ao
--- proprietário) precisa imprimir os dados da conta que RECEBE a taxa — hoje a
+-- proprietário) precisa imprimir os dados da conta que RECEBE a taxa, hoje a
 -- conta do Rodrigo no Bradesco. Esse dado é institucional (não pertence a
 -- contrato nem a cliente) e deve ser editável pelo painel sem deploy. Em vez de
 -- criar uma coluna fixa, abrimos uma tabela chave→jsonb que serve para este e

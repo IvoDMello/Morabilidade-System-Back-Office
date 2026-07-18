@@ -26,7 +26,7 @@ import { api } from "../api";
 const requestHandler = api.interceptors.request.handlers![0];
 const responseHandler = api.interceptors.response.handlers![0];
 
-describe("api — interceptor de request", () => {
+describe("api, interceptor de request", () => {
   it("não adiciona Authorization quando token é nulo", async () => {
     vi.mocked(useAuthStore.getState).mockReturnValue(makeAuthState({ token: null }));
 
@@ -50,7 +50,7 @@ describe("api — interceptor de request", () => {
   });
 });
 
-describe("api — interceptor de response (401)", () => {
+describe("api, interceptor de response (401)", () => {
   const originalLocation = window.location;
   let fetchMock: ReturnType<typeof vi.fn>;
 
@@ -72,7 +72,7 @@ describe("api — interceptor de response (401)", () => {
     vi.restoreAllMocks();
   });
 
-  it("ignora 401 sem config (ex: cancel) — não tenta refresh nem logout", async () => {
+  it("ignora 401 sem config (ex: cancel), não tenta refresh nem logout", async () => {
     const clearAuth = vi.fn();
     vi.mocked(useAuthStore.getState).mockReturnValue(makeAuthState({ token: "tok", clearAuth }));
 

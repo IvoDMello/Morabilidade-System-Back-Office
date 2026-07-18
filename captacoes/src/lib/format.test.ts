@@ -42,8 +42,8 @@ describe("parseMoeda", () => {
 });
 
 describe("formatBRL", () => {
-  it("retorna travessão para null", () => {
-    expect(formatBRL(null)).toBe("—");
+  it("retorna hífen para null", () => {
+    expect(formatBRL(null)).toBe("-");
   });
   it("formata em reais", () => {
     expect(formatBRL(1234.56).replace(/ /g, " ")).toBe("R$ 1.234,56");
@@ -105,7 +105,7 @@ describe("formatarTelefone", () => {
 });
 
 describe("dataCurta", () => {
-  it("null vira travessão", () => expect(dataCurta(null)).toBe("—"));
+  it("null vira hífen", () => expect(dataCurta(null)).toBe("-"));
   it("formata dd/mm", () => expect(dataCurta("2026-03-09T12:00:00.000Z")).toMatch(/^\d{2}\/\d{2}$/));
 });
 

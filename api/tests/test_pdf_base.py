@@ -25,7 +25,7 @@ def test_fmt_dt_converte_data_quando_vira_dia_anterior():
 
 
 def test_fmt_dt_string_so_data_e_naive_nao_converte():
-    # "2026-06-18" não tem fuso (naive) — fica como está, sem deslocar o dia.
+    # "2026-06-18" não tem fuso (naive), fica como está, sem deslocar o dia.
     assert fmt_dt("2026-06-18") == "18/06/2026"
     assert fmt_dt("2026-06-18", com_hora=True) == "18/06/2026 00:00"
 
@@ -36,8 +36,8 @@ def test_fmt_dt_aceita_objeto_datetime_aware():
 
 
 def test_fmt_dt_vazio_retorna_travessao():
-    assert fmt_dt(None) == "—"
-    assert fmt_dt("") == "—"
+    assert fmt_dt(None) == "-"
+    assert fmt_dt("") == "-"
 
 
 def test_fmt_dt_valor_invalido_nao_quebra():

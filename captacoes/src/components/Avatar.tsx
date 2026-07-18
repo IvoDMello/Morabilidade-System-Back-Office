@@ -1,6 +1,6 @@
 import { iniciaisNome, corAvatar } from "@/lib/opinioes";
 
-/** Avatar de iniciais com cor estável por pessoa — usado no topo, opiniões etc. */
+/** Avatar de iniciais com cor estável por pessoa, usado no topo, opiniões etc. */
 export function Avatar({ nome, size = 34 }: { nome: string; size?: number }) {
   const cor = corAvatar(nome);
   return (

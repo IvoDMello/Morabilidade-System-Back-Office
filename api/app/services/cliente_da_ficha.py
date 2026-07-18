@@ -1,17 +1,17 @@
 """Integração da Ficha de Visita com o CRM de clientes.
 
-Tudo acontece na ASSINATURA da ficha (best-effort — uma falha aqui nunca pode
+Tudo acontece na ASSINATURA da ficha (best-effort, uma falha aqui nunca pode
 bloquear o fluxo jurídico; o router envolve a chamada em try/except):
 
 `atualizar_cadastro_pos_assinatura`:
 1. Se a ficha não tem cliente vinculado, procura um cadastro existente pelos
    dados do visitante (CPF confirmado → telefone → e-mail) e, não havendo,
    cadastra um novo lead com origem 'ficha_visita'. Visitante que nunca
-   assina NÃO entra no CRM — evita cadastros mortos de fichas abandonadas.
+   assina NÃO entra no CRM, evita cadastros mortos de fichas abandonadas.
 2. Completa o CPF do cadastro com o confirmado na assinatura.
 3. Infere o perfil de imóvel buscado (cliente_preferencias) agregando todas
    as fichas assinadas do cliente. A inferência só cria/recalcula
-   preferências com origem 'ficha_visita' — preferência manual do corretor
+   preferências com origem 'ficha_visita', preferência manual do corretor
    nunca é sobrescrita (ver migration 037).
 """
 import re
@@ -39,7 +39,7 @@ def _norm(s: Optional[str]) -> str:
 
 
 def _mesmo_telefone(a: Optional[str], b: Optional[str]) -> bool:
-    """Compara pelo sufixo de 8 dígitos — tolera +55, DDD e o 9 extra."""
+    """Compara pelo sufixo de 8 dígitos, tolera +55, DDD e o 9 extra."""
     da, db = _so_digitos(a), _so_digitos(b)
     return len(da) >= 8 and len(db) >= 8 and da[-8:] == db[-8:]
 
@@ -49,7 +49,7 @@ def _mesmo_telefone(a: Optional[str], b: Optional[str]) -> bool:
 def _encontrar_cliente(cpf: Optional[str], telefone: Optional[str], email: Optional[str]) -> Optional[dict]:
     """Deduplicação por dado de contato, nunca por nome (homônimos).
 
-    A base de clientes é pequena — busca tudo e normaliza em Python, mesmo
+    A base de clientes é pequena, busca tudo e normaliza em Python, mesmo
     padrão do matching de oportunidades. Ordem de confiança:
     CPF → telefone → e-mail.
     """
@@ -86,7 +86,7 @@ def vincular_cliente_visitante(
     """Resolve o cliente do visitante da ficha. Retorna (cliente_id, foi_criado).
 
     Sem telefone não há como cadastrar (o cadastro de cliente exige telefone
-    ou Instagram) — nesse caso ainda tenta deduplicar por CPF/e-mail e, não
+    ou Instagram), nesse caso ainda tenta deduplicar por CPF/e-mail e, não
     encontrando, retorna (None, False).
     """
     cpf = ficha_payload.get("visitante_cpf")
@@ -172,7 +172,7 @@ def inferir_preferencia(cliente_id: str) -> None:
     )
     existente = res.data if res else None
     if existente and existente.get("origem") != "ficha_visita":
-        return  # preferência manual — o corretor manda
+        return  # preferência manual, o corretor manda
 
     fichas = (
         supabase_admin.table("fichas_visita")
@@ -209,7 +209,7 @@ def inferir_preferencia(cliente_id: str) -> None:
 def _montar_preferencia(imoveis: list) -> dict:
     """Agrega os imóveis visitados num perfil de busca.
 
-    Critério geral: convergência define, divergência relaxa — no matching,
+    Critério geral: convergência define, divergência relaxa, no matching,
     campo vazio não filtra, o que é preferível a um filtro errado.
     """
     # Tipo de negócio: só conta intenção clara ('ambos' no imóvel não revela nada).
@@ -228,7 +228,7 @@ def _montar_preferencia(imoveis: list) -> dict:
             bairros.setdefault(_norm(i["bairro"]), i["bairro"])
     cidade = next(iter(cidades.values())) if len(cidades) == 1 else None
 
-    # Faixa de valor: só quando a intenção de negócio é clara — misturar
+    # Faixa de valor: só quando a intenção de negócio é clara, misturar
     # valores de venda (milhões) e locação (milhares) produziria lixo.
     valor_min = valor_max = None
     if tipo_negocio in ("venda", "locacao"):

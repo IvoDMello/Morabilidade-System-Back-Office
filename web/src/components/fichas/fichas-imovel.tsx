@@ -38,9 +38,9 @@ export function linkAssinatura(token: string) {
 }
 
 function formatDataBR(iso?: string | null) {
-  if (!iso) return "—";
+  if (!iso) return "-";
   const d = new Date(iso);
-  return isNaN(d.getTime()) ? "—" : d.toLocaleDateString("pt-BR");
+  return isNaN(d.getTime()) ? "-" : d.toLocaleDateString("pt-BR");
 }
 
 export const STATUS_STYLE: Record<Ficha["status"], { label: string; cls: string }> = {
@@ -101,7 +101,7 @@ function NovaFicha({ imovelId, onCriada }: { imovelId: string; onCriada: () => v
     e.preventDefault();
     if (!nome.trim()) { toast.error("Informe o nome do visitante."); return; }
     if (!telefone.trim()) {
-      toast.error("Informe o WhatsApp do visitante — é por ele que o link é enviado e o cliente cadastrado.");
+      toast.error("Informe o WhatsApp do visitante, é por ele que o link é enviado e o cliente cadastrado.");
       return;
     }
     setSalvando(true);
@@ -119,7 +119,7 @@ function NovaFicha({ imovelId, onCriada }: { imovelId: string; onCriada: () => v
       );
       // Já copia o link pro corretor mandar.
       try { await navigator.clipboard.writeText(linkAssinatura(res.data.token)); } catch {}
-      toast.success("Ficha gerada — link de assinatura copiado.");
+      toast.success("Ficha gerada, link de assinatura copiado.");
       setNome(""); setCpf(""); setTelefone(""); setEmail("");
       onCriada();
     } catch (err) {
@@ -164,13 +164,13 @@ function NovaFicha({ imovelId, onCriada }: { imovelId: string; onCriada: () => v
           <select
             value={corretorId}
             onChange={(e) => setCorretorId(e.target.value)}
-            title="Corretor responsável — é o nome/CRECI que sai no documento assinado"
+            title="Corretor responsável, é o nome/CRECI que sai no documento assinado"
             className="lg:col-span-2 border border-slate-200 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:border-[#585a4f]"
           >
             <option value="">Corretor responsável: eu ({user?.nome_completo})</option>
             {corretores.filter((c) => c.id !== user?.id).map((c) => (
               <option key={c.id} value={c.id}>
-                {c.nome_completo}{c.creci ? ` — CRECI ${c.creci}` : " — sem CRECI"}
+                {c.nome_completo}{c.creci ? `: CRECI ${c.creci}` : ", sem CRECI"}
               </option>
             ))}
           </select>

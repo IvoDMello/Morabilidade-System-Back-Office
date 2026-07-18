@@ -108,10 +108,10 @@ function Download-Prefix($prefix) {
             if ([string]::IsNullOrEmpty($name)) { continue }
             $fullPath = if ($prefix) { "$prefix$name" } else { $name }
             if ($null -eq $it.id) {
-                # Pasta — desce um nivel
+                # Pasta, desce um nivel
                 Download-Prefix "$fullPath/"
             } else {
-                # Arquivo — baixa (com retry para 504/timeout transitorio do Supabase)
+                # Arquivo, baixa (com retry para 504/timeout transitorio do Supabase)
                 $dlUrl  = "$SupabaseUrl/storage/v1/object/$Bucket/$fullPath"
                 $target = Join-Path $StorageDir ($fullPath -replace '/', '\')
                 $dir    = Split-Path -Parent $target
@@ -153,7 +153,7 @@ $manifest = @"
 Backup Morabilidade
 Data/hora.......: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss")
 Supabase........: $SupabaseUrl
-Banco (dump)....: banco.dump ($dumpMB MB) — schemas public + auth, formato custom (pg_restore)
+Banco (dump)....: banco.dump ($dumpMB MB), schemas public + auth, formato custom (pg_restore)
 Storage.........: $($script:fileCount) arquivos ($storageMB MB) na pasta storage/
 Falhas..........: $($script:falhas.Count) arquivo(s) nao baixado(s)$(if ($script:falhas.Count) { "`n  " + ($script:falhas -join "`n  ") })
 
@@ -176,7 +176,7 @@ Log "Zip criado ($zipMB MB)."
 # ── 7. Limpa temporario ───────────────────────────────────────────────────────
 Remove-Item -Recurse -Force $WorkDir
 
-# ── 8. Rotacao — mantem as N copias mais recentes ─────────────────────────────
+# ── 8. Rotacao, mantem as N copias mais recentes ─────────────────────────────
 $zips = Get-ChildItem -Path $DriveFolder -Filter "morabilidade-backup-*.zip" |
         Sort-Object LastWriteTime -Descending
 if ($zips.Count -gt $RetentionCount) {

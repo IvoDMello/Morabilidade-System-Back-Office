@@ -62,7 +62,7 @@ _MESES_LABEL = [
 
 
 def _formatar_brl(valor) -> str:
-    """R$ 1.234,56 — padrão BR. Aceita Decimal/float/int."""
+    """R$ 1.234,56, padrão BR. Aceita Decimal/float/int."""
     v = float(valor)
     s = f"{v:,.2f}"
     return "R$ " + s.replace(",", "X").replace(".", ",").replace("X", ".")
@@ -77,7 +77,7 @@ router = APIRouter()
 _SELECT_FULL = (
     "*,"
     "imovel:imoveis(id, codigo, logradouro, numero, complemento, bairro),"
-    # Sintaxe curta `!coluna` — não depende do nome gerado pela FK no banco,
+    # Sintaxe curta `!coluna`, não depende do nome gerado pela FK no banco,
     # que pode variar (contratos_locacao_proprietario_id_fkey vs custom).
     "proprietario:clientes!proprietario_id("
     "    id, nome_completo, email, telefone"
@@ -91,12 +91,12 @@ _SELECT_FULL = (
 def _achatar_partes(raw: dict) -> dict:
     """Transforma os joins do Supabase em ParteResumo enxuto.
     O Supabase retorna nested objects com nomes completos das tabelas; o front
-    só precisa de id + um label legível. Retorna uma cópia — não muta o input."""
+    só precisa de id + um label legível. Retorna uma cópia, não muta o input."""
     out = dict(raw)
 
     imv = out.get("imovel")
     if imv:
-        # A tabela imoveis usa logradouro/numero/complemento/bairro — não há
+        # A tabela imoveis usa logradouro/numero/complemento/bairro, não há
         # coluna endereco. Aceita endereco como fallback p/ compat com mocks
         # de teste antigos.
         endereco = imv.get("endereco") or imv.get("logradouro")
@@ -204,7 +204,7 @@ def listar_contratos(
     )
     contratos = [_achatar_partes(c) for c in (result.data or [])]
 
-    # Anexa o mês do último pagamento gerado (snapshot) — uma única query
+    # Anexa o mês do último pagamento gerado (snapshot), uma única query
     # extra para todos os contratos da página, com Python escolhendo o máximo
     # por contrato_id. Evita N queries e suporta page_size até 100.
     ids = [c["id"] for c in contratos]
@@ -231,7 +231,7 @@ def listar_contratos(
 
 def _marcar_atrasados(contrato_id: Optional[str] = None) -> None:
     """Marca como 'atrasado' todo pagamento pendente cuja data_vencimento
-    já passou. Idempotente — pode ser chamado a cada request relevante.
+    já passou. Idempotente, pode ser chamado a cada request relevante.
 
     Sem cron: a operadora é pequena (~30 contratos), o overhead é
     desprezível e evita depender de scheduler externo.
@@ -248,7 +248,7 @@ def _marcar_atrasados(contrato_id: Optional[str] = None) -> None:
         q.execute()
     except Exception:
         # Não queremos que falha de marcação derrube o endpoint chamador.
-        # Pior caso: KPIs ficam um request desatualizados — mas logamos para
+        # Pior caso: KPIs ficam um request desatualizados, mas logamos para
         # não mascarar bugs de banco silenciosamente.
         logger.exception("Falha ao marcar pagamentos atrasados (contrato_id=%s)", contrato_id)
 
@@ -262,7 +262,7 @@ def analises_locacao(
     current_user: dict = Depends(get_current_user),
 ):
     """KPIs e séries para a aba Análises.
-    Uma chamada só — evita N requests em paralelo do front."""
+    Uma chamada só, evita N requests em paralelo do front."""
     _marcar_atrasados()  # garante que KPI de inadimplência reflete o dia
     ano = ano or datetime.now(timezone.utc).year
     hoje = date.today()
@@ -364,7 +364,7 @@ def _upsert_snapshot_pagamento(
     """Cria ou atualiza o snapshot do pagamento no momento da geração do PDF.
 
     Sem upsert nativo (Supabase requer onConflict explícito); usamos
-    SELECT + INSERT/UPDATE manual — operação rara (mensal) e a unique
+    SELECT + INSERT/UPDATE manual, operação rara (mensal) e a unique
     constraint do banco garante consistência mesmo em condição de corrida.
     """
     vencimento = vencimento_no_mes(dia_vencimento, mes_ref)
@@ -380,7 +380,7 @@ def _upsert_snapshot_pagamento(
     )
 
     if existente:
-        # Não sobrescreve pagamentos já liquidados — apenas pendente/atrasado
+        # Não sobrescreve pagamentos já liquidados, apenas pendente/atrasado
         # recebem novo snapshot quando o usuário re-emite o demonstrativo.
         atual = existente[0]
         if atual.get("status") in ("pago", "parcial"):
@@ -542,7 +542,7 @@ def relatorio_repasses(
         if prop_id not in por_prop:
             por_prop[prop_id] = RepasseProprietario(
                 proprietario_id=prop_id,
-                nome=prop.get("nome_completo") or "—",
+                nome=prop.get("nome_completo") or "-",
                 email=prop.get("email"),
                 total_recebido=Decimal("0"),
                 total_taxa=Decimal("0"),
@@ -607,13 +607,13 @@ _SELECT_ADM = (
 
 
 def _endereco_adm(imv: dict) -> str:
-    """'Rua X, 182 — Ap. 701' a partir das colunas do imóvel."""
+    """'Rua X, 182: Ap. 701' a partir das colunas do imóvel."""
     base = imv.get("logradouro") or imv.get("endereco") or ""
     if imv.get("numero"):
         base = f"{base}, {imv['numero']}" if base else str(imv["numero"])
     if imv.get("complemento"):
-        base = f"{base} — {imv['complemento']}" if base else str(imv["complemento"])
-    return base or "—"
+        base = f"{base}, {imv['complemento']}" if base else str(imv["complemento"])
+    return base or "-"
 
 
 def _montar_adm_cobranca(
@@ -623,7 +623,7 @@ def _montar_adm_cobranca(
     (aluguel × 8%) de cada imóvel. Opcionalmente filtra um único proprietário.
 
     Anti duplo débito: contratos com pagamento 'pago'/'parcial' na competência
-    tiveram o aluguel recebido pela imobiliária — os 8% já saem retidos no
+    tiveram o aluguel recebido pela imobiliária, os 8% já saem retidos no
     Repasse, então ficam FORA desta cobrança."""
     # Contratos cuja taxa do mês já foi retida no repasse.
     ja_retidos = {
@@ -678,7 +678,7 @@ def _montar_adm_cobranca(
         if prop_id not in por_prop:
             por_prop[prop_id] = AdmCobrancaProprietario(
                 proprietario_id=prop_id,
-                nome=prop.get("nome_completo") or "—",
+                nome=prop.get("nome_completo") or "-",
                 email=prop.get("email"),
                 qtd_imoveis=0,
                 total_aluguel=Decimal("0"),
@@ -794,7 +794,7 @@ def gerar_demonstrativo_administracao(
     if snap:
         bloco_dict = snap["dados"]
         dados_rec = snap.get("dados_recebimento") or {}
-        nome = bloco_dict.get("nome") or "—"
+        nome = bloco_dict.get("nome") or "-"
     else:
         proprietarios, _, _ = _montar_adm_cobranca(mes_ref, proprietario_id)
         if not proprietarios:
@@ -1062,7 +1062,7 @@ def rescindir_contrato(
 
 @router.delete("/{contrato_id}", status_code=status.HTTP_204_NO_CONTENT)
 def encerrar_contrato(contrato_id: str, current_user: dict = Depends(require_admin)):
-    """Soft-delete: marca como 'encerrado' em vez de apagar — preserva
+    """Soft-delete: marca como 'encerrado' em vez de apagar, preserva
     histórico de pagamentos e anexos para auditoria."""
     result = (
         supabase_admin.table("contratos_locacao")
@@ -1233,7 +1233,7 @@ def aplicar_reajuste(
     current_user: dict = Depends(require_admin),
 ):
     """Aplica um reajuste: registra o histórico e atualiza o aluguel
-    do contrato. Não recalcula pagamentos já gerados/pagos — só afeta
+    do contrato. Não recalcula pagamentos já gerados/pagos, só afeta
     geração futura (snapshots passados ficam intactos)."""
     contrato = _buscar_contrato(contrato_id)
     anterior = Decimal(str(contrato["aluguel_mensal"]))
@@ -1242,7 +1242,7 @@ def aplicar_reajuste(
     if novo <= 0:
         raise HTTPException(
             status_code=422,
-            detail="Reajuste resultaria em aluguel zero ou negativo — revise o percentual.",
+            detail="Reajuste resultaria em aluguel zero ou negativo, revise o percentual.",
         )
 
     registro = _serializar_para_banco({
@@ -1260,7 +1260,7 @@ def aplicar_reajuste(
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Erro ao registrar reajuste: {e}")
 
-    # Atualiza o aluguel do contrato — geração futura usa o valor novo.
+    # Atualiza o aluguel do contrato, geração futura usa o valor novo.
     supabase_admin.table("contratos_locacao").update(
         {"aluguel_mensal": float(novo)}
     ).eq("id", contrato_id).execute()
@@ -1331,7 +1331,7 @@ async def upload_anexo(
     try:
         result = supabase_admin.table("locacao_anexos").insert(registro).execute()
     except Exception as e:
-        # Reverte o upload se o INSERT falhou — evita órfão no storage.
+        # Reverte o upload se o INSERT falhou, evita órfão no storage.
         deletar_documento(storage_path)
         raise HTTPException(status_code=500, detail=f"Erro ao registrar anexo: {e}")
 

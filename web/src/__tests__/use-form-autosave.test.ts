@@ -38,7 +38,7 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-describe("useFormAutosave — detecção de rascunho no mount", () => {
+describe("useFormAutosave, detecção de rascunho no mount", () => {
   it("hasDraft false quando não há nada salvo", () => {
     const { watch } = makeWatch();
     const { result } = renderHook(() =>
@@ -84,7 +84,7 @@ describe("useFormAutosave — detecção de rascunho no mount", () => {
   });
 });
 
-describe("useFormAutosave — salvamento com debounce", () => {
+describe("useFormAutosave, salvamento com debounce", () => {
   it("persiste valores após o debounce", () => {
     const { watch, emit } = makeWatch();
     renderHook(() =>
@@ -120,7 +120,7 @@ describe("useFormAutosave — salvamento com debounce", () => {
   });
 });
 
-describe("useFormAutosave — restore / discard / clear", () => {
+describe("useFormAutosave, restore / discard / clear", () => {
   it("restoreDraft aplica os valores via reset e zera hasDraft", () => {
     localStorage.setItem(
       STORAGE_KEY,

@@ -2,11 +2,11 @@ import type { MetadataRoute } from "next";
 
 // App Router gera /manifest.webmanifest e injeta o <link rel="manifest">.
 // display: "standalone" faz o atalho da tela inicial abrir em tela cheia,
-// sem a barra do navegador — o que evita que a barra do app (☰ + avatar)
+// sem a barra do navegador, o que evita que a barra do app (☰ + avatar)
 // seja coberta pela barra do navegador interno.
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Morabilidade — Sistema de Gestão",
+    name: "Morabilidade: Sistema de Gestão",
     short_name: "Morabilidade",
     description: "Painel administrativo interno da imobiliária Morabilidade.",
     start_url: "/",

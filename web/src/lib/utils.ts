@@ -6,7 +6,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatarMoeda(valor: number | null | undefined): string {
-  if (valor == null) return "—";
+  if (valor == null) return "-";
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",
@@ -14,6 +14,6 @@ export function formatarMoeda(valor: number | null | undefined): string {
 }
 
 export function formatarArea(valor: number | null | undefined): string {
-  if (valor == null) return "—";
+  if (valor == null) return "-";
   return `${valor.toLocaleString("pt-BR")} m²`;
 }

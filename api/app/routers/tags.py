@@ -9,7 +9,7 @@ router = APIRouter()
 
 @router.get("/publico", response_model=List[TagOut], tags=["Site Público"])
 def listar_tags_publico():
-    """Lista todas as tags sem autenticação — para uso no site público."""
+    """Lista todas as tags sem autenticação, para uso no site público."""
     result = supabase_admin.table("tags").select("*").order("nome").execute()
     return result.data
 

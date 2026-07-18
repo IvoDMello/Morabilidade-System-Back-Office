@@ -5,7 +5,7 @@
 --   - /stats fazia 9 .execute() em sequência (~270ms só de rede).
 --   - /relatorios fazia SELECT * em imoveis e clientes e agregava em Python.
 --   - search_events / imovel_favoritos / imovel_shares / acao_audit_log
---     crescem para sempre — sem TTL, queries de analytics degradam ao
+--     crescem para sempre, sem TTL, queries de analytics degradam ao
 --     atingir centenas de milhares de linhas.
 
 -- ═════════════════════════════════════════════════════════════════════════════
@@ -37,7 +37,7 @@ BEGIN
     GET DIAGNOSTICS n = ROW_COUNT;
     tabela := 'acao_audit_log'; removidas := n; RETURN NEXT;
 
-    -- page_views também — embora venha da 026, segue mesma lógica.
+    -- page_views também, embora venha da 026, segue mesma lógica.
     DELETE FROM page_views WHERE created_at < cutoff;
     GET DIAGNOSTICS n = ROW_COUNT;
     tabela := 'page_views'; removidas := n; RETURN NEXT;
@@ -48,7 +48,7 @@ COMMENT ON FUNCTION purge_old_logs() IS
     'Apaga linhas com mais de 90 dias das tabelas append-only. Agendado via pg_cron diariamente às 03:15 UTC.';
 
 -- Agendamento via pg_cron. A extensão NÃO vem habilitada por padrão no
--- Supabase — precisa ser ligada manualmente em:
+-- Supabase, precisa ser ligada manualmente em:
 --   Dashboard → Database → Extensions → pg_cron → Enable
 -- Depois de habilitada, rode SÓ o bloco abaixo:
 --
@@ -58,7 +58,7 @@ COMMENT ON FUNCTION purge_old_logs() IS
 --     $$SELECT purge_old_logs();$$
 --   );
 --
--- Sem pg_cron, a função `purge_old_logs()` ainda funciona — basta chamar
+-- Sem pg_cron, a função `purge_old_logs()` ainda funciona, basta chamar
 -- manualmente periodicamente (`SELECT purge_old_logs();`) ou agendar via
 -- Supabase Edge Function com schedule. O DO block abaixo tenta agendar
 -- silenciosamente; se cron não existir, apenas pula sem travar a migration.
@@ -76,12 +76,12 @@ BEGIN
     RAISE NOTICE 'pg_cron: purge_old_logs_daily agendado para 03:15 UTC.';
 EXCEPTION
     WHEN OTHERS THEN
-        RAISE NOTICE 'pg_cron não está habilitado (ou falhou ao agendar: %) — função criada mas não agendada. Habilite a extensão e rode SELECT cron.schedule(...) manualmente.', SQLERRM;
+        RAISE NOTICE 'pg_cron não está habilitado (ou falhou ao agendar: %), função criada mas não agendada. Habilite a extensão e rode SELECT cron.schedule(...) manualmente.', SQLERRM;
 END $$;
 
 
 -- ═════════════════════════════════════════════════════════════════════════════
--- 2) RPC: stats_dashboard()  — substitui as 9 queries do /stats
+-- 2) RPC: stats_dashboard() , substitui as 9 queries do /stats
 -- ═════════════════════════════════════════════════════════════════════════════
 
 CREATE OR REPLACE FUNCTION stats_dashboard()
@@ -130,7 +130,7 @@ $$ LANGUAGE SQL STABLE;
 
 
 -- ═════════════════════════════════════════════════════════════════════════════
--- 3) RPC: relatorios_dashboard()  — substitui o /relatorios
+-- 3) RPC: relatorios_dashboard() , substitui o /relatorios
 -- ═════════════════════════════════════════════════════════════════════════════
 -- Retorna agregações em vez de SELECT * (cortando payload de ~milhares de
 -- registros pra Python). Tudo na mesma transação SQL.

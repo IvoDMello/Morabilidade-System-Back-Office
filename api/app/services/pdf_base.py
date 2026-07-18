@@ -1,7 +1,7 @@
 """Helpers compartilhados de geração de PDF (ReportLab).
 
 Centraliza a identidade visual Morabilidade (cores, header/footer, logo) e os
-formatadores BR usados pelos documentos do sistema — demonstrativo de locação
+formatadores BR usados pelos documentos do sistema, demonstrativo de locação
 ([demonstrativo_pdf]) e ficha de visita ([ficha_visita_pdf]).
 
 Stack: ReportLab puro (sem Cairo/Pango), por rodar igual no Windows local e no
@@ -35,8 +35,8 @@ LINHA = colors.HexColor("#e2e8f0")
 # Fuso usado na apresentação de datas/horas. O banco grava sempre em UTC; aqui
 # convertemos só na hora de imprimir, pra trilha de auditoria bater com o
 # horário local de quem assinou. Se o ambiente não tiver a base IANA (Windows
-# sem o pacote tzdata), caímos num offset fixo de -3h — correto pro Brasil hoje,
-# que não observa mais horário de verão — pra nunca quebrar a geração do PDF.
+# sem o pacote tzdata), caímos num offset fixo de -3h, correto pro Brasil hoje,
+# que não observa mais horário de verão, pra nunca quebrar a geração do PDF.
 try:
     TZ_BR = ZoneInfo("America/Sao_Paulo")
 except ZoneInfoNotFoundError:
@@ -61,7 +61,7 @@ LOGO_PATH = os.path.join(os.path.dirname(__file__), "..", "assets", "logo.png")
 # ── Formatadores ─────────────────────────────────────────────────────────────
 
 def dec(v) -> Decimal:
-    """Aceita None, str, float, int, Decimal — devolve Decimal."""
+    """Aceita None, str, float, int, Decimal, devolve Decimal."""
     if v is None:
         return Decimal("0")
     if isinstance(v, Decimal):
@@ -112,7 +112,7 @@ def draw_brand_header(
 ) -> float:
     """Desenha a faixa olive com o logo e (à direita) um título ou a tagline.
 
-    Mantém o documento robusto a logo ausente — em testes ou ambientes mínimos
+    Mantém o documento robusto a logo ausente, em testes ou ambientes mínimos
     a falha de imagem nunca impede a emissão. Devolve a coordenada Y logo abaixo
     da faixa, para o conteúdo continuar dali.
     """
@@ -181,9 +181,9 @@ def campo(c: canvas.Canvas, x: float, y: float, largura: float, label: str, valo
     c.drawString(x, y, label.upper())
     c.setFillColor(TEXTO_ESCURO)
     c.setFont("Helvetica-Bold", 10)
-    valor = valor or "—"
+    valor = valor or "-"
     # Trunca para não invadir o campo vizinho.
-    while valor != "—" and c.stringWidth(valor, "Helvetica-Bold", 10) > largura - 2 and len(valor) > 4:
+    while valor != "-" and c.stringWidth(valor, "Helvetica-Bold", 10) > largura - 2 and len(valor) > 4:
         valor = valor[:-2]
     c.drawString(x, y - 4.5 * mm, valor)
     c.setStrokeColor(LINHA)
@@ -206,7 +206,7 @@ def desenhar_qr(c: canvas.Canvas, x: float, y: float, lado: float, conteudo: str
         d.add(widget)
         renderPDF.draw(d, c, x, y)
     except Exception:
-        # QR é enfeite/rastreio — nunca deve impedir a emissão.
+        # QR é enfeite/rastreio, nunca deve impedir a emissão.
         pass
 
 
@@ -229,7 +229,7 @@ def desenhar_assinatura_png(c: canvas.Canvas, data_url: str, x: float, y: float,
 def fmt_dt(valor, com_hora: bool = False) -> str:
     """Formata um ISO timestamp/string para DD/MM/AAAA (+ hora opcional)."""
     if not valor:
-        return "—"
+        return "-"
     if isinstance(valor, datetime):
         dt = valor
     else:
@@ -238,7 +238,7 @@ def fmt_dt(valor, com_hora: bool = False) -> str:
         except ValueError:
             return str(valor)[:10]
     # Converte pro fuso do Brasil quando o valor é "aware" (timestamptz vindo do
-    # banco). Isso acerta tanto a hora quanto a data — perto da meia-noite o dia
+    # banco). Isso acerta tanto a hora quanto a data, perto da meia-noite o dia
     # em UTC e no Brasil podem diferir. Strings só-data ("2026-06-18") são naive
     # e ficam como estão.
     if dt.tzinfo is not None:
@@ -253,11 +253,11 @@ def bloco_trilha(
     """Caixa com a prova da assinatura eletrônica simples (IP, hora, geo, hash).
     Usada tanto pela ficha de visita quanto pela autorização."""
     linhas = [
-        ("Assinado eletronicamente por", f"{signatario_nome}  ·  CPF {cpf or '—'}"),
+        ("Assinado eletronicamente por", f"{signatario_nome}  ·  CPF {cpf or '-'}"),
         (f"Data/hora ({TZ_BR_LABEL})", fmt_dt(assinada_em, com_hora=True)),
-        ("IP de origem", ip or "—"),
+        ("IP de origem", ip or "-"),
         ("Geolocalização", geo or "não informada"),
-        ("Hash do documento (SHA-256)", doc_hash or "—"),
+        ("Hash do documento (SHA-256)", doc_hash or "-"),
     ]
     altura_caixa = 6 * mm + len(linhas) * 4.4 * mm + 5 * mm
     c.setFillColor(colors.HexColor("#fafafa"))
@@ -268,7 +268,7 @@ def bloco_trilha(
     yy = y - 5 * mm
     c.setFillColor(OLIVE)
     c.setFont("Helvetica-Bold", 8)
-    c.drawString(MARGEM + 3 * mm, yy, "TRILHA DE AUDITORIA — ASSINATURA ELETRÔNICA")
+    c.drawString(MARGEM + 3 * mm, yy, "TRILHA DE AUDITORIA: ASSINATURA ELETRÔNICA")
     yy -= 5 * mm
     for label, valor in linhas:
         c.setFillColor(TEXTO_CLARO)

@@ -62,7 +62,7 @@ export function CarouselDestaques({ imoveis }: Props) {
         </div>
       </div>
 
-      {/* Setas — só desktop */}
+      {/* Setas, só desktop */}
       <button
         type="button"
         onClick={scrollPrev}
@@ -82,7 +82,7 @@ export function CarouselDestaques({ imoveis }: Props) {
         <ChevronRight className="w-5 h-5" />
       </button>
 
-      {/* Dots — todas as telas (útil principalmente no mobile) */}
+      {/* Dots, todas as telas (útil principalmente no mobile) */}
       {snapCount > 1 && (
         <div className="flex items-center justify-center gap-2 mt-6">
           {Array.from({ length: snapCount }).map((_, i) => (

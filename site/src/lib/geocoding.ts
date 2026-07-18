@@ -6,7 +6,7 @@ export interface Coordenadas {
 const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
 const USER_AGENT = "Morabilidade-Site/1.0 (contato@morabilidade.com)";
 // Nominatim é externo e fora do nosso controle. Sem timeout, uma lentidão lá
-// segura o SSR — foi o padrão que amplificou a queda de 19/05.
+// segura o SSR, foi o padrão que amplificou a queda de 19/05.
 const NOMINATIM_TIMEOUT_MS = 4000;
 
 export async function geocodificarEndereco(

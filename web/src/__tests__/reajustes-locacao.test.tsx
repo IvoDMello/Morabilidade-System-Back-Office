@@ -116,7 +116,7 @@ describe("ReajustesLocacao", () => {
     apiGet.mockResolvedValue({ data: [] });
     const { toast } = await import("sonner");
     apiPost.mockRejectedValueOnce({
-      response: { data: { detail: "Reajuste resultaria em aluguel zero ou negativo — revise o percentual." } },
+      response: { data: { detail: "Reajuste resultaria em aluguel zero ou negativo, revise o percentual." } },
     });
 
     render(<ReajustesLocacao contratoId="c1" aluguelAtual={8500} />);

@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-// Painel administrativo — bloqueia iframe completamente (não há razão para
+// Painel administrativo, bloqueia iframe completamente (não há razão para
 // embedar). Sem CSP no go-live pra não quebrar nada de última hora.
 const securityHeaders = [
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },

@@ -458,7 +458,7 @@ export default function RelatoriosPage() {
       {/* Seção: Imóveis ao longo do tempo */}
       <section>
         <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
-          Evolução do portfólio — últimos 12 meses
+          Evolução do portfólio, últimos 12 meses
         </h2>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <ChartCard title="Imóveis cadastrados por mês">
@@ -538,7 +538,7 @@ export default function RelatoriosPage() {
         <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
           Geografia
         </h2>
-        <ChartCard title="Imóveis por bairro — top 10">
+        <ChartCard title="Imóveis por bairro, top 10">
           <div className="h-72">
             {dados ? (
               <TopBairrosChart dados={dados.top_bairros} />
@@ -585,7 +585,7 @@ export default function RelatoriosPage() {
                 {oportunidades.total_oportunidades} oportunidade
                 {oportunidades.total_oportunidades !== 1 ? "s" : ""}
               </strong>{" "}
-              de match — {oportunidades.clientes_com_preferencia} cliente
+              de match, {oportunidades.clientes_com_preferencia} cliente
               {oportunidades.clientes_com_preferencia !== 1 ? "s" : ""} com preferência ativa.
               <span className="text-amber-600"> Veja na ficha de cada cliente.</span>
             </p>

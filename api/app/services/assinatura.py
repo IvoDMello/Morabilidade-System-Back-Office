@@ -3,7 +3,7 @@ e autorização de intermediação).
 
 Centraliza a captura da origem do signatário (IP real + cadeia de proxy), o
 formato de endereço do imóvel, a emissão/expiração de tokens, a primitiva de
-hash do documento e a montagem da resposta PDF — antes duplicados nos dois routers.
+hash do documento e a montagem da resposta PDF, antes duplicados nos dois routers.
 """
 import hashlib
 import json
@@ -15,7 +15,7 @@ from fastapi import Request, Response
 
 from app.config import settings
 
-# Limite do XFF cru gravado como forense — protege contra header gigante.
+# Limite do XFF cru gravado como forense, protege contra header gigante.
 _XFF_MAX_LEN = 500
 
 # Validade do link de assinatura (ficha de visita e autorização).

@@ -8,14 +8,14 @@ vi.mock("next/navigation", () => ({
   useSearchParams: vi.fn(() => new URLSearchParams()),
 }));
 
-// Mock next/link — renders as plain <a>
+// Mock next/link, renders as plain <a>
 vi.mock("next/link", () => ({
   default: ({ href, children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { href: string }) => (
     <a href={href} {...props}>{children}</a>
   ),
 }));
 
-// Mock next/image — renders as plain <img>
+// Mock next/image, renders as plain <img>
 vi.mock("next/image", () => ({
   default: ({ src, alt, ...props }: React.ImgHTMLAttributes<HTMLImageElement> & { src: string }) => (
     // eslint-disable-next-line @next/next/no-img-element

@@ -1,12 +1,12 @@
 """Trava de segurança: todo endpoint não-público DEVE exigir autenticação.
 
 Percorre a árvore de dependências de cada rota e garante que ela tenha
-`get_current_user` ou `require_admin` — exceto as rotas explicitamente públicas
+`get_current_user` ou `require_admin`, exceto as rotas explicitamente públicas
 (allowlist abaixo). É a rede que pega a classe de bug do vazamento corrigido:
 um endpoint novo que esquece o `Depends(...)` falha aqui, na CI, antes de ir pro ar.
 
 Ao adicionar um endpoint público de propósito, inclua-o em PUBLIC_PATTERNS com um
-comentário do porquê — assim a decisão fica explícita e revisável.
+comentário do porquê, assim a decisão fica explícita e revisável.
 """
 from fastapi.dependencies.models import Dependant
 from fastapi.routing import APIRoute
@@ -83,7 +83,7 @@ def test_todo_endpoint_nao_publico_exige_autenticacao():
 
 
 def test_endpoints_de_cron_exigem_token():
-    """Garante que cada path em CRON_TOKEN_PATHS realmente exige o X-Cron-Token —
+    """Garante que cada path em CRON_TOKEN_PATHS realmente exige o X-Cron-Token
     senão o allowlist estaria liberando um endpoint sem nenhuma proteção."""
     por_path = {
         r.path: r for r in app.routes
@@ -98,10 +98,10 @@ def test_endpoints_de_cron_exigem_token():
 
 
 def test_allowlist_publica_nao_tem_padrao_morto():
-    """Cada padrão público deve casar com ao menos uma rota real — senão o
+    """Cada padrão público deve casar com ao menos uma rota real, senão o
     allowlist acumula entradas obsoletas que mascaram regressões."""
     paths = [r.path for r in app.routes if isinstance(r, APIRoute)]
     for pattern in PUBLIC_PATTERNS:
         assert any(pattern in p for p in paths), (
-            f"Padrão público '{pattern}' não casa com nenhuma rota — remova-o."
+            f"Padrão público '{pattern}' não casa com nenhuma rota, remova-o."
         )

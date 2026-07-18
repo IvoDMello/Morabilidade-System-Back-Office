@@ -21,7 +21,7 @@ os.environ.update({
 })
 
 # ── 2. Mock do Supabase antes de qualquer import da app ──────────────────────
-# Supabase valida o JWT no construtor — substituímos o módulo inteiro.
+# Supabase valida o JWT no construtor, substituímos o módulo inteiro.
 _supabase_mock = MagicMock()
 _supabase_mock.create_client.return_value = MagicMock()
 sys.modules["supabase"] = _supabase_mock
@@ -80,7 +80,7 @@ def client():
 
 @pytest.fixture
 def admin_client():
-    """Alias semântico para `client` — uso explícito quando o teste foca em ações admin-only."""
+    """Alias semântico para `client`, uso explícito quando o teste foca em ações admin-only."""
     app.dependency_overrides[get_current_user] = lambda: ADMIN_USER
     app.dependency_overrides[require_admin] = lambda: ADMIN_USER
     app.dependency_overrides[require_admin_or_internal] = lambda: ADMIN_USER

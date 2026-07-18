@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
  * Cron diário (Vercel): marca como arquivada a mídia de captações
  * negativadas/positivadas há mais de RETENCAO_MIDIA_DIAS (default 90).
  *
- * O registro/metadados no banco é SEMPRE preservado — só a mídia migra.
+ * O registro/metadados no banco é SEMPRE preservado, só a mídia migra.
  * A migração física para storage frio é o passo seguinte (ver seção 7 do PRD);
  * aqui marcamos `arquivado_em` para que esses cartões entrem na fila.
  */

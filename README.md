@@ -1,4 +1,4 @@
-# Morabilidade — Sistema de Gestão (Back-Office)
+# Morabilidade: Sistema de Gestão (Back-Office)
 
 Sistema interno de gestão imobiliária. Painel administrativo restrito à equipe + site público que consome a mesma API.
 
@@ -31,7 +31,7 @@ Morabilidade-System-Back-Office/
 └── site/    → Site público: Next.js 15           (porta 3001)
 ```
 
-- **`api/`** é o núcleo. Tudo passa por ela — o painel e o site consomem endpoints desta API.
+- **`api/`** é o núcleo. Tudo passa por ela, o painel e o site consomem endpoints desta API.
 - **`web/`** é o back-office: onde a equipe cadastra imóveis, gerencia clientes e usuários.
 - **`site/`** é a vitrine pública: o que os clientes finais acessam. Usa apenas endpoints públicos da API.
 
@@ -57,7 +57,7 @@ Morabilidade-System-Back-Office/
 
 ## 3. Como rodar o projeto
 
-São **3 terminais** rodando em paralelo. A API deve ser iniciada primeiro — o painel e o site dependem dela.
+São **3 terminais** rodando em paralelo. A API deve ser iniciada primeiro, o painel e o site dependem dela.
 
 > **Pré-requisitos:** Python 3.12+, Node.js 18+, contas no [Supabase](https://supabase.com), [Firebase](https://firebase.google.com) e [Resend](https://resend.com), e banco inicializado (ver [seção 7](#7-banco-de-dados)).
 
@@ -67,13 +67,13 @@ São **3 terminais** rodando em paralelo. A API deve ser iniciada primeiro — o
 
 | Terminal | Pasta | Comando | URL |
 |---|---|---|---|
-| 1 — API | `cd api` | `uvicorn app.main:app --reload` | `localhost:8000` |
-| 2 — Painel | `cd web` | `npm run dev` | `localhost:3000` |
-| 3 — Site | `cd site` | `npm run dev` | `localhost:3001` |
+| 1: API | `cd api` | `uvicorn app.main:app --reload` | `localhost:8000` |
+| 2: Painel | `cd web` | `npm run dev` | `localhost:3000` |
+| 3: Site | `cd site` | `npm run dev` | `localhost:3001` |
 
 ---
 
-### Terminal 1 — API (FastAPI)
+### Terminal 1: API (FastAPI)
 
 ```bash
 cd api
@@ -102,7 +102,7 @@ uvicorn app.main:app --reload
 
 ---
 
-### Terminal 2 — Painel administrativo (Next.js)
+### Terminal 2: Painel administrativo (Next.js)
 
 ```bash
 cd web
@@ -124,7 +124,7 @@ npm run dev
 
 ---
 
-### Terminal 3 — Site público (Next.js)
+### Terminal 3: Site público (Next.js)
 
 ```bash
 cd site
@@ -196,8 +196,8 @@ api/
 | Clientes | 6 | CRUD completo (autenticado) |
 | Tags | 6 | CRUD admin + GET público para o site |
 | Usuários | 10 | CRUD + perfil + troca de senha |
-| Contato | 1 | POST público — dispara e-mail em background |
-| Health | 2 | GET `/` e `/stats` — health check e dados do dashboard |
+| Contato | 1 | POST público, dispara e-mail em background |
+| Health | 2 | GET `/` e `/stats`, health check e dados do dashboard |
 
 ---
 
@@ -262,10 +262,10 @@ site/src/
     │   ├── page.tsx              → Listagem com filtros e paginação (client)
     │   └── [codigo]/page.tsx     → Detalhe do imóvel (SSR + generateMetadata para SEO)
     ├── contato/page.tsx          → Formulário de contato
-    └── sobre/page.tsx            → Sobre a imobiliária (tem placeholders — ver abaixo)
+    └── sobre/page.tsx            → Sobre a imobiliária (tem placeholders, ver abaixo)
 ```
 
-**Atenção — Textos a personalizar no site:**
+**Atenção: Textos a personalizar no site:**
 Os textos marcados com `[X]` na página `/sobre` e no `Footer.tsx` precisam ser substituídos pelas informações reais: anos de mercado, número de imóveis negociados, endereço e telefone.
 
 ---
@@ -276,7 +276,7 @@ O banco é PostgreSQL hospedado no Supabase. Há 6 tabelas:
 
 | Tabela | Função |
 |---|---|
-| `usuarios` | Perfis internos (admin / administrativo) — complementa auth.users do Supabase |
+| `usuarios` | Perfis internos (admin / administrativo), complementa auth.users do Supabase |
 | `imoveis` | Cadastro central dos imóveis (30+ campos: localização, preço, descrição, etc.) |
 | `imovel_fotos` | URLs das fotos no Firebase Storage, com ordenação |
 | `imovel_tags` | Relacionamento N:N entre imóveis e tags |
@@ -289,7 +289,7 @@ O banco é PostgreSQL hospedado no Supabase. Há 6 tabelas:
 3. Isso cria todas as tabelas, índices, triggers e políticas RLS
 
 **Sobre o RLS (Row Level Security):**
-O RLS está habilitado nas tabelas. A API usa a `service_role key` do Supabase, que bypassa o RLS por design. Isso é intencional — a segurança é feita via JWT + dependências do FastAPI (`get_current_user`, `require_admin`).
+O RLS está habilitado nas tabelas. A API usa a `service_role key` do Supabase, que bypassa o RLS por design. Isso é intencional, a segurança é feita via JWT + dependências do FastAPI (`get_current_user`, `require_admin`).
 
 ### Configuração obrigatória no Supabase Dashboard
 
@@ -314,7 +314,7 @@ A migration não cria seed de admin. No primeiro setup:
    INSERT INTO usuarios (id, nome_completo, email, perfil, ativo)
    VALUES ('<UUID-COPIADO>', '<Nome Completo>', '<email>', 'admin', true);
    ```
-3. Pronto — agora dá para fazer login no painel e criar os outros usuários pela tela `/usuarios`.
+3. Pronto, agora dá para fazer login no painel e criar os outros usuários pela tela `/usuarios`.
 
 ---
 
@@ -346,19 +346,19 @@ Esta seção explica **onde mexer** quando você precisar fazer mudanças comuns
 
 ### "Quero adicionar um campo novo ao cadastro de imóvel"
 
-1. **Banco** → `api/migrations/` — crie uma nova migration SQL com `ALTER TABLE imoveis ADD COLUMN ...`
-2. **Schema da API** → `api/app/schemas/imovel.py` — adicione o campo em `ImovelCreate`, `ImovelUpdate` e `ImovelOut`
-3. **Router da API** → `api/app/routers/imoveis.py` — inclua o campo nas operações de INSERT e UPDATE
-4. **Tipo TypeScript** → `web/src/types/index.ts` — atualize a interface `Imovel`
-5. **Formulário do painel** → `web/src/components/imoveis/imovel-form.tsx` — adicione o input
-6. **Página de detalhe no site** → `site/src/app/imoveis/[codigo]/page.tsx` — exiba o campo
+1. **Banco** → `api/migrations/`, crie uma nova migration SQL com `ALTER TABLE imoveis ADD COLUMN ...`
+2. **Schema da API** → `api/app/schemas/imovel.py`, adicione o campo em `ImovelCreate`, `ImovelUpdate` e `ImovelOut`
+3. **Router da API** → `api/app/routers/imoveis.py`, inclua o campo nas operações de INSERT e UPDATE
+4. **Tipo TypeScript** → `web/src/types/index.ts`, atualize a interface `Imovel`
+5. **Formulário do painel** → `web/src/components/imoveis/imovel-form.tsx`, adicione o input
+6. **Página de detalhe no site** → `site/src/app/imoveis/[codigo]/page.tsx`, exiba o campo
 
 ### "Quero mudar a aparência do painel"
 
 - Cores e tema → `web/tailwind.config.ts`
 - Layout geral (sidebar + header) → `web/src/components/layout/`
 - Estilo global → `web/src/app/globals.css`
-- Componentes de UI usam shadcn/ui — consulte a documentação do shadcn para customizar
+- Componentes de UI usam shadcn/ui, consulte a documentação do shadcn para customizar
 
 ### "Quero mudar a aparência do site público"
 
@@ -407,7 +407,7 @@ Esta seção explica **onde mexer** quando você precisar fazer mudanças comuns
 
 - **Painel**: todos os tipos centralizados em `web/src/types/index.ts`
 - **Site**: tipos em `site/src/types/index.ts`
-- Mantenha estes arquivos como fonte de verdade — evite criar tipos inline nos componentes
+- Mantenha estes arquivos como fonte de verdade, evite criar tipos inline nos componentes
 
 ---
 

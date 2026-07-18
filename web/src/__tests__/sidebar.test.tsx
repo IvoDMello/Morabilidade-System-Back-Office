@@ -36,7 +36,7 @@ beforeEach(() => {
   });
 });
 
-describe("Sidebar — navegação acessível", () => {
+describe("Sidebar, navegação acessível", () => {
   it("expõe um landmark de navegação rotulado", () => {
     render(<Sidebar isOpen onClose={vi.fn()} />);
     expect(

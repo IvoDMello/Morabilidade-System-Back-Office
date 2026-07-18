@@ -15,7 +15,7 @@ if settings.sentry_dsn:
     sentry_sdk.init(
         dsn=settings.sentry_dsn,
         environment=settings.app_env,
-        # Erros: captura 100%. Erro precisa ser visto inteiro pra debugar —
+        # Erros: captura 100%. Erro precisa ser visto inteiro pra debugar
         # com amostragem você descobre o bug 1× e perde as 9 ocorrências
         # seguintes. Volume real de erros em prod é baixo, custo é baixo.
         sample_rate=1.0,
@@ -49,7 +49,7 @@ async def lifespan(app: FastAPI):
         from app.scheduler import iniciar_scheduler, parar_scheduler
         try:
             iniciar_scheduler(hora=settings.relatorio_30dias_hora)
-        except Exception:  # noqa: BLE001 — o scheduler nunca deve impedir a app de subir
+        except Exception:  # noqa: BLE001, o scheduler nunca deve impedir a app de subir
             logger.exception("Falha ao iniciar o scheduler; seguindo sem ele.")
             scheduler_on = False
     try:
@@ -60,7 +60,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Morabilidade — API de Gestão Imobiliária",
+    title="Morabilidade: API de Gestão Imobiliária",
     description="API interna do sistema de gestão. O site público consome os endpoints públicos para exibir imóveis em tempo real.",
     version="1.0.0",
     docs_url="/docs" if settings.app_env != "production" else None,
@@ -71,7 +71,7 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# CORS — permite o painel administrativo e o site público consumirem a API
+# CORS, permite o painel administrativo e o site público consumirem a API
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,
@@ -105,9 +105,9 @@ def health_check():
 
 # Railway healthcheck (railway.toml: healthcheckPath = "/health") e Dockerfile
 # HEALTHCHECK apontam pra esta rota. Sem ela todo deploy falha o healthcheck
-# e o Railway mantém a versão anterior no ar — a nova nunca vai pro tráfego.
+# e o Railway mantém a versão anterior no ar, a nova nunca vai pro tráfego.
 #
-# Toca o Supabase pra não passar verde quando o banco está fora — foi
+# Toca o Supabase pra não passar verde quando o banco está fora, foi
 # exatamente o vetor da queda de 19/05/2026 (SSR amplificou indisponibilidade
 # do banco que o healthcheck não percebia).
 @app.get("/health", tags=["Health"], include_in_schema=False)
@@ -122,7 +122,7 @@ def health_endpoint():
 @app.get("/stats", tags=["Health"])
 def get_stats(current_user: dict = Depends(get_current_user)):
     """KPIs do painel inicial. Delegado para a RPC `stats_dashboard()`
-    (migration 032) — 1 query em vez das 9 anteriores."""
+    (migration 032): 1 query em vez das 9 anteriores."""
     res = supabase_admin.rpc("stats_dashboard").execute()
     return res.data or {}
 
@@ -130,7 +130,7 @@ def get_stats(current_user: dict = Depends(get_current_user)):
 @app.get("/relatorios", tags=["Relatórios"])
 def get_relatorios(current_user: dict = Depends(get_current_user)):
     """Agregações da aba Relatórios. Delegado para a RPC
-    `relatorios_dashboard()` (migration 032) — agregação no Postgres em
+    `relatorios_dashboard()` (migration 032), agregação no Postgres em
     vez de SELECT * + Python."""
     res = supabase_admin.rpc("relatorios_dashboard").execute()
     dados = res.data or {}

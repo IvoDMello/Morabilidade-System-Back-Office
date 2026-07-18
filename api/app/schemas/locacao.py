@@ -52,7 +52,7 @@ class ContratoLocacaoBase(BaseModel):
     iptu_anual: Decimal = Field(default=Decimal("0"), ge=0)
     incluir_iptu_cobranca: bool = False
 
-    # Seguro incêndio anual — quando incluído, divide por 12 meses (padrão
+    # Seguro incêndio anual, quando incluído, divide por 12 meses (padrão
     # de mercado, distinto do IPTU que segue 10 parcelas no RJ).
     seguro_incendio_anual: Decimal = Field(default=Decimal("0"), ge=0)
     incluir_seguro_incendio_cobranca: bool = False
@@ -67,10 +67,10 @@ class ContratoLocacaoBase(BaseModel):
     dados_cobranca_conta: Optional[str] = None
     observacoes_demonstrativo: Optional[str] = None
     # Notas internas da imobiliária (ex.: instruções de baixa do boleto).
-    # NÃO sai no PDF do demonstrativo — só consulta interna no back-office.
+    # NÃO sai no PDF do demonstrativo, só consulta interna no back-office.
     observacoes_internas: Optional[str] = None
 
-    # Repasse ao proprietário (Fase 5) — percentual retido pela imobiliária
+    # Repasse ao proprietário (Fase 5), percentual retido pela imobiliária
     # sobre o aluguel pago, antes do repasse mensal.
     taxa_administracao_pct: Decimal = Field(
         default=Decimal("0"), ge=0, le=100,
@@ -90,7 +90,7 @@ class ContratoLocacaoCreate(ContratoLocacaoBase):
 
 
 class ContratoLocacaoUpdate(BaseModel):
-    """Atualização parcial — todos os campos opcionais.
+    """Atualização parcial, todos os campos opcionais.
     Não permite trocar imóvel, proprietário ou locatário (mudaria o que o
     contrato representa; nesses casos, encerre e crie outro)."""
     data_inicio: Optional[date] = None
@@ -130,7 +130,7 @@ class ContratoLocacaoUpdate(BaseModel):
     @model_validator(mode="after")
     def vigencia_e_status_validos(self) -> "ContratoLocacaoUpdate":
         # Se ambas as datas vieram no PATCH, valida a coerência.
-        # (Se vier só uma, o banco mantém a outra — não dá pra cruzar aqui.)
+        # (Se vier só uma, o banco mantém a outra, não dá pra cruzar aqui.)
         if (
             self.data_inicio is not None
             and self.data_fim is not None
@@ -141,7 +141,7 @@ class ContratoLocacaoUpdate(BaseModel):
 
 
 class ParteResumo(BaseModel):
-    """Resumo de cliente/imóvel anexado ao contrato — evita N queries no front."""
+    """Resumo de cliente/imóvel anexado ao contrato, evita N queries no front."""
     id: str
     nome: Optional[str] = None
     codigo: Optional[str] = None
@@ -229,7 +229,7 @@ class AnexoOut(BaseModel):
     tamanho_bytes: Optional[int] = None
     mime_type: Optional[str] = None
     uploaded_by: Optional[str] = None
-    url: Optional[str] = None  # Resolvida na hora — não persistida no banco.
+    url: Optional[str] = None  # Resolvida na hora, não persistida no banco.
 
 
 # ── Reajuste (Fase 5) ───────────────────────────────────────────────────────

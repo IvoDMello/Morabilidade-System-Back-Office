@@ -1,4 +1,4 @@
-"""Testes dos anexos de contrato — Fase 4 do módulo de Locações.
+"""Testes dos anexos de contrato: Fase 4 do módulo de Locações.
 
 Cobre upload, listagem com URL pública resolvida, e delete que remove
 do storage + do banco. O bucket Supabase é mockado para evitar I/O real.
@@ -93,7 +93,7 @@ def test_upload_anexo_arquivo_vazio(client):
 
 
 def test_upload_anexo_arquivo_muito_grande(client):
-    """Limite 10 MB — testamos com 10.5 MB."""
+    """Limite 10 MB, testamos com 10.5 MB."""
     db = make_db_mock(MagicMock(data=CONTRATO_DB))
     _mock_storage(db)
     grande = b"x" * (10 * 1024 * 1024 + 1024)

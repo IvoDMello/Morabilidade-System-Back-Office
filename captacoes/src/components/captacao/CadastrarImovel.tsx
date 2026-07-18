@@ -147,7 +147,7 @@ export function CadastrarImovel({ captacao }: { captacao: Captacao }) {
 
             {captacao.endereco && (
               <p className="text-xs text-muted-foreground">
-                Endereço da captação: <span className="italic">{captacao.endereco}</span> — separe
+                Endereço da captação: <span className="italic">{captacao.endereco}</span>, separe
                 em logradouro, número e bairro abaixo.
               </p>
             )}

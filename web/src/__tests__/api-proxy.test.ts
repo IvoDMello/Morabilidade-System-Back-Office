@@ -95,7 +95,7 @@ afterEach(() => vi.unstubAllGlobals());
 
 // ── Autenticação ──────────────────────────────────────────────────────────────
 
-describe("proxy — autenticação", () => {
+describe("proxy, autenticação", () => {
   it("retorna 401 sem auth em rota protegida", async () => {
     const res = (await GET(makeProxyReq("GET", "/api/proxy/clientes"), {
       params: Promise.resolve({ path: ["clientes"] }),
@@ -144,7 +144,7 @@ describe("proxy — autenticação", () => {
 
 // ── Respostas upstream ────────────────────────────────────────────────────────
 
-describe("proxy — respostas upstream", () => {
+describe("proxy, respostas upstream", () => {
   it("repassa status 200", async () => {
     mockFetch.mockResolvedValue(makeUpstreamRes(200, { items: [] }));
     const res = (await GET(makeProxyReq("GET", "/api/proxy/clientes", { auth: TOKEN }), {
@@ -202,7 +202,7 @@ describe("proxy — respostas upstream", () => {
 
 // ── Seguimento de redirects ───────────────────────────────────────────────────
 
-describe("proxy — seguimento de redirects", () => {
+describe("proxy, seguimento de redirects", () => {
   // O proxy só segue redirects para o mesmo host da API (default localhost:8000).
   // Redirects cross-origin são bloqueados para nunca vazar o Bearer token.
   it("segue redirecionamento 301 same-host preservando Authorization", async () => {
@@ -251,7 +251,7 @@ describe("proxy — seguimento de redirects", () => {
       params: Promise.resolve({ path: ["clientes"] }),
     })) as any;
 
-    // Apenas a chamada inicial — o segundo fetch foi bloqueado antes de sair.
+    // Apenas a chamada inicial, o segundo fetch foi bloqueado antes de sair.
     expect(mockFetch).toHaveBeenCalledTimes(1);
     expect(res.status).toBe(502);
   });
@@ -268,7 +268,7 @@ describe("proxy — seguimento de redirects", () => {
         return new ArrayBuffer(0);
       },
     };
-    // Retorna 301 para todas as chamadas — o proxy deve parar após 5 hops
+    // Retorna 301 para todas as chamadas, o proxy deve parar após 5 hops
     mockFetch.mockResolvedValue(redirectRes);
 
     await GET(makeProxyReq("GET", "/api/proxy/clientes", { auth: TOKEN }), {
@@ -281,7 +281,7 @@ describe("proxy — seguimento de redirects", () => {
 
 // ── Remoção de headers hop-by-hop ─────────────────────────────────────────────
 
-describe("proxy — headers hop-by-hop", () => {
+describe("proxy, headers hop-by-hop", () => {
   it("remove content-encoding da resposta upstream", async () => {
     mockFetch.mockResolvedValue({
       ok: true,

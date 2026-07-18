@@ -77,7 +77,7 @@ def test_enviar_contato_escapa_html_no_template(anon_client):
 
 
 def test_enviar_contato_acessivel_sem_autenticacao(anon_client):
-    """Endpoint é público — não requer token."""
+    """Endpoint é público, não requer token."""
     with patch("app.routers.contato.enviar_notificacao_lead"), \
          patch("app.routers.contato.enviar_confirmacao_contato"):
         res = anon_client.post("/contato", json=PAYLOAD_VALIDO)

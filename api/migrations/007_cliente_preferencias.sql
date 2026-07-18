@@ -1,5 +1,5 @@
 -- ============================================================
--- Morabilidade — Migration 007
+-- Morabilidade: Migration 007
 -- Tabela de preferências de imóvel por cliente.
 --
 -- Quando um imóvel novo entra que casa com a preferência de um

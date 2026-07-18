@@ -1,4 +1,4 @@
-"""Testes da Autorização de Intermediação — criação, PDF, assinatura, validações.
+"""Testes da Autorização de Intermediação, criação, PDF, assinatura, validações.
 
 Cobre também múltiplos signatários (migration 038): cada proprietário tem o
 próprio token; a autorização fica 'parcial' até todos assinarem.

@@ -29,7 +29,7 @@ export function whatsappLink(telefone: string, imovel: ImovelWhatsApp): string {
   const dorms = imovel.dormitorios ? `, ${imovel.dormitorios} dorm.` : "";
   const isLocacao = imovel.tipo_negocio === "locacao";
   const valor = isLocacao ? imovel.valor_locacao : imovel.valor_venda;
-  const valorStr = valor ? ` — R$ ${valor.toLocaleString("pt-BR")}` : "";
+  const valorStr = valor ? `: R$ ${valor.toLocaleString("pt-BR")}` : "";
   const local = imovel.cidade ? `${imovel.bairro}, ${imovel.cidade}` : imovel.bairro;
   const mensagem =
     `Olá! Tenho um imóvel na Morabilidade que combina com o que você procura:\n\n` +

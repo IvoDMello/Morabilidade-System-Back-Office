@@ -1,9 +1,9 @@
 <#
     Copie este arquivo para "config.ps1" (na mesma pasta) e preencha os valores.
-    O config.ps1 NAO vai para o Git (contem segredos) — ja esta no .gitignore.
+    O config.ps1 NAO vai para o Git (contem segredos), ja esta no .gitignore.
 #>
 
-# Connection string do banco — pegue em:
+# Connection string do banco, pegue em:
 #   Supabase Dashboard -> Project Settings -> Database -> Connection string
 #   Use a aba "Session pooler" (IPv4, funciona em qualquer rede). Troque [YOUR-PASSWORD]
 #   pela senha do banco. Exemplo do formato:

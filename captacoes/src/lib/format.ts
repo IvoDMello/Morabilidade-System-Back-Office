@@ -16,7 +16,7 @@ export function relativo(iso: string): string {
 
 /** Data curta dd/mm. */
 export function dataCurta(iso: string | null): string {
-  if (!iso) return "—";
+  if (!iso) return "-";
   return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
 }
 
@@ -47,7 +47,7 @@ export function parseMoeda(v: unknown): number | null {
 
 /** Formata em BRL: R$ 1.234,56. */
 export function formatBRL(v: number | null): string {
-  if (v == null) return "—";
+  if (v == null) return "-";
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 

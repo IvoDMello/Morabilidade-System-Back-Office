@@ -7,7 +7,7 @@ describe("CompartilharButton", () => {
 
   beforeEach(() => {
     sendBeacon.mockClear();
-    // Sem navigator.share por padrão — força o fallback dropdown.
+    // Sem navigator.share por padrão, força o fallback dropdown.
     vi.stubGlobal("navigator", { sendBeacon });
     vi.stubGlobal("window", Object.assign(window, { open: vi.fn() }));
   });

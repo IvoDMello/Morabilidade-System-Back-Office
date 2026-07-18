@@ -105,7 +105,7 @@ export function ClienteNotas({ clienteId }: { clienteId: string }) {
       {/* Formulário de novo registro */}
       <form onSubmit={handleSubmit} className="mb-5">
         <div className="flex flex-col gap-2">
-          {/* Canal do contato — fita rolável no mobile, wrap no desktop */}
+          {/* Canal do contato, fita rolável no mobile, wrap no desktop */}
           <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 sm:pb-0 sm:flex-wrap sm:overflow-visible [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {ORDEM_TIPOS.map((t) => {
               const cfg = TIPOS[t];

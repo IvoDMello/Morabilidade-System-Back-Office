@@ -3,11 +3,11 @@
 Ponto único para a aritmética que o Repasse ao proprietário e o Demonstrativo
 de Administração (cobrança da taxa) têm em comum: parsing da competência,
 clamp do vencimento no mês e o cálculo taxa × valor. Antes cada endpoint
-carregava a própria cópia — qualquer ajuste de regra precisava ser feito em
+carregava a própria cópia, qualquer ajuste de regra precisava ser feito em
 dois lugares e era questão de tempo até os PDFs divergirem.
 
 Regra vigente (decisão do Ivo, 01/07/2026): a taxa de administração é FIXA em
-8% (TAXA_ADM_PADRAO) para todos os contratos — o campo taxa_administracao_pct
+8% (TAXA_ADM_PADRAO) para todos os contratos, o campo taxa_administracao_pct
 do contrato é ignorado nos cálculos. Para não haver cobrança em dobro, o
 Demonstrativo de Administração exclui contratos cujo aluguel do mês passou
 pela imobiliária (pagamento pago/parcial na competência): nesses, os 8% já

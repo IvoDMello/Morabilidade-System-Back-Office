@@ -29,7 +29,7 @@ beforeEach(() => {
 
 // ── Renderização ──────────────────────────────────────────────────────────────
 
-describe("LoginPage — renderização", () => {
+describe("LoginPage, renderização", () => {
   it("exibe campo de e-mail", () => {
     render(<LoginPage />);
     expect(screen.getByPlaceholderText("seu@email.com")).toBeInTheDocument();
@@ -59,7 +59,7 @@ describe("LoginPage — renderização", () => {
 
 // ── Toggle de senha ───────────────────────────────────────────────────────────
 
-describe("LoginPage — visibilidade da senha", () => {
+describe("LoginPage, visibilidade da senha", () => {
   it("campo de senha começa como 'password'", () => {
     render(<LoginPage />);
     expect(screen.getByPlaceholderText("••••••••")).toHaveAttribute("type", "password");
@@ -75,7 +75,7 @@ describe("LoginPage — visibilidade da senha", () => {
 
 // ── Validação de formulário ───────────────────────────────────────────────────
 
-describe("LoginPage — validação", () => {
+describe("LoginPage, validação", () => {
   it("bloqueia envio com e-mail inválido (fetch não é chamado)", async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
@@ -88,7 +88,7 @@ describe("LoginPage — validação", () => {
     await userEvent.type(senhaInput, "senha1234");
     await userEvent.click(screen.getByRole("button", { name: /entrar/i }));
 
-    // react-hook-form valida e bloqueia o submit — fetch nunca é chamado
+    // react-hook-form valida e bloqueia o submit, fetch nunca é chamado
     await waitFor(() => {
       expect(fetchMock).not.toHaveBeenCalled();
     });
@@ -126,7 +126,7 @@ describe("LoginPage — validação", () => {
 
 // ── Submissão ─────────────────────────────────────────────────────────────────
 
-describe("LoginPage — submissão", () => {
+describe("LoginPage, submissão", () => {
   it("chama /api/auth/login com credenciais corretas", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,

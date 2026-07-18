@@ -2,12 +2,12 @@
 --
 -- Decisão (Ivo, 2026-06-26): o cadastro/filtros devem oferecer só:
 --   Apartamento, Casa, Casa de vila, Casa de condomínio, Cobertura.
--- "Apartamento térreo" NÃO é um tipo armazenável de imóvel — continua sendo
+-- "Apartamento térreo" NÃO é um tipo armazenável de imóvel, continua sendo
 -- um conceito virtual (apartamento + andar = 1), válido apenas como
 -- preferência de cliente e filtro, conforme migrations 014/015.
 --
 -- Verificado antes de apertar os CHECKs: nenhum registro usa os tipos
--- removidos — imoveis: apartamento/casa/cobertura; cliente_preferencias:
+-- removidos, imoveis: apartamento/casa/cobertura; cliente_preferencias:
 -- apartamento/casa/NULL. Logo, sem migração de dados.
 --
 -- Alterações:

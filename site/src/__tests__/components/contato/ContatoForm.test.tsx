@@ -12,7 +12,7 @@ vi.mock("@/lib/api", () => ({
   enviarContato: vi.fn().mockResolvedValue(undefined),
 }));
 
-describe("ContatoForm — renderização", () => {
+describe("ContatoForm, renderização", () => {
   it("exibe os campos obrigatórios", () => {
     render(<ContatoForm />);
     expect(screen.getByPlaceholderText("Seu nome")).toBeInTheDocument();
@@ -31,7 +31,7 @@ describe("ContatoForm — renderização", () => {
   });
 });
 
-describe("ContatoForm — pré-preenchimento por imóvel", () => {
+describe("ContatoForm, pré-preenchimento por imóvel", () => {
   it("não pré-preenche mensagem sem codigoImovel", () => {
     render(<ContatoForm />);
     const textarea = screen.getByPlaceholderText(/como podemos/i) as HTMLTextAreaElement;
@@ -51,7 +51,7 @@ describe("ContatoForm — pré-preenchimento por imóvel", () => {
   });
 });
 
-describe("ContatoForm — validação", () => {
+describe("ContatoForm, validação", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

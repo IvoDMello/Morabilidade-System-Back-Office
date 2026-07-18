@@ -11,7 +11,7 @@ import type { ReajusteLocacao } from "@/types";
 interface Props {
   contratoId: string;
   aluguelAtual: number;
-  /** Chamado depois de aplicar reajuste — útil para recarregar o contrato pai. */
+  /** Chamado depois de aplicar reajuste, útil para recarregar o contrato pai. */
   onAplicado?: () => void;
 }
 
@@ -213,7 +213,7 @@ export function ReajustesLocacao({ contratoId, aluguelAtual, onAplicado }: Props
                 <tr key={r.id} className="hover:bg-slate-50/60 transition">
                   <td className="px-4 py-2.5 text-slate-700">{formatarData(r.data_aplicacao)}</td>
                   <td className="px-4 py-2.5 text-slate-600 text-xs uppercase tracking-wider">
-                    {r.indice_referencia ?? "—"}
+                    {r.indice_referencia ?? "-"}
                   </td>
                   <td className="px-4 py-2.5 text-right font-mono text-xs">
                     {Number(r.percentual) > 0 ? "+" : ""}
@@ -226,7 +226,7 @@ export function ReajustesLocacao({ contratoId, aluguelAtual, onAplicado }: Props
                     {formatarMoeda(Number(r.aluguel_novo))}
                   </td>
                   <td className="px-4 py-2.5 text-xs text-slate-500 max-w-xs truncate" title={r.observacoes ?? ""}>
-                    {r.observacoes || "—"}
+                    {r.observacoes || "-"}
                   </td>
                 </tr>
               ))}

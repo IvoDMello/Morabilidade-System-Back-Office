@@ -58,7 +58,7 @@ beforeEach(() => vi.clearAllMocks());
 
 // ── Arquivos estáticos ────────────────────────────────────────────────────────
 
-describe("middleware — arquivos estáticos", () => {
+describe("middleware, arquivos estáticos", () => {
   it("passa .png sem verificar token", () => {
     middleware(req("/logo.png"));
     expect(mocks.next).toHaveBeenCalledTimes(1);
@@ -78,7 +78,7 @@ describe("middleware — arquivos estáticos", () => {
 
 // ── Rota protegida sem nenhum cookie ──────────────────────────────────────────
 
-describe("middleware — rota protegida sem token nem refresh", () => {
+describe("middleware, rota protegida sem token nem refresh", () => {
   it("redireciona / para /login", () => {
     const res = middleware(req("/")) as any;
     expect(res._action).toBe("redirect");
@@ -100,7 +100,7 @@ describe("middleware — rota protegida sem token nem refresh", () => {
 
 // ── Token expirado SEM refresh ────────────────────────────────────────────────
 
-describe("middleware — token expirado sem cookie de refresh", () => {
+describe("middleware, token expirado sem cookie de refresh", () => {
   it("redireciona para /login", () => {
     const res = middleware(req("/", { accessToken: EXPIRED_TOKEN })) as any;
     expect(res._action).toBe("redirect");
@@ -115,7 +115,7 @@ describe("middleware — token expirado sem cookie de refresh", () => {
 
 // ── Token expirado COM refresh ───────────────────────────────────────────────
 
-describe("middleware — token expirado com cookie de refresh", () => {
+describe("middleware, token expirado com cookie de refresh", () => {
   it("redireciona para /api/auth/refresh preservando rota original", () => {
     const res = middleware(
       req("/imoveis/novo", { accessToken: EXPIRED_TOKEN, refreshToken: REFRESH }),
@@ -144,7 +144,7 @@ describe("middleware — token expirado com cookie de refresh", () => {
   });
 
   it("tenta refresh mesmo sem access cookie, se houver refresh", () => {
-    // Aba reaberta depois do access cookie ter expirado por TTL — só o
+    // Aba reaberta depois do access cookie ter expirado por TTL, só o
     // refresh sobreviveu. Deve tentar restaurar a sessão.
     const res = middleware(req("/imoveis", { refreshToken: REFRESH })) as any;
     expect(res._url).toContain("/api/auth/refresh");
@@ -153,7 +153,7 @@ describe("middleware — token expirado com cookie de refresh", () => {
 
 // ── Token malformado ──────────────────────────────────────────────────────────
 
-describe("middleware — token malformado", () => {
+describe("middleware, token malformado", () => {
   it("trata token inválido como ausente e redireciona", () => {
     const res = middleware(req("/", { accessToken: "nao.e.um.jwt.valido" })) as any;
     expect(res._action).toBe("redirect");
@@ -170,7 +170,7 @@ describe("middleware — token malformado", () => {
 
 // ── Token válido em rota protegida ────────────────────────────────────────────
 
-describe("middleware — token válido em rota protegida", () => {
+describe("middleware, token válido em rota protegida", () => {
   it("deixa passar /", () => {
     middleware(req("/", { accessToken: VALID_TOKEN }));
     expect(mocks.next).toHaveBeenCalledTimes(1);
@@ -190,7 +190,7 @@ describe("middleware — token válido em rota protegida", () => {
 
 // ── Rotas públicas com token válido ───────────────────────────────────────────
 
-describe("middleware — rotas públicas com token válido", () => {
+describe("middleware, rotas públicas com token válido", () => {
   it("redireciona /login → / quando já autenticado", () => {
     const res = middleware(req("/login", { accessToken: VALID_TOKEN })) as any;
     expect(res._action).toBe("redirect");
@@ -212,7 +212,7 @@ describe("middleware — rotas públicas com token válido", () => {
 
 // ── Rotas públicas sem token ──────────────────────────────────────────────────
 
-describe("middleware — rotas públicas sem token", () => {
+describe("middleware, rotas públicas sem token", () => {
   it("permite /login sem token", () => {
     middleware(req("/login"));
     expect(mocks.next).toHaveBeenCalledTimes(1);

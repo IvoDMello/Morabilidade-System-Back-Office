@@ -49,7 +49,7 @@ ALTER TABLE autorizacoes_intermediacao
     CHECK (status IN ('pendente', 'parcial', 'assinada', 'cancelada', 'expirada'));
 
 -- Backfill: cada autorização existente vira 1 signatário (o proprietário),
--- reaproveitando o token — nenhum link já enviado quebra. Idempotente.
+-- reaproveitando o token, nenhum link já enviado quebra. Idempotente.
 INSERT INTO autorizacao_signatarios (
     autorizacao_id, ordem, nome, cpf, telefone, email, token, status,
     assinada_em, assinante_ip, assinante_user_agent, assinante_geo,

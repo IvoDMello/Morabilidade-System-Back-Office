@@ -213,7 +213,7 @@ export function FiltrosBusca({ layout = "top", bairros = [] }: Props) {
         />
       </div>
 
-      {/* Bairros — multi-select com chips */}
+      {/* Bairros, multi-select com chips */}
       <div ref={bairroWrapRef}>
         <label className={labelCls}>Bairros</label>
         {filtros.bairros.length > 0 && (

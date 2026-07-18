@@ -13,7 +13,7 @@ export function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-14 pb-8">
         <div className="grid grid-cols-1 md:grid-cols-[1fr_minmax(360px,1.4fr)_1fr] gap-10 md:gap-16 mb-12 md:items-center">
 
-          {/* Páginas — esquerda */}
+          {/* Páginas, esquerda */}
           <div className="text-center md:text-right order-2 md:order-1">
             <h4 className="font-semibold mb-5 text-xs uppercase tracking-widest" style={{ color: "#d8cb6a" }}>
               Páginas
@@ -37,7 +37,7 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Marca — centro */}
+          {/* Marca, centro */}
           <div className="flex flex-col items-center text-center order-1 md:order-2">
             <Image
               src="/logo.jpeg"
@@ -80,7 +80,7 @@ export function Footer() {
             </a>
           </div>
 
-          {/* Portfólio — direita */}
+          {/* Portfólio, direita */}
           <div className="text-center md:text-left order-3">
             <h4 className="font-semibold mb-5 text-xs uppercase tracking-widest" style={{ color: "#d8cb6a" }}>
               Portfólio

@@ -50,7 +50,7 @@ export function PreferenciaForm({ clienteId, onSaved }: Props) {
         setExiste(true);
       })
       .catch(() => {
-        // 404 = sem preferência ainda — começa em branco
+        // 404 = sem preferência ainda, começa em branco
       })
       .finally(() => setLoading(false));
   }, [clienteId]);
@@ -111,7 +111,7 @@ export function PreferenciaForm({ clienteId, onSaved }: Props) {
     <div className="space-y-4">
       {pref.origem === "ficha_visita" && (
         <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-          Perfil inferido automaticamente das fichas de visita assinadas — é recalculado a cada nova
+          Perfil inferido automaticamente das fichas de visita assinadas, é recalculado a cada nova
           assinatura. Ao salvar uma edição aqui, ele passa a ser manual e deixa de ser recalculado.
         </p>
       )}
@@ -124,7 +124,7 @@ export function PreferenciaForm({ clienteId, onSaved }: Props) {
             onChange={(e) => setPref((p) => ({ ...p, tipo_negocio: e.target.value || null }))}
             className={inputClass}
           >
-            <option value="">— Qualquer —</option>
+            <option value="">- Qualquer -</option>
             <option value="venda">Venda</option>
             <option value="locacao">Locação</option>
             <option value="ambos">Ambos</option>
@@ -138,7 +138,7 @@ export function PreferenciaForm({ clienteId, onSaved }: Props) {
             onChange={(e) => setPref((p) => ({ ...p, tipo_imovel: e.target.value || null }))}
             className={inputClass}
           >
-            <option value="">— Qualquer —</option>
+            <option value="">- Qualquer -</option>
             <option value="casa">Casa</option>
             <option value="casa_vila">Casa de vila</option>
             <option value="casa_condominio">Casa de condomínio</option>
@@ -187,7 +187,7 @@ export function PreferenciaForm({ clienteId, onSaved }: Props) {
             ))}
             {isAdmin && (
               <input
-                placeholder={pref.bairros?.length ? "Adicionar bairro…" : "Ex: Humaitá, Leblon — Enter p/ adicionar"}
+                placeholder={pref.bairros?.length ? "Adicionar bairro…" : "Ex: Humaitá, Leblon: Enter p/ adicionar"}
                 disabled={!isAdmin}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === ",") {

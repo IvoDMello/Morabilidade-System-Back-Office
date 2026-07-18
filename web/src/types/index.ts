@@ -53,6 +53,7 @@ export interface Imovel {
   dormitorios?: number;
   suites?: number;
   banheiros?: number;
+  lavabos?: number;
   vagas_garagem?: number;
   mobiliado?: Mobiliado;
   condicao: CondicaoImovel;
@@ -101,6 +102,7 @@ export interface ImovelListOut {
   dormitorios?: number;
   suites?: number;
   banheiros?: number;
+  lavabos?: number;
   vagas_garagem?: number;
   area_util?: number;
   valor_venda?: number;

@@ -12,11 +12,11 @@ describe("formatarMoeda", () => {
   });
 
   it("retorna traço para null", () => {
-    expect(formatarMoeda(null)).toBe("—");
+    expect(formatarMoeda(null)).toBe("-");
   });
 
   it("retorna traço para undefined", () => {
-    expect(formatarMoeda(undefined)).toBe("—");
+    expect(formatarMoeda(undefined)).toBe("-");
   });
 
   it("formata zero corretamente", () => {
@@ -36,10 +36,10 @@ describe("formatarArea", () => {
   });
 
   it("retorna traço para null", () => {
-    expect(formatarArea(null)).toBe("—");
+    expect(formatarArea(null)).toBe("-");
   });
 
   it("retorna traço para undefined", () => {
-    expect(formatarArea(undefined)).toBe("—");
+    expect(formatarArea(undefined)).toBe("-");
   });
 });

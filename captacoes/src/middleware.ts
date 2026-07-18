@@ -44,7 +44,7 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Exclui assets do PWA (manifest e service worker) além dos estáticos — senão
+  // Exclui assets do PWA (manifest e service worker) além dos estáticos, senão
   // o middleware redireciona /manifest.webmanifest e /sw.js para /login (307) e
   // o navegador não consegue oferecer a instalação do app.
   matcher: [

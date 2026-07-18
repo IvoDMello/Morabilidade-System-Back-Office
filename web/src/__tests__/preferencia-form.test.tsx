@@ -42,7 +42,7 @@ beforeEach(() => {
   comoAdmin();
 });
 
-describe("PreferenciaForm — carregamento", () => {
+describe("PreferenciaForm, carregamento", () => {
   it("mostra carregando inicialmente", () => {
     apiGetMock.mockImplementation(() => new Promise(() => {}));
     render(<PreferenciaForm clienteId="cli-1" />);
@@ -59,12 +59,12 @@ describe("PreferenciaForm — carregamento", () => {
   });
 });
 
-describe("PreferenciaForm — remoção via ConfirmDialog (acessível)", () => {
+describe("PreferenciaForm, remoção via ConfirmDialog (acessível)", () => {
   beforeEach(() => {
     apiGetMock.mockResolvedValue({ data: prefExistente });
   });
 
-  it("não dispara delete só por clicar em Remover — abre o diálogo", async () => {
+  it("não dispara delete só por clicar em Remover, abre o diálogo", async () => {
     render(<PreferenciaForm clienteId="cli-1" />);
     await waitFor(() => screen.getByText(/remover preferência/i));
 
@@ -103,7 +103,7 @@ describe("PreferenciaForm — remoção via ConfirmDialog (acessível)", () => {
   });
 });
 
-describe("PreferenciaForm — salvar", () => {
+describe("PreferenciaForm, salvar", () => {
   it("envia o payload normalizado via PUT", async () => {
     apiGetMock.mockResolvedValue({ data: prefExistente });
     apiPutMock.mockResolvedValue({ data: prefExistente });

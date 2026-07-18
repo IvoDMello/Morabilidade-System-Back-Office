@@ -5,7 +5,7 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 -- ============================================================
 -- IMÓVEIS: busca textual (bairro_norm e cidade_norm)
--- Colunas geradas usadas com ILIKE '%valor%' — requerem trigram
+-- Colunas geradas usadas com ILIKE '%valor%', requerem trigram
 -- ============================================================
 CREATE INDEX IF NOT EXISTS idx_imoveis_bairro_norm_trgm
     ON imoveis USING gin(bairro_norm gin_trgm_ops);

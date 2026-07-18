@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 
 class DadosRecebimento(BaseModel):
-    """Conta que recebe a taxa de administração — impressa no box "Dados para
+    """Conta que recebe a taxa de administração, impressa no box "Dados para
     pagamento" do Demonstrativo de Administração. Editável pelo painel."""
     titular: str = ""
     banco: str = ""

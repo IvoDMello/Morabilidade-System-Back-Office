@@ -1,11 +1,11 @@
 -- 037_ficha_visita_crm.sql
 -- Integra a Ficha de Visita ao CRM de clientes:
 --
---   1. Novo valor 'ficha_visita' em clientes.origem_lead — visitante é
+--   1. Novo valor 'ficha_visita' em clientes.origem_lead, visitante é
 --      cadastrado automaticamente como cliente ao gerar a ficha (quando não
 --      existe cadastro com o mesmo CPF/telefone/e-mail).
 --
---   2. Coluna 'origem' em cliente_preferencias — distingue a preferência
+--   2. Coluna 'origem' em cliente_preferencias, distingue a preferência
 --      cadastrada manualmente pelo corretor da inferida a partir das fichas
 --      de visita assinadas. A inferência (services/cliente_da_ficha.py) só
 --      cria/recalcula preferências com origem 'ficha_visita'; editar uma

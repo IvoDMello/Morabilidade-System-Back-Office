@@ -25,7 +25,7 @@ export async function POST(
       !INTERNAL_TOKEN && "BACKOFFICE_INTERNAL_TOKEN",
     ].filter(Boolean);
     return NextResponse.json(
-      { error: `Integração não configurada — variável ausente: ${faltam.join(", ")}.` },
+      { error: `Integração não configurada, variável ausente: ${faltam.join(", ")}.` },
       { status: 500 },
     );
   }

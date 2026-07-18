@@ -57,7 +57,7 @@ function lerFiltroStatus(): "all" | Status {
     const v = window.sessionStorage.getItem(FILTRO_STATUS_KEY);
     if (v && (v === "all" || (STATUSES as readonly string[]).includes(v))) return v as "all" | Status;
   } catch {
-    // storage bloqueado (modo privado etc.) — segue no padrão.
+    // storage bloqueado (modo privado etc.), segue no padrão.
   }
   return "all";
 }

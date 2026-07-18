@@ -1,10 +1,10 @@
 -- ============================================================
--- Morabilidade — Migration 046
+-- Morabilidade: Migration 046
 -- Amplia o carrossel de destaques da home de 5 para 10 posições.
 --
 -- O CHECK original (migration 008) foi criado inline, então o
 -- Postgres nomeou automaticamente como imoveis_destaque_ordem_check.
--- O índice UNIQUE parcial permanece o mesmo — a lógica de "empurrar"
+-- O índice UNIQUE parcial permanece o mesmo, a lógica de "empurrar"
 -- posições no backend atualiza linha a linha (da maior para a menor)
 -- justamente para nunca colidir com ele.
 -- ============================================================

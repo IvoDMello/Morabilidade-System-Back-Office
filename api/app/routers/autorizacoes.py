@@ -1,4 +1,4 @@
-"""Autorização de Intermediação — geração, listagem e assinatura pelo(s) proprietário(s).
+"""Autorização de Intermediação, geração, listagem e assinatura pelo(s) proprietário(s).
 
 Mesma mecânica da ficha de visita ([fichas_visita]): o corretor gera, o link é
 enviado ao proprietário, que assina no celular. Captura IP, data/hora, geo e

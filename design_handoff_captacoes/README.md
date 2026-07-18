@@ -4,9 +4,9 @@
 Redesign mobile-first do app de **Captações** (captacoes.morabilidade.com): um quadro estilo kanban de captações de imóveis e a tela de detalhe onde dois usuários analisam e decidem (aprovar/reprovar) cada captação. O objetivo é deixar o visual mais bonito e alinhado a padrões de UI/UX, mantendo o fluxo atual.
 
 ## About the Design Files
-O arquivo deste pacote (`Captacoes Mora.dc.html`) é uma **referência de design feita em HTML** — um protótipo que mostra a aparência e o comportamento pretendidos, **não** código de produção para copiar e colar. A tarefa é **recriar este design no ambiente existente do projeto** (o app real, provavelmente React) usando os componentes, libs e padrões já estabelecidos no codebase. As cores, tipografia, espaçamentos e medidas abaixo são a fonte de verdade.
+O arquivo deste pacote (`Captacoes Mora.dc.html`) é uma **referência de design feita em HTML**, um protótipo que mostra a aparência e o comportamento pretendidos, **não** código de produção para copiar e colar. A tarefa é **recriar este design no ambiente existente do projeto** (o app real, provavelmente React) usando os componentes, libs e padrões já estabelecidos no codebase. As cores, tipografia, espaçamentos e medidas abaixo são a fonte de verdade.
 
-> Observação técnica: o arquivo `.dc.html` roda sobre um runtime próprio de protótipo (`support.js`) — ignore esse runtime. Interessam apenas o markup, os estilos inline e a lógica de estado descritos aqui.
+> Observação técnica: o arquivo `.dc.html` roda sobre um runtime próprio de protótipo (`support.js`), ignore esse runtime. Interessam apenas o markup, os estilos inline e a lógica de estado descritos aqui.
 
 ## Fidelity
 **Alta fidelidade (hi-fi).** Cores, tipografia, espaçamentos e interações são finais. Recriar pixel-perfect com a stack do projeto.
@@ -15,7 +15,7 @@ O arquivo deste pacote (`Captacoes Mora.dc.html`) é uma **referência de design
 
 ## Design Tokens
 
-### Cores — Olive (primária)
+### Cores: Olive (primária)
 | Tom | Hex |
 |---|---|
 | 50 | `#f5f5f3` |
@@ -30,7 +30,7 @@ O arquivo deste pacote (`Captacoes Mora.dc.html`) é uma **referência de design
 | 900 | `#2e302a` |
 | 950 | `#1a1c16` |
 
-### Cores — Gold (destaque)
+### Cores: Gold (destaque)
 | Tom | Hex |
 |---|---|
 | 50 | `#faf9ef` |
@@ -42,7 +42,7 @@ O arquivo deste pacote (`Captacoes Mora.dc.html`) é uma **referência de design
 | 600 | `#b5a94a` |
 | 700 | `#9a8d3a` |
 
-### Cores de status (colunas) — usadas no ponto + badge
+### Cores de status (colunas), usadas no ponto + badge
 Cada status tem: `dot` (cor do ponto), `bg` (fundo do badge), `fg` (texto do badge).
 | Status (key) | Rótulo completo | Rótulo curto (badge) | dot | bg | fg |
 |---|---|---|---|---|---|
@@ -63,11 +63,11 @@ Ordem das colunas: `aguardando → novas → decisao → agendar_visita → agen
 - **Reprovar (outline, barra inferior):** fundo `#fff`, borda `#e6c5c5`, texto `#9a3b3b`.
 
 ### Tipografia
-- **Serif (títulos/destaques):** `'Playfair Display', serif` — pesos 500/600/700.
+- **Serif (títulos/destaques):** `'Playfair Display', serif`, pesos 500/600/700.
   - Título do header ("Seu quadro"): 30px / 600 / line-height 1.
   - Endereço no detalhe: 25px / 600 / line-height 1.18 / letter-spacing -0.01em.
   - Títulos de seção ("Dados da captação", etc.): 18px / 600.
-- **Sans (corpo/UI):** `'Inter', system-ui, sans-serif` — pesos 400/500/600/700.
+- **Sans (corpo/UI):** `'Inter', system-ui, sans-serif`, pesos 400/500/600/700.
   - Endereço no card: 17px / 600 / line-height 1.28.
   - Specs, captador, labels: 13–14px.
   - Labels de campo (uppercase): 11px / 600 / letter-spacing 0.04em / `#9a9c90`.
@@ -87,7 +87,7 @@ Ordem das colunas: `aguardando → novas → decisao → agendar_visita → agen
 **Propósito:** ver todas as captações, filtrar por status e agir rápido nas que estão "Em decisão".
 
 **Layout (vertical, scroll único):**
-1. **Status bar** (mock de celular) — fundo olive `#2a2c26`, texto `#eef0ea`. Em produção, ignorar (é o chrome do device).
+1. **Status bar** (mock de celular), fundo olive `#2a2c26`, texto `#eef0ea`. Em produção, ignorar (é o chrome do device).
 2. **Header olive** (gradiente hero, padding 18/22/22): 
    - eyebrow "CAPTAÇÕES" (11px / 600 / letter-spacing 0.2em / gold `#d8cb6a`);
    - título "Seu quadro" (Playfair 30/600);
@@ -118,11 +118,11 @@ Ordem das colunas: `aguardando → novas → decisao → agendar_visita → agen
 1. **Top bar** (fundo branco, borda inferior `#e6e7e1`): botão "← Voltar ao quadro" (`#4a4d43`) à esquerda; "🗑 Excluir" (`#a85a5a`) à direita.
 2. **Hero** (fundo branco): badge de status (rótulo **completo**); endereço (Playfair 25/600); bairro com pin; linha com **chip de contato/WhatsApp** (fundo `#eef4f0`, borda `#d8e7df`, ícone de balão verde `#2f6b46`, nome + telefone) e botão **"Anúncio"** (fundo `#faf7e8`, borda `#ece4b8`, texto gold `#9a8d3a`, ícone de link).
 3. **Conteúdo** (padding 16/18, gap 14), seções em cards brancos:
-   - **Dados da captação** — título Playfair + botão "Editar" (chip `#f3f4f0`). Grade 2-col com divisórias de 1px (`#eef0ea`): Endereço (full), Quartos, Suítes, Banheiros, Vagas, Metragem, Portaria, Proprietário (full). Cada célula: label uppercase + valor (14.5px / 600 / `#3d3f36`). Abaixo, bloco de **valores**: "Valor de venda" (card `#faf9ef`/borda `#ece9cf`, valor 18/700) e "Condomínio" (card `#f5f6f1`).
-   - **Fotos e vídeos** — galeria horizontal de miniaturas (no protótipo são placeholders listrados 128×96; no app, usar as fotos reais) + tile tracejado "Adicionar". Abaixo: input "Link de vídeo (YouTube)" + botão "Adicionar" (ícone de vídeo).
-   - **Documentos** — lista de docs (ícone de arquivo + nome + meta "240 KB · há 2 dias") + botão tracejado "Anexar documento".
-   - **Anotações** — caixa de texto (`#fafbf8`, borda `#eef0ea`) + botão "Salvar" (gold gradient `linear-gradient(150deg,#e0d27a,#c5b54a)`, texto `#3a3408`).
-   - **Histórico** — timeline vertical: ponto colorido + linha conectora `#eceee8`; cada item "De → Para" (14/600) + tempo ("há 12 horas").
+   - **Dados da captação**, título Playfair + botão "Editar" (chip `#f3f4f0`). Grade 2-col com divisórias de 1px (`#eef0ea`): Endereço (full), Quartos, Suítes, Banheiros, Vagas, Metragem, Portaria, Proprietário (full). Cada célula: label uppercase + valor (14.5px / 600 / `#3d3f36`). Abaixo, bloco de **valores**: "Valor de venda" (card `#faf9ef`/borda `#ece9cf`, valor 18/700) e "Condomínio" (card `#f5f6f1`).
+   - **Fotos e vídeos**, galeria horizontal de miniaturas (no protótipo são placeholders listrados 128×96; no app, usar as fotos reais) + tile tracejado "Adicionar". Abaixo: input "Link de vídeo (YouTube)" + botão "Adicionar" (ícone de vídeo).
+   - **Documentos**, lista de docs (ícone de arquivo + nome + meta "240 KB · há 2 dias") + botão tracejado "Anexar documento".
+   - **Anotações**, caixa de texto (`#fafbf8`, borda `#eef0ea`) + botão "Salvar" (gold gradient `linear-gradient(150deg,#e0d27a,#c5b54a)`, texto `#3a3408`).
+   - **Histórico**, timeline vertical: ponto colorido + linha conectora `#eceee8`; cada item "De → Para" (14/600) + tempo ("há 12 horas").
 4. **Barra de decisão fixa** (rodapé, fundo branco, borda-topo, sombra para cima): **Reprovar** (outline vermelho) + **Aprovar captação** (verde sólido, flex maior). Aparece quando `status === 'decisao'`.
 
 ---
@@ -157,7 +157,7 @@ Ordem das colunas: `aguardando → novas → decisao → agendar_visita → agen
 ## Assets
 - **Ícones:** estilo *line* (Lucide-equivalente), stroke 1.7–2.2, `currentColor`. Usados: grade, logout, lupa, sliders, ordenação, pin, cama, porta, banheira, carro, scan, chevron, "+", link, balão de chat, lápis (editar), imagem, vídeo, arquivo, upload, lixeira, check, x. Use a biblioteca de ícones já adotada no projeto.
 - **Fonts:** Inter + Playfair Display (Google Fonts). Use o que o projeto já carrega; senão, importe ambas.
-- **Fotos/vídeos/docs:** placeholders no protótipo — ligar aos dados reais da captação.
+- **Fotos/vídeos/docs:** placeholders no protótipo, ligar aos dados reais da captação.
 
 ## Files
-- `Captacoes Mora.dc.html` — protótipo de referência (board + detalhe, interativo). Abrir no navegador para ver comportamento e medidas.
+- `Captacoes Mora.dc.html`, protótipo de referência (board + detalhe, interativo). Abrir no navegador para ver comportamento e medidas.

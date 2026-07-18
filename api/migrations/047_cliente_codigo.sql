@@ -1,5 +1,5 @@
 -- ============================================================
--- Morabilidade — Migration 047
+-- Morabilidade: Migration 047
 -- Código curto e legível para clientes (CLI-0001), no mesmo
 -- espírito do código de imóvel: citável em conversas, buscas,
 -- relatórios e fichas.

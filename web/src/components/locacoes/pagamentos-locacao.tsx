@@ -193,7 +193,7 @@ export function PagamentosLocacao({
                       {formatarMoeda(Number(p.valor_devido))}
                     </td>
                     <td className="px-4 py-2.5 text-right font-mono text-xs text-slate-600">
-                      {p.valor_pago != null ? formatarMoeda(Number(p.valor_pago)) : "—"}
+                      {p.valor_pago != null ? formatarMoeda(Number(p.valor_pago)) : "-"}
                     </td>
                     <td className="px-4 py-2.5 text-xs text-slate-500">
                       {formatarData(p.data_vencimento)}

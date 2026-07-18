@@ -88,7 +88,7 @@ def test_listar_imoveis_exige_autenticacao(anon_client):
     assert res.status_code == 403
 
 
-# ── Busca livre (q) — cobre código, logradouro e bairro ──────────────────────
+# ── Busca livre (q), cobre código, logradouro e bairro ──────────────────────
 
 def test_listar_imoveis_q_aplica_or_codigo_logradouro_bairro(client):
     """O parâmetro `q` deve emitir um OR cobrindo codigo + logradouro + bairro_norm."""
@@ -460,7 +460,7 @@ def test_bairros_publico_rota_nao_conflita_com_codigo(anon_client):
     assert isinstance(res.json(), list)
 
 
-# ── GET /imoveis/publico/disponiveis — parâmetro ordenar ─────────────────────
+# ── GET /imoveis/publico/disponiveis, parâmetro ordenar ─────────────────────
 
 def test_disponiveis_publico_ordenar_preco_asc_usa_campo_valor_venda(anon_client):
     count_mock = MagicMock(count=1, data=[])

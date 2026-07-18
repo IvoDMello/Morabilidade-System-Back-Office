@@ -37,7 +37,7 @@ CONTRATO_DB = {
     "data_rescisao": None,
     "created_at": "2026-01-01T00:00:00+00:00",
     "updated_at": "2026-01-01T00:00:00+00:00",
-    # Joins que o _SELECT_FULL produz — serão achatados pelo router
+    # Joins que o _SELECT_FULL produz, serão achatados pelo router
     "imovel": {
         "id": "imovel-uuid-1",
         "codigo": "MB-00042",
@@ -456,7 +456,7 @@ def test_deletar_pagamento(client):
 # ── GET /locacoes/analises ───────────────────────────────────────────────────
 
 def test_analises_carteira_vazia(client):
-    """Sem contratos e sem pagamentos — KPIs zeram, gráficos vazios."""
+    """Sem contratos e sem pagamentos: KPIs zeram, gráficos vazios."""
     db = make_db_mock(
         MagicMock(data=[]),  # contratos
         MagicMock(data=[]),  # pagamentos
@@ -503,16 +503,16 @@ def test_analises_com_pagamentos(client):
         },
     ]
     pagamentos = [
-        # Pago — entra em receita realizada
+        # Pago, entra em receita realizada
         {"mes_referencia": "2026-04-01", "valor_devido": "8354.19",
          "valor_pago": "8354.19", "status": "pago"},
-        # Atrasado — vira inadimplência
+        # Atrasado, vira inadimplência
         {"mes_referencia": "2026-05-01", "valor_devido": "8354.19",
          "valor_pago": None, "status": "atrasado"},
-        # Parcial — soma na receita o que foi pago + abre o restante
+        # Parcial, soma na receita o que foi pago + abre o restante
         {"mes_referencia": "2026-05-01", "valor_devido": "5000.00",
          "valor_pago": "2000.00", "status": "parcial"},
-        # Pendente — só entra em "em aberto"
+        # Pendente, só entra em "em aberto"
         {"mes_referencia": "2026-06-01", "valor_devido": "8354.19",
          "valor_pago": None, "status": "pendente"},
     ]

@@ -5,7 +5,7 @@
 --     e perdendo o histórico. Esta migration introduz uma tabela de
 --     reajustes para auditoria, e formaliza o cálculo de repasse ao
 --     proprietário com uma taxa de administração por contrato.
---   - Não buscamos índices externos automaticamente — o usuário informa
+--   - Não buscamos índices externos automaticamente, o usuário informa
 --     o percentual (lê IGPM/IPCA por fora) e o sistema registra a
 --     aplicação no aniversário do contrato.
 
@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS locacao_reajustes (
     aluguel_novo        numeric(12,2) NOT NULL CHECK (aluguel_novo >= 0),
 
     indice_referencia   text,
-    -- 'IGPM', 'IPCA', 'IGPM-12m', etc. Texto livre — não amarra o sistema
+    -- 'IGPM', 'IPCA', 'IGPM-12m', etc. Texto livre, não amarra o sistema
     -- a uma lista fechada de índices.
     observacoes         text,
 

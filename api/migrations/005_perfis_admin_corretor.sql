@@ -1,5 +1,5 @@
 -- ============================================================
--- Morabilidade — Migration 005
+-- Morabilidade: Migration 005
 -- Renomeia o perfil 'administrativo' para 'corretor' e ajusta o
 -- CHECK constraint da tabela usuarios.
 --
@@ -9,7 +9,7 @@
 --
 -- IMPORTANTE: a constraint é dropada ANTES do UPDATE para que o
 -- novo valor 'corretor' não viole a restrição antiga durante a
--- migração. Esta migration é idempotente — pode rodar de novo
+-- migração. Esta migration é idempotente, pode rodar de novo
 -- com segurança caso uma execução anterior tenha falhado no meio.
 -- ============================================================
 

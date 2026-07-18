@@ -1,16 +1,16 @@
-# Handoff: Morabilidade — Redesign das Abas Início, Imóveis, Sobre e Contato
+# Handoff: Morabilidade: Redesign das Abas Início, Imóveis, Sobre e Contato
 
 ## Overview
 
 Este pacote contém o redesign completo de quatro páginas do site da Morabilidade:
-- **Início** — página principal com hero, destaques, diferenciais, depoimentos, história e CTA
-- **Imóveis** — portfólio com filtros em barra horizontal e grid de cards editoriais
-- **Sobre** — história da empresa, diferenciais, como funciona, depoimentos completos
-- **Contato** — canais de atendimento (WhatsApp e Instagram)
+- **Início**, página principal com hero, destaques, diferenciais, depoimentos, história e CTA
+- **Imóveis**, portfólio com filtros em barra horizontal e grid de cards editoriais
+- **Sobre**, história da empresa, diferenciais, como funciona, depoimentos completos
+- **Contato**, canais de atendimento (WhatsApp e Instagram)
 
 ## Sobre os Arquivos de Design
 
-O arquivo `Morabilidade Redesign v2.html` é um **protótipo de referência em HTML/React** — não é código de produção. A tarefa é **recriar estas telas no projeto real existente** (site + sistema + API já integrados), respeitando os padrões, frameworks e componentes já estabelecidos no codebase.
+O arquivo `Morabilidade Redesign v2.html` é um **protótipo de referência em HTML/React**, não é código de produção. A tarefa é **recriar estas telas no projeto real existente** (site + sistema + API já integrados), respeitando os padrões, frameworks e componentes já estabelecidos no codebase.
 
 O protótipo usa React com Babel inline apenas para fins de visualização. No projeto real, adapte para a estrutura existente.
 
@@ -22,7 +22,7 @@ O protótipo usa React com Babel inline apenas para fins de visualização. No p
 
 ## Design Tokens
 
-### Cores (identidade visual aprovada — não alterar)
+### Cores (identidade visual aprovada, não alterar)
 
 | Papel | Nome | Hex |
 |-------|------|-----|
@@ -77,7 +77,7 @@ Usar `clamp()` para responsividade fluida:
 |---------|-----|
 | `Logo_fundoTransparente-7574853e.png` | Logo no nav (altura 46px) e na página Sobre |
 
-O logo deve aparecer **sem alterações** — não trocar cor, não recriar em SVG.
+O logo deve aparecer **sem alterações**, não trocar cor, não recriar em SVG.
 
 ---
 
@@ -85,14 +85,14 @@ O logo deve aparecer **sem alterações** — não trocar cor, não recriar em S
 
 ---
 
-### 1. Navegação (Nav) — compartilhada em todas as páginas
+### 1. Navegação (Nav), compartilhada em todas as páginas
 
 **Layout:** `position: sticky; top: 0; z-index: 500`  
 Altura: `60px` | Background: `#585a4f`  
 Padding horizontal: `clamp(20px, 5vw, 48px)`  
 Flex: `justify-content: space-between; align-items: center`
 
-**Esquerda:** Logo PNG — `height: 46px`
+**Esquerda:** Logo PNG: `height: 46px`
 
 **Direita (desktop):** Links de navegação + divisor + ícone Instagram + botão CTA
 - Links: Inter 14px, cor `rgba(252,252,252,0.6)`, hover `#fcfcfc`
@@ -129,7 +129,7 @@ Flex: `justify-content: space-between; align-items: center`
 **Barra de busca:** background `#fcfcfc`, border-radius `12px`, padding `10px`, max-width `580px`, box-shadow `0 8px 32px rgba(0,0,0,0.18)`
 - Select de tipo + divisor + input de localização com ícone pin + botão "Buscar" (`#d8cb6a`, bold)
 
-**Contador:** Inter 12px, `rgba(252,252,252,0.38)` — ex: "4 imóveis disponíveis agora" (dado real da API)
+**Contador:** Inter 12px, `rgba(252,252,252,0.38)`, ex: "4 imóveis disponíveis agora" (dado real da API)
 
 ---
 
@@ -142,7 +142,7 @@ Flex: `justify-content: space-between; align-items: center`
 **Card destaque:**
 - Border-radius `14px`, overflow hidden
 - Imagem: `padding-top: 65%` (aspect ratio), cover, hover scale `1.05`
-- Badge negócio (Venda/Locação): topo esquerdo — Venda=`#d8cb6a`/texto escuro, Locação=`#585a4f`/texto branco
+- Badge negócio (Venda/Locação): topo esquerdo: Venda=`#d8cb6a`/texto escuro, Locação=`#585a4f`/texto branco
 - Body: tipo (uppercase 12px muted), preço (Playfair 17px), localização com ícone pin, quartos + área, link "Ver mais →"
 
 ---
@@ -214,7 +214,7 @@ Flex: `justify-content: space-between; align-items: center`
 - **Nota editorial:** texto itálico entre aspas, border-top `1px solid #e4e1d6`
 - **Link:** "Ver detalhes →" Inter 13px bold olive, border-bottom dourado
 
-**Filtros funcionam via API** — os valores de negócio, bairro e tipo devem ser conectados aos filtros reais da API já existente.
+**Filtros funcionam via API**, os valores de negócio, bairro e tipo devem ser conectados aos filtros reais da API já existente.
 
 ---
 
@@ -223,7 +223,7 @@ Flex: `justify-content: space-between; align-items: center`
 #### 4.1 Hero
 - Background `#585a4f`
 - Label + headline **"Imobiliária feita para o mundo digital"** + subtítulo
-- Badge Instagram: background `rgba(252,252,252,0.08)`, border-radius `100px` — ícone IG + "@morabilidade" + divisor + **"+80k seguidores"** dourado
+- Badge Instagram: background `rgba(252,252,252,0.08)`, border-radius `100px`, ícone IG + "@morabilidade" + divisor + **"+80k seguidores"** dourado
 
 #### 4.2 Nossa História (split)
 - Background `#fcfcfc`, grid `1fr clamp(200px,30%,300px)`
@@ -248,11 +248,11 @@ Flex: `justify-content: space-between; align-items: center`
 - Título: 14px bold olive | Texto: 14px muted
 
 **Passos:**
-1. Entre em contato — WhatsApp ou Instagram
-2. Entendemos seu perfil — sem questionários longos
-3. Selecionamos as melhores opções — sem perda de tempo
-4. Agendamos a visita — no horário conveniente
-5. Negociação e fechamento — da proposta à escritura
+1. Entre em contato: WhatsApp ou Instagram
+2. Entendemos seu perfil, sem questionários longos
+3. Selecionamos as melhores opções, sem perda de tempo
+4. Agendamos a visita, no horário conveniente
+5. Negociação e fechamento, da proposta à escritura
 
 #### 4.6 Depoimentos (grid 2×2)
 - Background `#f7f6f2`, grid `repeat(auto-fit, minmax(300px, 1fr))`
@@ -268,8 +268,8 @@ Flex: `justify-content: space-between; align-items: center`
 #### 4.7 CTA Final
 - Background `#3e4037`
 - Headline + subtítulo + 2 botões lado a lado:
-  - **"Ver imóveis →"** — background `#d8cb6a`, texto escuro
-  - **"Falar com a equipe"** — borda `1.5px solid rgba(252,252,252,0.3)`, texto branco, ícone WA
+  - **"Ver imóveis →"**, background `#d8cb6a`, texto escuro
+  - **"Falar com a equipe"**, borda `1.5px solid rgba(252,252,252,0.3)`, texto branco, ícone WA
 
 ---
 
@@ -346,9 +346,9 @@ Flex: `justify-content: space-between; align-items: center`
 
 ## Notas para Implementação
 
-1. **Filtros da aba Imóveis** devem ser conectados à API real — os dados mocados no protótipo são apenas ilustrativos
+1. **Filtros da aba Imóveis** devem ser conectados à API real, os dados mocados no protótipo são apenas ilustrativos
 2. **Destaques na Início** devem buscar imóveis reais da API (ex: marcados como `destaque=true`)
 3. **Contador do hero** ("X imóveis disponíveis agora") deve refletir o total real da API
 4. **Logo:** usar sempre o arquivo PNG original, sem modificações de cor ou forma
-5. **Travessão (—):** não usar em nenhum copy — substituir por vírgula, ponto ou `·`
+5. **Travessão (-):** não usar em nenhum copy, substituir por vírgula, ponto ou `·`
 6. **WhatsApp flutuante** (já existente no site) deve ser mantido

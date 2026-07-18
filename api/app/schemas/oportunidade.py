@@ -88,7 +88,7 @@ class MatchClienteImovel(BaseModel):
     dormitorios: Optional[int] = None
     vagas_garagem: Optional[int] = None
     foto_capa: Optional[str] = None
-    # True quando o cliente tem ficha de visita assinada para este imóvel —
+    # True quando o cliente tem ficha de visita assinada para este imóvel
     # diferencia visita física comprovada de match só por preferência.
     visitado: bool = False
     score: int = 0
@@ -107,6 +107,6 @@ class MatchImovelCliente(BaseModel):
 
 
 class MatchsList(BaseModel):
-    """Resposta agregada — usada pelo dashboard."""
+    """Resposta agregada, usada pelo dashboard."""
     total: int
     items: List[MatchImovelCliente]

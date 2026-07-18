@@ -129,7 +129,7 @@ beforeEach(() => {
 
 // ── Carregamento ──────────────────────────────────────────────────────────────
 
-describe("EditarImovelPage — carregamento", () => {
+describe("EditarImovelPage, carregamento", () => {
   it("exibe spinner enquanto carrega", () => {
     apiGetMock.mockImplementation(() => new Promise(() => {}));
     render(<EditarImovelPage params={Promise.resolve({ id: "imovel-abc" })} />);
@@ -182,7 +182,7 @@ describe("EditarImovelPage — carregamento", () => {
 
 // ── Galeria de fotos ──────────────────────────────────────────────────────────
 
-describe("EditarImovelPage — galeria de fotos", () => {
+describe("EditarImovelPage, galeria de fotos", () => {
   it("exibe mensagem quando não há fotos", async () => {
     apiGetMock.mockResolvedValue({ data: imovelFixture({ imovel_fotos: [] }) });
     render(<EditarImovelPage params={Promise.resolve({ id: "imovel-abc" })} />);
@@ -235,7 +235,7 @@ describe("EditarImovelPage — galeria de fotos", () => {
 
 // ── Seção de interessados ─────────────────────────────────────────────────────
 
-describe("EditarImovelPage — interessados", () => {
+describe("EditarImovelPage, interessados", () => {
   it("renderiza seção de interessados", async () => {
     apiGetMock.mockResolvedValue({ data: imovelFixture() });
     render(<EditarImovelPage params={Promise.resolve({ id: "imovel-abc" })} />);
@@ -247,7 +247,7 @@ describe("EditarImovelPage — interessados", () => {
 
 // ── Salvar ────────────────────────────────────────────────────────────────────
 
-describe("EditarImovelPage — salvar", () => {
+describe("EditarImovelPage, salvar", () => {
   it("chama api.put com o id correto ao submeter", async () => {
     apiGetMock.mockResolvedValue({ data: imovelFixture() });
     apiPutMock.mockResolvedValue({ data: imovelFixture() });

@@ -33,7 +33,7 @@ export function Header({ onMenuClick }: HeaderProps) {
       style={{ borderColor: "#d8cb6a" }}
     >
       <div className="flex items-center gap-3">
-        {/* Hamburger — só aparece no mobile */}
+        {/* Hamburger, só aparece no mobile */}
         <button
           onClick={onMenuClick}
           className="md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition"

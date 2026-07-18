@@ -1,4 +1,4 @@
-"""Testes da geração do demonstrativo PDF — service + endpoints.
+"""Testes da geração do demonstrativo PDF, service + endpoints.
 
 Cobre Fase 3 do módulo de locações: cálculo do total seguindo a regra de
 negócio do Artur Araripe, geração individual e em lote (ZIP).
@@ -67,7 +67,7 @@ def test_total_com_iptu_dividido_em_dez():
 
 
 def test_total_com_fundo_obra_e_iptu():
-    """Fundo de obra é despesa extraordinária do proprietário — deduz do total
+    """Fundo de obra é despesa extraordinária do proprietário, deduz do total
     (mesmo tratamento do fundo de reserva)."""
     contrato = {
         "aluguel_mensal": "6000",
@@ -250,7 +250,7 @@ def test_demonstrativo_individual_atualiza_snapshot_existente_se_pendente(client
         )
 
     assert res.status_code == 200
-    # Update foi chamado (não insert) — mantém id do snapshot existente
+    # Update foi chamado (não insert), mantém id do snapshot existente
     updates = db.update.call_args.args[0]
     assert "valor_devido" in updates
     assert "data_vencimento" in updates
@@ -331,7 +331,7 @@ def test_demonstrativos_em_lote_isola_falha_de_um_contrato(client):
     db = make_db_mock(
         MagicMock(data=[CONTRATO_DB, contrato_quebrado]),
         MagicMock(data=[]), MagicMock(data=[{}]),  # snapshot 1
-        # snapshot 2 nem chega — falha antes
+        # snapshot 2 nem chega, falha antes
     )
 
     with patch("app.routers.locacoes.supabase_admin", db):

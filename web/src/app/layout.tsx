@@ -8,7 +8,7 @@ import { AuthProvider } from "@/components/providers/AuthProvider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Morabilidade — Sistema de Gestão",
+  title: "Morabilidade: Sistema de Gestão",
   description: "Painel administrativo interno da imobiliária Morabilidade.",
   icons: {
     icon: "/favcon_Mora.png",

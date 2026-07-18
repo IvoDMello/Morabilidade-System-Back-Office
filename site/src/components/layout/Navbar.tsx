@@ -136,7 +136,7 @@ export function Navbar() {
         {open ? <X className="w-6 h-6" strokeWidth={2.5} /> : <Menu className="w-6 h-6" strokeWidth={2.5} />}
       </button>
 
-      {/* Mobile menu — fullscreen overlay */}
+      {/* Mobile menu, fullscreen overlay */}
       {open && (
         <div
           className="md:hidden fixed inset-0 z-50 flex flex-col"

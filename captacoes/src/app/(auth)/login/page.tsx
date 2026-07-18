@@ -83,7 +83,7 @@ export default function LoginPage() {
               Do recebimento<br />à decisão.
             </h1>
             <p className="text-white/60 text-sm max-w-xs leading-relaxed">
-              Acompanhe cada captação — recebimento, decisão, visita e gravação — em um
+              Acompanhe cada captação, recebimento, decisão, visita e gravação, em um
               quadro só.
             </p>
           </div>
@@ -100,7 +100,7 @@ export default function LoginPage() {
 
       {/* ── Painel direito: formulário ── */}
       <div className="flex-1 flex flex-col lg:items-center lg:justify-center bg-white">
-        {/* Hero mobile (foto + logo sobreposta) — só fora do desktop */}
+        {/* Hero mobile (foto + logo sobreposta), só fora do desktop */}
         <div className="lg:hidden relative w-full h-56 sm:h-72 flex-shrink-0">
           <Image
             src="/login-hero.jpg"

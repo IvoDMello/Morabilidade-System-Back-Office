@@ -71,7 +71,7 @@ afterEach(() => vi.unstubAllGlobals());
 
 // ── Erros de entrada ──────────────────────────────────────────────────────────
 
-describe("POST /api/auth/login — corpo inválido", () => {
+describe("POST /api/auth/login, corpo inválido", () => {
   it("retorna 400 para JSON malformado", async () => {
     const req = new Request("http://localhost/api/auth/login", {
       method: "POST",
@@ -84,7 +84,7 @@ describe("POST /api/auth/login — corpo inválido", () => {
 
 // ── Falhas de conectividade ───────────────────────────────────────────────────
 
-describe("POST /api/auth/login — falhas de conectividade", () => {
+describe("POST /api/auth/login, falhas de conectividade", () => {
   it("retorna 502 quando a API não responde", async () => {
     mockFetch.mockRejectedValue(new Error("ECONNREFUSED"));
     const res = (await POST(makeReq({ email: "a@a.com", password: "123456" }) as any)) as any;
@@ -102,7 +102,7 @@ describe("POST /api/auth/login — falhas de conectividade", () => {
 
 // ── Erros retornados pela API upstream ────────────────────────────────────────
 
-describe("POST /api/auth/login — erros upstream", () => {
+describe("POST /api/auth/login, erros upstream", () => {
   it("repassa status 401 da API de autenticação", async () => {
     mockFetch.mockResolvedValue({
       ok: false,
@@ -148,7 +148,7 @@ describe("POST /api/auth/login — erros upstream", () => {
 
 // ── Sucesso ───────────────────────────────────────────────────────────────────
 
-describe("POST /api/auth/login — sucesso", () => {
+describe("POST /api/auth/login, sucesso", () => {
   const user = { id: "1", nome_completo: "Admin", email: "admin@test.com", perfil: "admin" };
 
   beforeEach(() => {

@@ -457,8 +457,8 @@ class Component extends DCLogic {
     this.setState(st => ({
       items: st.items.map(it => it.id === id ? Object.assign({}, it, { status: next }) : it),
       toast: kind === 'aprovar'
-        ? { text: 'Aprovada — movida para “Agendar visita”', tone:'ok' }
-        : { text: 'Reprovada — movida para “Pendente de negativa”', tone:'bad' },
+        ? { text: 'Aprovada, movida para “Agendar visita”', tone:'ok' }
+        : { text: 'Reprovada, movida para “Pendente de negativa”', tone:'bad' },
     }));
     clearTimeout(this._t);
     this._t = setTimeout(() => this.setState({ toast: null }), 2800);

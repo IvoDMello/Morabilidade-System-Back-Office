@@ -1,5 +1,5 @@
 -- =====================================================================
--- Migration 0012 — prazo de decisão, metadados da gaveta e duplicadas
+-- Migration 0012, prazo de decisão, metadados da gaveta e duplicadas
 -- (rodar DEPOIS da 0011, em transação separada)
 --
 -- 1. Default de status passa a ser 'novas' (fluxo: nasce em Novas).

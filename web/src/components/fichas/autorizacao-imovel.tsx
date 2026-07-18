@@ -43,18 +43,18 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://morabilidade.com";
 export const linkAssinatura = (token: string) => `${SITE_URL.replace(/\/$/, "")}/autorizacao/${token}`;
 
 function formatDataBR(iso?: string | null) {
-  if (!iso) return "—";
+  if (!iso) return "-";
   const d = new Date(iso);
-  return isNaN(d.getTime()) ? "—" : d.toLocaleDateString("pt-BR");
+  return isNaN(d.getTime()) ? "-" : d.toLocaleDateString("pt-BR");
 }
 
 // Para a assinatura, mostramos também a hora (o navegador já converte pro fuso
 // local), batendo com a trilha de auditoria do PDF.
 function formatDataHoraBR(iso?: string | null) {
-  if (!iso) return "—";
+  if (!iso) return "-";
   const d = new Date(iso);
   return isNaN(d.getTime())
-    ? "—"
+    ? "-"
     : d.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
 }
 
@@ -138,7 +138,7 @@ function NovaAutorizacao({ imovelId, onCriada }: { imovelId: string; onCriada: (
     if (preenchidos.length > 1) {
       payload.proprietarios = preenchidos.map((p) => ({
         nome: p.nome.trim(),
-        // CPF não é mais coletado aqui — cada proprietário confirma o seu na
+        // CPF não é mais coletado aqui, cada proprietário confirma o seu na
         // hora de assinar. A API puxa o que tiver do cadastro do imóvel.
         cpf: null,
         telefone: p.telefone.trim() || null,
@@ -157,8 +157,8 @@ function NovaAutorizacao({ imovelId, onCriada }: { imovelId: string; onCriada: (
       try { await navigator.clipboard.writeText(linkAssinatura(res.data.token)); } catch {}
       toast.success(
         preenchidos.length > 1
-          ? "Autorização gerada — envie o link de cada proprietário pela lista abaixo."
-          : "Autorização gerada — link de assinatura copiado.",
+          ? "Autorização gerada, envie o link de cada proprietário pela lista abaixo."
+          : "Autorização gerada, link de assinatura copiado.",
       );
       setValor(""); setProps([rowVazia()]);
       onCriada();
@@ -195,7 +195,7 @@ function NovaAutorizacao({ imovelId, onCriada }: { imovelId: string; onCriada: (
         <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
           <input type="checkbox" checked={exclusiva} onChange={(e) => setExclusiva(e.target.checked)}
             className="w-4 h-4 accent-[#585a4f]" />
-          <span>Com exclusividade <span className="text-xs text-slate-400">(comissão devida mesmo em venda direta do dono no prazo — art. 726 CC)</span></span>
+          <span>Com exclusividade <span className="text-xs text-slate-400">(comissão devida mesmo em venda direta do dono no prazo, art. 726 CC)</span></span>
         </label>
 
         <div className="space-y-2">

@@ -1,5 +1,5 @@
 -- =====================================================================
--- Migration 0013 — opiniões da equipe
+-- Migration 0013, opiniões da equipe
 --
 -- 1. perfil: nome de exibição de cada usuário (avatar/autoria).
 -- 2. opiniao: comentários da equipe por captação.

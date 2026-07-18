@@ -167,7 +167,7 @@ describe("montarRequest", () => {
 
   it("NÃO envia o link do anúncio nem fotos para o imóvel", () => {
     const { imovel } = montarRequest(completo());
-    // anúncio é referência interna (outras imobiliárias) — não vai pro imóvel
+    // anúncio é referência interna (outras imobiliárias), não vai pro imóvel
     expect(imovel).not.toHaveProperty("instagram_url");
     expect(imovel).not.toHaveProperty("anuncio_url");
     // fotos/mídia nunca fazem parte do payload do cadastro

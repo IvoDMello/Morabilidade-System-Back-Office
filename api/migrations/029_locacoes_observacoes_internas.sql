@@ -2,7 +2,7 @@
 --
 -- Motivação:
 --   Campo de texto livre para a equipe da imobiliária anotar instruções
---   internas sobre o contrato — por exemplo, "como baixar o boleto desta
+--   internas sobre o contrato, por exemplo, "como baixar o boleto desta
 --   locação". NÃO aparece no demonstrativo PDF enviado ao locatário (é
 --   distinto de `observacoes_demonstrativo`, que é externo).
 

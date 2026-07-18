@@ -266,7 +266,7 @@ function KpiCard({
             {positivo ? "+" : ""}{delta.toFixed(1)}%
           </span>
         ) : (
-          <span className="text-xs text-slate-300 ml-auto">—</span>
+          <span className="text-xs text-slate-300 ml-auto">-</span>
         )}
       </div>
     </div>
@@ -317,7 +317,7 @@ function TendenciaChart({ data, totalVisitantes, delta }: {
       <div className="h-56">
         {dados.length === 0 ? (
           <div className="h-full flex items-center justify-center text-sm text-slate-400">
-            Sem dados ainda — comece a divulgar o site para gerar histórico.
+            Sem dados ainda, comece a divulgar o site para gerar histórico.
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
@@ -508,7 +508,7 @@ function TopAnunciosTable({ rows }: { rows: DashboardData["top_imoveis"] }) {
                       <span className="flex items-center gap-1.5 text-[11px] text-slate-400 mt-0.5">
                         <span className="font-mono">{row.codigo}</span>
                         <span>·</span>
-                        <span>{[row.bairro, row.cidade].filter(Boolean).join(", ") || "—"}</span>
+                        <span>{[row.bairro, row.cidade].filter(Boolean).join(", ") || "-"}</span>
                         <span
                           className="px-1.5 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider text-white"
                           style={{ backgroundColor: row.tipo_negocio === "locacao" ? OLIVE : GOLD, color: row.tipo_negocio === "locacao" ? "#fff" : "#3e4037" }}
@@ -632,7 +632,7 @@ function DispositivoBar({ rows }: { rows: DashboardData["dispositivos"] }) {
       </ul>
       {pctMobile >= 50 && (
         <p className="text-[11px] text-slate-400 mt-4 leading-relaxed">
-          <span className="font-medium text-slate-600">Dica:</span> {pctMobile}% acessam pelo celular —
+          <span className="font-medium text-slate-600">Dica:</span> {pctMobile}% acessam pelo celular
           vale caprichar nas fotos verticais e na primeira imagem do anúncio.
         </p>
       )}
@@ -694,7 +694,7 @@ function HeatmapVisitas({ rows }: { rows: DashboardData["heatmap"] }) {
                       <div
                         className="w-[14px] h-[14px] sm:w-4 sm:h-4 rounded-sm"
                         style={{ backgroundColor: bg }}
-                        title={`${dia} ${String(h).padStart(2, "0")}h — ${v}`}
+                        title={`${dia} ${String(h).padStart(2, "0")}h, ${v}`}
                       />
                     </td>
                   );

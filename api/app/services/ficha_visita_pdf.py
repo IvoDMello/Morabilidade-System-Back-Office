@@ -5,7 +5,7 @@ Dois modos a partir da mesma função:
 - assinada (assinada=True): com os dados do visitante, a imagem da assinatura e
   o bloco de trilha de auditoria (IP, data/hora, geolocalização e hash).
 
-A cláusula assinada é versionada e gravada na própria ficha (snapshot) — ver
+A cláusula assinada é versionada e gravada na própria ficha (snapshot), ver
 `montar_clausula` e a coluna `clausula_texto` na migration 034. Componentes de
 layout (header/footer/seção/campo/trilha) vivem em [pdf_base].
 """
@@ -44,7 +44,7 @@ _EXTENSO = {
 def montar_clausula(prazo_meses: int) -> str:
     """Texto integral da declaração do visitante (versão `CLAUSULA_VERSAO`).
 
-    Gravado como snapshot na ficha no momento da geração — não deve ser alterado
+    Gravado como snapshot na ficha no momento da geração, não deve ser alterado
     retroativamente para fichas já existentes (integridade probatória)."""
     extenso = _EXTENSO.get(prazo_meses)
     prazo_txt = f"{prazo_meses} ({extenso})" if extenso else str(prazo_meses)
@@ -81,8 +81,8 @@ def gerar_ficha_visita_pdf(ficha: dict, assinada: bool = False) -> bytes:
 
     # ── Linha de identificação + QR ──────────────────────────────────────────
     y -= 12 * mm
-    codigo = ficha.get("imovel_codigo") or "—"
-    ficha_num = (ficha.get("id") or "").replace("-", "")[:8].upper() or "—"
+    codigo = ficha.get("imovel_codigo") or "-"
+    ficha_num = (ficha.get("id") or "").replace("-", "")[:8].upper() or "-"
     criada = fmt_dt(ficha.get("created_at"))
 
     campo(c, MARGEM, y, 50 * mm, "Ficha nº", ficha_num)
@@ -91,18 +91,18 @@ def gerar_ficha_visita_pdf(ficha: dict, assinada: bool = False) -> bytes:
 
     # QR no canto superior direito do conteúdo, apontando pro imóvel no site.
     # Alinhado pelo topo com a linha de campos (origem do QR = canto inferior).
-    qr_url = f"{settings.site_url.rstrip('/')}/imoveis/{codigo}" if codigo != "—" else settings.site_url
+    qr_url = f"{settings.site_url.rstrip('/')}/imoveis/{codigo}" if codigo != "-" else settings.site_url
     desenhar_qr(c, largura - MARGEM - 16 * mm, y - 14 * mm, 16 * mm, qr_url)
 
     y -= 20 * mm
 
     # ── 1. Dados do imóvel ───────────────────────────────────────────────────
     y = secao(c, largura, y, "1. Dados do imóvel")
-    campo(c, MARGEM, y, util, "Endereço completo", ficha.get("imovel_endereco") or "—")
+    campo(c, MARGEM, y, util, "Endereço completo", ficha.get("imovel_endereco") or "-")
     y -= 12 * mm
-    campo(c, MARGEM, y, 60 * mm, "Bairro", ficha.get("imovel_bairro") or "—")
-    campo(c, MARGEM + 66 * mm, y, 50 * mm, "Cidade / UF", ficha.get("imovel_cidade") or "—")
-    valor = fmt_brl(ficha["imovel_valor"]) if ficha.get("imovel_valor") is not None else "—"
+    campo(c, MARGEM, y, 60 * mm, "Bairro", ficha.get("imovel_bairro") or "-")
+    campo(c, MARGEM + 66 * mm, y, 50 * mm, "Cidade / UF", ficha.get("imovel_cidade") or "-")
+    valor = fmt_brl(ficha["imovel_valor"]) if ficha.get("imovel_valor") is not None else "-"
     campo(c, MARGEM + 122 * mm, y, util - 122 * mm, "Valor anunciado", valor)
     y -= 12 * mm
     prop = ficha.get("proprietario_nome") or "Imóvel sob intermediação da Morabilidade"
@@ -111,21 +111,21 @@ def gerar_ficha_visita_pdf(ficha: dict, assinada: bool = False) -> bytes:
 
     # ── 2. Dados do visitante ────────────────────────────────────────────────
     y = secao(c, largura, y, "2. Dados do visitante")
-    campo(c, MARGEM, y, util, "Nome completo", ficha.get("visitante_nome") or "—")
+    campo(c, MARGEM, y, util, "Nome completo", ficha.get("visitante_nome") or "-")
     y -= 12 * mm
-    campo(c, MARGEM, y, 55 * mm, "CPF", ficha.get("visitante_cpf") or "—")
-    campo(c, MARGEM + 61 * mm, y, 45 * mm, "RG", ficha.get("visitante_rg") or "—")
-    campo(c, MARGEM + 111 * mm, y, util - 111 * mm, "Telefone / WhatsApp", ficha.get("visitante_telefone") or "—")
+    campo(c, MARGEM, y, 55 * mm, "CPF", ficha.get("visitante_cpf") or "-")
+    campo(c, MARGEM + 61 * mm, y, 45 * mm, "RG", ficha.get("visitante_rg") or "-")
+    campo(c, MARGEM + 111 * mm, y, util - 111 * mm, "Telefone / WhatsApp", ficha.get("visitante_telefone") or "-")
     y -= 12 * mm
-    campo(c, MARGEM, y, util, "E-mail", ficha.get("visitante_email") or "—")
+    campo(c, MARGEM, y, util, "E-mail", ficha.get("visitante_email") or "-")
     y -= 14 * mm
 
     # ── 3. Corretor responsável ──────────────────────────────────────────────
     y = secao(c, largura, y, "3. Corretor responsável")
     if ficha.get("ocultar_creci"):
-        campo(c, MARGEM, y, util, "Nome do corretor", ficha.get("corretor_nome") or "—")
+        campo(c, MARGEM, y, util, "Nome do corretor", ficha.get("corretor_nome") or "-")
     else:
-        campo(c, MARGEM, y, 110 * mm, "Nome do corretor", ficha.get("corretor_nome") or "—")
+        campo(c, MARGEM, y, 110 * mm, "Nome do corretor", ficha.get("corretor_nome") or "-")
         campo(c, MARGEM + 116 * mm, y, util - 116 * mm, "CRECI nº",
               ficha.get("corretor_creci") or settings.empresa_creci_corretor)
     y -= 16 * mm
@@ -158,18 +158,18 @@ def gerar_ficha_visita_pdf(ficha: dict, assinada: bool = False) -> bytes:
 
     c.setFillColor(TEXTO_CLARO)
     c.setFont("Helvetica", 8)
-    c.drawCentredString(MARGEM + col_w / 2, base_assinatura - 4 * mm, "VISITANTE — Assinatura e CPF")
+    c.drawCentredString(MARGEM + col_w / 2, base_assinatura - 4 * mm, "VISITANTE: Assinatura e CPF")
     c.drawCentredString(MARGEM + col_w + 10 * mm + col_w / 2, base_assinatura - 4 * mm,
-                        "MORABILIDADE / CORRETOR — Assinatura"
+                        "MORABILIDADE / CORRETOR: Assinatura"
                         if ficha.get("ocultar_creci")
-                        else "MORABILIDADE / CORRETOR — Assinatura e CRECI")
+                        else "MORABILIDADE / CORRETOR: Assinatura e CRECI")
 
     # ── Bloco de trilha de auditoria (só assinada) ───────────────────────────
     if assinada:
         bloco_trilha(
             c, largura, base_assinatura - 12 * mm,
             signatario_nome=ficha.get("visitante_nome", ""),
-            cpf=ficha.get("assinante_cpf_confirmado") or ficha.get("visitante_cpf") or "—",
+            cpf=ficha.get("assinante_cpf_confirmado") or ficha.get("visitante_cpf") or "-",
             assinada_em=ficha.get("assinada_em"),
             ip=ficha.get("assinante_ip"),
             geo=ficha.get("assinante_geo"),
@@ -185,7 +185,7 @@ def gerar_ficha_visita_pdf(ficha: dict, assinada: bool = False) -> bytes:
     rodape_esq = " · ".join(filter(None, [
         settings.empresa_creci_juridico or settings.empresa_creci_corretor,
         f"CNPJ {settings.empresa_cnpj}" if settings.empresa_cnpj else None,
-    ])) or "MORABILIDADE — Intermediação imobiliária"
+    ])) or "MORABILIDADE: Intermediação imobiliária"
     draw_brand_footer(c, largura, esquerda=rodape_esq, direita=settings.empresa_telefone)
 
     c.showPage()

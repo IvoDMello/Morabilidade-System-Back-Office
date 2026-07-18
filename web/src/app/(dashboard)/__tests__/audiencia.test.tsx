@@ -20,7 +20,7 @@ vi.mock("lucide-react", () => ({
   Clock: () => null, ArrowRight: () => null,
 }));
 
-// Recharts depende de ResizeObserver e width não-zero — substitui pelos stubs.
+// Recharts depende de ResizeObserver e width não-zero, substitui pelos stubs.
 vi.mock("recharts", () => ({
   ResponsiveContainer: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   AreaChart: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
@@ -86,7 +86,7 @@ describe("Página /audiencia", () => {
 
   it("renderiza KPIs com valores formatados em pt-BR", async () => {
     render(<AudienciaPage />);
-    // "1.284" aparece no KPI Visitantes Únicos e no card de Tendência — usa findAll.
+    // "1.284" aparece no KPI Visitantes Únicos e no card de Tendência, usa findAll.
     // Vários KPIs reaparecem em funil/origem; basta confirmar que cada valor existe pelo menos uma vez.
     expect((await screen.findAllByText("1.284")).length).toBeGreaterThan(0);
     expect(screen.getAllByText("2.819").length).toBeGreaterThan(0);

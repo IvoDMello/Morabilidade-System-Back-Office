@@ -17,7 +17,7 @@ export function CompartilharButton({ codigo, titulo }: Props) {
   const wrapRef = useRef<HTMLDivElement>(null);
 
   const url = `${SITE_URL}/imoveis/${codigo}`;
-  const texto = `${titulo} (${codigo}) — Morabilidade`;
+  const texto = `${titulo} (${codigo}): Morabilidade`;
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
@@ -46,7 +46,7 @@ export function CompartilharButton({ codigo, titulo }: Props) {
       await navigator.share({ title: texto, text: texto, url });
       trackShare("web_share");
     } catch {
-      // Usuário cancelou — não é erro.
+      // Usuário cancelou, não é erro.
     }
   }
 
@@ -65,7 +65,7 @@ export function CompartilharButton({ codigo, titulo }: Props) {
       setTimeout(() => setCopiado(false), 1500);
       trackShare("copy_link");
     } catch {
-      // Sem permissão de clipboard — silencioso.
+      // Sem permissão de clipboard, silencioso.
     }
   }
 

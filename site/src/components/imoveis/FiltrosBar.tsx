@@ -167,7 +167,7 @@ export function FiltrosBar({ total: _total, bairros = [] }: Props) {
 
         <div className="w-px h-5 flex-shrink-0" style={{ backgroundColor: "#e4e1d6" }} />
 
-        {/* Código — input separado (primeiro filtro) */}
+        {/* Código, input separado (primeiro filtro) */}
         <div className="relative flex-shrink-0">
           <Hash
             className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none"
@@ -234,7 +234,7 @@ export function FiltrosBar({ total: _total, bairros = [] }: Props) {
           />
         </div>
 
-        {/* Bairro — select multi (ao selecionar, vira chip) */}
+        {/* Bairro, select multi (ao selecionar, vira chip) */}
         {bairros.length > 0 && (
           <div className="relative flex-shrink-0">
             <select

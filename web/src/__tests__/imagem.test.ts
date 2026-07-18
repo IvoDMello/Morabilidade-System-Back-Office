@@ -9,7 +9,7 @@ function fakeFile(nome = "foto.png"): File {
   return new File([new Uint8Array([1, 2, 3])], nome, { type: "image/png" });
 }
 
-describe("rotacionarArquivoImagem — validações (sem canvas)", () => {
+describe("rotacionarArquivoImagem, validações (sem canvas)", () => {
   it("devolve o mesmo arquivo quando a rotação é 0", async () => {
     const f = fakeFile();
     expect(await rotacionarArquivoImagem(f, 0)).toBe(f);
@@ -26,7 +26,7 @@ describe("rotacionarArquivoImagem — validações (sem canvas)", () => {
   });
 });
 
-describe("rotacionarArquivoImagem — caminho de rotação", () => {
+describe("rotacionarArquivoImagem, caminho de rotação", () => {
   let drawImage: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {

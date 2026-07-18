@@ -76,7 +76,7 @@ const inputCls =
   "focus:outline-none focus:ring-2 focus:ring-[#585a4f]/30 focus:border-[#585a4f] placeholder:text-slate-400";
 
 // Checagem de formato (sem rede): o link é um post/reel/tv do Instagram?
-// Posts/reels têm URL permanente — só não detectamos se o post foi apagado lá.
+// Posts/reels têm URL permanente, só não detectamos se o post foi apagado lá.
 function instagramLinkValido(url: string): boolean {
   try {
     const u = new URL(url.trim());
@@ -225,12 +225,12 @@ setLoading(true);
 
   function precoInfo(imovel: ImovelListOut): { tipo: string; valor: string } {
     if (imovel.tipo_negocio === "venda")
-      return { tipo: "Venda", valor: imovel.valor_venda ? formatarMoeda(imovel.valor_venda) : "—" };
+      return { tipo: "Venda", valor: imovel.valor_venda ? formatarMoeda(imovel.valor_venda) : "-" };
     if (imovel.tipo_negocio === "locacao")
-      return { tipo: "Locação", valor: imovel.valor_locacao ? formatarMoeda(imovel.valor_locacao) : "—" };
+      return { tipo: "Locação", valor: imovel.valor_locacao ? formatarMoeda(imovel.valor_locacao) : "-" };
     return {
       tipo: "Venda e Locação",
-      valor: imovel.valor_venda ? formatarMoeda(imovel.valor_venda) : "—",
+      valor: imovel.valor_venda ? formatarMoeda(imovel.valor_venda) : "-",
     };
   }
 
@@ -241,7 +241,7 @@ setLoading(true);
       className="flex overflow-hidden -m-4 md:-m-6"
       style={{ height: "calc(100vh - 64px)" }}
     >
-      {/* Backdrop mobile — começa abaixo do header (top-16 = 64px) */}
+      {/* Backdrop mobile, começa abaixo do header (top-16 = 64px) */}
       {filtrosOpen && (
         <div
           className="fixed top-16 inset-x-0 bottom-0 bg-black/40 z-20 md:hidden"
@@ -556,8 +556,8 @@ setLoading(true);
                           }`}
                           title={
                             valido
-                              ? "Anúncio no Instagram — abrir post"
-                              : "Link do Instagram preenchido, mas não parece um post válido — verifique"
+                              ? "Anúncio no Instagram, abrir post"
+                              : "Link do Instagram preenchido, mas não parece um post válido, verifique"
                           }
                         >
                           <Instagram className="w-3.5 h-3.5" />
@@ -614,7 +614,7 @@ setLoading(true);
                           <span
                             className="absolute top-1.5 left-1.5 text-[10px] px-1.5 py-0.5 rounded font-bold flex items-center gap-0.5 shadow"
                             style={{ backgroundColor: "#d8cb6a", color: "#2e302a" }}
-                            title={`Destaque na home — posição ${imovel.destaque_ordem}`}
+                            title={`Destaque na home, posição ${imovel.destaque_ordem}`}
                           >
                             ★ #{imovel.destaque_ordem}
                           </span>
@@ -633,7 +633,7 @@ setLoading(true);
                           <span
                             className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded font-bold"
                             style={{ backgroundColor: "#d8cb6a", color: "#2e302a" }}
-                            title={`Destaque na home — posição ${imovel.destaque_ordem}`}
+                            title={`Destaque na home, posição ${imovel.destaque_ordem}`}
                           >
                             ★ #{imovel.destaque_ordem}
                           </span>
@@ -700,7 +700,7 @@ setLoading(true);
                       </div>
                     </div>
 
-                    {/* Preço — empilhado abaixo no mobile, lateral no sm+ */}
+                    {/* Preço, empilhado abaixo no mobile, lateral no sm+ */}
                     <div className="w-full sm:w-auto sm:shrink-0 sm:text-right sm:min-w-[140px] order-last sm:order-none border-t sm:border-t-0 border-slate-100 pt-3 sm:pt-0 flex flex-wrap sm:block items-baseline gap-x-4 gap-y-1">
                       <div>
                         <p className="text-xs font-medium text-slate-400">{tipo}</p>
@@ -724,7 +724,7 @@ setLoading(true);
                       )}
                     </div>
 
-                    {/* Seta — só desktop, decorativa */}
+                    {/* Seta, só desktop, decorativa */}
                     <div className="hidden sm:flex items-center text-slate-300 shrink-0">
                       <ChevronRight className="w-5 h-5" />
                     </div>

@@ -41,7 +41,7 @@ const CAMPOS_RECONHECIDOS = [
   { campo: "como_conheceu", aliases: "Como Conheceu, Referência" },
   { campo: "observacoes", aliases: "Observações, Obs, Anotações" },
   { campo: "imovel_codigo", aliases: "Código do Imóvel (só para proprietário)" },
-  { campo: "— Perfil de oportunidade (opcional) —", aliases: "" },
+  { campo: "- Perfil de oportunidade (opcional) -", aliases: "" },
   { campo: "pref_tipo_negocio", aliases: "Pref Tipo Negócio (venda, locacao, ambos)" },
   { campo: "pref_tipo_imovel", aliases: "Pref Tipo Imóvel (apartamento, apartamento_terreo, casa, casa_vila, casa_condominio, cobertura)" },
   { campo: "pref_cidade", aliases: "Pref Cidade, Cidade de Interesse" },
@@ -86,7 +86,7 @@ export default function ImportarClientesPage() {
         toast.success(`${res.data.criadas} cliente(s) importado(s)${prefMsg}`);
       }
       if (res.data.erros > 0) {
-        toast.warning(`${res.data.erros} linha(s) com erro — veja os detalhes abaixo.`);
+        toast.warning(`${res.data.erros} linha(s) com erro, veja os detalhes abaixo.`);
       }
     } catch (err: unknown) {
       const msg =
@@ -281,7 +281,7 @@ export default function ImportarClientesPage() {
             </div>
           ))}
           <p className="text-slate-400 mt-3 text-[11px]">
-            Vindo do <strong>Jetmob</strong>: exporte os contatos em CSV pelo painel deles e suba aqui — a
+            Vindo do <strong>Jetmob</strong>: exporte os contatos em CSV pelo painel deles e suba aqui, a
             maioria dos cabeçalhos casa direto. Para colunas que não forem reconhecidas, basta renomear o
             cabeçalho na planilha (ex.: <em>Cliente Nome</em> → <em>Nome</em>) antes de importar.
           </p>

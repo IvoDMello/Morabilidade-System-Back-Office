@@ -1,4 +1,4 @@
-"""Testes da Ficha de Visita — criação, PDF, assinatura e validações de token."""
+"""Testes da Ficha de Visita, criação, PDF, assinatura e validações de token."""
 from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, patch
 
@@ -52,7 +52,7 @@ CRIAR_BODY = {
 
 
 def test_criar_ficha_gera_token_e_snapshot(client):
-    """Na criação NÃO há cadastro no CRM — o visitante só vira cliente ao
+    """Na criação NÃO há cadastro no CRM, o visitante só vira cliente ao
     assinar (evita cadastros mortos de fichas abandonadas)."""
     db = make_db_mock(
         MagicMock(data=IMOVEL),       # busca imóvel

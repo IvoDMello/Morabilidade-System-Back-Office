@@ -4,12 +4,12 @@
 -- inadimplência, guardar contrato em PDF) hoje é feita à mão em planilha +
 -- Word. Esta migration introduz o modelo mínimo para automatizar:
 --
---   1) contratos_locacao  — um contrato por unidade locada (imóvel + locatário
+--   1) contratos_locacao , um contrato por unidade locada (imóvel + locatário
 --      + proprietário + valores e regras de cobrança).
---   2) locacao_pagamentos — uma linha por mês de competência, com snapshot do
+--   2) locacao_pagamentos, uma linha por mês de competência, com snapshot do
 --      valor devido (protege contra mudanças retroativas no contrato) e
 --      status pago/pendente/atrasado/parcial.
---   3) locacao_anexos     — arquivos do contrato armazenados no Firebase
+--   3) locacao_anexos    , arquivos do contrato armazenados no Firebase
 --      Storage (mesmo bucket usado por imovel_fotos).
 --
 -- Regras de cobrança (refletem o demonstrativo Artur Araripe que serve de
@@ -19,7 +19,7 @@
 --   - Condomínio, fundo de obra e IPTU entram no total apenas se o checkbox
 --     correspondente estiver ligado.
 --   - IPTU, quando incluso na cobrança, é dividido em 10 parcelas (regra já
---     consolidada no painel — ver commit 99b2eb3).
+--     consolidada no painel, ver commit 99b2eb3).
 
 -- 1) contratos_locacao -------------------------------------------------------
 
@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS contratos_locacao (
     incluir_condominio_cobranca boolean NOT NULL DEFAULT true,
 
     fundo_reserva               numeric(12,2) NOT NULL DEFAULT 0 CHECK (fundo_reserva >= 0),
-    -- Fundo de reserva sempre deduz — não há checkbox.
+    -- Fundo de reserva sempre deduz, não há checkbox.
 
     fundo_obra                  numeric(12,2) NOT NULL DEFAULT 0 CHECK (fundo_obra >= 0),
     incluir_fundo_obra_cobranca boolean NOT NULL DEFAULT false,
@@ -87,7 +87,7 @@ CREATE INDEX IF NOT EXISTS idx_contratos_locacao_locatario
     ON contratos_locacao(locatario_id);
 
 -- Trigger para manter updated_at (reaproveita função existente se houver,
--- senão cria — padrão do projeto já usado em outras tabelas).
+-- senão cria, padrão do projeto já usado em outras tabelas).
 CREATE OR REPLACE FUNCTION set_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -109,7 +109,7 @@ CREATE TABLE IF NOT EXISTS locacao_pagamentos (
     contrato_id                 uuid NOT NULL REFERENCES contratos_locacao(id) ON DELETE CASCADE,
 
     -- Sempre dia 01 (ex: 2026-05-01 = competência maio/2026).
-    -- Snapshot no momento da geração — protege relatórios contra alterações
+    -- Snapshot no momento da geração, protege relatórios contra alterações
     -- retroativas nos valores do contrato.
     mes_referencia              date NOT NULL,
     valor_devido                numeric(12,2) NOT NULL CHECK (valor_devido >= 0),

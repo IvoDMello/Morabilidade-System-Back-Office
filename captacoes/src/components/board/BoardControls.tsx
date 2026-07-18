@@ -35,7 +35,7 @@ export function BoardControls() {
   const { ordenacao, setOrdenacao, criterios, setCriterios, limparCriterios } = useBoard();
   const ativos = contarAtivos(criterios);
 
-  // Estado local do formulário — só aplica ao confirmar.
+  // Estado local do formulário, só aplica ao confirmar.
   const [open, setOpen] = useState(false);
   const [valorMin, setValorMin] = useState("");
   const [valorMax, setValorMax] = useState("");
@@ -125,7 +125,7 @@ export function BoardControls() {
                   value={valorMin}
                   onChange={(e) => setValorMin(e.target.value)}
                 />
-                <span className="text-muted-foreground">—</span>
+                <span className="text-muted-foreground">-</span>
                 <Input
                   inputMode="numeric"
                   placeholder="Máximo"

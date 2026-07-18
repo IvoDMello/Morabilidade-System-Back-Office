@@ -316,7 +316,7 @@ export default async function HomePage() {
               alignItems: "stretch",
             }}
           >
-            {/* LEFT — coluna da foto */}
+            {/* LEFT, coluna da foto */}
             <div
               className="proprietario-photo"
               style={{
@@ -350,7 +350,7 @@ export default async function HomePage() {
               >
                 <Image
                   src="/assets/rodrigo-proprietario.jpeg"
-                  alt="Rodrigo Barbosa — sócio-fundador da Morabilidade"
+                  alt="Rodrigo Barbosa, sócio-fundador da Morabilidade"
                   fill
                   sizes="(max-width: 860px) 100vw, 45vw"
                   style={{ objectFit: "cover", objectPosition: "center 30%" }}
@@ -414,7 +414,7 @@ export default async function HomePage() {
               </div>
             </div>
 
-            {/* RIGHT — coluna de conteúdo */}
+            {/* RIGHT, coluna de conteúdo */}
             <div
               style={{
                 display: "flex",
@@ -478,7 +478,7 @@ export default async function HomePage() {
                 Sem call center, sem terceirização, sem ruído.
               </p>
 
-              {/* Pilares — Simples · Eficiente · Humanizada */}
+              {/* Pilares: Simples · Eficiente · Humanizada */}
               <div
                 style={{
                   display: "flex",

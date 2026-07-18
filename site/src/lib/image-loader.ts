@@ -1,12 +1,12 @@
 // Loader custom do Next/Image que usa o Image Transformation do Supabase Storage
-// em vez da otimização da Vercel (que estourou cota — erro 402 OPTIMIZED_IMAGE_REQUEST_PAYMENT_REQUIRED).
+// em vez da otimização da Vercel (que estourou cota, erro 402 OPTIMIZED_IMAGE_REQUEST_PAYMENT_REQUIRED).
 //
 // Funciona reescrevendo:
 //   .../storage/v1/object/public/{bucket}/{path}
 // para:
 //   .../storage/v1/render/image/public/{bucket}/{path}?width=W&quality=Q
 //
-// Qualquer URL que não seja do Supabase é devolvida sem mudança — assim logos
+// Qualquer URL que não seja do Supabase é devolvida sem mudança, assim logos
 // locais (/public/...) e imagens externas continuam funcionando.
 
 export default function supabaseLoader({

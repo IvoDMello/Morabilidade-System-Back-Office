@@ -16,7 +16,7 @@ api.interceptors.request.use((config) => {
   }
   // Para FormData (uploads), removemos o Content-Type herdado da instância.
   // Sem isso, o axios v1 detecta `application/json` e chama `formDataToJSON()`,
-  // descartando os arquivos — o servidor recebe `{}` e responde 422.
+  // descartando os arquivos, o servidor recebe `{}` e responde 422.
   if (typeof FormData !== "undefined" && config.data instanceof FormData) {
     if (config.headers) {
       delete (config.headers as Record<string, unknown>)["Content-Type"];
@@ -56,7 +56,7 @@ export function getErrorMessage(err: unknown, fallback = "Ocorreu um erro."): st
 //
 // Cenário: token expira no meio do uso. Várias requests podem voltar 401 ao
 // mesmo tempo (ex: dashboard carregando 4 endpoints em paralelo). Sem mutex,
-// dispararíamos 4 refreshes — o Supabase rotaciona o refresh_token a cada uso,
+// dispararíamos 4 refreshes, o Supabase rotaciona o refresh_token a cada uso,
 // só o primeiro daria certo e os 3 restantes invalidariam o token recém-emitido.
 //
 // `refreshPromise` mantém UMA chamada em voo; chamadas concorrentes aguardam o
@@ -108,7 +108,7 @@ async function forceLogout() {
 }
 
 // Marcador para evitar loop infinito: se uma request já foi reenviada após
-// refresh e ainda assim voltou 401, é porque o refresh não bastou — logout.
+// refresh e ainda assim voltou 401, é porque o refresh não bastou, logout.
 type RetriableConfig = AxiosRequestConfig & { _retry?: boolean };
 
 api.interceptors.response.use(

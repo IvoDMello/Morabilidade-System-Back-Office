@@ -144,7 +144,7 @@ def main() -> None:
     estilo.font.name = FONTE
     estilo.font.size = Pt(10.5)
 
-    # ── Faixa de marca (logo sobre fundo olive — mesmo tom do jpeg) ─────────
+    # ── Faixa de marca (logo sobre fundo olive, mesmo tom do jpeg) ─────────
     faixa = doc.add_table(rows=1, cols=1)
     faixa.alignment = WD_TABLE_ALIGNMENT.CENTER
     cel = faixa.rows[0].cells[0]
@@ -190,8 +190,8 @@ def main() -> None:
     numerado(doc, 3, "Preencha os dados do visitante:")
     bullet(doc, ("Nome", True), " (obrigatório)")
     bullet(doc, ("WhatsApp", True),
-           " (obrigatório — é por ele que o link é enviado e o cliente é cadastrado quando assina)")
-    bullet(doc, ("CPF", True), " (recomendado — ajuda a não duplicar cadastros)")
+           " (obrigatório, é por ele que o link é enviado e o cliente é cadastrado quando assina)")
+    bullet(doc, ("CPF", True), " (recomendado, ajuda a não duplicar cadastros)")
     bullet(doc, ("E-mail", True), " (opcional)")
     numerado(doc, 4, "Clique em ", ("“Gerar e copiar link”", True), ".")
     corpo(doc, "O link de assinatura já fica copiado na área de transferência, "
@@ -211,13 +211,13 @@ def main() -> None:
     numerado(doc, 2, "Lê a declaração e ", ("informa o CPF", True), ".")
     numerado(doc, 3, ("Assina com o dedo", True), " na tela e confirma o aceite.")
     corpo(doc, "Pronto: o sistema registra data/hora e IP, gera o ", ("PDF assinado", True),
-          " e guarda tudo como prova. O visitante pode baixar o PDF na hora — e se abrir "
+          " e guarda tudo como prova. O visitante pode baixar o PDF na hora, e se abrir "
           "o link de novo depois, vê a confirmação com o botão de download.")
 
     # ── 4. Automático ────────────────────────────────────────────────────────
     secao(doc, "4. O que acontece sozinho (sem trabalho manual)")
     corpo(doc, "Tudo acontece ", ("quando o visitante assina", True),
-          " (ficha que nunca é assinada não vira cadastro — a base de clientes só "
+          " (ficha que nunca é assinada não vira cadastro, a base de clientes só "
           "recebe quem realmente visitou):")
     bullet(doc, "O sistema procura o visitante na base de clientes pelo ",
            ("CPF, telefone ou e-mail", True), ".")
@@ -289,14 +289,14 @@ def main() -> None:
            " ao gerar a ficha: é o dado mais confiável para o sistema reconhecer um "
            "cliente que volta a visitar outros imóveis.")
     bullet(doc, "Gere a ficha ", ("antes", True),
-           " da visita e envie pelo WhatsApp — o visitante assina no caminho ou na porta do imóvel.")
+           " da visita e envie pelo WhatsApp, o visitante assina no caminho ou na porta do imóvel.")
     bullet(doc, "Visitou de novo com outro corretor? Sem problema: o sistema reconhece o "
                 "cliente pelo CPF/telefone e soma a nova visita ao mesmo perfil.")
 
     # ── Rodapé ───────────────────────────────────────────────────────────────
     rod = doc.sections[0].footer.paragraphs[0]
     rod.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    _run(rod, "MORABILIDADE — Intermediação imobiliária  ·  painel.morabilidade.com",
+    _run(rod, "MORABILIDADE: Intermediação imobiliária  ·  painel.morabilidade.com",
          cor=TEXTO_SUAVE, tamanho=8)
 
     doc.save(SAIDA)

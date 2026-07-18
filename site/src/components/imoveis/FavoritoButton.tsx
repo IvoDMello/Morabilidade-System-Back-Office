@@ -22,7 +22,7 @@ function salvarFavoritos(lista: string[]) {
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(lista));
   } catch {
-    // localStorage cheio ou bloqueado — silencioso.
+    // localStorage cheio ou bloqueado, silencioso.
   }
 }
 
@@ -56,7 +56,7 @@ export function FavoritoButton({ codigo, variant = "icon" }: Props) {
   }
 
   if (!montado) {
-    // Evita hydration mismatch — estado real só sai depois do mount.
+    // Evita hydration mismatch, estado real só sai depois do mount.
     return variant === "pill" ? (
       <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-slate-100 text-slate-400">
         <Heart className="w-3.5 h-3.5" /> Favoritar

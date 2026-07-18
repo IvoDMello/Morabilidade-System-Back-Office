@@ -4,7 +4,7 @@
 -- Motivação:
 --   Nem todo locatário paga por PIX; alguns preferem TED/DOC. O demonstrativo
 --   precisa imprimir banco + agência + conta para o proprietário receber.
---   Campos opcionais — quando vazios, a seção bancária não aparece no PDF.
+--   Campos opcionais, quando vazios, a seção bancária não aparece no PDF.
 
 ALTER TABLE contratos_locacao
     ADD COLUMN IF NOT EXISTS dados_cobranca_banco text,

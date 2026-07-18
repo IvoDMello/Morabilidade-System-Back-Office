@@ -4,13 +4,13 @@ Reproduz a regra de cobrança do exemplo "Artur Araripe" (referência do projeto
     Total = Aluguel
           + Condomínio          (se incluir_condominio_cobranca)
           - Fundo de obra       (se incluir_fundo_obra_cobranca; despesa
-                                 extraordinária — responsabilidade do proprietário)
+                                 extraordinária, responsabilidade do proprietário)
           + IPTU / 10           (se incluir_iptu_cobranca; IPTU é anual,
-                                 cobrado em 10 parcelas — padrão municipal RJ)
+                                 cobrado em 10 parcelas, padrão municipal RJ)
           + Seguro incêndio/12  (se incluir_seguro_incendio_cobranca;
                                  apólice anual diluída em 12 meses)
           + Internet            (se incluir_internet_cobranca)
-          - Fundo de reserva    (sempre deduz — responsabilidade do proprietário)
+          - Fundo de reserva    (sempre deduz, responsabilidade do proprietário)
 
 Stack: ReportLab (pure-Python). Escolhido em vez de WeasyPrint porque não tem
 dependências nativas (Cairo/Pango), o que evita atrito tanto no Windows
@@ -55,7 +55,7 @@ def calcular_total_demonstrativo(contrato: dict) -> Decimal:
         total += _dec(contrato.get("condominio_mensal"))
 
     if contrato.get("incluir_fundo_obra_cobranca"):
-        # Despesa extraordinária do proprietário — deduz do valor a receber.
+        # Despesa extraordinária do proprietário, deduz do valor a receber.
         total -= _dec(contrato.get("fundo_obra"))
 
     if contrato.get("incluir_iptu_cobranca"):
@@ -115,14 +115,14 @@ def gerar_demonstrativo_pdf(contrato: dict, mes_referencia: date) -> bytes:
     endereco_str = _endereco_curto(imovel)
 
     # Título empilhado em 2 linhas: "Demonstrativo Mensal" em cima, endereço
-    # embaixo. Antes era uma linha só "Demonstrativo Mensal — <endereço>" que
+    # embaixo. Antes era uma linha só "Demonstrativo Mensal, <endereço>" que
     # estourava a página em endereços longos (ex.: Rua + número + apto + bairro).
     c.setFillColor(TEXTO_ESCURO)
     c.setFont("Helvetica-Bold", 18)
     c.drawString(15 * mm, y, "Demonstrativo Mensal")
     y -= 8 * mm
 
-    # Auto-fit do endereço — começa em 14pt e reduz 1pt por vez até caber
+    # Auto-fit do endereço, começa em 14pt e reduz 1pt por vez até caber
     # na largura útil. Piso em 9pt; se ainda assim não couber (caso patológico),
     # quebra em palavras.
     largura_util = largura - 30 * mm
@@ -139,7 +139,7 @@ def gerar_demonstrativo_pdf(contrato: dict, mes_referencia: date) -> bytes:
         c.drawString(15 * mm, y, endereco_str)
         y -= 7 * mm
     else:
-        # Endereço extremamente longo — quebra em até 2 linhas a 11pt.
+        # Endereço extremamente longo, quebra em até 2 linhas a 11pt.
         c.setFont("Helvetica", 11)
         linhas_end = _quebrar_em_linhas(endereco_str, 70)[:2]
         for linha in linhas_end:
@@ -170,7 +170,7 @@ def gerar_demonstrativo_pdf(contrato: dict, mes_referencia: date) -> bytes:
     if incluir_iptu:
         iptu_mes = _dec(contrato.get("iptu_anual")) / Decimal("10")
         # Parcela do IPTU = mês de referência (Jan=1/10 ... Out=10/10).
-        # Nov/Dez ficam fora do calendário municipal RJ — clampa em 10 para
+        # Nov/Dez ficam fora do calendário municipal RJ, clampa em 10 para
         # não exibir "11/10" caso o admin gere demonstrativo desses meses.
         parcela_iptu = min(mes_referencia.month, 10)
         linhas.append((f"IPTU ({parcela_iptu}/10 do anual)", iptu_mes, False))
@@ -243,7 +243,7 @@ def gerar_demonstrativo_pdf(contrato: dict, mes_referencia: date) -> bytes:
         c.drawString(15 * mm + 42 * mm, y, pix)
         y -= 8 * mm
 
-    # Dados bancários (TED/DOC) — só renderiza os campos preenchidos.
+    # Dados bancários (TED/DOC), só renderiza os campos preenchidos.
     banco = (contrato.get("dados_cobranca_banco") or "").strip()
     agencia = (contrato.get("dados_cobranca_agencia") or "").strip()
     conta = (contrato.get("dados_cobranca_conta") or "").strip()

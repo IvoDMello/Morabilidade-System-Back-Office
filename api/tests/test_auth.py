@@ -6,7 +6,7 @@ from tests.conftest import ADMIN_USER, REGULAR_USER, make_db_mock
 
 def _make_token(user_id: str, expired: bool = False) -> str:
     """
-    Token opaco usado pelos testes — o Supabase Auth está mockado, então o conteúdo
+    Token opaco usado pelos testes, o Supabase Auth está mockado, então o conteúdo
     do token nunca é validado de fato. Basta ser uma string não vazia.
     """
     suffix = "expired" if expired else "valid"

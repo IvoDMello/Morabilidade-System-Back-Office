@@ -46,7 +46,7 @@ beforeEach(() => {
 
 // ── Renderização inicial ──────────────────────────────────────────────────────
 
-describe("ImportarClientesPage — renderização", () => {
+describe("ImportarClientesPage, renderização", () => {
   it("exibe área de upload", () => {
     render(<ImportarClientesPage />);
     expect(screen.getByText(/clique para selecionar um csv/i)).toBeInTheDocument();
@@ -71,7 +71,7 @@ describe("ImportarClientesPage — renderização", () => {
 
 // ── Seleção de arquivo ────────────────────────────────────────────────────────
 
-describe("ImportarClientesPage — seleção de arquivo", () => {
+describe("ImportarClientesPage, seleção de arquivo", () => {
   it("habilita o botão após selecionar um CSV", async () => {
     render(<ImportarClientesPage />);
     const input = document.querySelector("input[type=file]") as HTMLInputElement;
@@ -116,7 +116,7 @@ describe("ImportarClientesPage — seleção de arquivo", () => {
 
 // ── Importação com sucesso ────────────────────────────────────────────────────
 
-describe("ImportarClientesPage — importação com sucesso", () => {
+describe("ImportarClientesPage, importação com sucesso", () => {
   it("chama api.post com o arquivo", async () => {
     apiPostMock.mockResolvedValue({ data: resultadoOk() });
     render(<ImportarClientesPage />);
@@ -193,7 +193,7 @@ describe("ImportarClientesPage — importação com sucesso", () => {
     await userEvent.click(screen.getByRole("button", { name: /importar/i }));
 
     await waitFor(() => {
-      // "nome_completo" aparece na lista estática de campos E no resultado — ambos válidos
+      // "nome_completo" aparece na lista estática de campos E no resultado, ambos válidos
       expect(screen.getAllByText(/nome_completo/i).length).toBeGreaterThan(0);
       // "pref_tipo_negocio" aparece tanto no resultado quanto na seção de campos reconhecidos
       expect(screen.getAllByText(/pref_tipo_negocio/i).length).toBeGreaterThan(0);
@@ -203,7 +203,7 @@ describe("ImportarClientesPage — importação com sucesso", () => {
 
 // ── Resultado com erros ───────────────────────────────────────────────────────
 
-describe("ImportarClientesPage — resultado com erros", () => {
+describe("ImportarClientesPage, resultado com erros", () => {
   it("exibe toast de aviso quando há erros", async () => {
     const { toast } = await import("sonner");
     apiPostMock.mockResolvedValue({
@@ -254,7 +254,7 @@ describe("ImportarClientesPage — resultado com erros", () => {
 
 // ── Erro de API ───────────────────────────────────────────────────────────────
 
-describe("ImportarClientesPage — erro de API", () => {
+describe("ImportarClientesPage, erro de API", () => {
   it("exibe toast de erro quando a API falha", async () => {
     const { toast } = await import("sonner");
     apiPostMock.mockRejectedValue({
@@ -298,7 +298,7 @@ describe("ImportarClientesPage — erro de API", () => {
 
 // ── Reset após resultado ──────────────────────────────────────────────────────
 
-describe("ImportarClientesPage — reset", () => {
+describe("ImportarClientesPage, reset", () => {
   it("botão 'Importar outro arquivo' volta ao estado inicial", async () => {
     apiPostMock.mockResolvedValue({ data: resultadoOk() });
     render(<ImportarClientesPage />);
@@ -328,7 +328,7 @@ describe("ImportarClientesPage — reset", () => {
 
 // ── Campos de preferência na lista de campos reconhecidos ─────────────────────
 
-describe("ImportarClientesPage — campos pref_* documentados", () => {
+describe("ImportarClientesPage, campos pref_* documentados", () => {
   it("lista pref_tipo_negocio na seção de cabeçalhos reconhecidos", () => {
     render(<ImportarClientesPage />);
     expect(screen.getByText("pref_tipo_negocio")).toBeInTheDocument();

@@ -32,7 +32,7 @@ export function middleware(request: NextRequest) {
   if (!isPublic && !accessValido) {
     // Se tem refresh, tenta renovar via /api/auth/refresh server-side e
     // devolve o usuário na rota original. Preserva o trabalho em andamento
-    // (ex.: form de imóvel) — não joga pro login à toa.
+    // (ex.: form de imóvel), não joga pro login à toa.
     if (podeTentarRefresh) {
       const refreshUrl = new URL("/api/auth/refresh", request.url);
       refreshUrl.searchParams.set("next", pathname + search);
@@ -54,7 +54,7 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Exclui /api/* do middleware — essas rotas precisam funcionar sem cookie
+  // Exclui /api/* do middleware, essas rotas precisam funcionar sem cookie
   // (ex.: /api/auth/login cria o cookie após o login bem-sucedido) e elas
   // já tratam autenticação internamente quando necessário.
   matcher: ["/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|gif|svg|ico|webp)$).*)"],

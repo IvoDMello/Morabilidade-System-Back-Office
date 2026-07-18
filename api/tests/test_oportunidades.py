@@ -194,7 +194,7 @@ class TestFiltroDormitorios:
         )
 
     def test_dormitorios_min_zero_nao_filtra(self):
-        # 0 é falsy em Python — não deve contar como critério ativo
+        # 0 é falsy em Python, não deve contar como critério ativo
         assert _imovel_casa_preferencia(_imovel(dormitorios=1), _pref(dormitorios_min=0))
 
 
@@ -220,7 +220,7 @@ class TestFiltroValorMinimo:
         )
 
     def test_locacao_nao_tem_filtro_de_valor_minimo(self):
-        # Locação de R$ 5.000 deve passar — filtro de R$ 2M não se aplica
+        # Locação de R$ 5.000 deve passar, filtro de R$ 2M não se aplica
         imovel = _imovel(tipo_negocio="locacao", valor_locacao=5_000.0, valor_venda=None)
         assert _imovel_casa_preferencia(imovel, _pref())
 
@@ -280,14 +280,14 @@ class TestScorePreferencia:
         assert _score_imovel_preferencia(pref) == 6
 
     def test_tipo_negocio_ambos_nao_conta(self):
-        # "ambos" significa preferência aberta — não acrescenta ao score
+        # "ambos" significa preferência aberta, não acrescenta ao score
         assert _score_imovel_preferencia(_pref(tipo_negocio="ambos")) == 0
 
     def test_tipo_negocio_venda_conta(self):
         assert _score_imovel_preferencia(_pref(tipo_negocio="venda")) == 1
 
     def test_dormitorios_min_zero_nao_conta(self):
-        # 0 é falsy — não deve contar no score
+        # 0 é falsy, não deve contar no score
         assert _score_imovel_preferencia(_pref(dormitorios_min=0)) == 0
 
     def test_dormitorios_min_um_conta(self):
@@ -377,7 +377,7 @@ def test_atualizar_preferencia_quando_ja_existe(client):
 
 
 def test_upsert_preferencia_marca_origem_manual(client):
-    """Salvar pelo back-office converte preferência inferida em manual —
+    """Salvar pelo back-office converte preferência inferida em manual
     a inferência via ficha de visita deixa de recalculá-la."""
     existing_mock = MagicMock(data={"id": "pref-uuid-1"})
     update_mock = MagicMock(data=[PREF_DB])
@@ -453,7 +453,7 @@ def test_matches_retorna_imoveis_compativeis(client):
 
 def test_matches_exclui_imovel_incompativel(client):
     pref_mock = MagicMock(data={**PREF_ATIVA, "tipo_imovel": "casa"})
-    # Imóvel é apartamento — não casa
+    # Imóvel é apartamento, não casa
     imoveis_mock = MagicMock(data=[IMOVEL_MATCH])
     db = make_db_mock(pref_mock, imoveis_mock)
 
@@ -480,7 +480,7 @@ def test_matches_ordena_por_score_decrescente(client):
     pref_alta = {**PREF_ATIVA, "cliente_id": "c1", "tipo_imovel": "apartamento", "dormitorios_min": 2}
     pref_baixa = {**PREF_ATIVA, "cliente_id": "c2", "tipo_imovel": None, "dormitorios_min": None}
 
-    # Simula dois imoveis — preferência com mais score deve vencer
+    # Simula dois imoveis, preferência com mais score deve vencer
     # Usamos 1 preferência com score alto para verificar a ordenação da lista de matches
     pref_mock = MagicMock(data=pref_alta)
     imovel2 = {**IMOVEL_MATCH, "id": "i2", "codigo": "MB-00002", "valor_venda": 4_000_000.0}
@@ -491,7 +491,7 @@ def test_matches_ordena_por_score_decrescente(client):
         res = client.get("/clientes/cliente-uuid-1/matches")
 
     body = res.json()
-    # Todos os matches têm o mesmo score (mesma pref) — lista deve ter 2 itens
+    # Todos os matches têm o mesmo score (mesma pref), lista deve ter 2 itens
     assert len(body) == 2
 
 
@@ -629,7 +629,7 @@ def test_resumo_sem_preferencias_ativas_retorna_zeros(client):
 
 
 def test_resumo_conta_pares_validos(client):
-    # O endpoint chama apenas rpc("contar_oportunidades") — mock deve refletir o retorno do Postgres
+    # O endpoint chama apenas rpc("contar_oportunidades"), mock deve refletir o retorno do Postgres
     rpc_result = MagicMock(data=[{"total_oportunidades": 1, "clientes_com_preferencia": 1}])
     db = make_db_mock(rpc_result)
 

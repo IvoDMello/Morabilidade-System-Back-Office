@@ -99,7 +99,7 @@ export function HeroSearch() {
           <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
         </div>
 
-        {/* Bairro / cidade — escondido no mobile para limpar o hero */}
+        {/* Bairro / cidade, escondido no mobile para limpar o hero */}
         <div className="relative flex-1 min-w-0 hidden sm:block">
           <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
           <input

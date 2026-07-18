@@ -1,9 +1,9 @@
 -- 034_fichas_visita.sql
--- Ficha / Termo de Visita a Imóvel — documento digital que vincula o visitante
+-- Ficha / Termo de Visita a Imóvel, documento digital que vincula o visitante
 -- ao pagamento da corretagem caso o negócio se concretize (direta ou
 -- indiretamente, inclusive com o proprietário) dentro do prazo, nos termos dos
 -- arts. 725 e 727 do Código Civil. Assinatura eletrônica simples com trilha de
--- auditoria (IP, data/hora, geolocalização e hash do PDF) — válida entre
+-- auditoria (IP, data/hora, geolocalização e hash do PDF), válida entre
 -- particulares (art. 107 CC + Lei 14.063/2020).
 --
 -- Nomenclatura: 'fichas_visita' (distinta de 'imovel_visitas' da migration 020,
@@ -71,6 +71,6 @@ CREATE INDEX IF NOT EXISTS idx_fichas_visita_cliente
 COMMENT ON TABLE fichas_visita IS
     'Termo de visita a imóvel com assinatura eletrônica simples. Vincula o visitante à corretagem (arts. 725/727 CC) e guarda trilha de auditoria como prova.';
 COMMENT ON COLUMN fichas_visita.clausula_texto IS
-    'Texto integral da declaração assinada (versionado). Snapshot — não alterar após a assinatura.';
+    'Texto integral da declaração assinada (versionado). Snapshot, não alterar após a assinatura.';
 COMMENT ON COLUMN fichas_visita.documento_hash IS
     'SHA-256 dos dados essenciais assinados (id, imóvel, visitante, CPF, cláusula, data/hora, IP, geo). Comprova a integridade do acordo; estável e determinístico (ao contrário do PDF renderizado).';

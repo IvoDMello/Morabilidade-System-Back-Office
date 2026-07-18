@@ -27,7 +27,7 @@ from app.services.storage import (
 _CAMPOS_EXPORT = [
     "codigo", "titulo", "tipo_negocio", "disponibilidade", "tipo_imovel", "condicao",
     "cidade", "bairro", "logradouro", "numero", "complemento", "cep",
-    "dormitorios", "suites", "banheiros", "vagas_garagem", "andar", "mobiliado",
+    "dormitorios", "suites", "banheiros", "lavabos", "vagas_garagem", "andar", "mobiliado",
     "ano_construcao", "area_total", "area_util", "valor_venda", "valor_locacao",
     "iptu_mensal", "condominio_mensal", "instagram_url", "descricao", "created_at",
 ]
@@ -52,7 +52,7 @@ def _ev(v):
 
 
 def _norm(s: str) -> str:
-    """Lowercase sem acentos — espelha o que as colunas _norm armazenam no banco."""
+    """Lowercase sem acentos, espelha o que as colunas _norm armazenam no banco."""
     nfkd = unicodedata.normalize("NFKD", s)
     return "".join(c for c in nfkd if not unicodedata.combining(c)).lower()
 
@@ -65,7 +65,7 @@ router = APIRouter()
 
 _LIST_FIELDS = (
     "id, codigo, titulo, tipo_negocio, disponibilidade, cidade, bairro, "
-    "logradouro, numero, tipo_imovel, dormitorios, suites, banheiros, "
+    "logradouro, numero, tipo_imovel, dormitorios, suites, banheiros, lavabos, "
     "vagas_garagem, area_util, valor_venda, valor_locacao, valor_sob_consulta, "
     "condominio_mensal, iptu_mensal, destaque_ordem, proprietario_id, instagram_url, created_at, "
     "imovel_fotos(url, ordem), imovel_tags(tags(id, nome, cor)), "
@@ -138,7 +138,7 @@ def _aplicar_filtros(query, *, tipo_negocio, disponibilidade, cidade, bairro,
 
 def _normalizar_proprietario(raw: dict) -> Optional[dict]:
     """Extrai o objeto proprietário do join e devolve só os campos que o front
-    usa — evita vazar dados desnecessários e mantém a forma estável."""
+    usa, evita vazar dados desnecessários e mantém a forma estável."""
     prop = raw.pop("proprietario", None)
     if not prop:
         return None
@@ -207,7 +207,7 @@ def _liberar_posicao_destaque(posicao: int, exceto_imovel_id: Optional[str] = No
 
     Os updates são feitos linha a linha, da maior posição para a menor,
     para nunca violar o índice UNIQUE parcial de destaque_ordem.
-    Custo máximo: ~10 updates de 1 linha — só no momento de salvar.
+    Custo máximo: ~10 updates de 1 linha, só no momento de salvar.
     """
     if posicao is None:
         return
@@ -262,7 +262,7 @@ def _buscar_imovel(imovel_id: str) -> dict:
 @router.get("/publico/bairros", tags=["Site Público"])
 @limiter.limit("60/minute")
 def bairros_disponiveis_publico(request: Request):
-    """Bairros únicos dos imóveis disponíveis — usado para autocomplete no site."""
+    """Bairros únicos dos imóveis disponíveis, usado para autocomplete no site."""
     result = (
         supabase_admin.table("imoveis")
         .select("bairro")
@@ -353,7 +353,7 @@ def imoveis_destaques_publico(request: Request):
 @router.get("/destaques/ocupacao")
 def destaques_ocupacao(current_user: dict = Depends(get_current_user)):
     """
-    Mapa das posições de destaque ocupadas — usado no formulário do painel
+    Mapa das posições de destaque ocupadas, usado no formulário do painel
     para mostrar qual imóvel ocupa cada posição hoje.
     Retorna [{ordem, codigo, id}] ordenado por posição.
     """
@@ -418,7 +418,7 @@ def exportar_imoveis_csv(
 
     ids_sem_foto: Optional[List[str]] = None
     if sem_foto:
-        # Locação não conta no filtro "sem foto" — ver /stats em main.py.
+        # Locação não conta no filtro "sem foto", ver /stats em main.py.
         todos_resp = (
             supabase_admin.table("imoveis")
             .select("id")
@@ -510,7 +510,7 @@ def listar_imoveis(
 
     ids_sem_foto: Optional[List[str]] = None
     if sem_foto:
-        # Locação não conta no filtro "sem foto" — ver /stats em main.py.
+        # Locação não conta no filtro "sem foto", ver /stats em main.py.
         todos_resp = (
             supabase_admin.table("imoveis")
             .select("id")
@@ -648,7 +648,7 @@ async def deletar_imovel(imovel_id: str, current_user: dict = Depends(require_ad
         await deletar_foto(foto["url"])
 
     # Documentos internos: o registro some por cascade, mas o arquivo no storage
-    # não — limpamos explicitamente para não deixar órfãos no bucket.
+    # não, limpamos explicitamente para não deixar órfãos no bucket.
     docs = (
         supabase_admin.table("imovel_documentos")
         .select("firebase_path")
@@ -682,7 +682,7 @@ async def upload_fotos(
         raise HTTPException(status_code=400, detail="Limite máximo de 30 fotos por imóvel.")
 
     # Upload pro Storage continua sequencial (cada upload já é um round-trip
-    # I/O bound), mas o INSERT vai em batch — 1 query em vez de N.
+    # I/O bound), mas o INSERT vai em batch: 1 query em vez de N.
     records = []
     for i, foto in enumerate(fotos):
         filename = f"foto_{uuid.uuid4().hex}.jpg"
@@ -763,7 +763,7 @@ def reordenar_fotos(
 
 
 class RotacionarFotoBody(BaseModel):
-    graus: int = 90  # 90, 180 ou 270 — sentido horário
+    graus: int = 90  # 90, 180 ou 270, sentido horário
 
 
 @router.post("/{imovel_id}/fotos/{foto_id}/rotacionar", status_code=status.HTTP_200_OK)
@@ -875,7 +875,7 @@ async def upload_documento_imovel(
     try:
         result = supabase_admin.table("imovel_documentos").insert(registro).execute()
     except Exception as e:
-        # Reverte o upload se o INSERT falhou — evita órfão no storage.
+        # Reverte o upload se o INSERT falhou, evita órfão no storage.
         deletar_documento(storage_path)
         raise HTTPException(status_code=500, detail=f"Erro ao registrar documento: {e}")
 

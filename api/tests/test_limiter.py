@@ -1,4 +1,4 @@
-"""Testes da chave do rate limit — deve usar o IP real atrás do proxy."""
+"""Testes da chave do rate limit, deve usar o IP real atrás do proxy."""
 from unittest.mock import MagicMock
 
 from app.limiter import ip_real_do_cliente, limiter
@@ -29,7 +29,7 @@ def test_sem_xff_cai_no_client_host():
 
 
 def test_sem_nenhuma_origem_retorna_unknown():
-    # slowapi exige string como chave — None quebraria o middleware.
+    # slowapi exige string como chave: None quebraria o middleware.
     assert ip_real_do_cliente(_request(client_host=None)) == "unknown"
 
 

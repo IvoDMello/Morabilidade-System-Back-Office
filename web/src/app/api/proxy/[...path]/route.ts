@@ -62,7 +62,7 @@ async function handler(
   if (hasBody) {
     if (contentType.includes("multipart/form-data")) {
       body = await request.formData();
-      // Não define Content-Type — o fetch seta automaticamente com o boundary correto
+      // Não define Content-Type, o fetch seta automaticamente com o boundary correto
     } else {
       const text = await request.text();
       if (text) {

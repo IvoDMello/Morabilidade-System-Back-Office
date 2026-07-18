@@ -5,7 +5,7 @@
 -- é montado a partir da carteira de contratos ATIVOS no momento da geração. Sem
 -- congelar esse cálculo, uma 2ª via de um mês passado sairia diferente da 1ª
 -- (imóveis entram/saem, aluguéis mudam). Aqui guardamos, por (proprietário, mês),
--- o bloco já calculado e os dados de recebimento vigentes — para que qualquer
+-- o bloco já calculado e os dados de recebimento vigentes, para que qualquer
 -- reemissão daquela competência saia idêntica à original.
 --
 -- Congela na primeira geração; reemissões da mesma competência reusam o snapshot.

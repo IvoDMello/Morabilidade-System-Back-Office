@@ -2,7 +2,7 @@
 Acompanhamento do imóvel: visitas, percepções internas e disparo do relatório
 automático de 30 dias enviado ao proprietário.
 
-Visitas e percepções persistem mesmo após o imóvel sair de "disponível" — só
+Visitas e percepções persistem mesmo após o imóvel sair de "disponível", só
 somem se o imóvel for deletado (cascade na migration 020).
 """
 import csv
@@ -216,7 +216,7 @@ def deletar_percepcao(
 
 # ── Job: relatório automático de 30 dias ────────────────────────────────────
 
-# Destinatário(s) do relatório. Por enquanto só Ivo — quando Rodrigo aprovar o
+# Destinatário(s) do relatório. Por enquanto só Ivo, quando Rodrigo aprovar o
 # formato, adicionar o e-mail dele aqui.
 RELATORIO_30_DESTINATARIOS = ["ivompb2000@gmail.com"]
 
@@ -244,7 +244,7 @@ def processar_relatorios_30dias() -> dict:
 
     Chamado tanto pelo endpoint HTTP (`job_relatorio_30dias`, p/ disparo manual
     ou cron externo) quanto pelo agendador interno (`app.scheduler`). Idempotente
-    via `relatorio_30dias_enviado_em` — reexecutar não reenvia.
+    via `relatorio_30dias_enviado_em`, reexecutar não reenvia.
     """
     corte = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
     # Janela [30, 30+N] dias: pega quem ACABOU de cruzar os 30 dias, não o
@@ -305,7 +305,7 @@ def preview_relatorio_30dias(
     """Gera o PDF do relatório de 30 dias e devolve INLINE, sem enviar e-mail.
 
     Permite revisar o conteúdo (visitas, percepções, dados do proprietário) antes
-    de disparar o envio. Não marca `relatorio_30dias_enviado_em` — é só leitura.
+    de disparar o envio. Não marca `relatorio_30dias_enviado_em`, é só leitura.
     """
     imovel = _buscar_imovel_relatorio(imovel_id)
     try:
@@ -330,7 +330,7 @@ def enviar_relatorio_manual(
 ):
     """Envia (ou reenvia) o relatório de 30 dias deste imóvel agora, sob demanda.
 
-    Ignora a janela de idade do job automático — serve para testar o fluxo e
+    Ignora a janela de idade do job automático, serve para testar o fluxo e
     para mandar uma atualização avulsa. Marca `relatorio_30dias_enviado_em`, então
     o job automático não reenviará depois.
     """
@@ -358,7 +358,7 @@ def enviar_relatorio_manual(
 
 
 def _montar_relatorio(imovel: dict) -> tuple[dict, bytes]:
-    """Coleta os dados do relatório e gera o PDF — SEM efeitos colaterais.
+    """Coleta os dados do relatório e gera o PDF: SEM efeitos colaterais.
 
     Não envia e-mail nem marca `relatorio_30dias_enviado_em`; serve tanto para a
     prévia quanto como primeira etapa do envio real. Devolve `(dados, pdf_bytes)`.

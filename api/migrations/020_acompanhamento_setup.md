@@ -1,4 +1,4 @@
-# Migration 020 — Setup do Acompanhamento de Imóveis
+# Migration 020: Setup do Acompanhamento de Imóveis
 
 ## 1. Rodar SQL no Supabase
 
@@ -17,7 +17,7 @@ CRON_TOKEN=<gerar token aleatório longo, ex: openssl rand -hex 32>
 ```
 
 Sem essa variável o endpoint `/imoveis/internal/jobs/relatorio-30dias`
-fica permanentemente inacessível (retorna 403). Isso é proposital — é a
+fica permanentemente inacessível (retorna 403). Isso é proposital, é a
 proteção do job.
 
 ## 3. Configurar o cron no Railway

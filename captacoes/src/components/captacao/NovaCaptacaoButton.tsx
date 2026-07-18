@@ -58,7 +58,7 @@ export function NovaCaptacaoButton({ trigger }: { trigger?: ReactNode } = {}) {
     });
     // Checagem é best effort: se a RPC falhar, avisa mas não bloqueia o cadastro.
     if (error) {
-      toast.warning("Não foi possível checar duplicadas — confira o quadro manualmente.");
+      toast.warning("Não foi possível checar duplicadas, confira o quadro manualmente.");
     } else if (rows && rows.length > 0) {
       setDuplicadas(rows as Duplicada[]);
       setPendente(data);
@@ -145,7 +145,7 @@ export function NovaCaptacaoButton({ trigger }: { trigger?: ReactNode } = {}) {
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
               <p>
                 Já existe captação com esse telefone ou anúncio. Confira antes de cadastrar de
-                novo — pode ser o mesmo imóvel.
+                novo, pode ser o mesmo imóvel.
               </p>
             </div>
 

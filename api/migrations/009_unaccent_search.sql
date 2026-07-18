@@ -1,5 +1,5 @@
 -- ============================================================
--- Morabilidade — Migration 009
+-- Morabilidade: Migration 009
 -- Busca de imóveis insensível a acentos em bairro e cidade.
 --
 -- unaccent() é STABLE (não IMMUTABLE), o que impede uso direto

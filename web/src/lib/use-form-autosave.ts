@@ -5,7 +5,7 @@ import type { UseFormWatch, UseFormReset, FieldValues } from "react-hook-form";
 
 const PREFIX = "morabilidade-draft:";
 
-// Rascunhos mais antigos do que isso são descartados — quase certamente
+// Rascunhos mais antigos do que isso são descartados, quase certamente
 // o usuário esqueceu, mudou de máquina, ou os dados ficaram obsoletos.
 const MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
@@ -44,7 +44,7 @@ interface UseFormAutosaveResult {
  * Por que: forms longos (ex.: cadastro de imóvel) eram perdidos quando o
  * token JWT expirava no meio do trabalho. Mesmo com o refresh proativo
  * agora resolvendo a causa raiz, este autosave é defesa em profundidade
- * — cobre crash do browser, kernel panic, queda de luz, fechar a aba
+ *, cobre crash do browser, kernel panic, queda de luz, fechar a aba
  * sem querer, etc.
  *
  * Fora do escopo: arquivos (File/Blob). Quem usa precisa garantir que os
@@ -78,7 +78,7 @@ export function useFormAutosave<T extends FieldValues>({
       setHasDraft(true);
       setDraftAgeMs(age);
     } catch {
-      // JSON corrompido — limpa pra evitar travar o boot do form.
+      // JSON corrompido, limpa pra evitar travar o boot do form.
       try { window.localStorage.removeItem(storageKey); } catch {}
     }
   }, [storageKey]);
@@ -100,7 +100,7 @@ export function useFormAutosave<T extends FieldValues>({
           };
           window.localStorage.setItem(storageKey, JSON.stringify(payload));
         } catch {
-          // QuotaExceededError, modo anônimo, etc — silenciar é melhor que
+          // QuotaExceededError, modo anônimo, etc, silenciar é melhor que
           // crashar o form. Pior caso: usuário perde rascunho de browser-crash.
         }
       }, debounceMs);

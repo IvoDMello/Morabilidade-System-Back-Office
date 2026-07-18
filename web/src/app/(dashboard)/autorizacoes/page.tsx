@@ -26,9 +26,9 @@ const FILTROS: { key: string; label: string }[] = [
 ];
 
 function formatDataBR(iso?: string | null) {
-  if (!iso) return "—";
+  if (!iso) return "-";
   const d = new Date(iso);
-  return isNaN(d.getTime()) ? "—" : d.toLocaleDateString("pt-BR");
+  return isNaN(d.getTime()) ? "-" : d.toLocaleDateString("pt-BR");
 }
 
 /** Fim da vigência da exclusividade: assinatura + prazo em dias. */
@@ -207,7 +207,7 @@ function LinhaAutorizacao({ a }: { a: Autorizacao }) {
             <Link href={`/imoveis/${a.imovel_id}`}
               className="text-sm font-medium text-slate-800 hover:text-[#585a4f] hover:underline flex items-center gap-1.5">
               <Building2 className="w-3.5 h-3.5 text-slate-400" />
-              {a.imovel_codigo ? `${a.imovel_codigo} — ` : ""}{a.imovel_endereco ?? "Imóvel"}
+              {a.imovel_codigo ? `${a.imovel_codigo}: ` : ""}{a.imovel_endereco ?? "Imóvel"}
             </Link>
             <span className={`text-[11px] px-2 py-0.5 rounded-full border ${st.cls}`}>{st.label}</span>
             {a.exclusiva && (

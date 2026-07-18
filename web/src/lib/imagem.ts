@@ -18,7 +18,7 @@ export async function rotacionarArquivoImagem(file: File, graus: number): Promis
   const normalized = ((graus % 360) + 360) % 360;
   if (normalized === 0) return file;
   if (![90, 180, 270].includes(normalized)) {
-    throw new Error("Rotação inválida — use 90, 180 ou 270 graus.");
+    throw new Error("Rotação inválida, use 90, 180 ou 270 graus.");
   }
 
   const url = URL.createObjectURL(file);

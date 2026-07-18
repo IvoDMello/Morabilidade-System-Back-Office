@@ -56,7 +56,7 @@ describe("sendBeaconJSON", () => {
     expect((init as RequestInit).keepalive).toBe(true);
   });
 
-  it("nunca lança — engole erros para não quebrar a navegação", () => {
+  it("nunca lança, engole erros para não quebrar a navegação", () => {
     vi.stubGlobal("navigator", {
       sendBeacon: () => { throw new Error("denied"); },
     });

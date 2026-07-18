@@ -69,7 +69,7 @@ export const agendamentoSchema = z.object({
   gravacao_data: z.string().nullable().optional(),
 });
 
-/** "visita e gravação no mesmo dia" — preenche ambas as datas. */
+/** "visita e gravação no mesmo dia", preenche ambas as datas. */
 export const mesmoDiaSchema = z.object({ data: z.string() });
 
 export const videoSchema = z.object({

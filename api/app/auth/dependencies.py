@@ -12,7 +12,7 @@ PERFIS_ESCRITA = ("admin", "corretor")
 
 logger = logging.getLogger(__name__)
 security = HTTPBearer()
-# Variante que não estoura quando falta o header Authorization — usada onde a
+# Variante que não estoura quando falta o header Authorization, usada onde a
 # autenticação pode vir por um caminho alternativo (token de integração).
 security_opcional = HTTPBearer(auto_error=False)
 

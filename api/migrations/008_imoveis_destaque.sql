@@ -1,5 +1,5 @@
 -- ============================================================
--- Morabilidade — Migration 008
+-- Morabilidade: Migration 008
 -- Destaques na home do site público.
 --
 -- Admin escolhe até 5 imóveis para aparecerem no carrossel da

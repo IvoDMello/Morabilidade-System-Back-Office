@@ -77,7 +77,7 @@ export default function RedefinirSenhaPage() {
       const { error } = await supabase.auth.updateUser({ password: data.senha });
       if (error) throw new Error(error.message);
 
-      // Encerra a sessão temporária criada pelo recovery — o usuário precisa
+      // Encerra a sessão temporária criada pelo recovery, o usuário precisa
       // fazer login normalmente em seguida.
       await supabase.auth.signOut();
 

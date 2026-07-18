@@ -1,6 +1,6 @@
 -- Migration 036: cliques no botão "Ver vídeo no Instagram" da página do imóvel.
 --
--- ⚠️ PENDENTE DE EXECUÇÃO no Supabase — rodar no SQL Editor antes de usar.
+-- ⚠️ PENDENTE DE EXECUÇÃO no Supabase, rodar no SQL Editor antes de usar.
 --
 -- Motivação: o CTA de vídeo (reel do Instagram) foi adicionado à página de
 -- detalhe do imóvel. Para medir se ele engaja, registramos cada clique numa

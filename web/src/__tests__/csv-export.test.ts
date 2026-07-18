@@ -37,7 +37,7 @@ function buildImovelExportParams(filtros: {
   return params;
 }
 
-describe("CSV export — params de clientes", () => {
+describe("CSV export, params de clientes", () => {
   it("sem filtros retorna params vazio", () => {
     expect(buildClienteExportParams({})).toEqual({});
   });
@@ -56,7 +56,7 @@ describe("CSV export — params de clientes", () => {
   });
 });
 
-describe("CSV export — params de imóveis", () => {
+describe("CSV export, params de imóveis", () => {
   it("sem filtros retorna params vazio", () => {
     expect(buildImovelExportParams({})).toEqual({});
   });

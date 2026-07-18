@@ -209,7 +209,7 @@ export default function DashboardHome() {
                 {stats.imovel_mais_antigo.codigo}
               </span>
               <span className="text-slate-400">
-                {" "}— cadastrado em {new Date(stats.imovel_mais_antigo.created_at).toLocaleDateString("pt-BR")}
+                {" "}- cadastrado em {new Date(stats.imovel_mais_antigo.created_at).toLocaleDateString("pt-BR")}
               </span>
             </p>
           </Link>

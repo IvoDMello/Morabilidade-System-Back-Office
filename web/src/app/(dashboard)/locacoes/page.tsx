@@ -74,7 +74,7 @@ export default function LocacoesPage() {
         </div>
       </div>
 
-      {/* Tabs — rolagem horizontal no mobile para não estourar a largura */}
+      {/* Tabs, rolagem horizontal no mobile para não estourar a largura */}
       <div className="border-b border-slate-200 mb-6">
         <nav className="flex gap-1 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           <TabButton active={tab === "contratos"} onClick={() => setTab("contratos")}>
@@ -272,17 +272,17 @@ function AbaContratos() {
                     <tr key={c.id} className="hover:bg-slate-50/60 transition">
                       <td className="px-4 py-3">
                         <p className="font-medium text-slate-800">
-                          {c.imovel?.codigo ?? "—"}
+                          {c.imovel?.codigo ?? "-"}
                         </p>
                         <p className="text-xs text-slate-400 mt-0.5 truncate max-w-[240px]">
-                          {c.imovel?.endereco ?? "—"}
+                          {c.imovel?.endereco ?? "-"}
                         </p>
                       </td>
                       <td className="hidden md:table-cell px-4 py-3 text-slate-600">
-                        {c.locatario?.nome ?? "—"}
+                        {c.locatario?.nome ?? "-"}
                       </td>
                       <td className="hidden lg:table-cell px-4 py-3 text-slate-600">
-                        {c.proprietario?.nome ?? "—"}
+                        {c.proprietario?.nome ?? "-"}
                       </td>
                       <td className="px-4 py-3">
                         <span
@@ -298,7 +298,7 @@ function AbaContratos() {
                         {c.ultimo_mes_gerado ? (
                           formatarMesAno(c.ultimo_mes_gerado)
                         ) : (
-                          <span className="text-slate-300">—</span>
+                          <span className="text-slate-300">-</span>
                         )}
                       </td>
                       <td className="hidden md:table-cell px-4 py-3 text-slate-500 text-xs">
@@ -712,9 +712,9 @@ function AbaRepasses() {
                     {prop.itens.map((item) => (
                       <tr key={item.pagamento_id}>
                         <td className="px-4 py-2.5">
-                          <p className="font-medium text-slate-700">{item.imovel_codigo ?? "—"}</p>
+                          <p className="font-medium text-slate-700">{item.imovel_codigo ?? "-"}</p>
                           <p className="text-xs text-slate-400 truncate max-w-[300px]">
-                            {item.imovel_endereco ?? "—"}
+                            {item.imovel_endereco ?? "-"}
                           </p>
                         </td>
                         <td className="px-4 py-2.5 text-right font-mono text-xs text-slate-700">
@@ -873,14 +873,14 @@ function AbaAdmCobranca() {
                     {prop.itens.map((item) => (
                       <tr key={item.contrato_id}>
                         <td className="px-4 py-2.5">
-                          <p className="font-medium text-slate-700">{item.imovel_codigo ?? "—"}</p>
+                          <p className="font-medium text-slate-700">{item.imovel_codigo ?? "-"}</p>
                           <p className="text-xs text-slate-400 truncate max-w-[300px]">
-                            {item.imovel_endereco ?? "—"}
+                            {item.imovel_endereco ?? "-"}
                             {item.locatario_nome ? ` · ${item.locatario_nome}` : ""}
                           </p>
                         </td>
                         <td className="hidden sm:table-cell px-4 py-2.5 text-slate-500 text-xs">
-                          {item.bairro ?? "—"}
+                          {item.bairro ?? "-"}
                         </td>
                         <td className="px-4 py-2.5 text-right font-mono text-xs text-slate-700">
                           {formatarMoeda(Number(item.aluguel))}
@@ -947,7 +947,7 @@ function DadosRecebimentoCard() {
         <div>
           <h3 className="text-sm font-semibold text-slate-700">Dados para pagamento</h3>
           <p className="text-xs text-slate-400">
-            Conta que recebe a taxa — impressa no box do demonstrativo.
+            Conta que recebe a taxa, impressa no box do demonstrativo.
           </p>
         </div>
         {!editando ? (
@@ -980,7 +980,7 @@ function DadosRecebimentoCard() {
                 className="w-full px-2.5 py-1.5 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#585a4f]/30"
               />
             ) : (
-              <p className="text-sm text-slate-700">{dados[key] || "—"}</p>
+              <p className="text-sm text-slate-700">{dados[key] || "-"}</p>
             )}
           </div>
         ))}

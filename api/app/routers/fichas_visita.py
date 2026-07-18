@@ -1,10 +1,10 @@
-"""Ficha / Termo de Visita a Imóvel — geração, listagem e assinatura eletrônica.
+"""Ficha / Termo de Visita a Imóvel, geração, listagem e assinatura eletrônica.
 
 Fluxo:
-1. Corretor cria a ficha (`POST /fichas-visita`) — o sistema monta um snapshot
+1. Corretor cria a ficha (`POST /fichas-visita`), o sistema monta um snapshot
    imutável do imóvel/corretor e gera um `token` de assinatura.
 2. O link `/<site>/ficha/<token>` é enviado ao visitante (ex.: WhatsApp).
-3. O visitante abre, confere e assina (`POST /fichas-visita/assinar/<token>`) —
+3. O visitante abre, confere e assina (`POST /fichas-visita/assinar/<token>`)
    capturamos IP, data/hora, geolocalização e o hash dos dados como trilha de
    auditoria, e geramos o PDF assinado guardado no storage.
 
@@ -102,7 +102,7 @@ def criar_ficha(body: FichaVisitaCreate, current_user: dict = Depends(require_ad
 
     # Corretor responsável (default = usuário atual). A ficha é um documento
     # jurídico de corretagem: o corretor precisa existir, estar ativo e ter
-    # nome + CRECI — senão o PDF assinado sairia sem identificação válida.
+    # nome + CRECI, senão o PDF assinado sairia sem identificação válida.
     corretor_id = body.corretor_id or current_user["id"]
     if corretor_id != current_user["id"] and current_user.get("perfil") != "admin":
         raise HTTPException(
@@ -162,7 +162,7 @@ def criar_ficha(body: FichaVisitaCreate, current_user: dict = Depends(require_ad
     }
 
     # O vínculo/cadastro do visitante no CRM acontece só na ASSINATURA
-    # (atualizar_cadastro_pos_assinatura) — ficha que nunca é assinada não
+    # (atualizar_cadastro_pos_assinatura), ficha que nunca é assinada não
     # vira cliente, evitando cadastros mortos na base.
     res = supabase_admin.table("fichas_visita").insert(payload).execute()
     return res.data[0]
@@ -269,7 +269,7 @@ def obter_ficha(ficha_id: str, current_user: dict = Depends(get_current_user)):
 def baixar_pdf(ficha_id: str, current_user: dict = Depends(get_current_user)):
     ficha = _buscar_ficha(ficha_id)
     if ficha.get("status") == "assinada" and ficha.get("pdf_path"):
-        # Serve o PDF guardado — é dele que o hash foi calculado.
+        # Serve o PDF guardado, é dele que o hash foi calculado.
         pdf_bytes = baixar_documento(ficha["pdf_path"])
     else:
         # Pendente/cancelada: preview gerado na hora.
@@ -298,7 +298,7 @@ def _ficha_assinavel(token: str) -> dict:
     """Busca a ficha pelo token e valida que ainda pode ser exibida/assinada.
 
     Ficha assinada passa (a página pública mostra a confirmação com o download
-    do PDF) — o POST de assinatura rejeita explicitamente esse caso."""
+    do PDF), o POST de assinatura rejeita explicitamente esse caso."""
     res = supabase_admin.table("fichas_visita").select("*").eq("token", token).maybe_single().execute()
     if not res or not res.data:
         raise HTTPException(status_code=404, detail="Link inválido.")
@@ -360,7 +360,7 @@ def assinar_ficha(request: Request, token: str, body: FichaVisitaAssinaturaIn):
 
     # CRM: vincula/cadastra o visitante como cliente, completa o CPF do
     # cadastro e infere o perfil de busca a partir das visitas assinadas.
-    # Best-effort — a assinatura já está consumada.
+    # Best-effort, a assinatura já está consumada.
     try:
         atualizar_cadastro_pos_assinatura(ficha_assinada)
     except Exception:

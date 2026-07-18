@@ -51,7 +51,7 @@ def test_agrupa_por_proprietario_e_calcula_comissao():
     ana = props[0]
     assert ana.qtd_imoveis == 2
     assert ana.total_aluguel == Decimal("3000.00")
-    # Taxa única de 8% — o campo do contrato (10%) é ignorado.
+    # Taxa única de 8%, o campo do contrato (10%) é ignorado.
     assert ana.total_comissao == Decimal("240.00")
     assert ana.pct_uniforme == Decimal("8")
     # Itens ordenados por código do imóvel (estabilidade do PDF)
@@ -76,7 +76,7 @@ def test_taxa_unica_8pct_mesmo_sem_taxa_no_contrato():
 
 
 def test_taxas_divergentes_no_contrato_sao_ignoradas():
-    # Campo do contrato (10% / 5%) não importa — 8% fixo em todos.
+    # Campo do contrato (10% / 5%) não importa: 8% fixo em todos.
     contratos = [
         _contrato("p1", "Ana", taxa="10", codigo="MB-1"),
         _contrato("p1", "Ana", taxa="5", codigo="MB-2"),
@@ -91,7 +91,7 @@ def test_taxas_divergentes_no_contrato_sao_ignoradas():
 
 def test_exclui_contrato_ja_retido_no_repasse_do_mes():
     """Anti duplo débito: aluguel que passou pela imobiliária (pagamento
-    pago/parcial no mês) já teve os 8% retidos no Repasse — sai da cobrança."""
+    pago/parcial no mês) já teve os 8% retidos no Repasse, sai da cobrança."""
     contratos = [
         _contrato("p1", "Ana", aluguel="1000", codigo="MB-1"),
         _contrato("p1", "Ana", aluguel="2000", codigo="MB-2"),
@@ -136,7 +136,7 @@ _DADOS_REC = {"titular": "Rodrigo", "banco": "Bradesco", "agencia": "1745",
 def _bloco(n_itens, pct_uniforme=Decimal("8")):
     itens = [{
         "contrato_id": f"ct-{i}", "imovel_codigo": f"MB-{i:03d}",
-        "imovel_endereco": f"Rua Muito Longa das Flores, {i} — Ap. 701",
+        "imovel_endereco": f"Rua Muito Longa das Flores, {i}: Ap. 701",
         "bairro": "Ipanema", "locatario_nome": f"Locatário {i}",
         "aluguel": Decimal("1000"), "taxa_administracao_pct": Decimal("8"),
         "comissao": Decimal("80"),
@@ -156,7 +156,7 @@ def test_pdf_retorna_bytes_validos():
 
 
 def test_pdf_carteira_grande_gera_multiplas_paginas():
-    """25 imóveis não cabem em uma página — deve quebrar sem estourar o rodapé."""
+    """25 imóveis não cabem em uma página, deve quebrar sem estourar o rodapé."""
     pdf = gerar_demonstrativo_admin_pdf(_bloco(25), date(2026, 5, 1), _DADOS_REC)
     assert pdf.startswith(b"%PDF-")
     # ReportLab emite um objeto "/Page" por página; carteira grande → 2+ páginas.

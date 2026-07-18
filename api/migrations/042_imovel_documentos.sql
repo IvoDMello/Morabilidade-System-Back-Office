@@ -4,7 +4,7 @@
 -- arquivos vivem no mesmo bucket "media" do Supabase Storage, sob o prefixo
 -- imoveis/{imovel_id}/documentos/. O banco guarda apenas os metadados.
 --
--- Documentos são internos (uso da imobiliária) — nunca expostos no site público.
+-- Documentos são internos (uso da imobiliária), nunca expostos no site público.
 -- O download usa signed URL de curta duração gerada pela API (service_role),
 -- como já acontece com os anexos de locação.
 --

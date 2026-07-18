@@ -385,6 +385,7 @@ export default function EditarImovelPage({
     dormitorios: imovel.dormitorios ?? null,
     suites: imovel.suites ?? null,
     banheiros: imovel.banheiros ?? null,
+    lavabos: imovel.lavabos ?? null,
     vagas_garagem: imovel.vagas_garagem ?? null,
     mobiliado: imovel.mobiliado ?? null,
     andar: imovel.andar ?? null,
@@ -427,12 +428,12 @@ export default function EditarImovelPage({
             </span>
           </div>
           <p className="text-slate-500 text-sm truncate">
-            {imovel.logradouro}{imovel.numero ? `, ${imovel.numero}` : ""} — {imovel.bairro}, {imovel.cidade}
+            {imovel.logradouro}{imovel.numero ? `, ${imovel.numero}` : ""}, {imovel.bairro}, {imovel.cidade}
           </p>
         </div>
       </div>
 
-      {/* Tabs — rolagem horizontal no mobile para não estourar a largura */}
+      {/* Tabs, rolagem horizontal no mobile para não estourar a largura */}
       <div className="flex gap-1 mb-4 border-b border-slate-200 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         {(
           [

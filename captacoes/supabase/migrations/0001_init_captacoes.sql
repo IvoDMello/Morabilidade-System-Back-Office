@@ -1,6 +1,6 @@
 -- =====================================================================
 -- Morabilidade · Kanban de Captações
--- Migration 0001 — schema, tabelas, índices, RLS e RPC de movimentação
+-- Migration 0001, schema, tabelas, índices, RLS e RPC de movimentação
 -- =====================================================================
 
 create schema if not exists captacoes;
@@ -153,7 +153,7 @@ end;
 $$;
 
 -- =====================================================================
--- RLS — qualquer usuário autenticado tem leitura/escrita (todos têm acesso)
+-- RLS, qualquer usuário autenticado tem leitura/escrita (todos têm acesso)
 -- =====================================================================
 alter table captacoes.captacao  enable row level security;
 alter table captacoes.midia     enable row level security;

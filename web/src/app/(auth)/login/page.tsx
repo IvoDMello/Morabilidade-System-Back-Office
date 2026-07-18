@@ -41,7 +41,7 @@ export default function LoginPage() {
       const json = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        // Usa a mensagem do servidor quando disponível — distingue
+        // Usa a mensagem do servidor quando disponível, distingue
         // "credenciais incorretas" de "API fora do ar", "perfil ausente", etc.
         const detail =
           typeof json === "object" && json && "detail" in json && json.detail
@@ -51,7 +51,7 @@ export default function LoginPage() {
         return;
       }
 
-      // O access_token não chega ao browser — vive no cookie httpOnly setado
+      // O access_token não chega ao browser, vive no cookie httpOnly setado
       // pela rota /api/auth/login; o proxy /api/[...path] o injeta na API.
       setUser(json.user);
 
@@ -63,7 +63,7 @@ export default function LoginPage() {
       }
 
       // Respeita ?next= preservado pelo middleware quando a sessão expirou
-      // numa rota interna — devolve o usuário onde ele estava (form, edição etc).
+      // numa rota interna, devolve o usuário onde ele estava (form, edição etc).
       const params = new URLSearchParams(window.location.search);
       const next = params.get("next");
       const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
@@ -119,7 +119,7 @@ export default function LoginPage() {
               Simples,<br />Eficiente e<br />Humanizada.
             </h1>
             <p className="text-white/60 text-sm max-w-xs leading-relaxed">
-              Gerencie seu portfólio imobiliário com agilidade e controle total — em qualquer dispositivo.
+              Gerencie seu portfólio imobiliário com agilidade e controle total, em qualquer dispositivo.
             </p>
           </div>
 
@@ -136,7 +136,7 @@ export default function LoginPage() {
 
       {/* ── Painel direito: formulário ── */}
       <div className="flex-1 flex flex-col lg:items-center lg:justify-center bg-white">
-        {/* Hero mobile (foto + logo sobreposta) — só fora do desktop */}
+        {/* Hero mobile (foto + logo sobreposta), só fora do desktop */}
         <div className="lg:hidden relative w-full h-56 sm:h-72 flex-shrink-0">
           <Image
             src="/login-bg.jpeg"

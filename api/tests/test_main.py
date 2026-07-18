@@ -49,7 +49,7 @@ def test_stats_chama_rpc_stats_dashboard(client):
     with patch("app.main.supabase_admin", db):
         res = client.get("/stats")
     assert res.status_code == 200
-    # 1 query só — substituiu as 9 anteriores.
+    # 1 query só, substituiu as 9 anteriores.
     db.rpc.assert_called_once_with("stats_dashboard")
 
 

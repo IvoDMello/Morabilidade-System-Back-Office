@@ -1,4 +1,4 @@
-"""Testes dos endpoints de analytics — tracking público e dashboard interno."""
+"""Testes dos endpoints de analytics, tracking público e dashboard interno."""
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -141,7 +141,7 @@ def test_favorito_codigo_invalido_silencioso(anon_client):
             "/publico/favorito",
             json={"session_id": "session1234", "imovel_codigo": "lixo", "acao": "add"},
         )
-    # 204 mesmo sem inserir — código inválido não deve derrubar o site público.
+    # 204 mesmo sem inserir, código inválido não deve derrubar o site público.
     assert res.status_code == 204
     db.insert.assert_not_called()
 

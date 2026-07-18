@@ -132,7 +132,7 @@ function getCriteriaStatus(m: Match, p: Preferencia): CriterioStatus[] {
   // 1. Tipo de negócio ("ambos" não conta como critério definido)
   const prefNeg = p.tipo_negocio && p.tipo_negocio !== "ambos" ? p.tipo_negocio : null;
   if (!prefNeg) {
-    criteria.push({ key: "negocio", label: "Negócio", detail: "—", status: "na" });
+    criteria.push({ key: "negocio", label: "Negócio", detail: "-", status: "na" });
   } else {
     const ok = m.tipo_negocio === prefNeg || m.tipo_negocio === "ambos";
     criteria.push({ key: "negocio", label: "Negócio", detail: TIPO_NEGOCIO_LABEL[prefNeg] ?? prefNeg, status: ok ? "ok" : "fail" });
@@ -140,7 +140,7 @@ function getCriteriaStatus(m: Match, p: Preferencia): CriterioStatus[] {
 
   // 2. Tipo de imóvel
   if (!p.tipo_imovel) {
-    criteria.push({ key: "tipo", label: "Tipo", detail: "—", status: "na" });
+    criteria.push({ key: "tipo", label: "Tipo", detail: "-", status: "na" });
   } else {
     criteria.push({ key: "tipo", label: "Tipo", detail: TIPO_IMOVEL_LABEL[p.tipo_imovel] ?? p.tipo_imovel, status: m.tipo_imovel === p.tipo_imovel ? "ok" : "fail" });
   }
@@ -148,7 +148,7 @@ function getCriteriaStatus(m: Match, p: Preferencia): CriterioStatus[] {
   // 3. Cidade
   const cidadePref = p.cidade?.trim() ?? "";
   if (!cidadePref) {
-    criteria.push({ key: "cidade", label: "Cidade", detail: "—", status: "na" });
+    criteria.push({ key: "cidade", label: "Cidade", detail: "-", status: "na" });
   } else {
     const ok = (m.cidade ?? "").toLowerCase().includes(cidadePref.toLowerCase());
     criteria.push({ key: "cidade", label: "Cidade", detail: cidadePref, status: ok ? "ok" : "fail" });
@@ -157,7 +157,7 @@ function getCriteriaStatus(m: Match, p: Preferencia): CriterioStatus[] {
   // 4. Bairros
   const bairrosList = (p.bairros || []).filter((b) => b.trim());
   if (!bairrosList.length) {
-    criteria.push({ key: "bairro", label: "Bairro", detail: "—", status: "na" });
+    criteria.push({ key: "bairro", label: "Bairro", detail: "-", status: "na" });
   } else {
     const ok = bairrosList.some((b) => (m.bairro ?? "").toLowerCase().includes(b.toLowerCase()));
     criteria.push({ key: "bairro", label: "Bairro", detail: bairrosList.join(", "), status: ok ? "ok" : "fail" });
@@ -166,7 +166,7 @@ function getCriteriaStatus(m: Match, p: Preferencia): CriterioStatus[] {
   // 5. Dormitórios (0 = sem requisito)
   const dormPref = p.dormitorios_min && p.dormitorios_min > 0 ? p.dormitorios_min : null;
   if (!dormPref) {
-    criteria.push({ key: "dorm", label: "Dorm.", detail: "—", status: "na" });
+    criteria.push({ key: "dorm", label: "Dorm.", detail: "-", status: "na" });
   } else {
     criteria.push({ key: "dorm", label: "Dorm.", detail: `≥ ${dormPref}`, status: (m.dormitorios ?? 0) >= dormPref ? "ok" : "fail" });
   }
@@ -174,7 +174,7 @@ function getCriteriaStatus(m: Match, p: Preferencia): CriterioStatus[] {
   // 6. Vagas de garagem
   const vagasPref = p.vagas_garagem_min && p.vagas_garagem_min > 0 ? p.vagas_garagem_min : null;
   if (!vagasPref) {
-    criteria.push({ key: "vagas", label: "Vagas", detail: "—", status: "na" });
+    criteria.push({ key: "vagas", label: "Vagas", detail: "-", status: "na" });
   } else {
     criteria.push({ key: "vagas", label: "Vagas", detail: `≥ ${vagasPref}`, status: (m.vagas_garagem ?? 0) >= vagasPref ? "ok" : "fail" });
   }
@@ -182,7 +182,7 @@ function getCriteriaStatus(m: Match, p: Preferencia): CriterioStatus[] {
   // 7. Faixa de valor
   const hasValor = p.valor_min != null || p.valor_max != null;
   if (!hasValor) {
-    criteria.push({ key: "valor", label: "Valor", detail: "—", status: "na" });
+    criteria.push({ key: "valor", label: "Valor", detail: "-", status: "na" });
   } else {
     const isLocacaoMatch = m.tipo_negocio === "locacao" || (m.tipo_negocio === "ambos" && p.tipo_negocio === "locacao");
     const valor = isLocacaoMatch ? m.valor_locacao : m.valor_venda;
@@ -349,7 +349,7 @@ export default function OportunidadesPage() {
         </div>
       )}
 
-      {/* Carregando matches — barra de progresso */}
+      {/* Carregando matches, barra de progresso */}
       {!loadingClientes && !matchesLoaded && clientes.length > 0 && (
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
@@ -405,7 +405,7 @@ export default function OportunidadesPage() {
         </div>
       )}
 
-      {/* Vazio após carregar — com diagnóstico */}
+      {/* Vazio após carregar, com diagnóstico */}
       {!loadingClientes && matchesLoaded && clientes.length > 0 && clientesComMatches.length === 0 && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <Sparkles className="w-10 h-10 text-slate-300 mb-3" />
@@ -686,7 +686,7 @@ function LegendCard() {
       desc: "O campo foi definido, mas o imóvel não atende. Isso pode indicar que o match foi gerado via outro critério.",
     },
     {
-      icon: <span className="text-xs text-slate-400 font-medium leading-none">—</span>,
+      icon: <span className="text-xs text-slate-400 font-medium leading-none">-</span>,
       cls: "bg-slate-50 border-slate-200",
       title: "Não informado",
       desc: "O campo não foi preenchido na preferência. Qualquer valor do imóvel é aceito e não conta para o %.",

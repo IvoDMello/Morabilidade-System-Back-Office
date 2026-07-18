@@ -101,7 +101,7 @@ beforeEach(() => {
 
 // ── Carregamento ──────────────────────────────────────────────────────────────
 
-describe("EditarClientePage — carregamento", () => {
+describe("EditarClientePage, carregamento", () => {
   it("exibe spinner enquanto carrega", () => {
     apiGetMock.mockImplementation(() => new Promise(() => {}));
     render(<EditarClientePage params={Promise.resolve({ id: "cliente-abc" })} />);
@@ -152,7 +152,7 @@ describe("EditarClientePage — carregamento", () => {
 
 // ── Componentes filhos ────────────────────────────────────────────────────────
 
-describe("EditarClientePage — seções da página", () => {
+describe("EditarClientePage, seções da página", () => {
   it("renderiza seção de preferências", async () => {
     apiGetMock.mockResolvedValue({ data: clienteFixture() });
     render(<EditarClientePage params={Promise.resolve({ id: "cliente-abc" })} />);
@@ -180,7 +180,7 @@ describe("EditarClientePage — seções da página", () => {
 
 // ── Salvar ────────────────────────────────────────────────────────────────────
 
-describe("EditarClientePage — salvar", () => {
+describe("EditarClientePage, salvar", () => {
   it("chama api.put com o id correto ao submeter", async () => {
     apiGetMock.mockResolvedValue({ data: clienteFixture() });
     apiPutMock.mockResolvedValue({ data: clienteFixture() });

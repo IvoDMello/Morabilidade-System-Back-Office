@@ -7,7 +7,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 const COOKIE_ACCESS = "morabilidade-auth";
 const COOKIE_REFRESH = "morabilidade-refresh";
 // Refresh token vive 30 dias no cookie. O Supabase rotaciona a cada uso e
-// invalida o anterior — se for roubado e usado, o legítimo cai junto na
+// invalida o anterior, se for roubado e usado, o legítimo cai junto na
 // próxima tentativa de refresh, encurtando a janela de exposição.
 const REFRESH_MAX_AGE = 60 * 60 * 24 * 30;
 

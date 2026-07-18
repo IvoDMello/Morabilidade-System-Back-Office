@@ -2,7 +2,7 @@
 
 Documento assinado pelo(s) proprietário(s) que autoriza a Morabilidade a
 intermediar a venda/locação do imóvel e fixa a comissão (arts. 722-729 CC).
-Suporta múltiplos signatários — cada proprietário recebe o próprio link e a
+Suporta múltiplos signatários, cada proprietário recebe o próprio link e a
 autorização só fica 'assinada' quando todos assinarem (migration 038). Ver
 router `autorizacoes` e serviço `autorizacao_pdf`.
 """

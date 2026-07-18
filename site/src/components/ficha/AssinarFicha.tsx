@@ -146,7 +146,7 @@ function Formulario({
     if (!aceite) { toast.error("Marque a caixa de aceite para continuar."); return; }
     setAssinando(true);
     try {
-      // Usa a geo já capturada em segundo plano (pode ser null) — sem espera.
+      // Usa a geo já capturada em segundo plano (pode ser null), sem espera.
       const fichaAtualizada = await assinarFicha(token, {
         aceite: true,
         cpf: cpf.trim(),

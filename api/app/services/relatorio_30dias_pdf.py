@@ -7,7 +7,7 @@ análise qualitativa da equipe (percepções).
 
 Componentes de layout (header/footer/seção/campo) vivem em [pdf_base]. As visitas
 vêm de `fichas_visita` (status 'assinada'), não mais do cadastro manual da aba de
-acompanhamento — ver [imovel_acompanhamento].
+acompanhamento, ver [imovel_acompanhamento].
 """
 from __future__ import annotations
 
@@ -41,7 +41,7 @@ def _rodape(c: canvas.Canvas, largura: float) -> None:
     rodape_esq = " · ".join(filter(None, [
         settings.empresa_creci_juridico or settings.empresa_creci_corretor,
         f"CNPJ {settings.empresa_cnpj}" if settings.empresa_cnpj else None,
-    ])) or "MORABILIDADE — Intermediação imobiliária"
+    ])) or "MORABILIDADE: Intermediação imobiliária"
     draw_brand_footer(c, largura, esquerda=rodape_esq, direita=settings.empresa_telefone)
 
 
@@ -71,17 +71,17 @@ def gerar_relatorio_30dias_pdf(dados: dict) -> bytes:
 
     # ── 1. Proprietário ──────────────────────────────────────────────────────
     y = secao(c, largura, y, "1. Proprietário")
-    campo(c, MARGEM, y, 110 * mm, "Nome", dados.get("proprietario_nome") or "—")
+    campo(c, MARGEM, y, 110 * mm, "Nome", dados.get("proprietario_nome") or "-")
     campo(c, MARGEM + 116 * mm, y, util - 116 * mm, "Telefone / WhatsApp",
-          dados.get("proprietario_telefone") or "—")
+          dados.get("proprietario_telefone") or "-")
     y -= 16 * mm
 
     # ── 2. Imóvel ────────────────────────────────────────────────────────────
     y = secao(c, largura, y, "2. Imóvel")
-    campo(c, MARGEM, y, 40 * mm, "Código / ref.", dados.get("codigo") or "—")
-    campo(c, MARGEM + 46 * mm, y, util - 46 * mm, "Endereço", dados.get("endereco") or "—")
+    campo(c, MARGEM, y, 40 * mm, "Código / ref.", dados.get("codigo") or "-")
+    campo(c, MARGEM + 46 * mm, y, util - 46 * mm, "Endereço", dados.get("endereco") or "-")
     y -= 12 * mm
-    campo(c, MARGEM, y, util, "Anunciado em", dados.get("anunciado_em") or "—")
+    campo(c, MARGEM, y, util, "Anunciado em", dados.get("anunciado_em") or "-")
     y -= 16 * mm
 
     # ── 3. Visitas comprovadas ───────────────────────────────────────────────
@@ -103,7 +103,7 @@ def gerar_relatorio_30dias_pdf(dados: dict) -> bytes:
             c.drawString(MARGEM + 2 * mm, y, fmt_dt(v.get("data")))
             c.setFillColor(TEXTO_ESCURO)
             c.setFont("Helvetica", 9)
-            c.drawString(MARGEM + 30 * mm, y, str(v.get("nome") or "—"))
+            c.drawString(MARGEM + 30 * mm, y, str(v.get("nome") or "-"))
             c.setStrokeColor(LINHA)
             c.setLineWidth(0.4)
             c.line(MARGEM, y - 2 * mm, MARGEM + util, y - 2 * mm)

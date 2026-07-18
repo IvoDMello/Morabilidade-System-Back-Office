@@ -46,7 +46,7 @@ function clearExpiresAt() {
  *   3. Este provider agenda um timer para REFRESH_MARGIN_MS antes do exp.
  *   4. Ao voltar a aba para foreground, refresca se faltar pouco tempo.
  *
- * Tudo via cookie httpOnly — refresh_token nunca toca o JS.
+ * Tudo via cookie httpOnly, refresh_token nunca toca o JS.
  */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const timerRef = useRef<number | null>(null);

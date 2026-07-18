@@ -2,14 +2,14 @@
 -- Habilita Row Level Security (RLS) nas tabelas que ainda estavam sem ele.
 --
 -- CONTEXTO / PORQUÊ
--- A API acessa o banco com a service_role key, que IGNORA o RLS — então ligar
+-- A API acessa o banco com a service_role key, que IGNORA o RLS, então ligar
 -- RLS não afeta a API. O back-office no navegador usa a anon key apenas para
 -- supabase.auth.* (reset de senha) e NÃO consulta estas tabelas; o site público
 -- consome a API (não o Supabase direto). Todas as escritas de analytics passam
 -- por endpoints /publico/* da API (service_role).
 --
 -- Sem RLS, porém, os grants padrão do Supabase deixam os papéis anon/authenticated
--- lerem a tabela direto pelo PostgREST com a anon key — que é PÚBLICA (vai no
+-- lerem a tabela direto pelo PostgREST com a anon key, que é PÚBLICA (vai no
 -- bundle do navegador). Isto exporia contratos (dados bancários), CPF/assinaturas
 -- e os próprios tokens de assinatura. As tabelas da migration 001 já tinham RLS;
 -- as criadas depois (011+) não. Esta migration fecha essa lacuna.
@@ -52,7 +52,7 @@ BEGIN
             EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', t);
             RAISE NOTICE 'RLS habilitado em %', t;
         ELSE
-            RAISE NOTICE 'Tabela % não existe — ignorada', t;
+            RAISE NOTICE 'Tabela % não existe, ignorada', t;
         END IF;
     END LOOP;
 END $$;

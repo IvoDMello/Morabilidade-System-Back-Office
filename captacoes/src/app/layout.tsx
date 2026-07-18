@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#585a4f", // olive — barra do navegador no mobile
+  themeColor: "#585a4f", // olive, barra do navegador no mobile
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

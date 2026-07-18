@@ -18,13 +18,13 @@ beforeEach(() => {
   });
 });
 
-describe("useAuthStore — estado inicial", () => {
+describe("useAuthStore, estado inicial", () => {
   it("começa sem usuário logado", () => {
     expect(useAuthStore.getState().user).toBeNull();
   });
 });
 
-describe("useAuthStore — setUser", () => {
+describe("useAuthStore, setUser", () => {
   it("armazena o usuário corretamente", () => {
     act(() => {
       useAuthStore.getState().setUser(MOCK_USER);
@@ -42,7 +42,7 @@ describe("useAuthStore — setUser", () => {
   });
 });
 
-describe("useAuthStore — clearAuth", () => {
+describe("useAuthStore, clearAuth", () => {
   it("remove o usuário do estado", () => {
     act(() => {
       useAuthStore.getState().setUser(MOCK_USER);
@@ -52,7 +52,7 @@ describe("useAuthStore — clearAuth", () => {
   });
 });
 
-describe("useAuthStore — logout", () => {
+describe("useAuthStore, logout", () => {
   it("limpa o estado do usuário", () => {
     act(() => {
       useAuthStore.getState().setUser(MOCK_USER);

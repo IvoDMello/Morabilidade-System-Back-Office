@@ -14,8 +14,8 @@
 2. Entre na aba **"Fichas de visita"**.
 3. Preencha os dados do visitante:
    - **Nome** (obrigatório)
-   - **WhatsApp** (obrigatório — é por ele que o link é enviado e o cliente é cadastrado quando assina)
-   - **CPF** (recomendado — ajuda a não duplicar cadastros)
+   - **WhatsApp** (obrigatório, é por ele que o link é enviado e o cliente é cadastrado quando assina)
+   - **CPF** (recomendado, ajuda a não duplicar cadastros)
    - **E-mail** (opcional)
 4. Clique em **"Gerar e copiar link"**.
 
@@ -37,7 +37,7 @@ Pronto: o sistema registra data/hora e IP, gera o **PDF assinado** e guarda tudo
 
 ## 4. O que acontece sozinho (sem trabalho manual)
 
-Tudo acontece **quando o visitante assina** (ficha que nunca é assinada não vira cadastro — a base de clientes só recebe quem realmente visitou):
+Tudo acontece **quando o visitante assina** (ficha que nunca é assinada não vira cadastro, a base de clientes só recebe quem realmente visitou):
 
 - O sistema procura o visitante na base de clientes pelo **CPF, telefone ou e-mail**.
 - Se já existe → a ficha é **vinculada ao cadastro existente** (nada é duplicado).
@@ -67,5 +67,5 @@ Status possíveis: **Aguardando assinatura** → **Assinada** (ou **Cancelada** 
 ## 7. Boas práticas
 
 - **Sempre peça o CPF** ao gerar a ficha: é o dado mais confiável para o sistema reconhecer um cliente que volta a visitar outros imóveis.
-- Gere a ficha **antes** da visita e envie pelo WhatsApp — o visitante assina no caminho ou na porta do imóvel.
+- Gere a ficha **antes** da visita e envie pelo WhatsApp, o visitante assina no caminho ou na porta do imóvel.
 - Visitou de novo com outro corretor? Sem problema: o sistema reconhece o cliente pelo CPF/telefone e soma a nova visita ao mesmo perfil.

@@ -1,11 +1,11 @@
-# Morabilidade — Snapshot do Projeto e Próximos Passos
+# Morabilidade: Snapshot do Projeto e Próximos Passos
 
 _Documento gerado em 27/04/2026._
 _Atualiza e substitui o `próximos_passos.md`, que estava majoritariamente concluído._
 
 ---
 
-## 1. Estado atual — o que está consolidado
+## 1. Estado atual, o que está consolidado
 
 ### 1.1 Backend (`api/`)
 - **FastAPI 0.115 + Python 3.12** rodando em `localhost:8000`.
@@ -15,10 +15,10 @@ _Atualiza e substitui o `próximos_passos.md`, que estava majoritariamente concl
 - **Rate limiting** com `slowapi` (dual-limiter, commit `59d8adc`).
 - **Testes:** **97 testes passando** (auth, clientes, contato, imóveis, schemas, tags, users) com mocks em `tests/conftest.py`.
 - **Migrations aplicáveis:**
-  - `001_initial.sql` — schema base.
+  - `001_initial.sql`, schema base.
   - `002_clientes_instagram_pais.sql`.
   - `003_clientes_email_opcional.sql`.
-  - `004_clientes_imovel_proprietario.sql` (nova — **precisa ser rodada no Supabase**).
+  - `004_clientes_imovel_proprietario.sql` (nova, **precisa ser rodada no Supabase**).
 
 ### 1.2 Painel (`web/`)
 - **Next.js 15 + React 19 + Tailwind + shadcn/ui** em `localhost:3000`.
@@ -47,7 +47,7 @@ _Atualiza e substitui o `próximos_passos.md`, que estava majoritariamente concl
 
 ---
 
-## 2. Roadmap anterior (`próximos_passos.md`) — status
+## 2. Roadmap anterior (`próximos_passos.md`), status
 
 | # | Item | Status |
 |---|---|---|
@@ -63,7 +63,7 @@ _Atualiza e substitui o `próximos_passos.md`, que estava majoritariamente concl
 | P2-10 | Export CSV (imóveis e clientes) | **pendente** |
 | P2-11 | Templates HTML de e-mail com branding | **pendente** |
 | P2-12 | Gráficos no dashboard (Recharts) | **pendente** |
-| P2-13 | Rate limiting nas rotas públicas (60 req/min/IP) | parcial — `slowapi` instalado, **falta aplicar nas rotas públicas** |
+| P2-13 | Rate limiting nas rotas públicas (60 req/min/IP) | parcial: `slowapi` instalado, **falta aplicar nas rotas públicas** |
 | P3-14 | Módulo Match imóvel × cliente | **pendente** |
 
 ---
@@ -74,15 +74,15 @@ Ordenados por impacto operacional / esforço.
 
 ### 3.1 P0 imediato (até esta semana)
 
-1. **Rodar a migration `004` no Supabase.** A coluna `imovel_codigo` ainda não existe em produção — sem isso, listar/cadastrar cliente vai quebrar.
-2. **Commitar e fazer push** das mudanças pendentes (clientes — código do imóvel + observação no grid).
+1. **Rodar a migration `004` no Supabase.** A coluna `imovel_codigo` ainda não existe em produção, sem isso, listar/cadastrar cliente vai quebrar.
+2. **Commitar e fazer push** das mudanças pendentes (clientes, código do imóvel + observação no grid).
 3. **Atualizar/remover o `próximos_passos.md`** ou redirecionar para este documento, evitando ambiguidade sobre o que é "o plano atual".
-4. **Renomear ou descrever melhor o último commit `ff38966 .`** — mensagens vazias dificultam recuperar contexto depois.
+4. **Renomear ou descrever melhor o último commit `ff38966 .`**, mensagens vazias dificultam recuperar contexto depois.
 
 ### 3.2 Operacional do back-office (P1 novo)
 
 5. **Export CSV** de imóveis e clientes (P2-10 herdado). Essencial para a equipe levar dados para fora do sistema (relatórios, repasse para parceiros).
-6. **Templates HTML de e-mail** para `/contato` e notificação interna de novo lead (P2-11). Hoje o e-mail provavelmente é texto cru — perde profissionalismo.
+6. **Templates HTML de e-mail** para `/contato` e notificação interna de novo lead (P2-11). Hoje o e-mail provavelmente é texto cru, perde profissionalismo.
 7. **Gráficos no dashboard** (P2-12): origem de leads (pizza) e status de clientes (barras) com Recharts.
 8. **Rate limiting nas rotas públicas** (P2-13): finalizar a aplicação do `slowapi` em `/imoveis/publico/*` e `/contato` para conter abuso vindo da internet.
 
@@ -91,7 +91,7 @@ Ordenados por impacto operacional / esforço.
 9. **Captação de lead via Instagram** (origem dominante): rever o formulário/landing para uso direto a partir do bio link e medir conversão por origem (`origem_lead`).
 10. **Otimização de imagens**: garantir que `next/image` está com `sizes` correto na listagem; verificar peso real das fotos no Storage (a compressão Pillow já existe em `services/storage.py`).
 11. **Tags filtráveis no site público:** hoje as tags aparecem no card mas não filtram. Acrescentar filtro pode ajudar a destacar oportunidades.
-12. **Sitemap por bairro/cidade** para SEO local — Morabilidade opera por demanda regional; um sitemap segmentado pode ajudar.
+12. **Sitemap por bairro/cidade** para SEO local: Morabilidade opera por demanda regional; um sitemap segmentado pode ajudar.
 
 ### 3.4 Grande feature (P2 novo)
 
@@ -105,23 +105,23 @@ Ordenados por impacto operacional / esforço.
 ### 3.5 Qualidade, DX e segurança
 
 14. **Subir cobertura de testes do painel:** hoje só `auth-store` e `login` têm testes. Cobrir cliente-form, imovel-form e fluxos de listagem cobriria onde mais nascem bugs.
-15. **Documentar variáveis de ambiente de produção** num arquivo separado (não no README) — o `.env.example` cobre dev mas não distingue prod.
+15. **Documentar variáveis de ambiente de produção** num arquivo separado (não no README), o `.env.example` cobre dev mas não distingue prod.
 16. **Auditoria de RLS no Supabase:** o RLS está ativado mas a API usa `service_role` que faz bypass. Confirmar quais policies estão valendo e se algum cliente direto (ex: front no futuro) corre risco.
 17. **Plano de backup do banco** (Supabase oferece backups; documentar a janela e como restaurar).
-18. **Checklist de pré-deploy** (lint, testes, migrations pendentes, smoke test) — útil para consolidar a rotina.
+18. **Checklist de pré-deploy** (lint, testes, migrations pendentes, smoke test), útil para consolidar a rotina.
 
 ---
 
 ## 4. Pontos de atenção
 
-- **`Pendencias_Sistema_imobiliario.docx`** está na raiz mas é um Word — fora do versionamento útil. Sugiro converter para `.md` ou descontinuar; do contrário, o conteúdo fica fora do alcance de quem lê o repo.
-- **`requisitos_sistema_imobiliario_v1.2.docx`**: mesmo ponto — vale exportar a parte ainda relevante para Markdown.
+- **`Pendencias_Sistema_imobiliario.docx`** está na raiz mas é um Word, fora do versionamento útil. Sugiro converter para `.md` ou descontinuar; do contrário, o conteúdo fica fora do alcance de quem lê o repo.
+- **`requisitos_sistema_imobiliario_v1.2.docx`**: mesmo ponto, vale exportar a parte ainda relevante para Markdown.
 - **Migrations não automatizadas:** rodar manualmente no SQL Editor do Supabase é frágil. Conforme o sistema cresce, vale considerar uma ferramenta (sqitch, dbmate, ou gerenciamento via Supabase CLI) e um log de "qual migration está aplicada em qual ambiente".
-- **Mensagens de commit pobres** (`.`, "ajustes1.2.1") — em equipe pequena passa, mas dificulta auditar incidentes. Convém manter o padrão do tipo `feat(api): ...` que aparece em vários commits anteriores.
+- **Mensagens de commit pobres** (`.`, "ajustes1.2.1"), em equipe pequena passa, mas dificulta auditar incidentes. Convém manter o padrão do tipo `feat(api): ...` que aparece em vários commits anteriores.
 - **`firebase-credentials.json`** em `api/`: confirmar que está no `.gitignore` e que a versão de produção usa env var (já está para Railway).
-- **CORS:** `settings.cors_origins_list` precisa incluir o domínio público de produção do site e do painel — checar antes do go-live.
-- **SMTP do Supabase no plano gratuito** limita a 3 e-mails/h — considerar trocar para SMTP via Resend para "esqueci a senha" (já documentado no README seção 7).
-- **Sentry sample rate** está em 0.1 (10%) — adequado para começar; revisar custo após 1 mês de produção.
+- **CORS:** `settings.cors_origins_list` precisa incluir o domínio público de produção do site e do painel, checar antes do go-live.
+- **SMTP do Supabase no plano gratuito** limita a 3 e-mails/h, considerar trocar para SMTP via Resend para "esqueci a senha" (já documentado no README seção 7).
+- **Sentry sample rate** está em 0.1 (10%), adequado para começar; revisar custo após 1 mês de produção.
 
 ---
 

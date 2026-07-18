@@ -40,7 +40,7 @@ export const useAuthStore = create<AuthState>()(
     {
       name: "morabilidade-user",
       // Persiste só o perfil. O token vive em cookie httpOnly (setado por
-      // /api/auth/login) — nunca deve tocar o localStorage, onde qualquer
+      // /api/auth/login), nunca deve tocar o localStorage, onde qualquer
       // XSS conseguiria lê-lo. O campo `token` em memória fica como fallback
       // do cliente API para ambientes sem o proxy de cookie.
       partialize: (state) => ({ user: state.user }),

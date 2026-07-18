@@ -1,5 +1,5 @@
 -- Migration 030: Trilha de auditoria geral de ações de escrita.
--- ⚠️ PENDENTE DE EXECUÇÃO no Supabase — rodar no SQL Editor antes de usar.
+-- ⚠️ PENDENTE DE EXECUÇÃO no Supabase, rodar no SQL Editor antes de usar.
 --
 -- Motivação: o perfil 'corretor' passou a ter as mesmas permissões de
 -- alteração do 'admin'. Para manter rastreabilidade de QUEM alterou
@@ -7,7 +7,7 @@
 -- requisição de escrita (POST/PUT/PATCH/DELETE) que passa pelo gate de
 -- permissão grava uma linha aqui.
 --
--- Não há UI consumindo esta tabela — é append-only e destinada a
+-- Não há UI consumindo esta tabela, é append-only e destinada a
 -- consultas pontuais direto no Supabase. Ex.:
 --   SELECT created_at, user_email, user_perfil, metodo, path
 --   FROM acao_audit_log

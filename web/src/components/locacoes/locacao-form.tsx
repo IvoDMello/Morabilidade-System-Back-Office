@@ -142,7 +142,7 @@ export function LocacaoForm({
     },
   });
 
-  // Cargas iniciais — imóveis e clientes (lista enxuta).
+  // Cargas iniciais, imóveis e clientes (lista enxuta).
   // A imobiliária opera com volume baixo (~100 de cada); select nativo basta.
   const [imoveis, setImoveis] = useState<ImovelListOut[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
@@ -181,7 +181,7 @@ export function LocacaoForm({
 
   // Auto-preenche o proprietário quando o usuário escolhe um imóvel que já
   // tem proprietário cadastrado. Só dispara em modo "novo" (sem defaultValues
-  // já contendo proprietario_id) — em edição, respeita o que foi salvo.
+  // já contendo proprietario_id), em edição, respeita o que foi salvo.
   const imovelSelecionadoId = watch("imovel_id");
   const proprietarioAtualId = watch("proprietario_id");
   useEffect(() => {
@@ -193,7 +193,7 @@ export function LocacaoForm({
     }
   }, [imovelSelecionadoId, imoveis, loadingListas, proprietarioAtualId, setValue]);
 
-  // Cálculo do total ao vivo — replica a regra do PDF:
+  // Cálculo do total ao vivo, replica a regra do PDF:
   //   Aluguel + (Condomínio) − (Fundo de obra) + (IPTU/10) + (Seguro/12)
   //          + (Internet) − Fundo de reserva
   const w = watch();
@@ -247,11 +247,11 @@ export function LocacaoForm({
           <div className="sm:col-span-2 lg:col-span-3">
             <Field label="Imóvel *" error={errors.imovel_id?.message}>
               <select {...register("imovel_id")} className={selectClass} disabled={loadingListas}>
-                <option value="">— Selecionar imóvel —</option>
+                <option value="">- Selecionar imóvel -</option>
                 {imoveis.map((i) => (
                   <option key={i.id} value={i.id}>
                     {i.codigo} · {i.logradouro}
-                    {i.numero ? `, ${i.numero}` : ""} — {i.bairro}, {i.cidade}
+                    {i.numero ? `, ${i.numero}` : ""}, {i.bairro}, {i.cidade}
                   </option>
                 ))}
               </select>
@@ -265,7 +265,7 @@ export function LocacaoForm({
                 className={selectClass}
                 disabled={loadingListas}
               >
-                <option value="">— Selecionar —</option>
+                <option value="">- Selecionar -</option>
                 {clientes
                   // Mantém o proprietário atual mesmo que não seja tipo_cliente='proprietario'
                   // (compatibilidade com clientes reclassificados ou auto-preenchidos via imóvel).
@@ -291,7 +291,7 @@ export function LocacaoForm({
                 className={selectClass}
                 disabled={loadingListas}
               >
-                <option value="">— Selecionar —</option>
+                <option value="">- Selecionar -</option>
                 {clientes.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.nome_completo}
@@ -366,7 +366,7 @@ export function LocacaoForm({
 
           <Field
             label="Fundo de reserva (R$)"
-            hint="Sempre deduz do total — responsabilidade do proprietário"
+            hint="Sempre deduz do total, responsabilidade do proprietário"
             error={errors.fundo_reserva?.message}
           >
             <input
@@ -472,7 +472,7 @@ export function LocacaoForm({
             />
           </Field>
 
-          {/* Taxa de administração: fixa em 8% para toda a operação — o valor
+          {/* Taxa de administração: fixa em 8% para toda a operação, o valor
               é aplicado pelo backend (Repasse e Demonstrativo de Adm.), sem
               campo editável por contrato. */}
           <Field label="Taxa de administração" hint="Aplicada automaticamente no repasse e na cobrança de administração">
@@ -600,7 +600,7 @@ export function LocacaoForm({
         </div>
       </div>
 
-      {/* Notas internas — apenas para a equipe da imobiliária */}
+      {/* Notas internas, apenas para a equipe da imobiliária */}
       <div className="bg-amber-50/40 rounded-xl border border-amber-200 p-4 sm:p-6">
         <div className="grid grid-cols-1 gap-4">
           <SectionTitle>Notas internas</SectionTitle>
@@ -613,7 +613,7 @@ export function LocacaoForm({
               {...register("observacoes_internas")}
               rows={5}
               className={inputClass + " resize-y"}
-              placeholder="Ex: Boleto emitido pelo síndico — acessar portal X com login Y e baixar PDF do mês."
+              placeholder="Ex: Boleto emitido pelo síndico, acessar portal X com login Y e baixar PDF do mês."
             />
           </Field>
         </div>

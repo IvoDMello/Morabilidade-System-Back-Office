@@ -2,7 +2,7 @@
 
 Tenta ler cada tabela DIRETO pelo PostgREST do Supabase usando a anon key
 (pública, a mesma do bundle do navegador). Se alguma retornar dados/200, ela
-está exposta — qualquer um na internet poderia lê-la sem login. É o "passo 0"
+está exposta, qualquer um na internet poderia lê-la sem login. É o "passo 0"
 da migration 039_rls_lockdown.sql: rode antes (para confirmar o buraco) e
 depois (para confirmar que fechou).
 
@@ -41,7 +41,7 @@ TABELAS = [
     "locacao_reajustes",
     "page_views",
     "search_events",
-    # Já protegidas na migration 001 — incluídas como controle (devem dar BLOQUEADA).
+    # Já protegidas na migration 001, incluídas como controle (devem dar BLOQUEADA).
     "clientes",
     "usuarios",
 ]

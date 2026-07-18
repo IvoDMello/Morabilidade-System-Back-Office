@@ -471,7 +471,7 @@ async def importar_clientes_csv(
             erros.append({"linha": i, "motivo": "Nome vazio"})
             continue
         if not cliente.get("telefone") and not cliente.get("instagram"):
-            erros.append({"linha": i, "motivo": "Telefone e Instagram vazios — informe ao menos um"})
+            erros.append({"linha": i, "motivo": "Telefone e Instagram vazios, informe ao menos um"})
             continue
         para_inserir.append((i, (cliente, pref_data)))
 
@@ -492,7 +492,7 @@ async def importar_clientes_csv(
                 elif "cpf" in err_str or "cnpj" in err_str:
                     motivo = f"CPF/CNPJ já cadastrado: {cliente.get('cpf_cnpj', '')}"
                 else:
-                    motivo = "Registro duplicado — cliente já existe no sistema"
+                    motivo = "Registro duplicado, cliente já existe no sistema"
             else:
                 motivo = f"Erro do banco: {str(e)[:120]}"
             erros.append({"linha": i, "motivo": motivo})

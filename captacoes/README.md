@@ -15,7 +15,7 @@ Projeto separado, reaproveitando Supabase, identidade visual e autenticação do
 
 ## Decisões-chave
 - Kanban de **movimentação livre** (sem validação de transição).
-- `ordem` **numeric** (fractional indexing) — reordenar sem reindexar.
+- `ordem` **numeric** (fractional indexing), reordenar sem reindexar.
 - Imagens **comprimidas no cliente** (WebP grande ~1600px + thumb ~400px) e
   **upload direto** ao Storage. Sem `sharp` no servidor (poupa cota e CPU).
 - Vídeos só por **URL externa**. Documentos por **signed URL de 5 min**.
@@ -30,8 +30,8 @@ npm run dev
 
 ## Banco
 Aplicar as migrations em `supabase/migrations/` (na ordem) no projeto Supabase:
-1. `0001_init_captacoes.sql` — schema, tabelas, índices, RLS, RPC `mover_cartao`.
-2. `0002_storage_bucket.sql` — bucket privado `captacoes` + políticas.
+1. `0001_init_captacoes.sql`, schema, tabelas, índices, RLS, RPC `mover_cartao`.
+2. `0002_storage_bucket.sql`, bucket privado `captacoes` + políticas.
 
 ## Deploy
 - **Vercel** (deploy único). Cron de arquivamento em `vercel.json`.
@@ -39,5 +39,5 @@ Aplicar as migrations em `supabase/migrations/` (na ordem) no projeto Supabase:
 - Variáveis de ambiente: ver `.env.local.example`.
 
 ## Backup
-`scripts/backup-captacoes.ps1` — backup do bucket (o daily backup do Supabase
+`scripts/backup-captacoes.ps1`, backup do bucket (o daily backup do Supabase
 cobre o banco, **não** o Storage).

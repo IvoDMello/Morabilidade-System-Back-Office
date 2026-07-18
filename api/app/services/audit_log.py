@@ -2,7 +2,7 @@
 
 Toda mutação relevante (contrato, pagamento, reajuste, anexo) deve passar
 por `registrar_audit_locacao` para deixar rastro de QUEM/QUANDO/O QUE
-mudou. A função nunca propaga exceção — falha de auditoria não pode
+mudou. A função nunca propaga exceção, falha de auditoria não pode
 quebrar a operação principal.
 """
 from __future__ import annotations

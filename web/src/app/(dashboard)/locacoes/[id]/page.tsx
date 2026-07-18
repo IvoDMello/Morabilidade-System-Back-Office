@@ -33,7 +33,7 @@ export default function EditarContratoPage({
   const [rescindirOpen, setRescindirOpen] = useState(false);
   const [motivoRescisao, setMotivoRescisao] = useState("");
 
-  // Demonstrativo do mês — default = mês corrente em formato "YYYY-MM"
+  // Demonstrativo do mês, default = mês corrente em formato "YYYY-MM"
   const [mesDemonstrativo, setMesDemonstrativo] = useState(
     new Date().toISOString().slice(0, 7)
   );
@@ -201,7 +201,7 @@ export default function EditarContratoPage({
     taxa_administracao_pct: Number(contrato.taxa_administracao_pct ?? 0),
   };
 
-  // Valor sugerido para próximo pagamento — replica regra do form.
+  // Valor sugerido para próximo pagamento, replica regra do form.
   const valorSugerido =
     Number(contrato.aluguel_mensal) +
     (contrato.incluir_condominio_cobranca ? Number(contrato.condominio_mensal) : 0) -
@@ -234,7 +234,7 @@ export default function EditarContratoPage({
               </span>
             </h1>
             <p className="text-slate-500 text-sm">
-              {contrato.imovel?.endereco ?? "—"}
+              {contrato.imovel?.endereco ?? "-"}
             </p>
           </div>
         </div>

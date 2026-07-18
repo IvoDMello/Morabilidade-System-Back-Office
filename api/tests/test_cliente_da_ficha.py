@@ -124,7 +124,7 @@ def test_cria_cliente_novo_com_origem_ficha_visita():
 
 
 def test_sem_telefone_nao_cadastra():
-    """Cadastro de cliente exige telefone — sem ele, ficha segue sem vínculo."""
+    """Cadastro de cliente exige telefone, sem ele, ficha segue sem vínculo."""
     db = make_db_mock(MagicMock(data=[]))
     with patch(SERVICE, db):
         cliente_id, criado = vincular_cliente_visitante(
@@ -295,7 +295,7 @@ def test_pos_assinatura_vincula_existente_pelo_cpf_confirmado():
     }
     with patch(SERVICE, db):
         atualizar_cadastro_pos_assinatura(ficha)
-    db.insert.assert_not_called()  # deduplicado — nenhum cadastro novo
+    db.insert.assert_not_called()  # deduplicado, nenhum cadastro novo
     assert ficha["cliente_id"] == CLIENTE_ID
 
 

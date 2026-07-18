@@ -1,7 +1,7 @@
 -- Migration 031: Eventos de analytics expandidos (buscas, favoritos, shares)
 -- e RPCs do novo dashboard /audiencia.
 --
--- ⚠️ PENDENTE DE EXECUÇÃO no Supabase — rodar no SQL Editor antes de usar.
+-- ⚠️ PENDENTE DE EXECUÇÃO no Supabase, rodar no SQL Editor antes de usar.
 --
 -- Motivação: o redesign da aba /audiencia precisa de métricas que a
 -- migration 026 (só page_views) não cobre: buscas realizadas, termos,

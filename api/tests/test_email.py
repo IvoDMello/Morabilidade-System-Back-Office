@@ -125,7 +125,7 @@ def test_enviar_relatorio_30dias_inclui_resumo_e_anexo():
 
 
 def test_enviar_notificacao_lead_escapa_html():
-    """Dados do lead vêm de formulário público — devem ser escapados (anti-injeção)."""
+    """Dados do lead vêm de formulário público, devem ser escapados (anti-injeção)."""
     with patch("app.services.email.enviar_email") as env:
         email_svc.enviar_notificacao_lead(
             nome="<script>alert(1)</script>",

@@ -1,6 +1,6 @@
 // Service worker do captações (PWA).
 // Estratégia conservadora: cacheia SÓ assets estáticos (Next static, ícones,
-// fontes, imagens). Navegações, API e dados vão sempre à rede — assim nunca
+// fontes, imagens). Navegações, API e dados vão sempre à rede, assim nunca
 // servimos HTML autenticado/obsoleto a partir do cache.
 
 const CACHE = "captacoes-static-v4";

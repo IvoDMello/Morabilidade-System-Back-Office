@@ -10,14 +10,14 @@ logger = logging.getLogger(__name__)
 
 BUCKET = "media"
 ALLOWED_TYPES = {"image/jpeg", "image/png", "image/webp"}
-PHOTO_MAX_BYTES = 10 * 1024 * 1024  # 10 MB — fotos de imóvel e perfil
+PHOTO_MAX_BYTES = 10 * 1024 * 1024  # 10 MB, fotos de imóvel e perfil
 
-# Bloqueia "decompression bombs" — uma PNG de 10 KB pode descompactar para
+# Bloqueia "decompression bombs", uma PNG de 10 KB pode descompactar para
 # centenas de MB de pixels e estourar a RAM do worker. 50 megapixels cobre até
 # fotos profissionais de imóvel (8K) com folga.
 Image.MAX_IMAGE_PIXELS = 50_000_000
 
-# Marca d'água — carregada uma vez na importação do módulo e reutilizada.
+# Marca d'água, carregada uma vez na importação do módulo e reutilizada.
 WATERMARK_PATH = Path(__file__).resolve().parent.parent / "assets" / "watermark.png"
 _watermark_cache: Image.Image | None = None
 
@@ -83,7 +83,7 @@ async def upload_foto(file: UploadFile, path: str) -> str:
     except Image.DecompressionBombError:
         raise HTTPException(
             status_code=400,
-            detail="Imagem com resolução muito alta — reduza antes de enviar.",
+            detail="Imagem com resolução muito alta, reduza antes de enviar.",
         )
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Não foi possível processar a imagem: {e}")
@@ -152,7 +152,7 @@ def upload_bytes_jpeg(contents: bytes, path: str) -> str:
 
 def upload_pdf_bytes(contents: bytes, path: str) -> str:
     """Sobe um PDF (bytes) para o storage, sobrescrevendo se já existir, e
-    devolve o `path` salvo. Usado pela ficha de visita assinada — reemissão da
+    devolve o `path` salvo. Usado pela ficha de visita assinada, reemissão da
     mesma ficha deve substituir a versão anterior, por isso `upsert=true`."""
     try:
         supabase_admin.storage.from_(BUCKET).upload(
@@ -207,14 +207,14 @@ DOCUMENT_TYPES = {
     "application/msword",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 }
-DOCUMENT_MAX_BYTES = 10 * 1024 * 1024  # 10 MB — suficiente para contratos scan
+DOCUMENT_MAX_BYTES = 10 * 1024 * 1024  # 10 MB, suficiente para contratos scan
 
 
 async def upload_documento(file: UploadFile, path: str) -> dict:
     """Upload genérico de documento (sem conversão como em upload_foto).
     Retorna {firebase_path, mime_type, tamanho_bytes} para persistir no banco.
 
-    'firebase_path' mantém o nome legado da coluna em locacao_anexos — o
+    'firebase_path' mantém o nome legado da coluna em locacao_anexos, o
     bucket é o mesmo Supabase Storage usado pelas fotos.
     """
     if file.content_type not in DOCUMENT_TYPES:
@@ -251,7 +251,7 @@ async def upload_documento(file: UploadFile, path: str) -> dict:
     }
 
 
-DOCUMENT_SIGNED_URL_TTL = 300  # 5 min — janela para o browser baixar o arquivo
+DOCUMENT_SIGNED_URL_TTL = 300  # 5 min, janela para o browser baixar o arquivo
 
 
 def url_publica_documento(path: str) -> str:
@@ -266,7 +266,7 @@ def url_publica_documento(path: str) -> str:
             path, DOCUMENT_SIGNED_URL_TTL
         )
     except Exception:
-        logger.warning("Falha ao assinar URL — caindo no get_public_url (path=%s)", path)
+        logger.warning("Falha ao assinar URL, caindo no get_public_url (path=%s)", path)
         return supabase_admin.storage.from_(BUCKET).get_public_url(path)
 
     # O SDK do supabase-py retorna ora {"signedURL": "..."} (snake_case adapter),

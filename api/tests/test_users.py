@@ -130,7 +130,7 @@ def test_atualizar_proprio_perfil_ignora_campo_perfil(corretor_client):
         res = corretor_client.put("/usuarios/me", json={"nome_completo": "Outro Nome", "perfil": "admin"})
 
     assert res.status_code == 200
-    # perfil não deve ter mudado — validado pelo exclude no router
+    # perfil não deve ter mudado, validado pelo exclude no router
     update_call_kwargs = db.update.call_args
     if update_call_kwargs:
         data_sent = update_call_kwargs[0][0] if update_call_kwargs[0] else {}
@@ -195,7 +195,7 @@ def test_desativar_usuario_ban_falha_ainda_desativa_na_tabela(admin_client):
     db.update.assert_called_with({"ativo": False})
 
 
-# ── POST /usuarios/ — rollback ────────────────────────────────────────────────
+# ── POST /usuarios/, rollback ────────────────────────────────────────────────
 
 def test_criar_usuario_rollback_quando_insert_falha(admin_client):
     """Se a inserção do perfil falha, o usuário do Auth deve ser removido (rollback)."""

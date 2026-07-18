@@ -152,7 +152,7 @@ export function DocumentosImovel({ imovelId }: Props) {
         <div>
           <h2 className="text-sm font-semibold text-slate-700">Documentos internos</h2>
           <p className="text-xs text-slate-400 mt-0.5">
-            Uso interno — não aparece no site. PDF, JPG, PNG, DOC ou DOCX · máx 10 MB.
+            Uso interno, não aparece no site. PDF, JPG, PNG, DOC ou DOCX · máx 10 MB.
           </p>
         </div>
         {isAdmin && (
@@ -284,7 +284,7 @@ function IconePorMime({ mime }: { mime?: string }) {
 }
 
 function formatarTamanho(bytes?: number) {
-  if (!bytes) return "—";
+  if (!bytes) return "-";
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;

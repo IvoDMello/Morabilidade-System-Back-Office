@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
-// Headers conservadores — sem CSP por enquanto pra não quebrar Sentry/loader
+// Headers conservadores, sem CSP por enquanto pra não quebrar Sentry/loader
 // custom de imagens no go-live. CSP entra depois com tempo de testar.
 const securityHeaders = [
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
@@ -30,7 +30,7 @@ const nextConfig: NextConfig = {
   },
   images: {
     // Loader custom roteia fotos do Supabase pro endpoint de transformação
-    // nativa (render/image/public). Tira a Vercel do meio — estávamos
+    // nativa (render/image/public). Tira a Vercel do meio, estávamos
     // estourando a cota grátis de Image Optimization (erro 402).
     loader: "custom",
     loaderFile: "./src/lib/image-loader.ts",

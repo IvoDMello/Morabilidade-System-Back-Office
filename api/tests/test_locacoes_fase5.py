@@ -149,7 +149,7 @@ def test_aplicar_reajuste_cria_historico_e_atualiza_aluguel(client):
 
 
 def test_aplicar_reajuste_negativo_aceito(client):
-    """Permite descontos (percentual negativo) — negociação com proprietário."""
+    """Permite descontos (percentual negativo), negociação com proprietário."""
     db = make_db_mock(
         MagicMock(data=CONTRATO_DB),
         MagicMock(data=[{"id": "r", "contrato_id": "c", "data_aplicacao": "2027-01-01",

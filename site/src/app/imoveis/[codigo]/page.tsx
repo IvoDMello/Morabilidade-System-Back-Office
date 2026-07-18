@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import {
-  ArrowLeft, BedDouble, Bath, Car, Ruler, MapPin,
+  ArrowLeft, BedDouble, Bath, Toilet, Car, Ruler, MapPin,
   Tag, Building, Calendar, MessageCircle, Instagram,
 } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
@@ -36,7 +36,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     `${labelTipoImovel(imovel.tipo_imovel)} em ${imovel.bairro}, ${imovel.cidade}`;
   const descricao =
     imovel.descricao?.slice(0, 160) ??
-    `${titulo} — ${labelTipoNegocio(imovel.tipo_negocio)} pela Morabilidade.`;
+    `${titulo}, ${labelTipoNegocio(imovel.tipo_negocio)} pela Morabilidade.`;
   const imagemUrl = imovel.fotos[0]?.url;
   const pageUrl = `${SITE_URL}/imoveis/${imovel.codigo}`;
 
@@ -136,7 +136,11 @@ export default async function DetalheImovelPage({ params }: Props) {
     },
     ...(offers.length > 0 && { offers: offers.length === 1 ? offers[0] : offers }),
     numberOfRooms: imovel.dormitorios,
-    ...(imovel.banheiros != null && { numberOfBathroomsTotal: imovel.banheiros }),
+    ...(imovel.banheiros != null && {
+      numberOfBathroomsTotal: imovel.banheiros + (imovel.lavabos ?? 0),
+      numberOfFullBathrooms: imovel.banheiros,
+    }),
+    ...(imovel.lavabos != null && imovel.lavabos > 0 && { numberOfPartialBathrooms: imovel.lavabos }),
     floorSize: imovel.area_util
       ? { "@type": "QuantitativeValue", value: imovel.area_util, unitCode: "MTK" }
       : undefined,
@@ -271,7 +275,7 @@ export default async function DetalheImovelPage({ params }: Props) {
                 </span>
               </p>
 
-              {/* Radar da região — círculo de ~300m sobre OpenStreetMap */}
+              {/* Radar da região, círculo de ~300m sobre OpenStreetMap */}
               {/* `isolate` cria stacking context para conter o z-index alto das panes do Leaflet
                   (até 1000) e impedir que sobreponham a navbar sticky (z-50). */}
               <div className="relative isolate rounded-xl overflow-hidden border border-slate-100 shadow-sm mb-3 aspect-video">
@@ -279,7 +283,7 @@ export default async function DetalheImovelPage({ params }: Props) {
                   <MapaRegiaoClient lat={coordenadas.lat} lng={coordenadas.lng} />
                 ) : (
                   <iframe
-                    title={`Mapa da região — ${regiao}`}
+                    title={`Mapa da região, ${regiao}`}
                     src={`https://maps.google.com/maps?q=${mapQuery}&output=embed&hl=pt-BR&z=14`}
                     className="absolute inset-0 w-full h-full"
                     style={{ border: 0 }}
@@ -337,7 +341,7 @@ export default async function DetalheImovelPage({ params }: Props) {
                 </p>
               )}
 
-              {/* Botão primário — WhatsApp (cai pro /contato se o número não estiver configurado) */}
+              {/* Botão primário: WhatsApp (cai pro /contato se o número não estiver configurado) */}
               {whatsappNumero ? (
                 <a
                   href={`https://wa.me/${whatsappNumero}?text=${encodeURIComponent(`Olá! Tenho interesse no imóvel *${tituloPublico}* (código *${imovel.codigo}*). Pode me dar mais informações?`)}`}
@@ -358,7 +362,7 @@ export default async function DetalheImovelPage({ params }: Props) {
                 </Link>
               )}
 
-              {/* Vídeo do imóvel no Instagram (client component — rastreia o clique) */}
+              {/* Vídeo do imóvel no Instagram (client component, rastreia o clique) */}
               {imovel.instagram_url && (
                 <VideoInstagramButton codigo={imovel.codigo} url={imovel.instagram_url} />
               )}
@@ -390,6 +394,13 @@ export default async function DetalheImovelPage({ params }: Props) {
                     <Bath className="w-5 h-5 mx-auto mb-1 text-slate-400" />
                     <p className="font-semibold text-slate-700">{imovel.banheiros}</p>
                     <p className="text-slate-400">Banheiros</p>
+                  </div>
+                )}
+                {imovel.lavabos != null && imovel.lavabos > 0 && (
+                  <div className="bg-white rounded-lg p-3">
+                    <Toilet className="w-5 h-5 mx-auto mb-1 text-slate-400" />
+                    <p className="font-semibold text-slate-700">{imovel.lavabos}</p>
+                    <p className="text-slate-400">{imovel.lavabos === 1 ? "Lavabo" : "Lavabos"}</p>
                   </div>
                 )}
                 {imovel.vagas_garagem != null && (

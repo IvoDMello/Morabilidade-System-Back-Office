@@ -67,7 +67,7 @@ Thumbs.db
 design_handoff_morabilidade/
 
 # ========================
-# Claude Code — config local
+# Claude Code, config local
 # ========================
 .claude/settings.local.json
 
@@ -77,5 +77,5 @@ design_handoff_morabilidade/
 api/scripts/demonstrativo_administracao_*
 
 
-# PDFs gerados/exportados com dados de clientes — nunca versionar
+# PDFs gerados/exportados com dados de clientes, nunca versionar
 /*.pdf

@@ -20,7 +20,7 @@ interface Props {
 }
 
 function formatDataBR(iso: string) {
-  if (!iso) return "—";
+  if (!iso) return "-";
   const d = iso.length === 10 ? new Date(iso + "T00:00:00") : new Date(iso);
   if (isNaN(d.getTime())) return iso;
   return d.toLocaleDateString("pt-BR");
@@ -35,7 +35,7 @@ function diasDesde(iso: string): number {
 /** Data em que o imóvel completa 30 dias (cadastro + 30 dias). */
 function dataDisponivel(iso: string): string {
   const d = new Date(iso);
-  if (isNaN(d.getTime())) return "—";
+  if (isNaN(d.getTime())) return "-";
   d.setDate(d.getDate() + 30);
   return d.toLocaleDateString("pt-BR");
 }
@@ -152,7 +152,7 @@ export function AcompanhamentoImovel({ imovelId, createdAt, relatorio30diasEnvia
             </>
           ) : disponivel ? (
             <>
-              <strong>Relatório de 30 dias disponível</strong> — será enviado
+              <strong>Relatório de 30 dias disponível</strong>, será enviado
               automaticamente no próximo disparo (09:00), ou envie agora.
             </>
           ) : (
@@ -217,7 +217,7 @@ export function AcompanhamentoImovel({ imovelId, createdAt, relatorio30diasEnvia
 
             <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-slate-100 bg-slate-50">
               <p className="text-xs text-slate-500">
-                Esta é apenas uma prévia — nenhum e-mail foi enviado ainda.
+                Esta é apenas uma prévia, nenhum e-mail foi enviado ainda.
               </p>
               <div className="flex items-center gap-2">
                 <button
@@ -307,7 +307,7 @@ function SecaoPercepcoes({
         <MessageSquare className="w-4 h-4 text-[#585a4f]" />
         <h2 className="text-sm font-semibold text-slate-700">Percepção do cliente</h2>
         <span className="text-xs text-slate-400">
-          · histórico interno — alimenta o relatório de 30 dias
+          · histórico interno, alimenta o relatório de 30 dias
         </span>
       </div>
 

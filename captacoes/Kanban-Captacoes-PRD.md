@@ -1,4 +1,4 @@
-# Kanban de Captações — Morabilidade
+# Kanban de Captações: Morabilidade
 
 > Documento de requisitos e especificação técnica.
 > Projeto **separado** do sistema principal (repositório GitHub próprio),
@@ -24,7 +24,7 @@ representando as etapas do fluxo de aprovação e agendamento.
 - Endereço completo
 - Nº de quartos e nº de banheiros
 - Tipo de portaria
-- Fotos e vídeos (vídeos via **link externo** — YouTube/Drive)
+- Fotos e vídeos (vídeos via **link externo**: YouTube/Drive)
 - Contato do proprietário
 - Observações
 - Documentos anexados
@@ -108,13 +108,13 @@ Colunas (enum de status):
 
 ## 5. Especificação visual
 
-Reaproveitada de `web/src/app/globals.css` do Morabilidade — sistema **60/30/10**:
+Reaproveitada de `web/src/app/globals.css` do Morabilidade, sistema **60/30/10**:
 
 | Papel | Cor | HSL (CSS var) | Token |
 |-------|-----|---------------|-------|
-| 60% — fundos escuros, sidebar | olive `#585a4f` | `71 6% 33%` | `secondary` |
-| 30% — botões, destaques | dourado `#d8cb6a` | `53 55% 63%` | `primary` |
-| 10% — conteúdo/texto sobre escuro | off-white `#fcfcfc` | `71 5% 96%` | `background` |
+| 60%, fundos escuros, sidebar | olive `#585a4f` | `71 6% 33%` | `secondary` |
+| 30%, botões, destaques | dourado `#d8cb6a` | `53 55% 63%` | `primary` |
+| 10%, conteúdo/texto sobre escuro | off-white `#fcfcfc` | `71 5% 96%` | `background` |
 | Destrutivo | vermelho | `0 84% 60%` | `destructive` |
 
 - **Raio padrão:** `0.5rem`.
@@ -123,11 +123,11 @@ Reaproveitada de `web/src/app/globals.css` do Morabilidade — sistema **60/30/1
 - **Ícones:** lucide-react. **Toasts:** sonner.
 
 ### Mapeamento de cor das colunas (sugerido)
-- `aguardando_informacoes` — muted/cinza
-- `novas` — dourado (primary)
-- `em_decisao` — olive
-- `pendente_negativa` / `negativada` — vermelho/destrutivo
-- `pendente_agendar_visita` / `pendente_agendar_gravacao` — verde/positivo
+- `aguardando_informacoes`, muted/cinza
+- `novas`, dourado (primary)
+- `em_decisao`, olive
+- `pendente_negativa` / `negativada`, vermelho/destrutivo
+- `pendente_agendar_visita` / `pendente_agendar_gravacao`, verde/positivo
 
 ---
 
@@ -139,9 +139,9 @@ Reaproveitada de `web/src/app/globals.css` do Morabilidade — sistema **60/30/1
 | UI | shadcn/Radix + Tailwind 3, lucide-react, sonner, react-hook-form + zod, zustand. |
 | Drag-and-drop | **@dnd-kit**. |
 | Banco | **Supabase Pro existente**, schema novo `captacoes`, com **RLS**. |
-| Auth | Supabase Auth compartilhado (`auth.users`) — todos os usuários têm acesso. |
+| Auth | Supabase Auth compartilhado (`auth.users`), todos os usuários têm acesso. |
 | Kanban | **Movimentação livre** entre colunas (sem validação de transição); confia no usuário. |
-| Ordenação | Campo `ordem` **numeric** (fractional indexing) — insere entre dois cartões sem reindexar a coluna. |
+| Ordenação | Campo `ordem` **numeric** (fractional indexing), insere entre dois cartões sem reindexar a coluna. |
 | Storage | Bucket novo `captacoes`. **Compressão/resize no cliente** (`browser-image-compression`): grande ~1600px + thumb ~400px em WebP, **upload direto** ao Storage via signed upload URL (API só assina, não recebe o arquivo). |
 | Vídeos | Apenas URL externa no banco (sem upload no Supabase). |
 | Documentos | Bucket `captacoes`, acesso por **signed URL de 5 min**. |
@@ -153,7 +153,7 @@ Reaproveitada de `web/src/app/globals.css` do Morabilidade — sistema **60/30/1
 ## 7. Ciclo de vida e arquivamento de arquivos
 
 - Captação negativada/positivada **mantém a mídia** no bucket por um prazo
-  (sugestão: **90 dias** — `arquivado_em`).
+  (sugestão: **90 dias**: `arquivado_em`).
 - **Job de limpeza/arquivamento** (cron Vercel) após o prazo move os arquivos
   para storage frio. Opções, em ordem de simplicidade:
   1. Backup já existente no Google Drive Desktop (mais simples).
@@ -161,11 +161,11 @@ Reaproveitada de `web/src/app/globals.css` do Morabilidade — sistema **60/30/1
   3. Cloudflare R2 / Backblaze B2 (egress barato) para arquivo real.
 - O **registro/metadados no banco é sempre preservado**; só a mídia migra.
 - Daily backup do Supabase Pro cobre o **banco** (inclui o schema novo);
-  o **Storage não** — por isso o backup externo do bucket é obrigatório.
+  o **Storage não**, por isso o backup externo do bucket é obrigatório.
 
 ---
 
-## 8. Modelo de dados (esboço — schema `captacoes`)
+## 8. Modelo de dados (esboço, schema `captacoes`)
 
 ```sql
 -- enum de status / coluna do kanban

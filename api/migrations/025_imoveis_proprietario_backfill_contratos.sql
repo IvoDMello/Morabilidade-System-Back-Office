@@ -3,7 +3,7 @@
 -- A migration 024 só conseguia preencher imoveis.proprietario_id quando o
 -- proprietário estava cadastrado em `clientes` com `imovel_codigo` apontando
 -- para o imóvel. Mas a operação tem imóveis cujo proprietário existia apenas
--- no contrato de locação (contratos_locacao.proprietario_id) — não havia
+-- no contrato de locação (contratos_locacao.proprietario_id), não havia
 -- nenhum vínculo em clientes.imovel_codigo.
 --
 -- Resultado: para esses imóveis, a tela "Editar imóvel" abria com o campo

@@ -1,5 +1,5 @@
 -- 035_autorizacoes_intermediacao.sql
--- Autorização de Intermediação Imobiliária — documento digital assinado pelo
+-- Autorização de Intermediação Imobiliária, documento digital assinado pelo
 -- PROPRIETÁRIO que autoriza a Morabilidade a intermediar a venda/locação do
 -- imóvel e fixa a comissão de corretagem (arts. 722 a 729 do Código Civil).
 --
@@ -78,4 +78,4 @@ COMMENT ON TABLE autorizacoes_intermediacao IS
 COMMENT ON COLUMN autorizacoes_intermediacao.exclusiva IS
     'true = com exclusividade (comissão devida mesmo em venda direta do dono no prazo, art. 726 CC); false = autorização aberta.';
 COMMENT ON COLUMN autorizacoes_intermediacao.clausula_texto IS
-    'Texto integral da autorização assinada (versionado). Snapshot — não alterar após a assinatura.';
+    'Texto integral da autorização assinada (versionado). Snapshot, não alterar após a assinatura.';

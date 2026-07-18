@@ -129,7 +129,7 @@ export default async function ContatoPage({ searchParams }: Props) {
               </div>
             </div>
 
-            {/* Direita — stats (hidden mobile) */}
+            {/* Direita, stats (hidden mobile) */}
             <div
               className="hidden md:grid"
               style={{ gridTemplateRows: "1fr 1fr 1fr", gap: 10 }}

@@ -5,7 +5,7 @@ import type { Captacao } from "@/types";
  * Separada do componente para ser testável (o ambiente de teste é node).
  *
  * Nota: o `anuncio_url` da captação é referência interna (anúncio de outras
- * imobiliárias) e NÃO é enviado ao imóvel. As fotos também não vão — elas são
+ * imobiliárias) e NÃO é enviado ao imóvel. As fotos também não vão, elas são
  * do cliente e ficam só na captação. O cadastro envia apenas os campos abaixo.
  */
 

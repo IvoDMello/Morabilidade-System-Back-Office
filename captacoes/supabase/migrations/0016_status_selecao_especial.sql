@@ -1,5 +1,5 @@
 -- =====================================================================
--- Migration 0016 — novo status 'selecao_especial'
+-- Migration 0016, novo status 'selecao_especial'
 --
 -- Coluna para imóveis fora dos bairros habituais que merecem atenção
 -- especial (meta: 1 por mês).

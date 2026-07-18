@@ -282,7 +282,7 @@ function MobileCard({
         </div>
       )}
 
-      {/* Decisão (versões suaves) — só na coluna de decisão */}
+      {/* Decisão (versões suaves), só na coluna de decisão */}
       {naDecisao && (
         <div className="flex gap-2 border-t border-[#eef0ea] pt-3">
           <button

@@ -1,5 +1,5 @@
 -- ============================================================
--- Morabilidade — Migration 006
+-- Morabilidade: Migration 006
 -- Tabela de junção cliente_tags (mesma estrutura de imovel_tags).
 -- Tags reutilizadas das já existentes na tabela `tags`.
 -- ============================================================

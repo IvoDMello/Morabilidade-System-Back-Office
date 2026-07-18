@@ -118,7 +118,7 @@ export default function NovoImovelPage() {
           const formData = new FormData();
           pendingFotos.forEach((f) => formData.append("fotos", f));
           // O interceptor do `api` remove o Content-Type quando o body é
-          // FormData — assim o browser adiciona o boundary correto.
+          // FormData, assim o browser adiciona o boundary correto.
           await api.post(`/imoveis/${imovelId}/fotos`, formData);
         } catch (err: unknown) {
           const msg = getErrorMessage(err, "tente adicioná-las na edição.");

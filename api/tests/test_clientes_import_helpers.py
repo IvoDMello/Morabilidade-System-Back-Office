@@ -1,6 +1,6 @@
 """Testes unitários das helpers puras do import de clientes via CSV.
 
-Funções sem I/O (parsing/sanitização) — o coração do mapeamento de colunas e da
+Funções sem I/O (parsing/sanitização), o coração do mapeamento de colunas e da
 conversão de valores BR. Cobrem ramos que os testes de endpoint não exercitam:
 formatos de data, renda no padrão brasileiro, enums inválidos descartados e a
 separação cliente × preferência.
@@ -88,7 +88,7 @@ def test_row_para_cliente_sanitiza_enums_e_estado():
 
 def test_row_para_cliente_descarta_enum_invalido():
     """Enum fora dos valores válidos é descartado (não gravado cru), de forma
-    consistente com data/renda inválidas — assim o insert não viola o CHECK do
+    consistente com data/renda inválidas, assim o insert não viola o CHECK do
     banco e a linha não é derrubada inteira."""
     mapa = {"Status": "status", "Tipo": "tipo_cliente", "Origem": "origem_lead"}
     row = {"Status": "valor_invalido", "Tipo": "xpto", "Origem": "????"}

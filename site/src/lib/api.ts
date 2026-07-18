@@ -28,7 +28,7 @@ async function fetchWithTimeout(
 }
 
 // Retry só em GET (idempotente) e só em 502/503/504/timeout. POST não retenta
-// pra não duplicar contato/etc. Um único retry com backoff curto — suficiente
+// pra não duplicar contato/etc. Um único retry com backoff curto, suficiente
 // pra cobrir restart do Railway sem segurar o SSR.
 async function fetchGetWithRetry(
   input: string,
@@ -108,7 +108,7 @@ export async function getBairros(): Promise<string[]> {
   // Bairros mudam ~nunca (depende de um novo imóvel em região inédita).
   // 1 dia de cache reduz pressão sem prejudicar discoverability. A tag
   // "bairros" permite revalidação on-demand: ao salvar um imóvel, o back-office
-  // purga esta lista na hora — senão um bairro inédito (ex.: Laranjeiras) só
+  // purga esta lista na hora, senão um bairro inédito (ex.: Laranjeiras) só
   // apareceria no filtro após o cache de 1 dia expirar.
   const res = await fetchGetWithRetry(
     `${API_URL}/imoveis/publico/bairros`,

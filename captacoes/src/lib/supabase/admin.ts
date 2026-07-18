@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 
 /**
- * Client com service_role — ignora RLS. Uso EXCLUSIVO no servidor
+ * Client com service_role, ignora RLS. Uso EXCLUSIVO no servidor
  * (cron de arquivamento, tarefas administrativas). Nunca importar no cliente.
  */
 export function createAdminClient() {

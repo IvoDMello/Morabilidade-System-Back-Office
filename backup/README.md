@@ -7,8 +7,8 @@ plano Pro do Supabase **não** cobre sozinho.
 
 | Item | Conteúdo | Coberto pelo backup do Pro? |
 |------|----------|------------------------------|
-| **Banco Postgres** (`banco.dump`) | Schemas `public` (clientes, imóveis, locações, fichas, autorizações, audit, analytics) e `auth` (logins) | ✅ daily 7d — aqui é redundância externa |
-| **Storage** (pasta `storage/`) | Bucket `media`: fotos dos imóveis/perfil + **PDFs de fichas assinadas, contratos e anexos de locação** | ❌ **NÃO** — esse é o motivo principal deste backup |
+| **Banco Postgres** (`banco.dump`) | Schemas `public` (clientes, imóveis, locações, fichas, autorizações, audit, analytics) e `auth` (logins) | ✅ daily 7d, aqui é redundância externa |
+| **Storage** (pasta `storage/`) | Bucket `media`: fotos dos imóveis/perfil + **PDFs de fichas assinadas, contratos e anexos de locação** | ❌ **NÃO**, esse é o motivo principal deste backup |
 
 > Firebase, Resend e Sentry **não** entram: Firebase está morto no projeto (só restam
 > variáveis órfãs), e Resend/Sentry são serviços transacionais sem dado de negócio.
@@ -19,7 +19,7 @@ plano Pro do Supabase **não** cobre sozinho.
    dentro do seu Drive. (O Drive sincroniza sozinho o que cair lá.)
 
 2. **Cliente do PostgreSQL** (para o `pg_dump`). Baixe em
-   <https://www.postgresql.org/download/windows/> — instale a versão **17** (mesma do
+   <https://www.postgresql.org/download/windows/>, instale a versão **17** (mesma do
    Supabase). Anote o caminho do `pg_dump.exe`, normalmente
    `C:\Program Files\PostgreSQL\17\bin\pg_dump.exe`.
 
@@ -31,9 +31,9 @@ plano Pro do Supabase **não** cobre sozinho.
 
 1. Copie `config.example.ps1` para `config.ps1` (mesma pasta).
 2. Preencha em `config.ps1`:
-   - `$PgConnString` — a connection string do Session pooler com a senha.
-   - `$DriveFolder` — caminho da pasta no Drive, ex.: `G:\Meu Drive\Backups Morabilidade`.
-   - `$PgDumpPath` — caminho do `pg_dump.exe` (ou deixe `pg_dump` se estiver no PATH).
+   - `$PgConnString`, a connection string do Session pooler com a senha.
+   - `$DriveFolder`, caminho da pasta no Drive, ex.: `G:\Meu Drive\Backups Morabilidade`.
+   - `$PgDumpPath`, caminho do `pg_dump.exe` (ou deixe `pg_dump` se estiver no PATH).
 
 O `config.ps1` **não vai para o Git** (está no `.gitignore`). As chaves do Supabase são
 lidas automaticamente do `api/.env`.

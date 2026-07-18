@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 /* ---------------------------------------------------------------------
-   Tokens 60/30/10 — reaproveitados do Morabilidade
+   Tokens 60/30/10, reaproveitados do Morabilidade
    60% olive (secondary) · 30% dourado (primary) · 10% off-white (background)
 --------------------------------------------------------------------- */
 @layer base {
@@ -29,7 +29,7 @@
     --destructive: 0 84% 60%;         /* vermelho */
     --destructive-foreground: 0 0% 100%;
 
-    --positive: 142 60% 38%;          /* verde — ramo aprovado */
+    --positive: 142 60% 38%;          /* verde, ramo aprovado */
     --positive-foreground: 0 0% 100%;
 
     --border: 71 6% 85%;

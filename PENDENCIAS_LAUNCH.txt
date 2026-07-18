@@ -1,12 +1,12 @@
-PENDÊNCIAS PÓS-HARDENING — Launch 22/05/2026
+PENDÊNCIAS PÓS-HARDENING: Launch 22/05/2026
 ==============================================
 
 STATUS em 11/07/2026 (auditoria):
   [x] Plano Supabase        -> Pro ativo, backups diários 7d (sem PITR)
   [x] npm audit site/web    -> Next 15.5.18+ nos três apps Next
   [x] CI roda tsc --noEmit  -> typecheck agora bloqueia (jobs web/site/captacoes)
-  [—] Object Versioning Firebase -> obsoleto: fotos migraram p/ Supabase Storage.
-      ATENÇÃO: o backup diário do Supabase NÃO cobre Storage — criar proteção
+  [-] Object Versioning Firebase -> obsoleto: fotos migraram p/ Supabase Storage.
+      ATENÇÃO: o backup diário do Supabase NÃO cobre Storage, criar proteção
       equivalente (backup do bucket `media` ou soft-delete).
   [ ] Rotacionar/revogar chave Firebase -> AINDA PENDENTE. Se o Firebase não é
       mais usado, revogar a service account e remover FIREBASE_CREDENTIALS_JSON
@@ -15,7 +15,7 @@ STATUS em 11/07/2026 (auditoria):
 Commit aplicado: d799ea2 (já em origin/main)
 
 
-HOJE — antes/durante o launch
+HOJE, antes/durante o launch
 ------------------------------
 
 [ ] SMTP do Resend no Supabase Auth
@@ -43,7 +43,7 @@ HOJE — antes/durante o launch
     [ ] Sentry recebe um erro de teste
 
 
-PÓS-LAUNCH — esta semana, sem pressa
+PÓS-LAUNCH, esta semana, sem pressa
 -------------------------------------
 
 [ ] Plano do Supabase / política de backup
@@ -76,7 +76,7 @@ PÓS-LAUNCH — esta semana, sem pressa
     Não bloqueia (CI roda next build, não tsc --noEmit), mas vale alinhar.
 
 
-CONTEXTO — o que o commit d799ea2 fez
+CONTEXTO, o que o commit d799ea2 fez
 --------------------------------------
 
 Estabilidade:

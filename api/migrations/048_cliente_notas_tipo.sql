@@ -1,5 +1,5 @@
 -- ============================================================
--- Morabilidade — Migration 048
+-- Morabilidade: Migration 048
 -- Estrutura o histórico de contato do cliente: cada nota ganha
 -- um tipo de contato (canal). As notas antigas viram 'nota'
 -- (texto livre, comportamento que sempre existiu).

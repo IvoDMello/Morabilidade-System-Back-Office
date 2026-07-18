@@ -43,7 +43,7 @@ export function filtrarPorCriterios(cards: Captacao[], crit: Criterios): Captaca
     if (valorMin != null && (c.valor_venda == null || c.valor_venda < valorMin)) return false;
     if (valorMax != null && (c.valor_venda == null || c.valor_venda > valorMax)) return false;
     if (quartosMin != null && (c.quartos == null || c.quartos < quartosMin)) return false;
-    // Gaveta e Seleção Especial são paradas por definição — não entram no alerta de "somente paradas".
+    // Gaveta e Seleção Especial são paradas por definição, não entram no alerta de "somente paradas".
     if (soParadas && (c.status === "gaveta" || c.status === "selecao_especial" || diasParado(c.atualizado_em) < DIAS_PARADO)) return false;
     return true;
   });

@@ -64,7 +64,7 @@ afterEach(() => vi.unstubAllGlobals());
 
 // ── Com token no cookie ───────────────────────────────────────────────────────
 
-describe("POST /api/auth/logout — com token no cookie", () => {
+describe("POST /api/auth/logout, com token no cookie", () => {
   it("retorna { ok: true }", async () => {
     const res = (await POST(new Request("http://localhost") as any)) as any;
     const body = await res.json();
@@ -98,7 +98,7 @@ describe("POST /api/auth/logout — com token no cookie", () => {
 
 // ── Sem token ─────────────────────────────────────────────────────────────────
 
-describe("POST /api/auth/logout — sem token", () => {
+describe("POST /api/auth/logout, sem token", () => {
   beforeEach(() => {
     vi.mocked(cookies).mockResolvedValue(makeCookieStore() as any);
   });
@@ -123,7 +123,7 @@ describe("POST /api/auth/logout — sem token", () => {
 
 // ── Falha na API upstream ─────────────────────────────────────────────────────
 
-describe("POST /api/auth/logout — falha na API upstream", () => {
+describe("POST /api/auth/logout, falha na API upstream", () => {
   it("retorna ok mesmo que a API falhe (fire-and-forget)", async () => {
     mockFetch.mockRejectedValue(new Error("network error"));
     const res = (await POST(new Request("http://localhost") as any)) as any;

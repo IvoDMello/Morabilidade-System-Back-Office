@@ -1,5 +1,5 @@
 -- ============================================================
--- Morabilidade — Migration Inicial
+-- Morabilidade: Migration Inicial
 -- Execute este script no SQL Editor do Supabase
 -- ============================================================
 
@@ -165,7 +165,7 @@ CREATE INDEX IF NOT EXISTS idx_clientes_status ON clientes(status);
 
 -- ============================================================
 -- RLS (Row Level Security)
--- Acesso via service_role key desabilita RLS — a API usa isso.
+-- Acesso via service_role key desabilita RLS, a API usa isso.
 -- Para segurança adicional, habilite RLS e crie policies conforme necessário.
 -- ============================================================
 ALTER TABLE usuarios    ENABLE ROW LEVEL SECURITY;
@@ -188,7 +188,7 @@ CREATE POLICY "usuarios autenticados podem ler tags"
 -- ============================================================
 -- COMENTÁRIOS
 -- ============================================================
-COMMENT ON TABLE imoveis      IS 'Cadastro de imóveis — núcleo do sistema';
+COMMENT ON TABLE imoveis      IS 'Cadastro de imóveis, núcleo do sistema';
 COMMENT ON TABLE clientes     IS 'Cadastro de clientes e leads';
 COMMENT ON TABLE tags         IS 'Etiquetas configuráveis pelo admin (Destaque, Novo, etc.)';
 COMMENT ON TABLE imovel_fotos IS 'Fotos armazenadas no Firebase Storage, referenciadas aqui';

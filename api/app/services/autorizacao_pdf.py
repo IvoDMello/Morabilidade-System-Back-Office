@@ -2,7 +2,7 @@
 
 Documento assinado pelo(s) proprietário(s). Reaproveita os componentes de
 layout de [pdf_base] (header/footer/seção/campo/trilha). A cláusula é
-versionada e gravada na própria autorização (snapshot) — ver
+versionada e gravada na própria autorização (snapshot), ver
 `montar_clausula_autorizacao` e a coluna `clausula_texto` na migration 035.
 
 Com múltiplos signatários (migration 038), o documento lista todos os
@@ -51,7 +51,7 @@ _MARGEM_INFERIOR = _RODAPE_H + 6 * mm
 
 def _fmt_pct(v) -> str:
     if v is None:
-        return "—"
+        return "-"
     d = Decimal(str(v))
     # Remove zeros à direita: 6.00 -> 6, 6.50 -> 6,5
     txt = format(d.normalize(), "f").replace(".", ",")
@@ -128,7 +128,7 @@ def _signatarios_do_auth(auth: dict) -> list[dict]:
         return sorted(sigs, key=lambda s: s.get("ordem") or 0)
     return [{
         "ordem": 1,
-        "nome": auth.get("proprietario_nome") or "—",
+        "nome": auth.get("proprietario_nome") or "-",
         "cpf": auth.get("proprietario_cpf"),
         "telefone": auth.get("proprietario_telefone"),
         "email": auth.get("proprietario_email"),
@@ -152,7 +152,7 @@ def gerar_autorizacao_pdf(auth: dict, assinada: bool = False) -> bytes:
     rodape_esq = " · ".join(filter(None, [
         settings.empresa_creci_juridico or settings.empresa_creci_corretor,
         f"CNPJ {settings.empresa_cnpj}" if settings.empresa_cnpj else None,
-    ])) or "MORABILIDADE — Intermediação imobiliária"
+    ])) or "MORABILIDADE: Intermediação imobiliária"
 
     def _rodape() -> None:
         draw_brand_footer(c, largura, esquerda=rodape_esq, direita=settings.empresa_telefone)
@@ -175,7 +175,7 @@ def gerar_autorizacao_pdf(auth: dict, assinada: bool = False) -> bytes:
             c.setFillColor(DOURADO)
             c.setFont("Helvetica-Bold", 11)
             c.drawRightString(largura - MARGEM, altura - faixa_h / 2 - 1.3 * mm,
-                              "AUTORIZAÇÃO DE INTERMEDIAÇÃO — CONTINUAÇÃO")
+                              "AUTORIZAÇÃO DE INTERMEDIAÇÃO: CONTINUAÇÃO")
             topo = altura - faixa_h
         return topo - 12 * mm
 
@@ -188,14 +188,14 @@ def gerar_autorizacao_pdf(auth: dict, assinada: bool = False) -> bytes:
     y = _nova_pagina(primeira=True)
 
     # ── Identificação + QR ───────────────────────────────────────────────────
-    codigo = auth.get("imovel_codigo") or "—"
-    num = (auth.get("id") or "").replace("-", "")[:8].upper() or "—"
+    codigo = auth.get("imovel_codigo") or "-"
+    num = (auth.get("id") or "").replace("-", "")[:8].upper() or "-"
     criada = fmt_dt(auth.get("created_at"))
 
     campo(c, MARGEM, y, 50 * mm, "Autorização nº", num)
     campo(c, MARGEM + 56 * mm, y, 45 * mm, "Data", criada)
     campo(c, MARGEM + 106 * mm, y, 30 * mm, "Código / ref.", codigo)
-    qr_url = f"{settings.site_url.rstrip('/')}/imoveis/{codigo}" if codigo != "—" else settings.site_url
+    qr_url = f"{settings.site_url.rstrip('/')}/imoveis/{codigo}" if codigo != "-" else settings.site_url
     # QR alinhado pelo topo com a linha de campos (origem = canto inferior).
     desenhar_qr(c, largura - MARGEM - 16 * mm, y - 14 * mm, 16 * mm, qr_url)
     y -= 20 * mm
@@ -203,11 +203,11 @@ def gerar_autorizacao_pdf(auth: dict, assinada: bool = False) -> bytes:
     # ── 1. Imóvel ────────────────────────────────────────────────────────────
     y = _garantir(y, 45 * mm)
     y = secao(c, largura, y, "1. Imóvel")
-    campo(c, MARGEM, y, util, "Endereço completo", auth.get("imovel_endereco") or "—")
+    campo(c, MARGEM, y, util, "Endereço completo", auth.get("imovel_endereco") or "-")
     y -= 12 * mm
-    campo(c, MARGEM, y, 55 * mm, "Bairro", auth.get("imovel_bairro") or "—")
-    campo(c, MARGEM + 61 * mm, y, 50 * mm, "Cidade / UF", auth.get("imovel_cidade") or "—")
-    campo(c, MARGEM + 116 * mm, y, util - 116 * mm, "Matrícula / RGI", auth.get("imovel_matricula") or "—")
+    campo(c, MARGEM, y, 55 * mm, "Bairro", auth.get("imovel_bairro") or "-")
+    campo(c, MARGEM + 61 * mm, y, 50 * mm, "Cidade / UF", auth.get("imovel_cidade") or "-")
+    campo(c, MARGEM + 116 * mm, y, util - 116 * mm, "Matrícula / RGI", auth.get("imovel_matricula") or "-")
     y -= 14 * mm
 
     # ── 2. Proprietário(s) ───────────────────────────────────────────────────
@@ -217,9 +217,9 @@ def gerar_autorizacao_pdf(auth: dict, assinada: bool = False) -> bytes:
     for sig in signatarios:
         y = _garantir(y, 16 * mm)
         campo(c, MARGEM, y, 78 * mm, f"Nome completo ({sig.get('ordem')}º)" if len(signatarios) > 1 else "Nome completo",
-              sig.get("nome") or "—")
-        campo(c, MARGEM + 84 * mm, y, 40 * mm, "CPF / CNPJ", sig.get("cpf") or "—")
-        campo(c, MARGEM + 130 * mm, y, util - 130 * mm, "Telefone / WhatsApp", sig.get("telefone") or "—")
+              sig.get("nome") or "-")
+        campo(c, MARGEM + 84 * mm, y, 40 * mm, "CPF / CNPJ", sig.get("cpf") or "-")
+        campo(c, MARGEM + 130 * mm, y, util - 130 * mm, "Telefone / WhatsApp", sig.get("telefone") or "-")
         y -= 12 * mm
     if auth.get("proprietario_endereco"):
         y = _garantir(y, 16 * mm)
@@ -233,9 +233,9 @@ def gerar_autorizacao_pdf(auth: dict, assinada: bool = False) -> bytes:
     y = _garantir(y, (60 if tem_datas else 45) * mm)
     y = secao(c, largura, y, "3. Condições da intermediação")
     tipo = auth.get("tipo_negocio", "venda")
-    negocio_lbl = _NEGOCIO.get(tipo, "—").capitalize()
-    valor_lbl = fmt_brl(auth["valor_autorizado"]) if auth.get("valor_autorizado") is not None else "—"
-    prazo_val = auth.get("prazo_dias") or "—"
+    negocio_lbl = _NEGOCIO.get(tipo, "-").capitalize()
+    valor_lbl = fmt_brl(auth["valor_autorizado"]) if auth.get("valor_autorizado") is not None else "-"
+    prazo_val = auth.get("prazo_dias") or "-"
 
     campo(c, MARGEM, y, 50 * mm, "Negócio", negocio_lbl)
     campo(c, MARGEM + 56 * mm, y, 50 * mm, "Valor autorizado", valor_lbl)
@@ -245,13 +245,13 @@ def gerar_autorizacao_pdf(auth: dict, assinada: bool = False) -> bytes:
 
     if tipo == "ambos":
         campo(c, MARGEM, y, 50 * mm, "Comissão (venda)", _fmt_pct(auth.get("comissao_venda_pct")))
-        campo(c, MARGEM + 56 * mm, y, 55 * mm, "Comissão (locação)", auth.get("comissao_locacao_desc") or "—")
+        campo(c, MARGEM + 56 * mm, y, 55 * mm, "Comissão (locação)", auth.get("comissao_locacao_desc") or "-")
         campo(c, MARGEM + 117 * mm, y, util - 117 * mm, "Prazo", f"{prazo_val} dias")
     elif tipo == "venda":
         campo(c, MARGEM, y, 70 * mm, "Comissão (venda)", _fmt_pct(auth.get("comissao_venda_pct")))
         campo(c, MARGEM + 76 * mm, y, util - 76 * mm, "Prazo", f"{prazo_val} dias")
     else:  # locacao
-        campo(c, MARGEM, y, 100 * mm, "Comissão (locação)", auth.get("comissao_locacao_desc") or "—")
+        campo(c, MARGEM, y, 100 * mm, "Comissão (locação)", auth.get("comissao_locacao_desc") or "-")
         campo(c, MARGEM + 106 * mm, y, util - 106 * mm, "Prazo", f"{prazo_val} dias")
     y -= 12 * mm
 
@@ -307,16 +307,16 @@ def gerar_autorizacao_pdf(auth: dict, assinada: bool = False) -> bytes:
 
     blocos = [
         (
-            (sig.get("nome") or "—").upper(),
-            f"PROPRIETÁRIO(A) {sig.get('ordem')} — Assinatura e CPF/CNPJ" if len(signatarios) > 1
-            else "PROPRIETÁRIO(A) — Assinatura e CPF/CNPJ",
+            (sig.get("nome") or "-").upper(),
+            f"PROPRIETÁRIO(A) {sig.get('ordem')}: Assinatura e CPF/CNPJ" if len(signatarios) > 1
+            else "PROPRIETÁRIO(A): Assinatura e CPF/CNPJ",
             (sig.get("assinante_assinatura_png") if assinada else None),
         )
         for sig in signatarios
     ]
     blocos.append((
         "MORABILIDADE",
-        "CORRETOR — Assinatura e CRECI",
+        "CORRETOR: Assinatura e CRECI",
         None,
     ))
 
@@ -342,10 +342,10 @@ def gerar_autorizacao_pdf(auth: dict, assinada: bool = False) -> bytes:
         yy = topo_caixa - 5 * mm
         c.setFillColor(OLIVE)
         c.setFont("Helvetica-Bold", 8)
-        c.drawString(MARGEM + 3 * mm, yy, "TRILHA DE AUDITORIA — ASSINATURA ELETRÔNICA")
+        c.drawString(MARGEM + 3 * mm, yy, "TRILHA DE AUDITORIA: ASSINATURA ELETRÔNICA")
         yy -= 5.5 * mm
         for sig in assinados:
-            cpf = sig.get("assinante_cpf_confirmado") or sig.get("cpf") or "—"
+            cpf = sig.get("assinante_cpf_confirmado") or sig.get("cpf") or "-"
             c.setFillColor(TEXTO_ESCURO)
             c.setFont("Helvetica-Bold", 7.5)
             c.drawString(MARGEM + 3 * mm, yy, f"{sig.get('nome')}  ·  CPF {cpf}")
@@ -354,14 +354,14 @@ def gerar_autorizacao_pdf(auth: dict, assinada: bool = False) -> bytes:
             c.setFont("Helvetica", 7)
             detalhe = (
                 f"Assinado em {fmt_dt(sig.get('assinada_em'), com_hora=True)}"
-                f"  ·  IP {sig.get('assinante_ip') or '—'}"
+                f"  ·  IP {sig.get('assinante_ip') or '-'}"
                 f"  ·  Geo {sig.get('assinante_geo') or 'não informada'}"
             )
             c.drawString(MARGEM + 3 * mm, yy, detalhe)
             yy -= 5 * mm
         c.setFillColor(TEXTO_CLARO)
         c.setFont("Helvetica", 7)
-        c.drawString(MARGEM + 3 * mm, yy, f"Hash do documento (SHA-256): {auth.get('documento_hash') or '—'}")
+        c.drawString(MARGEM + 3 * mm, yy, f"Hash do documento (SHA-256): {auth.get('documento_hash') or '-'}")
         yy -= 4.4 * mm
         c.setFont("Helvetica-Oblique", 6.5)
         c.drawString(MARGEM + 3 * mm, yy,

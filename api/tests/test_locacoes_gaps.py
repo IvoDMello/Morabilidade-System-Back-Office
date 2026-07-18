@@ -125,7 +125,7 @@ def test_atualizar_contrato_data_fim_anterior_ao_inicio_no_patch(client):
 
 
 def test_atualizar_contrato_so_uma_data_no_patch_passa(client):
-    """Se vier só uma das datas, não dá pra cruzar — segue para o banco."""
+    """Se vier só uma das datas, não dá pra cruzar, segue para o banco."""
     db = make_db_mock(
         MagicMock(data=CONTRATO_DB),
         MagicMock(data=[CONTRATO_DB]),
@@ -140,7 +140,7 @@ def test_atualizar_contrato_so_uma_data_no_patch_passa(client):
 
 
 def test_atualizar_contrato_status_no_patch_e_ignorado(client):
-    """Fix 7: PATCH não deve trocar status diretamente — use /rescindir."""
+    """Fix 7: PATCH não deve trocar status diretamente, use /rescindir."""
     db = make_db_mock(
         MagicMock(data=CONTRATO_DB),
         MagicMock(data=[CONTRATO_DB]),
@@ -226,7 +226,7 @@ def test_enviar_demonstrativo_com_para_explicito_busca_nome_no_banco(client):
 
 
 def test_atualizar_contrato_ignora_campos_imutaveis(client):
-    """imovel_id/proprietario_id/locatario_id não existem no Update — pydantic
+    """imovel_id/proprietario_id/locatario_id não existem no Update, pydantic
     ignora extras por padrão (model_config sem extra='forbid'). Garante que o
     PATCH não acidentalmente troca uma das partes do contrato."""
     db = make_db_mock(

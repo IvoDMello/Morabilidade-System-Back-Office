@@ -1,6 +1,6 @@
 """Testes do serviço compartilhado de fechamento mensal (app.services.fechamento).
 
-É a aritmética usada pelo Repasse e pelo Demonstrativo de Administração —
+É a aritmética usada pelo Repasse e pelo Demonstrativo de Administração
 qualquer regressão aqui muda valor em PDF/relatório financeiro.
 """
 from datetime import date

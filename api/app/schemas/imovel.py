@@ -52,6 +52,7 @@ class ImovelCreate(BaseModel):
     dormitorios: Optional[int] = None
     suites: Optional[int] = None
     banheiros: Optional[int] = None
+    lavabos: Optional[int] = None
     vagas_garagem: Optional[int] = None
     mobiliado: Optional[Mobiliado] = None
     condicao: CondicaoImovel
@@ -125,6 +126,7 @@ class ImovelListOut(BaseModel):
     dormitorios: Optional[int] = None
     suites: Optional[int] = None
     banheiros: Optional[int] = None
+    lavabos: Optional[int] = None
     vagas_garagem: Optional[int] = None
     area_util: Optional[Decimal] = None
     valor_venda: Optional[Decimal] = None
@@ -171,7 +173,7 @@ class DocumentoImovelOut(BaseModel):
     mime_type: Optional[str] = None
     uploaded_by: Optional[str] = None
     created_at: Optional[str] = None
-    url: Optional[str] = None  # signed URL resolvida na hora — não persistida.
+    url: Optional[str] = None  # signed URL resolvida na hora, não persistida.
 
 
 class ImovelFiltros(BaseModel):

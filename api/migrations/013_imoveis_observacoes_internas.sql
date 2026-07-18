@@ -1,4 +1,4 @@
--- Observações internas — texto livre, visível apenas para perfil admin.
+-- Observações internas, texto livre, visível apenas para perfil admin.
 -- Filtro do back-office e detalhe do imóvel devem omitir o campo para corretores.
 
 ALTER TABLE imoveis

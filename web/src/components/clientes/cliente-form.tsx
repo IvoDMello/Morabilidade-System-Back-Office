@@ -114,7 +114,7 @@ export function ClienteForm({ defaultValues, onSubmit, isLoading, submitLabel = 
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      {/* Botão de salvar no topo (atalho — evita rolar até o final) */}
+      {/* Botão de salvar no topo (atalho, evita rolar até o final) */}
       <div className="flex justify-end">{submitButton}</div>
 
       {/* Dados principais */}
@@ -142,7 +142,7 @@ export function ClienteForm({ defaultValues, onSubmit, isLoading, submitLabel = 
 
           <Field label="Instagram" error={undefined}>
             <input {...register("instagram")} className={inputClass} placeholder="@perfil ou link" />
-            <p className="text-[11px] text-slate-400 mt-1">Telefone ou Instagram — ao menos um obrigatório</p>
+            <p className="text-[11px] text-slate-400 mt-1">Telefone ou Instagram, ao menos um obrigatório</p>
           </Field>
 
           <Field label="CPF / CNPJ">
@@ -153,7 +153,7 @@ export function ClienteForm({ defaultValues, onSubmit, isLoading, submitLabel = 
 
           <Field label="Tipo de cliente">
             <select {...register("tipo_cliente")} className={selectClass}>
-              <option value="">— Selecionar —</option>
+              <option value="">- Selecionar -</option>
               <option value="comprador">Comprador</option>
               <option value="locatario">Locatário</option>
               <option value="proprietario">Proprietário</option>
@@ -163,7 +163,7 @@ export function ClienteForm({ defaultValues, onSubmit, isLoading, submitLabel = 
 
           <Field label="Status">
             <select {...register("status")} className={selectClass}>
-              <option value="">— Selecionar —</option>
+              <option value="">- Selecionar -</option>
               <option value="ativo">Ativo</option>
               <option value="em_negociacao">Em negociação</option>
               <option value="inativo">Inativo</option>
@@ -173,7 +173,7 @@ export function ClienteForm({ defaultValues, onSubmit, isLoading, submitLabel = 
 
           <Field label="Origem do lead">
             <select {...register("origem_lead")} className={selectClass}>
-              <option value="">— Selecionar —</option>
+              <option value="">- Selecionar -</option>
               <option value="site">Site</option>
               <option value="indicacao">Indicação</option>
               <option value="ligacao">Ligação</option>
@@ -212,11 +212,11 @@ export function ClienteForm({ defaultValues, onSubmit, isLoading, submitLabel = 
 
           <Field label="Estado">
             <select {...register("estado")} className={selectClass}>
-              <option value="">— UF —</option>
+              <option value="">- UF -</option>
               {["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"].map((uf) => (
                 <option key={uf} value={uf}>{uf}</option>
               ))}
-              <option value="EX">EX — Exterior</option>
+              <option value="EX">EX: Exterior</option>
             </select>
           </Field>
 

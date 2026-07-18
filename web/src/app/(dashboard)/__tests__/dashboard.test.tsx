@@ -109,7 +109,7 @@ describe("DashboardHome", () => {
     expect(screen.getByText(/Imóvel mais antigo no portfólio/)).toBeInTheDocument();
   });
 
-  it("não quebra quando /stats falha — mostra toast e segue", async () => {
+  it("não quebra quando /stats falha, mostra toast e segue", async () => {
     vi.mocked(api.get).mockImplementation(() =>
       Promise.reject(new Error("offline")),
     );

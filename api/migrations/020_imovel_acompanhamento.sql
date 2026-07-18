@@ -1,15 +1,15 @@
 -- Migration 020: Acompanhamento de captação do imóvel.
--- ⚠️ PENDENTE DE EXECUÇÃO no Supabase — rodar no SQL Editor antes de usar a aba.
+-- ⚠️ PENDENTE DE EXECUÇÃO no Supabase, rodar no SQL Editor antes de usar a aba.
 --
 -- Três recursos alimentam um único objetivo: gerar transparência pro proprietário
 -- sobre o que aconteceu com o imóvel desde que entrou no portfólio.
 --
--- 1. imovel_visitas       — histórico de quem visitou (manual + import CSV).
--- 2. imovel_percepcoes    — anotações internas do admin (alimentam o relatório).
--- 3. imoveis.relatorio_30dias_enviado_em — flag para impedir reenvio do relatório.
+-- 1. imovel_visitas      , histórico de quem visitou (manual + import CSV).
+-- 2. imovel_percepcoes   , anotações internas do admin (alimentam o relatório).
+-- 3. imoveis.relatorio_30dias_enviado_em, flag para impedir reenvio do relatório.
 --
 -- Visitas e percepções são preservadas mesmo após o imóvel sair de "disponível"
--- (venda/locação) — só somem se o imóvel for deletado (ON DELETE CASCADE).
+-- (venda/locação), só somem se o imóvel for deletado (ON DELETE CASCADE).
 
 -- ── Visitas ──────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS imovel_visitas (

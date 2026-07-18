@@ -130,10 +130,10 @@ def atualizar_usuario(
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 def desativar_usuario(user_id: str, admin: dict = Depends(require_admin)):
-    """Desativa (soft delete) um usuário — idempotente. Apenas admin."""
+    """Desativa (soft delete) um usuário, idempotente. Apenas admin."""
     # Bloqueia o login no Supabase Auth (ban de 100 anos = desativação permanente)
     try:
         supabase_admin.auth.admin.update_user_by_id(user_id, {"ban_duration": "876600h"})
     except Exception:
-        logger.error("Falha ao banir usuário %s no Supabase Auth — ativo=False aplicado na tabela", user_id, exc_info=True)
+        logger.error("Falha ao banir usuário %s no Supabase Auth, ativo=False aplicado na tabela", user_id, exc_info=True)
     supabase_admin.table("usuarios").update({"ativo": False}).eq("id", user_id).execute()

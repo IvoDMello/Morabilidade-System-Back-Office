@@ -66,7 +66,7 @@ def refresh(request: Request, body: RefreshRequest):
     """Troca um refresh_token por um novo par (access + refresh).
 
     O Supabase rotaciona o refresh_token a cada uso: o antigo é invalidado
-    assim que o novo é emitido — token roubado fica inservível depois do
+    assim que o novo é emitido, token roubado fica inservível depois do
     primeiro uso legítimo.
     """
     try:
@@ -103,7 +103,7 @@ def logout(current_user: dict = Depends(get_current_user)):
 
 
 def _processar_recuperacao_senha(email: str, redirect_to: str | None) -> None:
-    """Roda em background — gera o link via Supabase Admin e envia via Resend.
+    """Roda em background, gera o link via Supabase Admin e envia via Resend.
 
     Falhas (e-mail inexistente, Supabase fora do ar, Resend fora do ar) são só
     logadas. O cliente sempre recebe 204, sem oracle de enumeração de e-mail.
@@ -134,7 +134,7 @@ def forgot_password(
     body: ForgotPasswordRequest,
     background_tasks: BackgroundTasks,
 ):
-    """Sempre retorna 204 — o trabalho real roda em background para não revelar
+    """Sempre retorna 204, o trabalho real roda em background para não revelar
     se o e-mail existe (evita enumeração via timing/status code)."""
     logger.info("[recuperar-senha] solicitação recebida (email=%s)", _mask_email(body.email))
     background_tasks.add_task(_processar_recuperacao_senha, body.email, body.redirect_to)

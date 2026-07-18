@@ -13,7 +13,7 @@ import type { Captacao } from "@/types";
 
 /**
  * Aberto logo após mover um cartão para a Gaveta: registra por que o imóvel
- * foi engavetado e (opcionalmente) quando reavaliar. Fechar sem salvar é ok —
+ * foi engavetado e (opcionalmente) quando reavaliar. Fechar sem salvar é ok
  * o cartão já está na gaveta, só fica sem os metadados.
  */
 export function GavetaDialog({ card, onClose }: { card: Captacao | null; onClose: () => void }) {

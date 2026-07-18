@@ -24,7 +24,7 @@ export function Historico({ eventos, nomes = {} }: { eventos: Evento[]; nomes?: 
             {e.de_status ? STATUS_LABEL[e.de_status] : "Criada"}
           </span>
           <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="font-medium">{e.para_status ? STATUS_LABEL[e.para_status] : "—"}</span>
+          <span className="font-medium">{e.para_status ? STATUS_LABEL[e.para_status] : "-"}</span>
           <span className="ml-auto shrink-0 text-right text-xs text-muted-foreground">
             {e.autor && nomes[e.autor] && <span>{nomes[e.autor]} · </span>}
             {relativo(e.criado_em)}

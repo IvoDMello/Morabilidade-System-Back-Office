@@ -1,5 +1,5 @@
 -- Migration 019: Trilha de auditoria para o módulo de Administração de Locações.
--- ⚠️ PENDENTE DE EXECUÇÃO no Supabase — rodar no SQL Editor antes de usar a auditoria.
+-- ⚠️ PENDENTE DE EXECUÇÃO no Supabase, rodar no SQL Editor antes de usar a auditoria.
 --
 -- Motivação: contratos de locação envolvem valores recorrentes, taxas e
 -- demonstrativos enviados ao locatário. Quando algo é alterado ou removido
@@ -7,7 +7,7 @@
 -- deletado) precisamos saber QUEM, QUANDO e O QUE mudou, sem depender do
 -- log de aplicação (que não é persistido).
 --
--- A tabela é append-only do ponto de vista da aplicação — não há endpoint
+-- A tabela é append-only do ponto de vista da aplicação, não há endpoint
 -- de UPDATE ou DELETE. Consulta direta no Supabase (ou via futura página
 -- /admin/auditoria-locacoes).
 

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath, revalidateTag } from "next/cache";
 
 // Revalidação on-demand: o back-office (via API) chama este endpoint logo após
-// criar/editar/excluir um imóvel, para que a mudança apareça no site na hora —
+// criar/editar/excluir um imóvel, para que a mudança apareça no site na hora
 // sem esperar o cache ISR expirar. Protegido por um segredo compartilhado.
 //
 // Contrato: POST /api/revalidate
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     if (body && typeof body.codigo === "string") codigo = body.codigo;
   } catch {
-    // body vazio/inválido é aceitável — revalida só listagem e home
+    // body vazio/inválido é aceitável, revalida só listagem e home
   }
 
   const paths = ["/", "/imoveis"];

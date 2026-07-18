@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 /**
  * Mini-carrossel de fotos para os cards de imóvel (listagem e destaques).
- * Vive DENTRO de um <Link> — swipe no touch usa scroll nativo (não navega)
+ * Vive DENTRO de um <Link>, swipe no touch usa scroll nativo (não navega)
  * e as setas fazem preventDefault para não abrir a página do imóvel.
  */
 export function CardFotoCarousel({
@@ -54,7 +54,7 @@ export function CardFotoCarousel({
           <div key={`${url}-${i}`} className="relative h-full w-full flex-shrink-0 snap-center snap-always">
             <Image
               src={url}
-              alt={i === 0 ? alt : `${alt} — foto ${i + 1}`}
+              alt={i === 0 ? alt : `${alt}, foto ${i + 1}`}
               fill
               className={`object-cover object-center ${imgClassName}`}
               sizes={sizes}
@@ -65,7 +65,7 @@ export function CardFotoCarousel({
 
       {varias && (
         <>
-          {/* Setas — só fazem sentido com mouse; aparecem no hover do card */}
+          {/* Setas, só fazem sentido com mouse; aparecem no hover do card */}
           {idx > 0 && (
             <button
               type="button"
@@ -87,7 +87,7 @@ export function CardFotoCarousel({
             </button>
           )}
 
-          {/* Aviso "ver todas" — aparece na última foto exibida quando há mais no imóvel */}
+          {/* Aviso "ver todas", aparece na última foto exibida quando há mais no imóvel */}
           {temMaisFotos && idx === fotos.length - 1 && (
             <div className="absolute inset-x-0 bottom-8 z-10 flex justify-center pointer-events-none">
               <span className="px-3 py-1 rounded-full bg-black/45 text-white/90 text-[11px] font-medium backdrop-blur-sm">

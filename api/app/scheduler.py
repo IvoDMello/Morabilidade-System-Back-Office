@@ -10,7 +10,7 @@ app em [main]; desligado nos testes (lifespan não roda) e via
 `settings.scheduler_enabled=false`.
 
 O endpoint HTTP `POST /imoveis/internal/jobs/relatorio-30dias` continua existindo
-para disparo manual ou cron externo — ambos chamam o mesmo
+para disparo manual ou cron externo, ambos chamam o mesmo
 `processar_relatorios_30dias`.
 """
 import logging
@@ -32,7 +32,7 @@ def _rodar_relatorio_30dias() -> None:
     try:
         resultado = processar_relatorios_30dias()
         logger.info("Job agendado 'relatorio_30dias' concluído: %s", resultado)
-    except Exception:  # noqa: BLE001 — o scheduler não pode morrer por um erro do job
+    except Exception:  # noqa: BLE001, o scheduler não pode morrer por um erro do job
         logger.exception("Falha no job agendado 'relatorio_30dias'.")
 
 
@@ -53,7 +53,7 @@ def iniciar_scheduler(hora: int = 9, minuto: int = 0) -> BackgroundScheduler:
     )
     _scheduler.start()
     logger.info(
-        "Scheduler iniciado — relatório 30 dias às %02d:%02d (America/Sao_Paulo).",
+        "Scheduler iniciado, relatório 30 dias às %02d:%02d (America/Sao_Paulo).",
         hora, minuto,
     )
     return _scheduler
