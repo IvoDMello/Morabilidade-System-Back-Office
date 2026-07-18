@@ -60,6 +60,14 @@ describe("filtrarCaptacoes", () => {
     const lst = [card({ endereco: "Rua M", bairro: "Leblon" })];
     expect(filtrarCaptacoes(lst, "leblon")).toHaveLength(1);
   });
+  it("ignora acentos nos dois sentidos (Brandão ⇄ Brandao)", () => {
+    const lst = [
+      card({ endereco: "Rua Professor Brandao Filho, 50" }),
+      card({ endereco: "Av. São João, 10" }),
+    ];
+    expect(filtrarCaptacoes(lst, "Professor Brandão Filho")).toHaveLength(1);
+    expect(filtrarCaptacoes(lst, "sao joao")).toHaveLength(1);
+  });
   it("ignora campos nulos sem quebrar", () => {
     expect(() => filtrarCaptacoes([card({ endereco: "Z" })], "z")).not.toThrow();
   });
@@ -93,6 +101,15 @@ describe("filtrarPorCriterios", () => {
   });
   it("soParadas mantém só atualização antiga", () => {
     const lst = [card({ id: "velho", atualizado_em: ontem() }), card({ id: "novo", atualizado_em: agora() })];
+    const r = filtrarPorCriterios(lst, { ...CRITERIOS_VAZIO, soParadas: true });
+    expect(r.map((c) => c.id)).toEqual(["velho"]);
+  });
+  it("soParadas ignora Gaveta e Seleção Especial mesmo com atualização antiga", () => {
+    const lst = [
+      card({ id: "gaveta", status: "gaveta", atualizado_em: ontem() }),
+      card({ id: "especial", status: "selecao_especial", atualizado_em: ontem() }),
+      card({ id: "velho", atualizado_em: ontem() }),
+    ];
     const r = filtrarPorCriterios(lst, { ...CRITERIOS_VAZIO, soParadas: true });
     expect(r.map((c) => c.id)).toEqual(["velho"]);
   });

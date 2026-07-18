@@ -7,6 +7,7 @@ export const STATUSES = [
   "pendente_agendar_visita",
   "pendente_agendar_gravacao",
   "gaveta",
+  "selecao_especial",
 ] as const;
 
 export type Status = (typeof STATUSES)[number];
@@ -20,6 +21,7 @@ export const STATUS_LABEL: Record<Status, string> = {
   pendente_agendar_visita: "Pendente agendar visita",
   pendente_agendar_gravacao: "Pendente agendar gravação",
   gaveta: "Gaveta",
+  selecao_especial: "Seleção Especial",
 };
 
 /** Cor de destaque por coluna (mapa da seção 5 do PRD). */
@@ -32,6 +34,7 @@ export const STATUS_TONE: Record<Status, string> = {
   pendente_agendar_visita: "positive",
   pendente_agendar_gravacao: "positive",
   gaveta: "muted",
+  selecao_especial: "primary",
 };
 
 export type Decisao = "aprovada" | "reprovada";

@@ -22,6 +22,7 @@ export const STATUS_STYLE: Record<Status, StatusStyle> = {
   pendente_negativa: { label: STATUS_LABEL.pendente_negativa, short: "Pend. negativa", dot: "#c98a8a", bg: "#f4e8e8", fg: "#8a4444" },
   negativada: { label: STATUS_LABEL.negativada, short: "Negativada", dot: "#a85a5a", bg: "#f0e2e2", fg: "#7a3434" },
   gaveta: { label: STATUS_LABEL.gaveta, short: "Gaveta", dot: "#8a8fa8", bg: "#e9eaf0", fg: "#565b72" },
+  selecao_especial: { label: STATUS_LABEL.selecao_especial, short: "Seleção Especial", dot: "#a4739a", bg: "#f2e7ef", fg: "#6f3f63" },
 };
 
 /** Ordem das pills/colunas do quadro mobile (handoff). */
@@ -34,4 +35,5 @@ export const PILL_ORDER: Status[] = [
   "pendente_negativa",
   "negativada",
   "gaveta",
+  "selecao_especial",
 ];
