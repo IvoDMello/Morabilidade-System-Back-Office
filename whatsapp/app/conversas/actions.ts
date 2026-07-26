@@ -22,10 +22,15 @@ import { createTemplate, deleteTemplate } from "@/services/templates.service";
 import { templateFormSchema, type TemplateFormValues } from "@/lib/validations/template.schema";
 import { generateFollowUpSuggestion } from "@/services/ai.service";
 import type { ID } from "@/types/common";
+import type { MessageReply } from "@/types/whatsapp";
 
-export async function sendMessageAction(contactId: ID, values: MessageFormValues) {
+export async function sendMessageAction(
+  contactId: ID,
+  values: MessageFormValues,
+  replyTo?: MessageReply | null,
+) {
   const parsed = messageFormSchema.parse(values);
-  await sendMessage(contactId, parsed.body);
+  await sendMessage(contactId, parsed.body, replyTo ?? null);
   revalidatePath(`/contatos/${contactId}`);
   revalidatePath("/");
 }

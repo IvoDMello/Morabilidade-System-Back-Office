@@ -6,6 +6,7 @@ import { ChatListPanel } from "@/features/whatsapp/components/chat-list-panel";
 import { ConversationThread } from "@/features/whatsapp/components/conversation-thread";
 import { ConversationThreadHeader } from "@/features/whatsapp/components/conversation-thread-header";
 import { MessageComposer } from "@/features/whatsapp/components/message-composer";
+import { ReplyProvider } from "@/features/whatsapp/reply-context";
 import { SimulateMessageForm } from "@/features/whatsapp/components/simulate-message-form";
 import { isMockWhatsAppProvider } from "@/services/whatsapp";
 import {
@@ -90,17 +91,27 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           )}
         >
           {selectedContact ? (
-            <div key={selectedContact.id} className="flex h-full min-h-0 flex-col animate-in fade-in duration-200">
-              <ConversationThreadHeader contact={selectedContact} />
-              <ConversationThread contactId={selectedContact.id} messages={selectedMessages} />
-              <div className="border-t bg-card p-3">
-                {selectedContact.isBlocked ? (
-                  <BlockedContactNotice contactId={selectedContact.id} />
-                ) : (
-                  <MessageComposer contactId={selectedContact.id} templates={templates} />
-                )}
+            <ReplyProvider key={selectedContact.id}>
+              <div className="flex h-full min-h-0 flex-col animate-in fade-in duration-200">
+                <ConversationThreadHeader contact={selectedContact} />
+                <ConversationThread
+                  contactId={selectedContact.id}
+                  contactName={selectedContact.name}
+                  messages={selectedMessages}
+                />
+                <div className="border-t bg-card p-3">
+                  {selectedContact.isBlocked ? (
+                    <BlockedContactNotice contactId={selectedContact.id} />
+                  ) : (
+                    <MessageComposer
+                      contactId={selectedContact.id}
+                      contactName={selectedContact.name}
+                      templates={templates}
+                    />
+                  )}
+                </div>
               </div>
-            </div>
+            </ReplyProvider>
           ) : (
             <div className="flex flex-1 items-center justify-center bg-well/50 p-6">
               <EmptyState

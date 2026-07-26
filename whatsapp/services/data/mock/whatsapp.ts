@@ -119,6 +119,7 @@ export const mockWhatsapp: DataSource["whatsapp"] = {
       status: input.status,
       errorMessage: null,
       createdBy: input.createdBy ?? null,
+      replyTo: input.replyTo ?? null,
       waTimestamp: input.waTimestamp,
       createdAt: new Date().toISOString(),
     };

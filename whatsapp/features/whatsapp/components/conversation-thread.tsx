@@ -3,10 +3,11 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { isToday, isYesterday } from "date-fns";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, Reply } from "lucide-react";
 import { EmptyState } from "@/components/shared/empty-state";
 import { cn, formatDate, formatDateTime } from "@/lib/utils";
 import { markConversationReadAction } from "@/app/conversas/actions";
+import { useReply } from "@/features/whatsapp/reply-context";
 import { MessageStatusIcon } from "./message-status-icon";
 import type { ID } from "@/types/common";
 import type { WhatsAppMessage } from "@/types/whatsapp";
@@ -46,14 +47,21 @@ function groupMessages(messages: WhatsAppMessage[]) {
 
 export function ConversationThread({
   contactId,
+  contactName,
   messages,
 }: {
   contactId: ID;
+  contactName: string;
   messages: WhatsAppMessage[];
 }) {
   const router = useRouter();
+  const { setReplyingTo } = useReply();
   const scrollRef = useRef<HTMLDivElement>(null);
   const days = useMemo(() => groupMessages(messages), [messages]);
+
+  /** Rótulo do autor de um trecho citado: "Você" para o corretor, nome do contato para o cliente. */
+  const authorLabel = (direction: WhatsAppMessage["direction"]) =>
+    direction === "outbound" ? "Você" : contactName;
 
   useEffect(() => {
     markConversationReadAction(contactId).catch(() => {});
@@ -109,24 +117,51 @@ export function ConversationThread({
                     <div
                       key={message.id}
                       className={cn(
-                        "max-w-[75%] rounded-[14px] border px-3 py-2 text-sm",
-                        isOutbound
-                          ? "rounded-br-[4px] border-bubble-out-line bg-bubble-out text-bubble-out-fg"
-                          : "rounded-bl-[4px] border-veil/5 bg-bubble-in text-bubble-in-fg",
+                        "group flex max-w-[85%] items-center gap-1",
+                        isOutbound ? "flex-row" : "flex-row-reverse",
                       )}
                     >
-                      <p className="whitespace-pre-wrap">{message.body}</p>
-                      {isLast && (
-                        <div
-                          className={cn(
-                            "mt-1 flex items-center justify-end gap-1 text-[0.7rem] tabular-nums",
-                            isOutbound ? "text-bubble-out-meta" : "text-ink-faint",
-                          )}
-                        >
-                          {formatDateTime(message.waTimestamp)}
-                          {isOutbound && <MessageStatusIcon status={message.status} />}
-                        </div>
-                      )}
+                      <button
+                        type="button"
+                        aria-label="Responder a esta mensagem"
+                        onClick={() =>
+                          setReplyingTo({
+                            id: message.id,
+                            body: message.body,
+                            direction: message.direction,
+                          })
+                        }
+                        className="shrink-0 rounded-full p-1 text-ink-faint opacity-60 transition-opacity hover:bg-veil/6 hover:text-foreground focus-visible:opacity-100 md:opacity-0 md:group-hover:opacity-100"
+                      >
+                        <Reply className="h-4 w-4" />
+                      </button>
+                      <div
+                        className={cn(
+                          "min-w-0 rounded-[14px] border px-3 py-2 text-sm",
+                          isOutbound
+                            ? "rounded-br-[4px] border-bubble-out-line bg-bubble-out text-bubble-out-fg"
+                            : "rounded-bl-[4px] border-veil/5 bg-bubble-in text-bubble-in-fg",
+                        )}
+                      >
+                        {message.replyTo && (
+                          <div className="mb-1 border-l-2 border-jade/60 bg-veil/6 px-2 py-1 text-xs">
+                            <p className="font-medium text-jade">{authorLabel(message.replyTo.direction)}</p>
+                            <p className="truncate text-ink-faint">{message.replyTo.body}</p>
+                          </div>
+                        )}
+                        <p className="whitespace-pre-wrap">{message.body}</p>
+                        {isLast && (
+                          <div
+                            className={cn(
+                              "mt-1 flex items-center justify-end gap-1 text-[0.7rem] tabular-nums",
+                              isOutbound ? "text-bubble-out-meta" : "text-ink-faint",
+                            )}
+                          >
+                            {formatDateTime(message.waTimestamp)}
+                            {isOutbound && <MessageStatusIcon status={message.status} />}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   );
                 })}

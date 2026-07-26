@@ -186,6 +186,9 @@ export function mapMessageRow(row: any): WhatsAppMessage {
     status: row.status,
     errorMessage: row.error_message,
     createdBy: row.created_by,
+    replyTo: row.reply_to_body
+      ? { id: row.reply_to_id ?? null, body: row.reply_to_body, direction: row.reply_to_direction }
+      : null,
     waTimestamp: row.wa_timestamp,
     createdAt: row.created_at,
   };

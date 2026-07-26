@@ -6,7 +6,7 @@ import type { NormalizedIncomingMessage, NormalizedStatusUpdate } from "./whatsa
 import { CURRENT_USER_NAME } from "@/constants/current-user";
 import { formatPhone } from "@/lib/utils";
 import type { ID } from "@/types/common";
-import type { WhatsAppConversationSummary } from "@/types/whatsapp";
+import type { MessageReply, WhatsAppConversationSummary } from "@/types/whatsapp";
 
 async function getOrCreateContactForIncomingMessage(message: NormalizedIncomingMessage) {
   const existing = await getContactByPhone(message.fromPhone);
@@ -67,7 +67,7 @@ export async function processStatusUpdate(update: NormalizedStatusUpdate) {
   );
 }
 
-export async function sendMessage(contactId: ID, body: string) {
+export async function sendMessage(contactId: ID, body: string, replyTo?: MessageReply | null) {
   const contact = await dataSource.contacts.getById(contactId);
   if (!contact) throw new Error("Contato não encontrado.");
   if (contact.isBlocked) throw new Error("Contato bloqueado — desbloqueie para enviar.");
@@ -90,6 +90,7 @@ export async function sendMessage(contactId: ID, body: string) {
     body,
     status: "sent",
     createdBy: CURRENT_USER_NAME,
+    replyTo: replyTo ?? null,
     waTimestamp: nowIso,
   });
 

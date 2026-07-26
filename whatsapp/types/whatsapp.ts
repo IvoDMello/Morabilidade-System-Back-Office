@@ -34,6 +34,13 @@ export interface WhatsAppConversationSummary extends WhatsAppConversation {
   contactTagIds: ID[];
 }
 
+/** Trecho citado numa resposta (snapshot da mensagem original). */
+export interface MessageReply {
+  id: ID | null;
+  body: string;
+  direction: WhatsAppMessageDirection;
+}
+
 export interface WhatsAppMessage {
   id: ID;
   conversationId: ID;
@@ -44,6 +51,8 @@ export interface WhatsAppMessage {
   status: WhatsAppMessageStatus;
   errorMessage: string | null;
   createdBy: string | null;
+  /** Mensagem citada, se esta for uma resposta; null caso contrário. */
+  replyTo: MessageReply | null;
   waTimestamp: string;
   createdAt: string;
 }
@@ -68,5 +77,6 @@ export interface CreateWhatsAppMessageInput {
   body: string;
   status: WhatsAppMessageStatus;
   createdBy?: string | null;
+  replyTo?: MessageReply | null;
   waTimestamp: string;
 }

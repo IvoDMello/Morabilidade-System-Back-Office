@@ -105,6 +105,9 @@ export const supabaseWhatsapp: DataSource["whatsapp"] = {
         body: input.body,
         status: input.status,
         created_by: input.createdBy ?? null,
+        reply_to_id: input.replyTo?.id ?? null,
+        reply_to_body: input.replyTo?.body ?? null,
+        reply_to_direction: input.replyTo?.direction ?? null,
         wa_timestamp: input.waTimestamp,
       })
       .select("*")
