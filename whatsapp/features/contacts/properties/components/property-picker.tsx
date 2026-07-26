@@ -19,6 +19,8 @@ import {
   unlinkPropertyAction,
   updatePropertyStageAction,
 } from "@/app/contatos/actions";
+import { ImovelLiveDetails } from "./imovel-live-details";
+import type { ImovelResumo } from "@/lib/backoffice-api";
 import type { ID } from "@/types/common";
 import type { ContactPropertyWithDetails, Property } from "@/types/property";
 
@@ -26,9 +28,16 @@ interface PropertyPickerProps {
   contactId: ID;
   contactProperties: ContactPropertyWithDetails[];
   allProperties: Property[];
+  /** Dados ao vivo do catálogo real, por código. Vazio se a API não respondeu. */
+  liveDetails?: Record<string, ImovelResumo>;
 }
 
-export function PropertyPicker({ contactId, contactProperties, allProperties }: PropertyPickerProps) {
+export function PropertyPicker({
+  contactId,
+  contactProperties,
+  allProperties,
+  liveDetails = {},
+}: PropertyPickerProps) {
   const [open, setOpen] = useState(false);
   const [code, setCode] = useState("");
   const [stage, setStage] = useState<PropertyStage>("interesse");
@@ -89,6 +98,9 @@ export function PropertyPicker({ contactId, contactProperties, allProperties }: 
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{cp.code}</p>
                 {cp.title && <p className="truncate text-xs text-muted-foreground">{cp.title}</p>}
+                {liveDetails[cp.code] && (
+                  <ImovelLiveDetails imovel={liveDetails[cp.code]} className="mt-1" />
+                )}
               </div>
               <Select value={cp.stage} onValueChange={(v) => handleStageChange(cp, v)}>
                 <SelectTrigger

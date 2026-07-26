@@ -86,3 +86,23 @@ export async function fetchImovelByCodigo(codigo: string): Promise<ImovelResumo 
     clearTimeout(timeout);
   }
 }
+
+/**
+ * Resolve vários códigos de uma vez (em paralelo), retornando um mapa
+ * código → imóvel só com os que foram encontrados. Best-effort: se a integração
+ * não estiver configurada, retorna mapa vazio sem nem tentar. Usado para
+ * enriquecer a lista de imóveis vinculados a um contato com dados ao vivo.
+ */
+export async function fetchImoveisByCodigos(
+  codigos: string[],
+): Promise<Record<string, ImovelResumo>> {
+  if (!isBackofficeConfigured()) return {};
+  const unicos = [...new Set(codigos.map((c) => c.trim()).filter(Boolean))];
+  const resultados = await Promise.all(unicos.map((c) => fetchImovelByCodigo(c)));
+
+  const mapa: Record<string, ImovelResumo> = {};
+  resultados.forEach((imovel) => {
+    if (imovel) mapa[imovel.codigo] = imovel;
+  });
+  return mapa;
+}

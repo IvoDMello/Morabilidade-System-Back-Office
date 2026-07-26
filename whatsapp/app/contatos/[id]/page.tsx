@@ -28,6 +28,7 @@ import { getTags, getTagsByContact } from "@/services/tags.service";
 import { getEventsByContact } from "@/services/events.service";
 import { getTemplates } from "@/services/templates.service";
 import { getProperties, getPropertiesByContact } from "@/services/properties.service";
+import { fetchImoveisByCodigos } from "@/lib/backoffice-api";
 import { getConversationMessages } from "@/services/whatsapp.service";
 import { createReminderAction } from "@/app/contatos/actions";
 
@@ -66,6 +67,10 @@ export default async function ContatoDetalhePage({
     getPropertiesByContact(id),
     getProperties(),
   ]);
+
+  // Detalhes ao vivo dos imóveis vinculados (status/bairro/preço do catálogo
+  // real). Best-effort: mapa vazio se a API não estiver configurada ou fora.
+  const liveDetails = await fetchImoveisByCodigos(contactProperties.map((cp) => cp.code));
 
   const lastMessageAt = messages.length > 0 ? messages[messages.length - 1].waTimestamp : null;
   const lastNoteAt = notes.length > 0 ? notes[0].createdAt : null;
@@ -195,6 +200,7 @@ export default async function ContatoDetalhePage({
                 contactId={contact.id}
                 contactProperties={contactProperties}
                 allProperties={allProperties}
+                liveDetails={liveDetails}
               />
             </CardContent>
           </Card>
