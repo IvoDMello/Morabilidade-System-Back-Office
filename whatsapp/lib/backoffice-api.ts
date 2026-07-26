@@ -1,0 +1,88 @@
+/**
+ * Cliente server-to-server para a API principal do back-office (FastAPI).
+ *
+ * Liga o CRM ao domínio real: um código de imóvel citado numa conversa deixa de
+ * ser um título digitado à mão e passa a resolver o imóvel de verdade (título,
+ * bairro, status, preço) do catálogo do sistema.
+ *
+ * A autenticação é o mesmo padrão das captações: header X-Internal-Token
+ * validado por `require_admin_or_internal` na API. O token só é lido no servidor
+ * (process.env sem prefixo NEXT_PUBLIC) — este módulo só é importado por server
+ * actions e services, nunca por componente de client.
+ *
+ * Tudo aqui é best-effort: sem as variáveis de ambiente, com a API fora do ar
+ * ou com 404, retornamos null e o CRM segue funcionando com o que tem (o código
+ * ainda é vinculado, só sem os dados ricos). Nunca lançamos para não derrubar
+ * uma server action ou um job por causa de uma indisponibilidade da API.
+ */
+
+const REQUEST_TIMEOUT_MS = 5000;
+
+/** Subconjunto do ImovelOut da API que o CRM realmente usa. */
+export interface ImovelResumo {
+  codigo: string;
+  titulo: string | null;
+  bairro: string | null;
+  cidade: string | null;
+  tipoNegocio: string | null;
+  disponibilidade: string | null;
+  valorVenda: number | null;
+  valorLocacao: number | null;
+}
+
+function getConfig(): { apiUrl: string; token: string } | null {
+  const apiUrl = process.env.BACKOFFICE_API_URL;
+  const token = process.env.BACKOFFICE_INTERNAL_TOKEN;
+  if (!apiUrl || !token) return null;
+  return { apiUrl: apiUrl.replace(/\/$/, ""), token };
+}
+
+/** True se a integração com a API principal está configurada. */
+export function isBackofficeConfigured(): boolean {
+  return getConfig() !== null;
+}
+
+function toNumber(value: unknown): number | null {
+  if (value === null || value === undefined) return null;
+  const n = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+/**
+ * Busca um imóvel por código na API principal. Retorna null se não configurado,
+ * não encontrado (404) ou em qualquer falha de rede/timeout — sempre best-effort.
+ */
+export async function fetchImovelByCodigo(codigo: string): Promise<ImovelResumo | null> {
+  const config = getConfig();
+  const code = codigo.trim();
+  if (!config || !code) return null;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    const res = await fetch(
+      `${config.apiUrl}/imoveis/interno/${encodeURIComponent(code)}`,
+      {
+        headers: { "X-Internal-Token": config.token },
+        signal: controller.signal,
+        cache: "no-store",
+      },
+    );
+    if (!res.ok) return null;
+    const data = (await res.json()) as Record<string, unknown>;
+    return {
+      codigo: String(data.codigo ?? code),
+      titulo: (data.titulo as string) ?? null,
+      bairro: (data.bairro as string) ?? null,
+      cidade: (data.cidade as string) ?? null,
+      tipoNegocio: (data.tipo_negocio as string) ?? null,
+      disponibilidade: (data.disponibilidade as string) ?? null,
+      valorVenda: toNumber(data.valor_venda),
+      valorLocacao: toNumber(data.valor_locacao),
+    };
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}

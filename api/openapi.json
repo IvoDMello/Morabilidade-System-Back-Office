@@ -9887,6 +9887,55 @@
         ]
       }
     },
+    "/imoveis/interno/{codigo}": {
+      "get": {
+        "description": "Busca um imóvel por código para integrações server-to-server (ex.: CRM do\nWhatsApp) autenticadas pelo X-Internal-Token.\n\nDiferente de /publico/{codigo}, retorna o imóvel em QUALQUER status\n(disponível, reservado, vendido) e com os dados internos/proprietário — o\ncorretor comenta imóveis fora do catálogo público durante o atendimento.",
+        "operationId": "detalhe_imovel_interno_imoveis_interno__codigo__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "codigo",
+            "required": true,
+            "schema": {
+              "title": "Codigo",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImovelOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Detalhe Imovel Interno",
+        "tags": [
+          "Imóveis",
+          "Integração"
+        ]
+      }
+    },
     "/imoveis/publico/bairros": {
       "get": {
         "description": "Bairros únicos dos imóveis disponíveis, usado para autocomplete no site.",

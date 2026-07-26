@@ -386,6 +386,30 @@ def detalhe_imovel_publico(request: Request, codigo: str):
     return _ocultar_internas(_buscar_imovel(result.data["id"]), None)
 
 
+@router.get("/interno/{codigo}", response_model=ImovelOut, tags=["Integração"])
+def detalhe_imovel_interno(
+    codigo: str,
+    current_user: dict = Depends(require_admin_or_internal),
+):
+    """Busca um imóvel por código para integrações server-to-server (ex.: CRM do
+    WhatsApp) autenticadas pelo X-Internal-Token.
+
+    Diferente de /publico/{codigo}, retorna o imóvel em QUALQUER status
+    (disponível, reservado, vendido) e com os dados internos/proprietário — o
+    corretor comenta imóveis fora do catálogo público durante o atendimento.
+    """
+    result = (
+        supabase_admin.table("imoveis")
+        .select("id")
+        .eq("codigo", codigo)
+        .maybe_single()
+        .execute()
+    )
+    if not result or not result.data:
+        raise HTTPException(status_code=404, detail="Imóvel não encontrado.")
+    return _ocultar_internas(_buscar_imovel(result.data["id"]), current_user)
+
+
 # ── Endpoints autenticados ────────────────────────────────────────────────────
 
 # IMPORTANTE: /exportar precisa vir ANTES de /{imovel_id},

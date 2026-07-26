@@ -677,6 +677,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/imoveis/interno/{codigo}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Detalhe Imovel Interno
+         * @description Busca um imóvel por código para integrações server-to-server (ex.: CRM do
+         *     WhatsApp) autenticadas pelo X-Internal-Token.
+         *
+         *     Diferente de /publico/{codigo}, retorna o imóvel em QUALQUER status
+         *     (disponível, reservado, vendido) e com os dados internos/proprietário — o
+         *     corretor comenta imóveis fora do catálogo público durante o atendimento.
+         */
+        get: operations["detalhe_imovel_interno_imoveis_interno__codigo__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/imoveis/publico/bairros": {
         parameters: {
             query?: never;
@@ -5206,6 +5231,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    detalhe_imovel_interno_imoveis_interno__codigo__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                codigo: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImovelOut"];
                 };
             };
             /** @description Validation Error */

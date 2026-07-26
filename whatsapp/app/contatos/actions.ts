@@ -32,6 +32,7 @@ import {
   unlinkPropertyFromContact,
   updateContactPropertyStage,
 } from "@/services/properties.service";
+import { fetchImovelByCodigo } from "@/lib/backoffice-api";
 import { propertyLinkFormSchema, type PropertyLinkFormValues } from "@/lib/validations/property.schema";
 import { generateConversationSummary, saveConversationSummary } from "@/services/ai.service";
 import type { ID } from "@/types/common";
@@ -268,7 +269,14 @@ export async function updateContactStatusAction(
 
 export async function linkPropertyAction(contactId: ID, values: PropertyLinkFormValues) {
   const parsed = propertyLinkFormSchema.parse(values);
-  const property = (await findPropertyByCode(parsed.code)) ?? (await createProperty({ code: parsed.code }));
+  let property = await findPropertyByCode(parsed.code);
+  if (!property) {
+    // Código novo no CRM: resolve o imóvel real no catálogo do back-office para
+    // guardar o título de verdade como snapshot (best-effort — sem a API, cria
+    // só com o código, como antes).
+    const imovel = await fetchImovelByCodigo(parsed.code);
+    property = await createProperty({ code: parsed.code, title: imovel?.titulo ?? null });
+  }
   await linkPropertyToContact(contactId, property.id, parsed.stage);
   await logEvent({
     contactId,
