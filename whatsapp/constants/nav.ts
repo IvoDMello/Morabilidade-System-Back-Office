@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Users, BellRing, MessageCircle, LayoutDashboard, ListTodo } from "lucide-react";
+import { Users, BellRing, MessageCircle, LayoutDashboard, ListTodo, Sparkles } from "lucide-react";
 
 export type NavBadgeKind = "reminders" | "unreadConversations" | "pendingConversations";
 
@@ -16,6 +16,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/pendencias", label: "Pendências", icon: ListTodo, badgeKind: "pendingConversations" },
   { href: "/contatos", label: "Contatos", icon: Users },
   { href: "/lembretes", label: "Lembretes", icon: BellRing, badgeKind: "reminders" },
+  { href: "/assistente", label: "Assistente", icon: Sparkles },
 ];
 
 const MOBILE_SECTION_INFO: Record<string, { title: string; subtitle: string }> = {
@@ -24,6 +25,7 @@ const MOBILE_SECTION_INFO: Record<string, { title: string; subtitle: string }> =
   "/pendencias": { title: "Pendências", subtitle: "Conversas aguardando resposta ou follow-up." },
   "/contatos": { title: "Contatos", subtitle: "Gerencie seus contatos." },
   "/lembretes": { title: "Central de Lembretes", subtitle: "Vencidos, hoje e próximos." },
+  "/assistente": { title: "Assistente", subtitle: "Proponha e confirme ações com a IA." },
 };
 
 /** Título/subtítulo exibidos no header fixo mobile, por seção de navegação. */

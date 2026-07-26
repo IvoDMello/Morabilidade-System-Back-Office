@@ -29,3 +29,28 @@ export function getSupabaseServerClient(): WhatsappClient {
   }
   return serverClient;
 }
+
+// O assistente (fase 2) pode criar captações — que vivem no schema `captacoes`
+// do MESMO Supabase (app irmão do monorepo). Cliente separado só para esse
+// cruzamento de fronteira, também com service_role.
+type CaptacoesClient = SupabaseClient<any, any, "captacoes">;
+
+let captacoesClient: CaptacoesClient | null = null;
+
+/**
+ * Cliente Supabase no schema `captacoes` (server-only). Usado apenas pelo
+ * assistente para inserir uma captação a partir de uma ação confirmada.
+ */
+export function getSupabaseCaptacoesClient(): CaptacoesClient {
+  if (typeof window !== "undefined") {
+    throw new Error("getSupabaseCaptacoesClient() não pode ser usado no navegador.");
+  }
+  if (!captacoesClient) {
+    captacoesClient = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { db: { schema: "captacoes" }, auth: { persistSession: false } },
+    );
+  }
+  return captacoesClient;
+}
