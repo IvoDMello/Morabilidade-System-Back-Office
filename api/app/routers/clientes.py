@@ -1,5 +1,6 @@
 import csv
 import io
+import re
 import unicodedata
 from datetime import date, datetime
 from typing import List, Optional
@@ -532,6 +533,57 @@ def _buscar_cliente(cliente_id: str) -> dict:
     if not result.data:
         raise HTTPException(status_code=404, detail="Cliente não encontrado.")
     return _achatar_tags(result.data)
+
+
+def _telefone_canonico(valor: Optional[str]) -> str:
+    """Reduz um telefone a só dígitos, tirando o DDI 55 do Brasil quando presente,
+    para comparar números salvos em formatos diferentes ("(27) 99999-9999",
+    "27999999999", "5527999999999") de forma estável."""
+    digitos = re.sub(r"\D", "", valor or "")
+    if len(digitos) >= 12 and digitos.startswith("55"):
+        digitos = digitos[2:]
+    return digitos
+
+
+def _telefones_batem(a: Optional[str], b: Optional[str]) -> bool:
+    """True se dois telefones correspondem ao mesmo número. Exige pelo menos 10
+    dígitos (DDD + número) para evitar falso positivo entre números curtos."""
+    ca, cb = _telefone_canonico(a), _telefone_canonico(b)
+    if len(ca) < 10 or len(cb) < 10:
+        return False
+    return ca == cb or ca.endswith(cb) or cb.endswith(ca)
+
+
+@router.get("/interno/por-telefone/{telefone}", response_model=Optional[ClienteListOut],
+            tags=["Integração"])
+def buscar_cliente_por_telefone_interno(
+    telefone: str,
+    current_user: dict = Depends(require_admin_or_internal),
+):
+    """Casa um telefone com um cliente existente, para integrações server-to-server
+    (ex.: CRM do WhatsApp) autenticadas pelo X-Internal-Token.
+
+    Como o telefone é gravado em formatos livres, a comparação é feita por dígitos
+    (absorvendo o DDI 55). Retorna o cliente correspondente ou `null` (200) quando
+    nenhum bate — o CRM trata ausência de vínculo como estado normal.
+    """
+    alvo = _telefone_canonico(telefone)
+    if len(alvo) < 10:
+        return None
+
+    candidatos = (
+        supabase_admin.table("clientes")
+        .select("id, codigo, nome_completo, email, telefone, telefone_secundario, "
+                "status, tipo_cliente")
+        .or_("telefone.not.is.null,telefone_secundario.not.is.null")
+        .execute()
+    )
+    for cliente in candidatos.data or []:
+        if _telefones_batem(telefone, cliente.get("telefone")) or _telefones_batem(
+            telefone, cliente.get("telefone_secundario")
+        ):
+            return cliente
+    return None
 
 
 @router.post("/", response_model=ClienteOut, status_code=status.HTTP_201_CREATED)

@@ -27,6 +27,8 @@ function contact(
     generalNotes: null,
     aiSummary: null,
     aiSummaryGeneratedAt: null,
+    clienteId: null,
+    clienteCodigo: null,
     createdAt: subDays(now, 30).toISOString(),
     updatedAt: subDays(now, 30).toISOString(),
     ...partial,

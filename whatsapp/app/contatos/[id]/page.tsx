@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Pencil, Plus } from "lucide-react";
+import { BadgeCheck, Pencil, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -21,7 +21,7 @@ import { ReminderList } from "@/features/contacts/reminders/components/reminder-
 import { ReminderFormDialog } from "@/features/contacts/reminders/components/reminder-form-dialog";
 import { ActivityFeed } from "@/features/contacts/timeline/components/activity-feed";
 import { formatDateTime, formatPhone } from "@/lib/utils";
-import { getContactById } from "@/services/contacts.service";
+import { ensureClienteVinculo, getContactById } from "@/services/contacts.service";
 import { getNotesByContact } from "@/services/notes.service";
 import { getRemindersByContact } from "@/services/reminders.service";
 import { getTags, getTagsByContact } from "@/services/tags.service";
@@ -43,8 +43,12 @@ export default async function ContatoDetalhePage({
 }: ContatoDetalhePageProps) {
   const { id } = await params;
   const { novoLembrete } = await searchParams;
-  const contact = await getContactById(id);
-  if (!contact) notFound();
+  const contactRaw = await getContactById(id);
+  if (!contactRaw) notFound();
+
+  // Casa o contato com o cliente real do sistema por telefone (best-effort;
+  // idempotente — só busca enquanto não vinculado).
+  const contact = await ensureClienteVinculo(contactRaw);
 
   const [
     notes,
@@ -113,6 +117,12 @@ export default async function ContatoDetalhePage({
                   <p className="truncate text-sm text-muted-foreground">{formatPhone(contact.phone)}</p>
                   {contact.email && (
                     <p className="truncate text-sm text-muted-foreground">{contact.email}</p>
+                  )}
+                  {contact.clienteCodigo && (
+                    <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                      <BadgeCheck className="h-3 w-3" />
+                      Cliente {contact.clienteCodigo}
+                    </span>
                   )}
                 </div>
               </div>

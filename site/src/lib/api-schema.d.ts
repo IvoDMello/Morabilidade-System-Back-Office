@@ -315,6 +315,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/clientes/interno/por-telefone/{telefone}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Buscar Cliente Por Telefone Interno
+         * @description Casa um telefone com um cliente existente, para integrações server-to-server
+         *     (ex.: CRM do WhatsApp) autenticadas pelo X-Internal-Token.
+         *
+         *     Como o telefone é gravado em formatos livres, a comparação é feita por dígitos
+         *     (absorvendo o DDI 55). Retorna o cliente correspondente ou `null` (200) quando
+         *     nenhum bate — o CRM trata ausência de vínculo como estado normal.
+         */
+        get: operations["buscar_cliente_por_telefone_interno_clientes_interno_por_telefone__telefone__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/clientes/{cliente_id}": {
         parameters: {
             query?: never;
@@ -4356,6 +4381,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    buscar_cliente_por_telefone_interno_clientes_interno_por_telefone__telefone__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                telefone: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClienteListOut"] | null;
                 };
             };
             /** @description Validation Error */

@@ -116,6 +116,8 @@ export const supabaseContacts: DataSource["contacts"] = {
     if (input.aiSummaryGeneratedAt !== undefined) {
       payload.ai_summary_generated_at = input.aiSummaryGeneratedAt;
     }
+    if (input.clienteId !== undefined) payload.cliente_id = input.clienteId;
+    if (input.clienteCodigo !== undefined) payload.cliente_codigo = input.clienteCodigo;
 
     const { data, error } = await supabase
       .from("contacts")

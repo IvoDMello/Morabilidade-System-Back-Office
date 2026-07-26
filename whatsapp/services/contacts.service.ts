@@ -1,7 +1,9 @@
 import { dataSource } from "./data";
 import { normalizePhone, phoneMatchCandidates } from "@/lib/phone";
+import { fetchClienteByTelefone, isBackofficeConfigured } from "@/lib/backoffice-api";
 import type { ID } from "@/types/common";
 import type {
+  Contact,
   ContactFilters,
   CreateContactInput,
   UpdateContactInput,
@@ -46,4 +48,33 @@ export function setContactFavorite(id: ID, isFavorite: boolean) {
 
 export function setContactBlocked(id: ID, isBlocked: boolean) {
   return dataSource.contacts.update(id, { isBlocked });
+}
+
+/**
+ * Casa o contato com um cliente real do sistema por telefone, se ainda não
+ * estiver vinculado. Best-effort e idempotente: só tenta quando a integração
+ * está configurada e `clienteId` é null; qualquer falha na API é engolida e o
+ * contato segue sem vínculo. Persiste o vínculo (id + snapshot do código) quando
+ * encontra, e devolve o contato possivelmente atualizado.
+ */
+export async function ensureClienteVinculo(contact: Contact): Promise<Contact> {
+  if (contact.clienteId || !isBackofficeConfigured()) return contact;
+
+  let cliente;
+  try {
+    cliente = await fetchClienteByTelefone(contact.phone);
+  } catch {
+    return contact;
+  }
+  if (!cliente) return contact;
+
+  try {
+    return await dataSource.contacts.update(contact.id, {
+      clienteId: cliente.id,
+      clienteCodigo: cliente.codigo,
+    });
+  } catch {
+    // O vínculo é conveniência; se a escrita falhar, não atrapalha a ficha.
+    return { ...contact, clienteId: cliente.id, clienteCodigo: cliente.codigo };
+  }
 }

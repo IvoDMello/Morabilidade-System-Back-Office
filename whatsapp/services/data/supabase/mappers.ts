@@ -31,6 +31,8 @@ export function mapContactRow(row: any): Contact {
     generalNotes: row.general_notes,
     aiSummary: row.ai_summary,
     aiSummaryGeneratedAt: row.ai_summary_generated_at,
+    clienteId: row.cliente_id ?? null,
+    clienteCodigo: row.cliente_codigo ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

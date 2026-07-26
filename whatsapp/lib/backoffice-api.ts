@@ -18,6 +18,13 @@
 
 const REQUEST_TIMEOUT_MS = 5000;
 
+/** Subconjunto do ClienteListOut da API que o CRM usa para o vínculo. */
+export interface ClienteResumo {
+  id: string;
+  codigo: string | null;
+  nome: string | null;
+}
+
 /** Subconjunto do ImovelOut da API que o CRM realmente usa. */
 export interface ImovelResumo {
   codigo: string;
@@ -79,6 +86,43 @@ export async function fetchImovelByCodigo(codigo: string): Promise<ImovelResumo 
       disponibilidade: (data.disponibilidade as string) ?? null,
       valorVenda: toNumber(data.valor_venda),
       valorLocacao: toNumber(data.valor_locacao),
+    };
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+/**
+ * Casa um telefone com um cliente existente do sistema (busca por dígitos na API
+ * principal). Retorna null se não configurado, sem correspondência ou em falha —
+ * sempre best-effort. O telefone deve ir só com dígitos (o wa_id do contato).
+ */
+export async function fetchClienteByTelefone(telefone: string): Promise<ClienteResumo | null> {
+  const config = getConfig();
+  const tel = telefone.replace(/\D/g, "");
+  if (!config || tel.length < 10) return null;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    const res = await fetch(
+      `${config.apiUrl}/clientes/interno/por-telefone/${encodeURIComponent(tel)}`,
+      {
+        headers: { "X-Internal-Token": config.token },
+        signal: controller.signal,
+        cache: "no-store",
+      },
+    );
+    if (!res.ok) return null;
+    // A API responde 200 com corpo `null` quando nada bate.
+    const data = (await res.json()) as Record<string, unknown> | null;
+    if (!data || !data.id) return null;
+    return {
+      id: String(data.id),
+      codigo: (data.codigo as string) ?? null,
+      nome: (data.nome_completo as string) ?? null,
     };
   } catch {
     return null;

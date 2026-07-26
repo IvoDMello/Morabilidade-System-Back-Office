@@ -8102,6 +8102,63 @@
         ]
       }
     },
+    "/clientes/interno/por-telefone/{telefone}": {
+      "get": {
+        "description": "Casa um telefone com um cliente existente, para integrações server-to-server\n(ex.: CRM do WhatsApp) autenticadas pelo X-Internal-Token.\n\nComo o telefone é gravado em formatos livres, a comparação é feita por dígitos\n(absorvendo o DDI 55). Retorna o cliente correspondente ou `null` (200) quando\nnenhum bate — o CRM trata ausência de vínculo como estado normal.",
+        "operationId": "buscar_cliente_por_telefone_interno_clientes_interno_por_telefone__telefone__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "telefone",
+            "required": true,
+            "schema": {
+              "title": "Telefone",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ClienteListOut"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Buscar Cliente Por Telefone Interno Clientes Interno Por Telefone  Telefone  Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Buscar Cliente Por Telefone Interno",
+        "tags": [
+          "Clientes",
+          "Integração"
+        ]
+      }
+    },
     "/clientes/{cliente_id}": {
       "delete": {
         "description": "Remove um cliente (idempotente: retorna 204 mesmo se já não existir).",

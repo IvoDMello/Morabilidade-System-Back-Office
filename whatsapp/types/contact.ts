@@ -20,6 +20,10 @@ export interface Contact {
   generalNotes: string | null;
   aiSummary: ContactAiSummary | null;
   aiSummaryGeneratedAt: string | null;
+  /** Cliente real do sistema (API principal) casado por telefone; null se não vinculado. */
+  clienteId: string | null;
+  /** Código do cliente (ex.: CL-00042) — snapshot para exibir sem consultar a API. */
+  clienteCodigo: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -38,6 +42,8 @@ export interface CreateContactInput {
   generalNotes?: string | null;
   aiSummary?: ContactAiSummary | null;
   aiSummaryGeneratedAt?: string | null;
+  clienteId?: string | null;
+  clienteCodigo?: string | null;
 }
 
 export type UpdateContactInput = Partial<CreateContactInput>;
