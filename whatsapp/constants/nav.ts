@@ -6,12 +6,14 @@ export type NavBadgeKind = "reminders" | "unreadConversations" | "pendingConvers
 export interface NavItem {
   href: string;
   label: string;
+  /** Rótulo curto para a barra inferior mobile (cabe melhor com 6 itens). */
+  shortLabel?: string;
   icon: LucideIcon;
   badgeKind?: NavBadgeKind;
 }
 
 export const NAV_ITEMS: NavItem[] = [
-  { href: "/dashboard", label: "Visão geral", icon: LayoutDashboard },
+  { href: "/dashboard", label: "Visão geral", shortLabel: "Resumo", icon: LayoutDashboard },
   { href: "/", label: "Conversas", icon: MessageCircle, badgeKind: "unreadConversations" },
   { href: "/pendencias", label: "Pendências", icon: ListTodo, badgeKind: "pendingConversations" },
   { href: "/contatos", label: "Contatos", icon: Users },
