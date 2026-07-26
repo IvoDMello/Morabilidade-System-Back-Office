@@ -1,0 +1,244 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: ui-monospace, monospace;
+  --font-heading: var(--font-heading);
+  --font-chat: var(--font-chat);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  /* Tokens do redesign carvão + dourado — cada um tem valor claro (:root)
+     e escuro (.dark) para o alternador de tema funcionar. */
+  --color-ink-strong: var(--ink-strong);
+  --color-ink-mid: var(--ink-mid);
+  --color-ink-dim: var(--ink-dim);
+  --color-ink-faint: var(--ink-faint);
+  --color-ink-ghost: var(--ink-ghost);
+  --color-veil: var(--veil);
+  --color-gold: var(--gold);
+  --color-jade: var(--jade);
+  --color-jade-soft: var(--jade-soft);
+  --color-tick: var(--tick);
+  --color-ember: var(--ember);
+  --color-sky: var(--sky);
+  --color-lilac: var(--lilac);
+  --color-blush: var(--blush);
+  --color-fade: var(--fade);
+  --color-avatar-bg: var(--avatar-bg);
+  --color-avatar-fg: var(--avatar-fg);
+  --color-well: var(--well);
+  --color-raised: var(--raised);
+  --color-bubble-out: var(--bubble-out);
+  --color-bubble-out-fg: var(--bubble-out-fg);
+  --color-bubble-out-line: var(--bubble-out-line);
+  --color-bubble-out-meta: var(--bubble-out-meta);
+  --color-bubble-in: var(--bubble-in);
+  --color-bubble-in-fg: var(--bubble-in-fg);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/* Paleta 07/2026 (verde-oliva + dourado), alinhada à identidade do site
+   público: oliva #585a4f como marca, dourado #d8cb6a como acento.
+   :root traz a variante clara (papel frio + oliva/dourado escuro); .dark é a
+   mesma paleta sobre carvão-oliva. O next-themes alterna a classe no <html>. */
+:root {
+  --font-sans: var(--font-geist);
+  --font-heading: var(--font-geist);
+  /* Fonte das bolhas de conversa — a mesma pilha de sistema que o WhatsApp
+     usa (SF Pro no iOS/macOS, Roboto no Android, Segoe UI no Windows). */
+  --font-chat:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    "Noto Sans", Arial, sans-serif;
+  --background: #f7f6f2;
+  --foreground: #2d2f28;
+  --card: #fcfcfc;
+  --card-foreground: #2d2f28;
+  --popover: #fdfdfb;
+  --popover-foreground: #2d2f28;
+  --primary: #585a4f;
+  --primary-foreground: #f7f6f2;
+  /* muted / secondary / accent têm papéis distintos:
+     muted = área rebaixada (cabeçalho de tabela, skeleton);
+     secondary = fundo de chip / botão secundário;
+     accent = hover / seleção. */
+  --secondary: rgba(46, 48, 42, 0.07);
+  --secondary-foreground: #2d2f28;
+  --muted: #ecebe1;
+  --muted-foreground: #7a7c72;
+  --accent: rgba(46, 48, 42, 0.05);
+  --accent-foreground: #2d2f28;
+  --destructive: #c4553e;
+  --border: #e4e1d6;
+  --input: rgba(46, 48, 42, 0.14);
+  --ring: #585a4f;
+  --chart-1: #9a8d3a;
+  --chart-2: #3f7fb8;
+  --chart-3: #6f63c0;
+  --chart-4: #3f9861;
+  --chart-5: #bf6390;
+  --radius: 0.7rem;
+  --sidebar: #edece3;
+  --sidebar-foreground: #2d2f28;
+  --sidebar-primary: #585a4f;
+  --sidebar-primary-foreground: #f7f6f2;
+  --sidebar-accent: rgba(88, 90, 79, 0.16);
+  --sidebar-accent-foreground: #3e4037;
+  --sidebar-border: rgba(46, 48, 42, 0.08);
+  --sidebar-ring: #585a4f;
+  /* Escala de texto neutro (tinta) */
+  --ink-strong: #3e4037;
+  --ink-mid: #5d5f53;
+  --ink-dim: #8f9184;
+  --ink-faint: #9b9d90;
+  --ink-ghost: #c9cbbd;
+  /* Véu: cor-base de bordas/hovers translúcidos — usar com /alfa */
+  --veil: #2e302a;
+  /* Acentos */
+  --gold: #9a8d3a;
+  --jade: #287a47;
+  --jade-soft: #2e7d4a;
+  --tick: #21a05a;
+  --ember: #b0442e;
+  --sky: #2f6da8;
+  --lilac: #5c4fa8;
+  --blush: #a8437a;
+  --fade: #82847a;
+  --avatar-bg: #e2e4f0;
+  --avatar-fg: #494f70;
+  /* Superfícies especiais */
+  --well: #ebeadf;
+  --raised: #fbfbf7;
+  /* Bolhas do chat */
+  --bubble-out: #dcf0ca;
+  --bubble-out-fg: #24361c;
+  --bubble-out-line: rgba(80, 130, 60, 0.2);
+  --bubble-out-meta: #5c7852;
+  --bubble-in: #ffffff;
+  --bubble-in-fg: #31332b;
+}
+
+.dark {
+  --background: #14160f;
+  --foreground: #f1f2e9;
+  --card: #1b1d15;
+  --card-foreground: #f1f2e9;
+  --popover: #21231a;
+  --popover-foreground: #f1f2e9;
+  --primary: #d8cb6a;
+  --primary-foreground: #191b10;
+  --secondary: rgba(235, 237, 222, 0.08);
+  --secondary-foreground: #f1f2e9;
+  --muted: #1d1f16;
+  --muted-foreground: #8b8e7f;
+  --accent: rgba(235, 237, 222, 0.05);
+  --accent-foreground: #f1f2e9;
+  --destructive: #e08267;
+  --border: rgba(235, 237, 222, 0.08);
+  --input: rgba(235, 237, 222, 0.1);
+  --ring: #d8cb6a;
+  --chart-1: #d8cb6a;
+  --chart-2: #5b9bd5;
+  --chart-3: #8b7fd4;
+  --chart-4: #5fb87a;
+  --chart-5: #d47fa8;
+  --sidebar: #10120b;
+  --sidebar-foreground: #f1f2e9;
+  --sidebar-primary: #d8cb6a;
+  --sidebar-primary-foreground: #191b10;
+  --sidebar-accent: rgba(216, 203, 106, 0.14);
+  --sidebar-accent-foreground: #e8dea0;
+  --sidebar-border: rgba(235, 237, 222, 0.06);
+  --sidebar-ring: #d8cb6a;
+  --ink-strong: #e3e5d6;
+  --ink-mid: #cbcec0;
+  --ink-dim: #7b7e6e;
+  --ink-faint: #707365;
+  --ink-ghost: #474a3c;
+  --veil: #eef0dd;
+  --gold: #e8dea0;
+  --jade: #5fb87a;
+  --jade-soft: #8fd4a3;
+  --tick: #7fd49a;
+  --ember: #e8a48f;
+  --sky: #8fc0f0;
+  --lilac: #b1a6ec;
+  --blush: #e3a4c5;
+  --fade: #999c8c;
+  --avatar-bg: #2a2c3a;
+  --avatar-fg: #c9cbe0;
+  --well: #171911;
+  --raised: #22241a;
+  --bubble-out: #243a2c;
+  --bubble-out-fg: #eef3ea;
+  --bubble-out-line: rgba(120, 190, 140, 0.12);
+  --bubble-out-meta: #8fb89b;
+  --bubble-in: #1f2118;
+  --bubble-in-fg: #e9ead9;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    letter-spacing: -0.01em;
+    -webkit-font-smoothing: antialiased;
+  }
+  html {
+    @apply font-sans;
+  }
+  ::-webkit-scrollbar {
+    width: 9px;
+    height: 9px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--veil) 12%, transparent);
+    border-radius: 6px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in srgb, var(--veil) 20%, transparent);
+    background-clip: padding-box;
+  }
+}
