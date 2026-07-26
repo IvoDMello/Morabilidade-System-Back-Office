@@ -8,9 +8,17 @@ export const STATUSES = [
   "pendente_agendar_gravacao",
   "gaveta",
   "selecao_especial",
+  "publicada",
 ] as const;
 
 export type Status = (typeof STATUSES)[number];
+
+/**
+ * Status ativos exibidos como colunas/pills no quadro. Exclui os terminais
+ * "ocultos" (hoje só 'publicada'), que ficam fora do fluxo do dia a dia e são
+ * consultados por telas próprias (aba "Publicadas").
+ */
+export const BOARD_STATUSES: Status[] = STATUSES.filter((s) => s !== "publicada");
 
 export const STATUS_LABEL: Record<Status, string> = {
   aguardando_informacoes: "Aguardando informações",
@@ -22,6 +30,7 @@ export const STATUS_LABEL: Record<Status, string> = {
   pendente_agendar_gravacao: "Pendente agendar gravação",
   gaveta: "Gaveta",
   selecao_especial: "Seleção Especial",
+  publicada: "Publicada",
 };
 
 /** Cor de destaque por coluna (mapa da seção 5 do PRD). */
@@ -35,6 +44,7 @@ export const STATUS_TONE: Record<Status, string> = {
   pendente_agendar_gravacao: "positive",
   gaveta: "muted",
   selecao_especial: "primary",
+  publicada: "positive",
 };
 
 export type Decisao = "aprovada" | "reprovada";
@@ -108,6 +118,7 @@ export interface Captacao {
   imovel_id: string | null;
   imovel_codigo: string | null;
   cadastrado_em: string | null;
+  publicada_em: string | null;
   arquivado_em: string | null;
   excluido_em: string | null;
   criado_por: string | null;

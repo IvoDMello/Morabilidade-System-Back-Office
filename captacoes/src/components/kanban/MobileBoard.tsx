@@ -21,9 +21,11 @@ import {
   ArrowRightLeft,
   CalendarDays,
   MessageSquare,
+  CheckCircle2,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { BoardControls } from "@/components/board/BoardControls";
+import { PublicadasButton } from "@/components/board/PublicadasButton";
 import { NovaCaptacaoButton } from "@/components/captacao/NovaCaptacaoButton";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -51,10 +53,12 @@ function MobileCard({
   card,
   onDecidir,
   onMover,
+  onPublicar,
 }: {
   card: Captacao;
   onDecidir: (c: Captacao, d: Decisao) => void;
   onMover: (c: Captacao, s: Status) => void;
+  onPublicar: (c: Captacao) => void;
 }) {
   const [aberto, setAberto] = useState(false);
   const opinioes = useBoard((s) => s.opinioes[card.id]);
@@ -279,6 +283,20 @@ function MobileCard({
               ))}
             </div>
           </div>
+
+          {/* Atalho de publicação: fecha o ciclo de uma captação aprovada. */}
+          {card.decisao === "aprovada" && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onPublicar(card);
+              }}
+              className="inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-[#c3e0cd] bg-[#ecf5ef] text-sm font-semibold text-[#2f6b46] active:brightness-95"
+            >
+              <CheckCircle2 className="h-4 w-4" /> Marcar como publicada
+            </button>
+          )}
         </div>
       )}
 
@@ -318,6 +336,7 @@ export function MobileBoard({
   visiveis,
   onDecidir,
   onMover,
+  onPublicar,
   userEmail,
   userNome,
 }: {
@@ -325,6 +344,7 @@ export function MobileBoard({
   visiveis: (cards: Captacao[]) => Captacao[];
   onDecidir: (c: Captacao, d: Decisao) => void;
   onMover: (c: Captacao, s: Status) => void;
+  onPublicar: (c: Captacao) => void;
   userEmail: string;
   userNome: string;
 }) {
@@ -342,7 +362,9 @@ export function MobileBoard({
     return m;
   }, [filtradas]);
 
-  const lista = filtro_ === "all" ? filtradas : filtradas.filter((c) => c.status === filtro_);
+  // Buscando: mostra correspondências de todas as colunas (não prende à aba ativa).
+  const buscando = filtro.trim().length > 0;
+  const lista = buscando || filtro_ === "all" ? filtradas : filtradas.filter((c) => c.status === filtro_);
 
   async function sair() {
     const supabase = createClient();
@@ -417,11 +439,13 @@ export function MobileBoard({
       {/* Sub-header sticky: ordenação/filtros + pills */}
       <div className="sticky top-0 z-10 border-b border-[#e2e3dd] bg-[#f3f4f0]/[0.92] backdrop-blur">
         <div className="flex items-center justify-between gap-2 px-4 pb-2 pt-3">
-          <BoardControls />
+          <div className="flex items-center gap-1">
+            <BoardControls />
+            <PublicadasButton className="text-[#585a4f] hover:bg-[#e2e3dd]" />
+          </div>
           <span className="text-xs text-[#9a9c90]">Toque para analisar</span>
         </div>
         <div className="flex gap-2 overflow-x-auto px-4 pb-3">
-          <Pill ativo={filtro_ === "all"} onClick={() => setFiltroStatus("all")} label="Todas" count={filtradas.length} />
           {PILL_ORDER.map((s) => (
             <Pill
               key={s}
@@ -438,7 +462,7 @@ export function MobileBoard({
       {/* Lista */}
       <div className="flex-1 space-y-[14px] overflow-y-auto px-4 pb-28 pt-[18px]">
         {lista.map((c) => (
-          <MobileCard key={c.id} card={c} onDecidir={onDecidir} onMover={onMover} />
+          <MobileCard key={c.id} card={c} onDecidir={onDecidir} onMover={onMover} onPublicar={onPublicar} />
         ))}
         {lista.length === 0 && (
           <div className="mt-12 text-center text-sm text-[#9a9c90]">
