@@ -36,6 +36,12 @@ jobs:
             exit 1
           fi
 
+      # O openapi.json é a fonte dos tipos TS dos fronts. Se alguém muda um
+      # endpoint/schema e esquece de regenerar, os fronts geram tipos velhos.
+      # Roda com env dummy embutido no próprio script (não toca Supabase).
+      - name: OpenAPI schema em dia
+        run: python scripts/export_openapi.py --check
+
       - name: Run tests
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -73,6 +79,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Garante que os tipos commitados (api-schema.d.ts) batem com o
+      # openapi.json. Regenera e falha se houver diferença não commitada.
+      - name: Tipos da API em dia
+        run: |
+          npm run gen:api
+          git diff --exit-code src/lib/api-schema.d.ts
+
       - name: Type check
         run: npx tsc --noEmit
 
@@ -101,6 +114,11 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Tipos da API em dia
+        run: |
+          npm run gen:api
+          git diff --exit-code src/lib/api-schema.d.ts
 
       - name: Type check
         run: npx tsc --noEmit
@@ -151,6 +169,44 @@ jobs:
         env:
           # Valores dummy só para o `next build` coletar dados das páginas;
           # os segredos reais vivem no projeto Vercel.
+          NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy_anon_key
+        run: npm run build
+
+  whatsapp:
+    name: WhatsApp CRM (Next.js)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: whatsapp
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: whatsapp/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Migrations, número duplicado
+        run: |
+          dups=$(ls supabase/migrations/*.sql | sed 's|.*/||; s/_.*//' | sort | uniq -d)
+          if [ -n "$dups" ]; then
+            echo "Número de migration duplicado: $dups"
+            exit 1
+          fi
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Build
+        env:
+          # Build roda na fonte de dados mock (default); segredos reais no Vercel.
           NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
           NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy_anon_key
         run: npm run build
