@@ -9,7 +9,12 @@ export default async function BoardPage() {
   const supabase = await createClient();
 
   const [{ data }, { data: auth }, { data: perfis }] = await Promise.all([
-    supabase.from("captacao").select("*").is("excluido_em", null).order("ordem", { ascending: true }),
+    supabase
+      .from("captacao")
+      .select("*")
+      .is("excluido_em", null)
+      .neq("status", "publicada")
+      .order("ordem", { ascending: true }),
     supabase.auth.getUser(),
     supabase.from("perfil").select("*"),
   ]);

@@ -8,6 +8,7 @@ import { EditCaptacao } from "@/components/captacao/EditCaptacao";
 import { DecisaoBox } from "@/components/captacao/DecisaoBox";
 import { DecisaoBar } from "@/components/captacao/DecisaoBar";
 import { CadastrarImovel } from "@/components/captacao/CadastrarImovel";
+import { PublicarCaptacao } from "@/components/captacao/PublicarCaptacao";
 import { Agendamento } from "@/components/captacao/Agendamento";
 import { Galeria } from "@/components/captacao/Galeria";
 import { Documentos } from "@/components/captacao/Documentos";
@@ -179,6 +180,17 @@ export default async function CaptacaoPage({ params }: { params: Promise<{ id: s
           </CardHeader>
           <CardContent>
             <Agendamento captacao={c} />
+          </CardContent>
+        </Card>
+      )}
+
+      {(c.decisao === "aprovada" || c.status === "publicada") && (
+        <Card className="rounded-[18px] border-[#e8e9e3]">
+          <CardHeader>
+            <CardTitle className="font-serif text-lg">Publicação</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <PublicarCaptacao captacao={c} />
           </CardContent>
         </Card>
       )}

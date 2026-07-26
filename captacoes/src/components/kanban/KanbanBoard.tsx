@@ -29,7 +29,7 @@ import { filtrarCaptacoes, filtrarPorCriterios } from "@/lib/filter";
 import { fetchOpinioesResumo } from "@/lib/opinioes";
 import { confirmarDecisao, destinoDecisao } from "@/lib/decisao";
 import { ordenarCaptacoes, priorizarRevisaoGaveta } from "@/lib/sort";
-import { STATUSES, STATUS_LABEL, type Captacao, type Decisao, type Status } from "@/types";
+import { STATUSES, BOARD_STATUSES, STATUS_LABEL, type Captacao, type Decisao, type Status } from "@/types";
 
 export function KanbanBoard({
   initial,
@@ -61,7 +61,8 @@ export function KanbanBoard({
           const row = payload.new as Captacao;
           if (payload.eventType === "DELETE") {
             remove((payload.old as Captacao).id);
-          } else if (row.excluido_em) {
+          } else if (row.excluido_em || row.status === "publicada") {
+            // Excluída ou publicada: sai das colunas ativas do quadro.
             remove(row.id);
           } else {
             upsert(row);
@@ -185,6 +186,15 @@ export function KanbanBoard({
     [byStatus, persistMove]
   );
 
+  // Mobile: marcar como publicada direto no card (estado terminal → aba Publicadas).
+  const publicar = useCallback(
+    (card: Captacao) => {
+      // Ordem na coluna oculta é irrelevante; a lista ordena por data.
+      persistMove(card, "publicada", Date.now());
+    },
+    [persistMove]
+  );
+
   // Mobile: mover o cartão para outra etapa (vai pro fim da coluna destino).
   const mover = useCallback(
     (card: Captacao, toStatus: Status) => {
@@ -228,8 +238,8 @@ export function KanbanBoard({
     persistMove(card, toStatus, ordem);
   }
 
-  const totalCards = STATUSES.reduce((n, s) => n + byStatus[s].length, 0);
-  const totalVisivel = STATUSES.reduce((n, s) => n + visiveis(byStatus[s]).length, 0);
+  const totalCards = BOARD_STATUSES.reduce((n, s) => n + byStatus[s].length, 0);
+  const totalVisivel = BOARD_STATUSES.reduce((n, s) => n + visiveis(byStatus[s]).length, 0);
   const semResultado = totalCards > 0 && totalVisivel === 0;
 
   // Primeiro uso: nenhuma captação cadastrada (idêntico em desktop e mobile).
@@ -256,7 +266,7 @@ export function KanbanBoard({
   if (!desktop) {
     return (
       <>
-        <MobileBoard byStatus={byStatus} visiveis={visiveis} onDecidir={decidir} onMover={mover} userEmail={userEmail} userNome={userNome} />
+        <MobileBoard byStatus={byStatus} visiveis={visiveis} onDecidir={decidir} onMover={mover} onPublicar={publicar} userEmail={userEmail} userNome={userNome} />
         <GavetaDialog key={gavetaCard?.id ?? "none"} card={gavetaCard} onClose={() => setGavetaCard(null)} />
       </>
     );
@@ -275,7 +285,7 @@ export function KanbanBoard({
   return (
     <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={onDragStart} onDragEnd={onDragEnd}>
       <div className="flex h-full gap-3 overflow-x-auto px-4 pb-4">
-        {STATUSES.map((status) => (
+        {BOARD_STATUSES.map((status) => (
           <KanbanColumn key={status} status={status} cards={visiveis(byStatus[status])} />
         ))}
       </div>

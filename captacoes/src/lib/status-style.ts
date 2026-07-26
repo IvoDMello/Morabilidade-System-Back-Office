@@ -23,6 +23,7 @@ export const STATUS_STYLE: Record<Status, StatusStyle> = {
   negativada: { label: STATUS_LABEL.negativada, short: "Negativada", dot: "#a85a5a", bg: "#f0e2e2", fg: "#7a3434" },
   gaveta: { label: STATUS_LABEL.gaveta, short: "Gaveta", dot: "#8a8fa8", bg: "#e9eaf0", fg: "#565b72" },
   selecao_especial: { label: STATUS_LABEL.selecao_especial, short: "Seleção Especial", dot: "#a4739a", bg: "#f2e7ef", fg: "#6f3f63" },
+  publicada: { label: STATUS_LABEL.publicada, short: "Publicada", dot: "#5a9a6e", bg: "#e5efe8", fg: "#2f6b46" },
 };
 
 /** Ordem das pills/colunas do quadro mobile (handoff). */

@@ -8,12 +8,13 @@ import { Button } from "@/components/ui/button";
 import { NovaCaptacaoButton } from "@/components/captacao/NovaCaptacaoButton";
 import { Avatar } from "@/components/Avatar";
 import { LixeiraButton } from "./LixeiraButton";
+import { PublicadasButton } from "./PublicadasButton";
 import { BoardControls } from "./BoardControls";
 import { SyncIndicator } from "./SyncIndicator";
 import { createClient } from "@/lib/supabase/client";
 import { useBoard } from "@/stores/board";
 import { filtrarCaptacoes, filtrarPorCriterios } from "@/lib/filter";
-import { STATUSES, CRITERIOS_VAZIO } from "@/types";
+import { BOARD_STATUSES, CRITERIOS_VAZIO } from "@/types";
 
 export function BoardTopbar({
   userEmail,
@@ -31,7 +32,7 @@ export function BoardTopbar({
   const temCriterios = JSON.stringify(criterios) !== JSON.stringify(CRITERIOS_VAZIO);
   const filtrando = filtro.trim().length > 0 || temCriterios;
   const resultados = filtrando
-    ? STATUSES.reduce((n, s) => n + filtrarPorCriterios(filtrarCaptacoes(byStatus[s], filtro), criterios).length, 0)
+    ? BOARD_STATUSES.reduce((n, s) => n + filtrarPorCriterios(filtrarCaptacoes(byStatus[s], filtro), criterios).length, 0)
     : total;
 
   async function sair() {
@@ -74,6 +75,7 @@ export function BoardTopbar({
       {/* Ações: ficam à direita da marca no mobile; busca cai para a linha de baixo */}
       <div className="ml-auto flex items-center gap-1.5 sm:order-last sm:ml-0 sm:gap-2">
         <NovaCaptacaoButton />
+        <PublicadasButton />
         <LixeiraButton />
         <span title={`${userNome} · ${userEmail}`}>
           <Avatar nome={userNome} size={36} />

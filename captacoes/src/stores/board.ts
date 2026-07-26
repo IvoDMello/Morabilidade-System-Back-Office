@@ -49,17 +49,21 @@ function lerCriterios(): Criterios {
   }
 }
 
+/** Vista padrão do quadro mobile: a coluna que costuma exigir ação. */
+const FILTRO_STATUS_PADRAO: Status = "em_decisao";
+
 function lerFiltroStatus(): "all" | Status {
   // sessionStorage sobrevive ao reload (F5 no detalhe) mas não vaza entre
   // abas/sessões. Guard de window: o módulo também é avaliado no SSR.
-  if (typeof window === "undefined") return "all";
+  if (typeof window === "undefined") return FILTRO_STATUS_PADRAO;
   try {
     const v = window.sessionStorage.getItem(FILTRO_STATUS_KEY);
-    if (v && (v === "all" || (STATUSES as readonly string[]).includes(v))) return v as "all" | Status;
+    // "all" (aba "Todas", removida) e "publicada" (oculta) caem no padrão.
+    if (v && v !== "all" && v !== "publicada" && (STATUSES as readonly string[]).includes(v)) return v as Status;
   } catch {
     // storage bloqueado (modo privado etc.), segue no padrão.
   }
-  return "all";
+  return FILTRO_STATUS_PADRAO;
 }
 
 function gravarFiltroStatus(v: "all" | Status): void {
