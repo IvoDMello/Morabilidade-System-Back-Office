@@ -19,6 +19,8 @@ export interface WhatsAppConversation {
   statusChangedAt: string;
   followUpSnoozedUntil: string | null;
   lastAlertAt: string | null;
+  /** Fixada no topo da lista (padrão WhatsApp); null = não fixada. Ordena pelas mais recém-fixadas primeiro. */
+  pinnedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }

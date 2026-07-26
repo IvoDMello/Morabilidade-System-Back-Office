@@ -38,6 +38,10 @@ export const mockWhatsapp: DataSource["whatsapp"] = {
     return [...mockStore.conversations]
       .map(withContact)
       .sort((a, b) => {
+        // Fixadas primeiro (mais recém-fixadas no topo), depois por última mensagem.
+        const aPin = a.pinnedAt ? new Date(a.pinnedAt).getTime() : 0;
+        const bPin = b.pinnedAt ? new Date(b.pinnedAt).getTime() : 0;
+        if (aPin !== bPin) return bPin - aPin;
         const aTime = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
         const bTime = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
         return bTime - aTime;
@@ -67,6 +71,7 @@ export const mockWhatsapp: DataSource["whatsapp"] = {
       statusChangedAt: nowIso,
       followUpSnoozedUntil: null,
       lastAlertAt: null,
+      pinnedAt: null,
       createdAt: nowIso,
       updatedAt: nowIso,
     };
@@ -172,6 +177,16 @@ export const mockWhatsapp: DataSource["whatsapp"] = {
     mockStore.conversations[index] = {
       ...mockStore.conversations[index],
       unreadCount: 0,
+      updatedAt: new Date().toISOString(),
+    };
+  },
+
+  async setConversationPinned(conversationId: ID, pinnedAt: string | null) {
+    const index = mockStore.conversations.findIndex((c) => c.id === conversationId);
+    if (index === -1) return;
+    mockStore.conversations[index] = {
+      ...mockStore.conversations[index],
+      pinnedAt,
       updatedAt: new Date().toISOString(),
     };
   },

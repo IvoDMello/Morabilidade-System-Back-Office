@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { differenceInCalendarDays, format, isToday, isYesterday } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Star } from "lucide-react";
+import { Pin, Star } from "lucide-react";
 import { AvatarInitials } from "@/components/shared/avatar-initials";
 import { cn, formatDate } from "@/lib/utils";
 import type { WhatsAppConversationSummary, WhatsAppMessageSearchResult } from "@/types/whatsapp";
@@ -87,6 +87,9 @@ export function ConversationRow({
           <span className="flex shrink-0 items-center gap-1.5">
             {conversation.contactIsFavorite && (
               <Star className="h-3.5 w-3.5 fill-gold text-gold" />
+            )}
+            {conversation.pinnedAt && !hasUnread && (
+              <Pin className="h-3.5 w-3.5 text-muted-foreground" />
             )}
             {hasUnread && (
               <span className="flex h-[19px] min-w-[19px] items-center justify-center rounded-full bg-[#3a7d5c] px-1.5 text-[11px] font-semibold text-white">

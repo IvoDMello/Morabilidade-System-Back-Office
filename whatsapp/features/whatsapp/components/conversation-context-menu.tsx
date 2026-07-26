@@ -7,6 +7,8 @@ import {
   Eraser,
   Mail,
   MailOpen,
+  Pin,
+  PinOff,
   Plus,
   Star,
   StarOff,
@@ -46,6 +48,7 @@ import {
   markConversationReadAction,
   markConversationUnreadAction,
   setContactBlockedAction,
+  setConversationPinnedAction,
 } from "@/app/conversas/actions";
 import {
   addTagToContactAction,
@@ -106,6 +109,17 @@ export function ConversationContextMenu({
           >
             {hasUnread ? <MailOpen /> : <Mail />}
             {hasUnread ? "Marcar como lida" : "Marcar como não lida"}
+          </ContextMenuItem>
+          <ContextMenuItem
+            onClick={() =>
+              run(
+                () => setConversationPinnedAction(contactId, !conversation.pinnedAt),
+                "Não foi possível fixar a conversa.",
+              )
+            }
+          >
+            {conversation.pinnedAt ? <PinOff /> : <Pin />}
+            {conversation.pinnedAt ? "Desafixar" : "Fixar conversa"}
           </ContextMenuItem>
           <ContextMenuItem
             onClick={() =>

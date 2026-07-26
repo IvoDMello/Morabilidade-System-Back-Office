@@ -104,6 +104,8 @@ export interface DataSource {
     ): Promise<void>;
     markConversationRead(conversationId: ID): Promise<void>;
     markConversationUnread(conversationId: ID): Promise<void>;
+    /** Fixa (pinnedAt = ISO) ou desafixa (null) a conversa no topo da lista. */
+    setConversationPinned(conversationId: ID, pinnedAt: string | null): Promise<void>;
     clearConversation(conversationId: ID): Promise<void>;
     countUnreadConversations(): Promise<number>;
     countByStatus(status: ConversationStatus): Promise<number>;

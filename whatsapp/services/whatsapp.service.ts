@@ -127,6 +127,16 @@ export async function markConversationUnread(contactId: ID) {
   await dataSource.whatsapp.markConversationUnread(conversation.id);
 }
 
+/** Fixa/desafixa a conversa do contato no topo da lista (padrão WhatsApp). */
+export async function setConversationPinned(contactId: ID, pinned: boolean) {
+  const conversation = await dataSource.whatsapp.getConversationByContactId(contactId);
+  if (!conversation) return;
+  await dataSource.whatsapp.setConversationPinned(
+    conversation.id,
+    pinned ? new Date().toISOString() : null,
+  );
+}
+
 /** Apaga todas as mensagens da conversa e zera a prévia (ação destrutiva). */
 export async function clearConversation(contactId: ID) {
   const conversation = await dataSource.whatsapp.getConversationByContactId(contactId);

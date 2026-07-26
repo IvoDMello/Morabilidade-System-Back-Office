@@ -13,6 +13,7 @@ import {
   markConversationUnread,
   processIncomingMessage,
   sendMessage,
+  setConversationPinned,
 } from "@/services/whatsapp.service";
 import { setContactBlocked } from "@/services/contacts.service";
 import { createTag } from "@/services/tags.service";
@@ -37,6 +38,11 @@ export async function markConversationReadAction(contactId: ID) {
 
 export async function markConversationUnreadAction(contactId: ID) {
   await markConversationUnread(contactId);
+  revalidatePath("/");
+}
+
+export async function setConversationPinnedAction(contactId: ID, pinned: boolean) {
+  await setConversationPinned(contactId, pinned);
   revalidatePath("/");
 }
 

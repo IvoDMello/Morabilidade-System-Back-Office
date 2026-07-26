@@ -94,6 +94,7 @@ export function mapConversationRow(row: any): WhatsAppConversation {
     statusChangedAt: row.status_changed_at ?? row.created_at,
     followUpSnoozedUntil: row.follow_up_snoozed_until,
     lastAlertAt: row.last_alert_at,
+    pinnedAt: row.pinned_at ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

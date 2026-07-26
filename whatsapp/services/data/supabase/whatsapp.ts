@@ -21,6 +21,7 @@ export const supabaseWhatsapp: DataSource["whatsapp"] = {
     const { data, error } = await supabase
       .from("whatsapp_conversations")
       .select("*, contacts(name, phone, is_favorite, is_blocked, contact_tags(tag_id))")
+      .order("pinned_at", { ascending: false, nullsFirst: false })
       .order("last_message_at", { ascending: false, nullsFirst: false });
     if (error) {
       // Banco ainda sem a migration 0008 (is_blocked): cai para o select
@@ -196,6 +197,15 @@ export const supabaseWhatsapp: DataSource["whatsapp"] = {
     const { error } = await supabase
       .from("whatsapp_conversations")
       .update({ unread_count: 0 })
+      .eq("id", conversationId);
+    if (error) throw error;
+  },
+
+  async setConversationPinned(conversationId: ID, pinnedAt: string | null) {
+    const supabase = getSupabaseServerClient();
+    const { error } = await supabase
+      .from("whatsapp_conversations")
+      .update({ pinned_at: pinnedAt })
       .eq("id", conversationId);
     if (error) throw error;
   },
