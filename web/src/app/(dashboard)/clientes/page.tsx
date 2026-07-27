@@ -8,22 +8,13 @@ import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-import type { Cliente } from "@/types";
+import type { Schemas } from "@/lib/api-types";
 
-interface ClienteListItem {
-  id: string;
-  codigo?: string;
-  nome_completo: string;
-  email?: string;
-  telefone: string;
-  status?: string;
-  tipo_cliente?: string;
-  origem_lead?: string;
-  imovel_codigo?: string;
-  observacoes?: string;
-  tags?: { id: string; nome: string; cor?: string }[];
-  created_at: string;
-}
+// Contrato gerado do OpenAPI da API (era uma interface duplicada à mão). Se o
+// endpoint GET /clientes/ mudar, este tipo muda junto e o TS acusa aqui.
+// Nota: a API marca telefone/tags/status como OPCIONAIS — o código de render
+// abaixo já os trata como tal (c.telefone || c.email, c.tags && …).
+type ClienteListItem = Schemas["ClienteListOut"];
 
 interface Filtros {
   nome: string;

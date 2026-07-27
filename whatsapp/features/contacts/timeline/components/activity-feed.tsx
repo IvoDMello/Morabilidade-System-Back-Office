@@ -1,0 +1,214 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import type { LucideIcon } from "lucide-react";
+import {
+  ArrowRightLeft,
+  Ban,
+  BellOff,
+  BellPlus,
+  BellRing,
+  Building2,
+  History,
+  MessageCircle,
+  NotebookText,
+  Send,
+  Tag,
+  UserPlus,
+} from "lucide-react";
+import { isToday, isYesterday } from "date-fns";
+import { EmptyState } from "@/components/shared/empty-state";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { cn, formatDate, formatDateTime } from "@/lib/utils";
+import { NoteForm } from "@/features/contacts/notes/components/note-form";
+import { MessageComposer } from "@/features/whatsapp/components/message-composer";
+import type { ContactNote } from "@/types/note";
+import type { ContactEvent, ContactEventType } from "@/types/event";
+import type { WhatsAppMessage } from "@/types/whatsapp";
+import type { ID } from "@/types/common";
+import type { MessageTemplate } from "@/types/template";
+
+const EVENT_ICONS: Record<ContactEventType, LucideIcon> = {
+  contact_created: UserPlus,
+  status_changed: ArrowRightLeft,
+  reminder_created: BellPlus,
+  reminder_completed: BellRing,
+  reminder_cancelled: BellOff,
+  tag_added: Tag,
+  tag_removed: Tag,
+  property_linked: Building2,
+  property_stage_changed: Building2,
+  property_unlinked: Building2,
+  contact_blocked: Ban,
+  contact_unblocked: Ban,
+};
+
+type TimelineItem =
+  | { kind: "note"; createdAt: string; note: ContactNote }
+  | { kind: "event"; createdAt: string; event: ContactEvent }
+  | { kind: "message"; createdAt: string; message: WhatsAppMessage };
+
+type FeedFilter = "all" | "messages" | "notes";
+
+const FILTERS: { value: FeedFilter; label: string }[] = [
+  { value: "all", label: "Tudo" },
+  { value: "messages", label: "Mensagens" },
+  { value: "notes", label: "Anotações" },
+];
+
+function dateGroupLabel(iso: string): string {
+  const date = new Date(iso);
+  if (isToday(date)) return "Hoje";
+  if (isYesterday(date)) return "Ontem";
+  return formatDate(date);
+}
+
+interface ActivityFeedProps {
+  contactId: ID;
+  notes: ContactNote[];
+  events: ContactEvent[];
+  messages: WhatsAppMessage[];
+  templates: MessageTemplate[];
+}
+
+/**
+ * Atividade unificada da ficha (FC-1/FC-2): substitui as abas "Visão geral" /
+ * "Conversa" — que duplicavam Lembretes/Anotações inteiros — por um único feed
+ * filtrável, com divisores de data e composer ancorado embaixo (mensagem ou
+ * anotação, sem trocar de tela).
+ */
+export function ActivityFeed({ contactId, notes, events, messages, templates }: ActivityFeedProps) {
+  const [filter, setFilter] = useState<FeedFilter>("all");
+  const [noteOpen, setNoteOpen] = useState(false);
+
+  const items = useMemo(() => {
+    const all: TimelineItem[] = [
+      ...notes.map((note): TimelineItem => ({ kind: "note", createdAt: note.createdAt, note })),
+      ...events.map((event): TimelineItem => ({ kind: "event", createdAt: event.createdAt, event })),
+      ...messages.map(
+        (message): TimelineItem => ({ kind: "message", createdAt: message.waTimestamp, message }),
+      ),
+    ];
+    const filtered =
+      filter === "messages"
+        ? all.filter((i) => i.kind === "message")
+        : filter === "notes"
+          ? all.filter((i) => i.kind === "note")
+          : all;
+    return filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [notes, events, messages, filter]);
+
+  return (
+    <div className="flex flex-1 flex-col gap-4 overflow-hidden">
+      <div className="flex items-center gap-1.5">
+        {FILTERS.map((f) => (
+          <button
+            key={f.value}
+            type="button"
+            onClick={() => setFilter(f.value)}
+            className={cn(
+              "rounded-full px-3 py-1 text-sm font-medium transition-colors",
+              filter === f.value
+                ? "bg-primary/15 text-primary"
+                : "text-muted-foreground hover:bg-muted",
+            )}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex-1 overflow-y-auto">
+        {items.length === 0 ? (
+          <EmptyState
+            icon={History}
+            title="Nenhum registro ainda"
+            description="Anotações, mensagens e eventos automáticos do sistema aparecem aqui em ordem cronológica."
+          />
+        ) : (
+          <ul className="flex flex-col gap-3">
+            {items.map((item, index) => {
+              const previous = items[index - 1];
+              const showDivider =
+                !previous || dateGroupLabel(previous.createdAt) !== dateGroupLabel(item.createdAt);
+
+              return (
+                <li key={`${item.kind}-${"note" in item ? item.note.id : "event" in item ? item.event.id : item.message.id}`}>
+                  {showDivider && (
+                    <div className="my-1 flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                      <span className="h-px flex-1 bg-border" />
+                      {dateGroupLabel(item.createdAt)}
+                      <span className="h-px flex-1 bg-border" />
+                    </div>
+                  )}
+
+                  {item.kind === "note" && (
+                    <div className="rounded-lg border bg-card p-3">
+                      <p className="whitespace-pre-wrap text-sm">{item.note.note}</p>
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        {item.note.createdBy} · {formatDateTime(item.note.createdAt)}
+                      </p>
+                    </div>
+                  )}
+
+                  {item.kind === "message" && (
+                    <div className="flex items-start gap-2 px-1 text-sm text-muted-foreground">
+                      {item.message.direction === "outbound" ? (
+                        <Send className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                      ) : (
+                        <MessageCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                      )}
+                      <p className="min-w-0 flex-1">
+                        <span className="font-medium text-foreground">
+                          {item.message.direction === "outbound"
+                            ? "Mensagem enviada: "
+                            : "Mensagem recebida: "}
+                        </span>
+                        <span>{item.message.body}</span>
+                        <span className="ml-1.5 text-xs">
+                          · {formatDateTime(item.message.waTimestamp)}
+                        </span>
+                      </p>
+                    </div>
+                  )}
+
+                  {item.kind === "event" &&
+                    (() => {
+                      const Icon = EVENT_ICONS[item.event.type];
+                      return (
+                        <div className="flex items-center gap-2 px-1 text-sm text-muted-foreground">
+                          <Icon className="h-3.5 w-3.5 shrink-0" />
+                          <span>{item.event.summary}</span>
+                          <span className="text-xs">· {formatDateTime(item.event.createdAt)}</span>
+                        </div>
+                      );
+                    })()}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+
+      <div className="flex items-end gap-2 border-t pt-3">
+        <Popover open={noteOpen} onOpenChange={setNoteOpen}>
+          <PopoverTrigger
+            render={
+              <Button type="button" variant="outline" size="icon" aria-label="Adicionar anotação" />
+            }
+          >
+            <NotebookText className="h-4 w-4" />
+          </PopoverTrigger>
+          <PopoverContent align="start" className="w-80">
+            <p className="px-1 text-xs font-medium text-muted-foreground">Nova anotação</p>
+            <NoteForm contactId={contactId} onSuccess={() => setNoteOpen(false)} />
+          </PopoverContent>
+        </Popover>
+        <div className="flex-1">
+          <MessageComposer contactId={contactId} templates={templates} />
+        </div>
+      </div>
+    </div>
+  );
+}
