@@ -1,4 +1,5 @@
 import { PendenciasTabs } from "@/features/pendencias/components/pendencias-tabs";
+import { AiPendencias } from "@/features/pendencias/components/ai-pendencias";
 import { getPendingQueue } from "@/services/whatsapp.service";
 
 export default async function PendenciasPage() {
@@ -14,6 +15,8 @@ export default async function PendenciasPage() {
           </span>
         )}
       </div>
+
+      <AiPendencias />
 
       <PendenciasTabs queue={queue} />
     </div>
