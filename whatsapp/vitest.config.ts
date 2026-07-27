@@ -9,8 +9,10 @@ export default defineConfig({
     },
   },
   test: {
+    // Padrão Node (testes de lógica). Testes de componente pedem jsdom via
+    // docblock `// @vitest-environment jsdom` no topo do arquivo.
     environment: "node",
-    include: ["**/*.{test,spec}.ts"],
+    include: ["**/*.{test,spec}.{ts,tsx}"],
     exclude: ["node_modules/**", ".next/**"],
   },
 });

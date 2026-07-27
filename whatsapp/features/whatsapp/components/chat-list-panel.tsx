@@ -150,7 +150,7 @@ export function ChatListPanel({
                 inputRef.current?.focus();
               }}
               aria-label="Limpar busca"
-              className="shrink-0 text-muted-foreground transition-colors hover:text-foreground"
+              className="-m-2 flex shrink-0 items-center justify-center p-2 text-muted-foreground transition-colors hover:text-foreground"
             >
               <X className="h-4 w-4" />
             </button>
