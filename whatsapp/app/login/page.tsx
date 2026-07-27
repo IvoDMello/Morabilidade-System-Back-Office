@@ -12,8 +12,9 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/client";
  * seguindo o design_handoff_login_central_atendimento, alinhado ao padrão de
  * login do Painel Administrativo e da Gestão de Captações.
  *
- * A tela renderiza em `fixed inset-0` para ficar full-bleed por cima do
- * AppShell (sidebar/nav), sem depender de um route group separado.
+ * O `ConditionalShell` já remove o chrome do app nesta rota, então a tela é
+ * naturalmente full-bleed. Usa `100dvh` (não `100vh`) para respeitar a barra
+ * dinâmica do navegador mobile e não gerar rolagem fantasma.
  */
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -52,7 +53,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex bg-white text-[#1F2320]">
+    <div className="flex min-h-[100dvh] bg-white text-[#1F2320] lg:h-[100dvh] lg:overflow-hidden">
       {/* ── Painel esquerdo: foto + branding (desktop ≥1024px) ── */}
       <div className="relative hidden flex-col overflow-hidden bg-[#3C4A4F] lg:flex lg:w-[52%]">
         <Image
@@ -104,7 +105,7 @@ export default function LoginPage() {
       </div>
 
       {/* ── Painel direito: formulário ── */}
-      <div className="relative flex flex-1 flex-col overflow-y-auto bg-white lg:items-center lg:justify-center">
+      <div className="relative flex flex-1 flex-col bg-white lg:items-center lg:justify-center lg:overflow-y-auto">
         {/* Hero mobile (foto + logo sobreposta), só fora do desktop */}
         <div className="relative h-[358px] w-full flex-shrink-0 overflow-hidden lg:hidden">
           <Image

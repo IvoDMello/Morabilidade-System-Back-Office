@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
-import { AppShell } from "@/components/layout/app-shell";
+import { ConditionalShell } from "@/components/layout/conditional-shell";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { getReminderCounts } from "@/services/dashboard.service";
@@ -32,8 +32,9 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  // Não travar o zoom: bloquear pinch-zoom (maximumScale/userScalable) fere a
+  // acessibilidade em mobile — usuários com baixa visão precisam ampliar.
+  viewportFit: "cover",
 };
 
 export default async function RootLayout({
@@ -55,13 +56,13 @@ export default async function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange>
-          <AppShell
+          <ConditionalShell
             reminderCounts={reminderCounts}
             unreadConversations={unreadConversations}
             pendingConversations={pendingConversations}
           >
             {children}
-          </AppShell>
+          </ConditionalShell>
           <Toaster />
         </ThemeProvider>
       </body>
