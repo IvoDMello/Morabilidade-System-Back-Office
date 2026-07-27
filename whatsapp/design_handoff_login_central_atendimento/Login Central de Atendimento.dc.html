@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="./image-slot.js"></script>
+<style>
+  body { margin: 0; background: #eceae5; font-family: Archivo, Helvetica, Arial, sans-serif; }
+  a { color: #55584a; }
+  a:hover { color: #2f3128; }
+  input::placeholder { color: #a3a3a0; }
+</style>
+</helmet>
+
+<section style="padding: 56px; display: flex; flex-direction: column; gap: 28px">
+  <div id="1a" style="display: flex; flex-direction: column; gap: 18px">
+    <div style="display: flex; align-items: center; gap: 12px">
+      <span style="font: 700 12px/1 Archivo, sans-serif; letter-spacing: 0.12em; color: #55584a; background: #dcd9d0; border-radius: 999px; padding: 7px 12px">1a</span>
+      <span style="font: 500 14px/1 Archivo, sans-serif; color: #6b6b64">Central de Atendimento · login desktop e mobile</span>
+    </div>
+
+    <div style="display: flex; align-items: flex-start; gap: 40px; flex-wrap: wrap">
+
+      <div style="flex: none; width: 1440px; height: 900px; display: grid; grid-template-columns: 52% 48%; background: #fff; border-radius: 18px; overflow: hidden; box-shadow: 0 30px 80px rgba(30,30,26,0.18)">
+        <div style="position: relative; overflow: hidden; background: #3c4a4f">
+          <image-slot id="login-hero-desktop" shape="rect" src="https://commons.wikimedia.org/wiki/Special:FilePath/Rio_de_Janeiro,_Brazil_003_version_2.jpg?width=1600" placeholder="foto do Rio · fachada / paisagem (1200×1600)"></image-slot>
+          <div style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(20,26,24,0.55) 0%, rgba(20,26,24,0.18) 38%, rgba(20,26,24,0.72) 100%); pointer-events: none"></div>
+          <div style="position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-between; padding: 56px 64px; pointer-events: none">
+            <img src="./assets/logo-morabilidade.png" alt="Morabilidade" style="width: 190px; height: auto; display: block">
+            <div style="display: flex; flex-direction: column; gap: 20px; max-width: 520px">
+              <div style="font: 700 14px/1 Archivo, sans-serif; letter-spacing: 0.18em; color: #cbb26a">CENTRAL DE ATENDIMENTO</div>
+              <h1 style="margin: 0; font: 800 52px/1.06 Archivo, sans-serif; letter-spacing: -0.02em; color: #fff; text-wrap: balance">Toda conversa<br>em um só lugar.</h1>
+              <p style="margin: 0; font: 400 17px/1.6 Archivo, sans-serif; color: rgba(255,255,255,0.78); max-width: 400px; text-wrap: pretty">Atenda proprietários, inquilinos e corretores pelos canais da Morabilidade, com histórico completo de cada contato.</p>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; font: 400 13px/1 Archivo, sans-serif; color: rgba(255,255,255,0.6)">
+              <span>Zona Sul · Rio de Janeiro, RJ</span>
+              <span style="font-size: 11px; color: rgba(255,255,255,0.42)">Foto: Wikimedia Commons · CC BY-SA</span>
+              <span>© 2026 Morabilidade</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: center; padding: 64px">
+          <form onSubmit="{{ submit }}" style="width: 352px; display: flex; flex-direction: column; gap: 26px">
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              <h2 style="margin: 0; font: 700 28px/1.2 Archivo, sans-serif; letter-spacing: -0.015em; color: #1f2320">Entrar no sistema</h2>
+              <p style="margin: 0; font: 400 14px/1.5 Archivo, sans-serif; color: #77786f">Acesso exclusivo para colaboradores</p>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 18px">
+              <div style="display: flex; flex-direction: column; gap: 8px">
+                <label for="email-d" style="font: 600 13px/1 Archivo, sans-serif; color: #3f4139">E-mail</label>
+                <input id="email-d" type="email" placeholder="seu@email.com" style="height: 46px; padding: 0 14px; border: 1px solid #e3e1db; border-radius: 10px; background: #fff; font: 400 15px/1 Archivo, sans-serif; color: #1f2320; outline: none; transition: border-color .15s, box-shadow .15s" style-focus="border-color: #cbb26a; box-shadow: 0 0 0 3px rgba(203,178,106,0.22)">
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 8px">
+                <label for="pass-d" style="font: 600 13px/1 Archivo, sans-serif; color: #3f4139">Senha</label>
+                <div style="position: relative; display: flex">
+                  <input id="pass-d" type="{{ pwType }}" placeholder="••••••••" style="flex: 1; height: 46px; padding: 0 46px 0 14px; border: 1px solid #e3e1db; border-radius: 10px; background: #fff; font: 400 15px/1 Archivo, sans-serif; color: #1f2320; outline: none; transition: border-color .15s, box-shadow .15s" style-focus="border-color: #cbb26a; box-shadow: 0 0 0 3px rgba(203,178,106,0.22)">
+                  <button type="button" onClick="{{ togglePw }}" aria-label="Mostrar senha" style="position: absolute; right: 6px; top: 6px; width: 34px; height: 34px; display: grid; place-items: center; border: 0; background: transparent; border-radius: 8px; cursor: pointer; color: #8b8c82" style-hover="background: #f2f1ec; color: #55584a">{{ eye }}</button>
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 16px">
+              <button type="submit" style="height: 48px; border: 0; border-radius: 10px; background: #55584a; color: #fff; font: 700 15px/1 Archivo, sans-serif; cursor: pointer; transition: background .15s" style-hover="background: #42453a">Entrar</button>
+              <a href="#1a" style="text-align: center; font: 500 14px/1 Archivo, sans-serif; color: #6c6d64; text-decoration: none" style-hover="color: #55584a; text-decoration: underline">Esqueci minha senha</a>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div style="flex: none; width: 390px; height: 844px; position: relative; background: #fff; border-radius: 34px; overflow: hidden; box-shadow: 0 30px 80px rgba(30,30,26,0.18)">
+        <div style="position: absolute; inset: 0 0 auto 0; height: 358px; overflow: hidden; background: #3c4a4f">
+          <image-slot id="login-hero-mobile" shape="rect" src="https://commons.wikimedia.org/wiki/Special:FilePath/Rio_de_Janeiro,_Brazil_003_version_2.jpg?width=900" placeholder="foto do Rio (780×720)"></image-slot>
+          <div style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(20,26,24,0.55) 0%, rgba(20,26,24,0.25) 45%, rgba(20,26,24,0.8) 100%); pointer-events: none"></div>
+          <div style="position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-between; padding: 44px 26px 44px; pointer-events: none">
+            <img src="./assets/logo-morabilidade.png" alt="Morabilidade" style="width: 140px; height: auto; display: block">
+            <div style="display: flex; flex-direction: column; gap: 10px">
+              <div style="font: 700 11px/1 Archivo, sans-serif; letter-spacing: 0.18em; color: #cbb26a">CENTRAL DE ATENDIMENTO</div>
+              <h1 style="margin: 0; font: 800 30px/1.1 Archivo, sans-serif; letter-spacing: -0.02em; color: #fff">Toda conversa<br>em um só lugar.</h1>
+            </div>
+          </div>
+        </div>
+
+        <div style="position: absolute; inset: 330px 0 0 0; background: #fff; border-radius: 24px 24px 0 0; padding: 32px 26px 28px; display: flex; flex-direction: column; gap: 24px">
+          <div style="display: flex; flex-direction: column; gap: 5px">
+            <h2 style="margin: 0; font: 700 24px/1.2 Archivo, sans-serif; letter-spacing: -0.015em; color: #1f2320">Entrar no sistema</h2>
+            <p style="margin: 0; font: 400 13.5px/1.5 Archivo, sans-serif; color: #77786f">Acesso exclusivo para colaboradores</p>
+          </div>
+
+          <form onSubmit="{{ submit }}" style="display: flex; flex-direction: column; gap: 22px">
+            <div style="display: flex; flex-direction: column; gap: 16px">
+              <div style="display: flex; flex-direction: column; gap: 8px">
+                <label for="email-m" style="font: 600 13px/1 Archivo, sans-serif; color: #3f4139">E-mail</label>
+                <input id="email-m" type="email" inputMode="email" placeholder="seu@email.com" style="height: 50px; padding: 0 14px; border: 1px solid #e3e1db; border-radius: 12px; background: #fff; font: 400 15px/1 Archivo, sans-serif; color: #1f2320; outline: none" style-focus="border-color: #cbb26a; box-shadow: 0 0 0 3px rgba(203,178,106,0.22)">
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 8px">
+                <label for="pass-m" style="font: 600 13px/1 Archivo, sans-serif; color: #3f4139">Senha</label>
+                <div style="position: relative; display: flex">
+                  <input id="pass-m" type="{{ pwType }}" placeholder="••••••••" style="flex: 1; height: 50px; padding: 0 50px 0 14px; border: 1px solid #e3e1db; border-radius: 12px; background: #fff; font: 400 15px/1 Archivo, sans-serif; color: #1f2320; outline: none" style-focus="border-color: #cbb26a; box-shadow: 0 0 0 3px rgba(203,178,106,0.22)">
+                  <button type="button" onClick="{{ togglePw }}" aria-label="Mostrar senha" style="position: absolute; right: 7px; top: 7px; width: 36px; height: 36px; display: grid; place-items: center; border: 0; background: transparent; border-radius: 8px; cursor: pointer; color: #8b8c82">{{ eye }}</button>
+                </div>
+              </div>
+            </div>
+            <button type="submit" style="height: 52px; border: 0; border-radius: 12px; background: #55584a; color: #fff; font: 700 15px/1 Archivo, sans-serif; cursor: pointer">Entrar</button>
+            <a href="#1a" style="text-align: center; font: 500 14px/1 Archivo, sans-serif; color: #6c6d64; text-decoration: none">Esqueci minha senha</a>
+          </form>
+
+          <div style="margin-top: auto; text-align: center; font: 400 12px/1 Archivo, sans-serif; color: #a3a49b">© 2026 Morabilidade · Zona Sul, Rio de Janeiro</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1960,&quot;height&quot;:1060}}">
+class Component extends DCLogic {
+  state = { show: false };
+  renderVals() {
+    const on = this.state.show;
+    return {
+      pwType: on ? "text" : "password",
+      togglePw: () => this.setState(s => ({ show: !s.show })),
+      submit: (e) => e.preventDefault(),
+      eye: React.createElement("svg", { width: 19, height: 19, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.7, strokeLinecap: "round" },
+        React.createElement("ellipse", { cx: 12, cy: 12, rx: 9.5, ry: 6 }),
+        React.createElement("circle", { cx: 12, cy: 12, r: 2.6 }),
+        on ? React.createElement("line", { x1: 4, y1: 20, x2: 20, y2: 4 }) : null
+      )
+    };
+  }
+}
+</script>
+</body>
+</html>

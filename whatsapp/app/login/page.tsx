@@ -1,14 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { toast } from "sonner";
-import { Eye, EyeOff, MessageCircle } from "lucide-react";
+import { Eye, EyeOff, MapPin } from "lucide-react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 /**
  * Login por e-mail/senha via Supabase Auth (mesmos usuários do projeto
- * principal — quem já entra nas captações entra aqui). Padrão portado de
- * captacoes/src/app/(auth)/login, com visual simplificado para o CRM.
+ * principal — quem já entra nas captações entra aqui). Layout split-screen
+ * seguindo o design_handoff_login_central_atendimento, alinhado ao padrão de
+ * login do Painel Administrativo e da Gestão de Captações.
+ *
+ * A tela renderiza em `fixed inset-0` para ficar full-bleed por cima do
+ * AppShell (sidebar/nav), sem depender de um route group separado.
  */
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -47,75 +52,174 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-6">
-      <div className="w-full max-w-sm">
-        <div className="mb-8 text-center">
-          <div
-            className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl text-white"
-            style={{ backgroundColor: "#585a4f" }}
-          >
-            <MessageCircle className="h-6 w-6" />
+    <div className="fixed inset-0 z-50 flex bg-white text-[#1F2320]">
+      {/* ── Painel esquerdo: foto + branding (desktop ≥1024px) ── */}
+      <div className="relative hidden flex-col overflow-hidden bg-[#3C4A4F] lg:flex lg:w-[52%]">
+        <Image
+          src="/login-hero.jpg"
+          alt="Zona Sul do Rio de Janeiro"
+          fill
+          className="object-cover object-center"
+          priority
+        />
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(20,26,24,0.55) 0%, rgba(20,26,24,0.18) 38%, rgba(20,26,24,0.72) 100%)",
+          }}
+        />
+
+        <div className="relative flex h-full flex-col justify-between px-16 py-14">
+          <Image
+            src="/logo.png"
+            alt="Morabilidade"
+            width={190}
+            height={50}
+            className="h-auto w-[190px] object-contain"
+            priority
+          />
+
+          <div className="flex max-w-[520px] flex-col gap-5">
+            <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#CBB26A]">
+              Central de Atendimento
+            </p>
+            <h1 className="text-[52px] font-extrabold leading-[1.06] tracking-[-0.02em] text-white">
+              Toda conversa<br />em um só lugar.
+            </h1>
+            <p className="max-w-[400px] text-[17px] leading-relaxed text-white/[0.78]">
+              Atenda proprietários, inquilinos e corretores pelos canais da
+              Morabilidade, com histórico completo de cada contato.
+            </p>
           </div>
-          <h1 className="text-2xl font-bold">Central de Atendimento</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Morabilidade · acesso exclusivo para colaboradores
-          </p>
+
+          <div className="flex items-center justify-between text-[13px] text-white/60">
+            <span className="flex items-center gap-1.5">
+              <MapPin className="h-3.5 w-3.5" />
+              Zona Sul · Rio de Janeiro, RJ
+            </span>
+            <span>© 2026 Morabilidade</span>
+          </div>
         </div>
+      </div>
 
-        <form onSubmit={entrar} className="space-y-5">
-          <div>
-            <label className="block text-sm font-medium mb-1.5">E-mail</label>
-            <input
-              type="email"
-              placeholder="seu@email.com"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#585a4f] focus:border-transparent transition"
+      {/* ── Painel direito: formulário ── */}
+      <div className="relative flex flex-1 flex-col overflow-y-auto bg-white lg:items-center lg:justify-center">
+        {/* Hero mobile (foto + logo sobreposta), só fora do desktop */}
+        <div className="relative h-[358px] w-full flex-shrink-0 overflow-hidden lg:hidden">
+          <Image
+            src="/login-hero.jpg"
+            alt="Zona Sul do Rio de Janeiro"
+            fill
+            className="object-cover object-center"
+            priority
+          />
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(180deg, rgba(20,26,24,0.55) 0%, rgba(20,26,24,0.25) 45%, rgba(20,26,24,0.80) 100%)",
+            }}
+          />
+          <div className="relative flex h-full flex-col justify-start gap-4 px-[26px] py-11">
+            <Image
+              src="/logo.png"
+              alt="Morabilidade"
+              width={140}
+              height={38}
+              className="h-auto w-[140px] object-contain drop-shadow"
+              priority
             />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1.5">Senha</label>
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                placeholder="••••••••"
-                autoComplete="current-password"
-                value={senha}
-                onChange={(e) => setSenha(e.target.value)}
-                required
-                className="w-full rounded-xl border border-input bg-background px-4 py-3 pr-11 text-sm focus:outline-none focus:ring-2 focus:ring-[#585a4f] focus:border-transparent transition"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition"
-                tabIndex={-1}
-              >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
+            <div className="mt-auto flex flex-col gap-2">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#CBB26A]">
+                Central de Atendimento
+              </p>
+              <h1 className="text-[30px] font-extrabold leading-[1.1] text-white">
+                Toda conversa em um só lugar.
+              </h1>
             </div>
           </div>
+        </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-xl py-3 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 transition"
-            style={{ backgroundColor: "#585a4f" }}
-          >
-            {loading ? "Entrando..." : "Entrar"}
-          </button>
+        {/* Folha branca do formulário */}
+        <div className="relative z-10 -mt-7 flex w-full flex-1 flex-col rounded-t-[24px] bg-white px-[26px] pb-7 pt-8 lg:mt-0 lg:max-w-[352px] lg:flex-none lg:rounded-none lg:px-0 lg:py-0">
+          <div className="flex flex-col gap-1.5">
+            <h2 className="text-2xl font-bold leading-tight tracking-[-0.015em] text-[#1F2320] lg:text-[28px]">
+              Entrar no sistema
+            </h2>
+            <p className="text-[13.5px] leading-normal text-[#77786F] lg:text-sm">
+              Acesso exclusivo para colaboradores
+            </p>
+          </div>
 
-          <button
-            type="button"
-            onClick={recuperarSenha}
-            className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition"
-          >
-            Esqueci minha senha
-          </button>
-        </form>
+          <form onSubmit={entrar} className="mt-6 flex flex-col gap-[18px]">
+            <div className="flex flex-col gap-2">
+              <label htmlFor="email" className="text-[13px] font-semibold text-[#3F4139]">
+                E-mail
+              </label>
+              <input
+                id="email"
+                type="email"
+                placeholder="seu@email.com"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="h-[50px] rounded-xl border border-[#E3E1DB] bg-white px-3.5 text-[15px] text-[#1F2320] outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-[#A3A3A0] focus:border-[#CBB26A] focus:shadow-[0_0_0_3px_rgba(203,178,106,0.22)] lg:h-[46px]"
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label htmlFor="senha" className="text-[13px] font-semibold text-[#3F4139]">
+                Senha
+              </label>
+              <div className="relative">
+                <input
+                  id="senha"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  autoComplete="current-password"
+                  value={senha}
+                  onChange={(e) => setSenha(e.target.value)}
+                  required
+                  className="h-[50px] w-full rounded-xl border border-[#E3E1DB] bg-white px-3.5 pr-12 text-[15px] text-[#1F2320] outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-[#A3A3A0] focus:border-[#CBB26A] focus:shadow-[0_0_0_3px_rgba(203,178,106,0.22)] lg:h-[46px]"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                  className="absolute right-[7px] top-[7px] flex h-9 w-9 items-center justify-center rounded-lg text-[#8B8C82] transition-colors hover:bg-[#F2F1EC] hover:text-[#55584A] lg:right-1.5 lg:top-1.5 lg:h-[34px] lg:w-[34px]"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-[19px] w-[19px]" />
+                  ) : (
+                    <Eye className="h-[19px] w-[19px]" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="mt-2 h-[52px] rounded-xl bg-[#55584A] text-[15px] font-bold text-white transition-colors duration-150 hover:bg-[#42453A] disabled:pointer-events-none disabled:opacity-70 lg:h-12 lg:rounded-[10px]"
+            >
+              {loading ? "Entrando…" : "Entrar"}
+            </button>
+
+            <button
+              type="button"
+              onClick={recuperarSenha}
+              className="mx-auto mt-1 text-sm font-medium text-[#6C6D64] transition-colors hover:text-[#55584A] hover:underline"
+            >
+              Esqueci minha senha
+            </button>
+          </form>
+
+          <p className="mt-auto pt-8 text-center text-xs text-[#A3A49B] lg:hidden">
+            © 2026 Morabilidade · Zona Sul, Rio de Janeiro
+          </p>
+        </div>
       </div>
     </div>
   );
