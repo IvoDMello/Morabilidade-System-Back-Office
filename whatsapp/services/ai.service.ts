@@ -159,6 +159,67 @@ ${blocos.join("\n\n")}`,
   return response.parsed_output?.pendencias ?? [];
 }
 
+// ── Classificação de encerramentos (triagem dos "aguardando resposta") ──────
+//
+// A aba "aguardando resposta" é mecânica: qualquer conversa cuja última mensagem
+// foi do cliente entra ali — inclusive "obrigada!" ou "pode deixar que eu
+// retorno", que NÃO pedem resposta. Esta função lê essas conversas e aponta
+// quais são só encerramento, para o operador limpar a fila com 1 clique.
+
+const encerramentoSchema = z.object({
+  encerramentos: z
+    .array(
+      z.object({
+        conversa: z.string().describe("id EXATO da conversa (o valor após 'id:' no cabeçalho)"),
+        motivo: z
+          .string()
+          .describe("por que não precisa de resposta, em poucas palavras (ex.: agradecimento; cliente disse que retorna)"),
+      }),
+    )
+    .describe("conversas cuja última mensagem do cliente é um encerramento e não pede resposta; vazio se todas precisam"),
+});
+
+export async function classificarEncerramentos(): Promise<{ conversationId: ID; motivo: string }[]> {
+  const conversations = await dataSource.whatsapp.listConversations();
+  const aguardando = conversations.filter((c) => c.status === "aguardando_resposta");
+  if (aguardando.length === 0) return [];
+
+  const validIds = new Set(aguardando.map((c) => c.id));
+  const blocos: string[] = [];
+  for (const conv of aguardando) {
+    const messages = await dataSource.whatsapp.listMessages(conv.id);
+    const transcript = buildTranscript(messages, 8);
+    if (!transcript) continue;
+    blocos.push(`### id:${conv.id} — ${conv.contactName}\n${transcript}`);
+  }
+  if (blocos.length === 0) return [];
+
+  const client = getAnthropicClient();
+  const response = await client.messages.parse({
+    model: AI_MODEL,
+    max_tokens: 1024,
+    output_config: { effort: "low", format: zodOutputFormat(encerramentoSchema) },
+    messages: [
+      {
+        role: "user",
+        content: `Abaixo estão conversas de WhatsApp marcadas como "aguardando resposta" (a última mensagem foi do cliente). Identifique APENAS aquelas cuja última mensagem do cliente é um ENCERRAMENTO que NÃO pede resposta:
+
+- agradecimento ("obrigada!", "valeu");
+- o cliente avisa que ele mesmo retorna ("pode deixar que eu retorno", "depois te falo", "qualquer coisa te chamo");
+- "ok"/"entendi"/"perfeito" que claramente fecham o assunto.
+
+NÃO inclua conversas em que o cliente fez uma pergunta, pediu algo, ou espera uma ação sua — essas precisam de resposta. Para cada encerramento, devolva o id EXATO da conversa e um motivo curto. Se todas precisam de resposta, devolva a lista vazia.
+
+${blocos.join("\n\n")}`,
+      },
+    ],
+  });
+
+  return (response.parsed_output?.encerramentos ?? [])
+    .filter((e) => validIds.has(e.conversa))
+    .map((e) => ({ conversationId: e.conversa, motivo: e.motivo }));
+}
+
 export async function generateFollowUpSuggestion(contactId: ID): Promise<string> {
   const { contact, messages, notes } = await getContactContext(contactId);
   const client = getAnthropicClient();

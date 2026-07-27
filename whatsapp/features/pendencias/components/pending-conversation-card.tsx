@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { Building2, CheckCircle2, Clock3, MoreHorizontal } from "lucide-react";
+import { Building2, CheckCircle2, Check, Clock3, MoreHorizontal, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,17 +24,24 @@ import {
 import { AvatarInitials } from "@/components/shared/avatar-initials";
 import { PendingRelativeTime } from "./pending-relative-time";
 import { closeConversationAction, snoozeFollowUpAction } from "@/app/pendencias/actions";
-import { formatPhone } from "@/lib/utils";
+import { cn, formatPhone } from "@/lib/utils";
 import type { PendingConversationItem } from "@/services/whatsapp.service";
 
 interface PendingConversationCardProps {
   item: PendingConversationItem;
   showSnooze?: boolean;
+  /** Sugestão da IA de que esta conversa é só encerramento e não precisa de resposta. */
+  suggestion?: string;
 }
 
-export function PendingConversationCard({ item, showSnooze = false }: PendingConversationCardProps) {
+export function PendingConversationCard({
+  item,
+  showSnooze = false,
+  suggestion,
+}: PendingConversationCardProps) {
   const [isPending, startTransition] = useTransition();
   const [confirmClose, setConfirmClose] = useState(false);
+  const [resolved, setResolved] = useState(false);
   const waitDate = item.lastInboundAt ?? item.lastMessageAt;
 
   function handleClose() {
@@ -46,6 +53,21 @@ export function PendingConversationCard({ item, showSnooze = false }: PendingCon
         toast.error("Não foi possível encerrar a conversa.");
       } finally {
         setConfirmClose(false);
+      }
+    });
+  }
+
+  // Confirmação da sugestão da IA: 1 clique resolve (encerra) — reversível, a
+  // conversa volta à fila se o cliente mandar uma nova mensagem.
+  function handleResolve() {
+    setResolved(true);
+    startTransition(async () => {
+      try {
+        await closeConversationAction(item.id);
+        toast.success("Marcada como resolvida.");
+      } catch {
+        setResolved(false);
+        toast.error("Não foi possível resolver a conversa.");
       }
     });
   }
@@ -62,7 +84,22 @@ export function PendingConversationCard({ item, showSnooze = false }: PendingCon
   }
 
   return (
-    <li className="rounded-xl border border-veil/7 bg-raised p-3 transition-colors hover:border-veil/14">
+    <li
+      className={cn(
+        "rounded-xl border bg-raised p-3 transition-colors",
+        suggestion
+          ? "border-jade/30 hover:border-jade/45"
+          : "border-veil/7 hover:border-veil/14",
+      )}
+    >
+      {suggestion && (
+        <div className="mb-2 flex items-start gap-1.5 rounded-lg bg-jade/8 px-2 py-1.5 text-xs">
+          <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-jade" />
+          <p className="text-jade">
+            Provavelmente não precisa de resposta — <span className="text-ink-mid">{suggestion}</span>
+          </p>
+        </div>
+      )}
       <div className="flex items-start justify-between gap-2">
         <Link
           href={`/?c=${item.contactId}`}
@@ -102,7 +139,14 @@ export function PendingConversationCard({ item, showSnooze = false }: PendingCon
           Abrir conversa
         </Button>
 
-        <DropdownMenu>
+        <div className="flex items-center gap-1.5">
+          {suggestion && (
+            <Button size="sm" onClick={handleResolve} loading={isPending && resolved}>
+              <Check className="h-3.5 w-3.5" />
+              Resolver
+            </Button>
+          )}
+          <DropdownMenu>
           <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label="Mais ações" />}>
             <MoreHorizontal className="h-4 w-4" />
           </DropdownMenuTrigger>
@@ -118,7 +162,8 @@ export function PendingConversationCard({ item, showSnooze = false }: PendingCon
               Marcar como encerrada
             </DropdownMenuItem>
           </DropdownMenuContent>
-        </DropdownMenu>
+          </DropdownMenu>
+        </div>
       </div>
 
       <AlertDialog open={confirmClose} onOpenChange={setConfirmClose}>
