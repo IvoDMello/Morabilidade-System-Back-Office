@@ -8,9 +8,10 @@ STATUS em 11/07/2026 (auditoria):
   [-] Object Versioning Firebase -> obsoleto: fotos migraram p/ Supabase Storage.
       ATENÇÃO: o backup diário do Supabase NÃO cobre Storage, criar proteção
       equivalente (backup do bucket `media` ou soft-delete).
-  [ ] Rotacionar/revogar chave Firebase -> AINDA PENDENTE. Se o Firebase não é
-      mais usado, revogar a service account e remover FIREBASE_CREDENTIALS_JSON
-      do Railway (custo zero agora).
+  [x] Rotacionar/revogar chave Firebase -> RESOLVIDO 27/07/2026: conta de
+      serviço firebase-adminsdk-fbsvc@morabilidade-sistema desativada (revoga as
+      4 chaves, incl. a vazada). Falta só remover FIREBASE_* do Railway (o
+      código não lê essas vars).
 
 Commit aplicado: d799ea2 (já em origin/main)
 
@@ -54,12 +55,12 @@ PÓS-LAUNCH, esta semana, sem pressa
     Console GCP -> Storage -> [bucket] -> Protection -> ativar Object Versioning.
     Protege contra delete acidental de fotos.
 
-[ ] Rotacionar chave do Firebase
-    A chave do commit be8096a ainda funciona (foi removida do tracking em
-    e77b7af mas continua recuperável no histórico).
-    Console Google Cloud -> IAM -> Service Accounts -> criar nova chave,
-    substituir FIREBASE_CREDENTIALS_JSON no Railway, revogar a antiga.
-    Não é urgente (repo privado), só higiene.
+[x] Rotacionar chave do Firebase -> FEITO 27/07/2026.
+    A conta de serviço firebase-adminsdk-fbsvc@morabilidade-sistema foi
+    DESATIVADA no console (revoga as 4 chaves ativas, incl. a vazada
+    917f0a87… do commit be8096a). Firebase está morto no runtime (storage é
+    Supabase). Repo privado -> histórico NÃO reescrito (chave já inútil).
+    Pendente só: remover FIREBASE_* das env vars do Railway.
 
 [ ] npm audit fix --force em site/ e web/
     Sobe Next.js 15.5.15 -> 15.5.18.
