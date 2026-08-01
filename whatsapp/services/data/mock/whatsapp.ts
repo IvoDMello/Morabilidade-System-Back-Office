@@ -120,6 +120,9 @@ export const mockWhatsapp: DataSource["whatsapp"] = {
       errorMessage: null,
       createdBy: input.createdBy ?? null,
       replyTo: input.replyTo ?? null,
+      mediaUrl: input.mediaUrl ?? null,
+      mediaMimeType: input.mediaMimeType ?? null,
+      mediaFilename: input.mediaFilename ?? null,
       waTimestamp: input.waTimestamp,
       createdAt: new Date().toISOString(),
     };

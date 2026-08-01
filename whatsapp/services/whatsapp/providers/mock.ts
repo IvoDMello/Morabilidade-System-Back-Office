@@ -1,4 +1,5 @@
 import { normalizePhone } from "@/lib/phone";
+import type { WhatsAppMessageType } from "@/types/whatsapp";
 import type { NormalizedWebhookEvent, WhatsAppProvider } from "../types";
 
 /**
@@ -25,7 +26,13 @@ export const mockWhatsAppProvider: WhatsAppProvider = {
       from: string;
       profileName?: string | null;
       body: string;
+      // Simulação de mídia recebida: uma URL já hospedada (acessível pelo navegador).
+      mediaUrl?: string | null;
+      mediaType?: WhatsAppMessageType | null;
     };
+
+    const mediaUrl = parsed.mediaUrl?.trim() || null;
+    const messageType: WhatsAppMessageType = mediaUrl ? (parsed.mediaType ?? "image") : "text";
 
     return [
       {
@@ -35,7 +42,8 @@ export const mockWhatsAppProvider: WhatsAppProvider = {
           fromPhone: normalizePhone(parsed.from),
           profileName: parsed.profileName?.trim() || null,
           body: parsed.body,
-          messageType: "text",
+          messageType,
+          media: mediaUrl ? { url: mediaUrl } : null,
           timestamp: new Date().toISOString(),
         },
       },

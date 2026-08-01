@@ -3,7 +3,14 @@ import type { ConversationStatus } from "@/constants/conversation-status";
 import type { ID } from "./common";
 
 export type WhatsAppMessageDirection = "inbound" | "outbound";
-export type WhatsAppMessageType = "text" | "unsupported";
+export type WhatsAppMessageType =
+  | "text"
+  | "image"
+  | "audio"
+  | "video"
+  | "document"
+  | "sticker"
+  | "unsupported";
 
 export interface WhatsAppConversation {
   id: ID;
@@ -47,12 +54,17 @@ export interface WhatsAppMessage {
   waMessageId: string | null;
   direction: WhatsAppMessageDirection;
   messageType: WhatsAppMessageType;
+  /** Legenda da mídia ou texto da mensagem. Vazio quando a mídia não tem legenda. */
   body: string;
   status: WhatsAppMessageStatus;
   errorMessage: string | null;
   createdBy: string | null;
   /** Mensagem citada, se esta for uma resposta; null caso contrário. */
   replyTo: MessageReply | null;
+  /** Mídia recebida: URL absoluta (mock/hospedada) ou caminho no bucket (cloud-api). null em mensagens de texto. */
+  mediaUrl: string | null;
+  mediaMimeType: string | null;
+  mediaFilename: string | null;
   waTimestamp: string;
   createdAt: string;
 }
@@ -78,5 +90,8 @@ export interface CreateWhatsAppMessageInput {
   status: WhatsAppMessageStatus;
   createdBy?: string | null;
   replyTo?: MessageReply | null;
+  mediaUrl?: string | null;
+  mediaMimeType?: string | null;
+  mediaFilename?: string | null;
   waTimestamp: string;
 }

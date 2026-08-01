@@ -12,4 +12,10 @@ export const whatsappProvider: WhatsAppProvider =
 
 export const isMockWhatsAppProvider = process.env.WHATSAPP_PROVIDER !== "cloud-api";
 
-export type { WhatsAppProvider, NormalizedIncomingMessage, NormalizedStatusUpdate, NormalizedWebhookEvent } from "./types";
+export type {
+  WhatsAppProvider,
+  NormalizedIncomingMessage,
+  NormalizedIncomingMedia,
+  NormalizedStatusUpdate,
+  NormalizedWebhookEvent,
+} from "./types";

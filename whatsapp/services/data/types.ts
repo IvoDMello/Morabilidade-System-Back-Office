@@ -119,6 +119,11 @@ export interface DataSource {
       todayStartIso: string,
     ): Promise<WhatsAppConversationSummary[]>;
     markAlerted(conversationId: ID, whenIso: string): Promise<void>;
+    /** Guarda os bytes de uma mídia recebida no storage e devolve o caminho salvo.
+     * Só existe na fonte Supabase — o mock recebe mídia como URL já hospedada. */
+    uploadMedia?(path: string, data: Uint8Array, mimeType: string): Promise<string>;
+    /** Baixa uma mídia do storage pelo caminho (usado pelo proxy autenticado). */
+    getMediaObject?(path: string): Promise<{ data: Blob; mimeType: string } | null>;
   };
   pushSubscriptions: {
     list(): Promise<PushSubscriptionRecord[]>;

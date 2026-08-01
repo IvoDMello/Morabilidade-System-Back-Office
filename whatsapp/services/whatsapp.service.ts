@@ -5,8 +5,57 @@ import { whatsappProvider } from "./whatsapp";
 import type { NormalizedIncomingMessage, NormalizedStatusUpdate } from "./whatsapp";
 import { CURRENT_USER_NAME } from "@/constants/current-user";
 import { formatPhone } from "@/lib/utils";
+import { extFromMime, messagePreview } from "@/lib/whatsapp-media";
 import type { ID } from "@/types/common";
 import type { MessageReply, WhatsAppConversationSummary } from "@/types/whatsapp";
+
+interface ResolvedMedia {
+  mediaUrl: string;
+  mediaMimeType: string | null;
+  mediaFilename: string | null;
+}
+
+/**
+ * Transforma a referência de mídia da mensagem recebida em algo exibível:
+ * - `url` (simulação/mock): já hospedada, usada direto;
+ * - `metaMediaId` (cloud-api): baixa os bytes da Meta e guarda no storage.
+ * Best-effort: qualquer falha vira `null` — a mensagem ainda é gravada como
+ * seu tipo (foto/áudio/…), só sem a mídia carregada.
+ */
+async function resolveIncomingMedia(
+  message: NormalizedIncomingMessage,
+  conversationId: ID,
+): Promise<ResolvedMedia | null> {
+  const media = message.media;
+  if (!media) return null;
+
+  if (media.url) {
+    return {
+      mediaUrl: media.url,
+      mediaMimeType: media.mimeType ?? null,
+      mediaFilename: media.filename ?? null,
+    };
+  }
+
+  if (!media.metaMediaId || !whatsappProvider.fetchMediaBytes || !dataSource.whatsapp.uploadMedia) {
+    return null;
+  }
+
+  try {
+    const fetched = await whatsappProvider.fetchMediaBytes(media.metaMediaId);
+    if (!fetched) return null;
+
+    const path = `${conversationId}/${crypto.randomUUID()}.${extFromMime(fetched.mimeType)}`;
+    const storedPath = await dataSource.whatsapp.uploadMedia(path, fetched.data, fetched.mimeType);
+    return {
+      mediaUrl: storedPath,
+      mediaMimeType: fetched.mimeType,
+      mediaFilename: media.filename ?? null,
+    };
+  } catch {
+    return null;
+  }
+}
 
 async function getOrCreateContactForIncomingMessage(message: NormalizedIncomingMessage) {
   const existing = await getContactByPhone(message.fromPhone);
@@ -33,6 +82,9 @@ export async function processIncomingMessage(message: NormalizedIncomingMessage)
     message.fromPhone,
   );
 
+  const media = await resolveIncomingMedia(message, conversation.id);
+  const preview = messagePreview(message.messageType, message.body);
+
   const created = await dataSource.whatsapp.createMessage({
     conversationId: conversation.id,
     waMessageId: message.waMessageId,
@@ -40,19 +92,22 @@ export async function processIncomingMessage(message: NormalizedIncomingMessage)
     messageType: message.messageType,
     body: message.body,
     status: "received",
+    mediaUrl: media?.mediaUrl ?? null,
+    mediaMimeType: media?.mediaMimeType ?? null,
+    mediaFilename: media?.mediaFilename ?? null,
     waTimestamp: message.timestamp,
   });
 
   await dataSource.whatsapp.touchConversationOnNewMessage(
     conversation.id,
-    message.body,
+    preview,
     message.timestamp,
     "inbound",
   );
 
   await notifyNewMessage({
     title: "Nova mensagem",
-    body: `${contact.name}: ${message.body}`,
+    body: `${contact.name}: ${preview}`,
     url: `/?c=${contact.id}`,
   }).catch(() => {});
 

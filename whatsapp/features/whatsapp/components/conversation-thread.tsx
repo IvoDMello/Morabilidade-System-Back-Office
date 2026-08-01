@@ -3,14 +3,79 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { isToday, isYesterday } from "date-fns";
-import { MessageCircle, Reply } from "lucide-react";
+import { Download, FileText, MessageCircle, Reply } from "lucide-react";
 import { EmptyState } from "@/components/shared/empty-state";
 import { cn, formatDate, formatDateTime } from "@/lib/utils";
+import { mediaLabel, mediaSrc, messagePreview } from "@/lib/whatsapp-media";
 import { markConversationReadAction } from "@/app/conversas/actions";
 import { useReply } from "@/features/whatsapp/reply-context";
 import { MessageStatusIcon } from "./message-status-icon";
 import type { ID } from "@/types/common";
 import type { WhatsAppMessage } from "@/types/whatsapp";
+
+/** Elemento visual da mídia (foto/áudio/vídeo/documento/figurinha) de uma mensagem. */
+function MediaElement({ message }: { message: WhatsAppMessage }) {
+  const src = mediaSrc(message);
+  if (!src) {
+    return (
+      <p className="text-xs italic text-ink-faint">{mediaLabel(message.messageType)} · indisponível</p>
+    );
+  }
+
+  switch (message.messageType) {
+    case "image":
+    case "sticker":
+      return (
+        <a href={src} target="_blank" rel="noreferrer" className="block">
+          {/* eslint-disable-next-line @next/next/no-img-element -- mídia servida pelo proxy/URL externa, não pelo otimizador do Next */}
+          <img
+            src={src}
+            alt={message.mediaFilename ?? "Imagem recebida"}
+            loading="lazy"
+            className={cn(
+              "rounded-lg object-cover",
+              message.messageType === "sticker" ? "max-h-32 w-32" : "max-h-80 w-auto",
+            )}
+          />
+        </a>
+      );
+    case "video":
+      return <video src={src} controls preload="metadata" className="max-h-80 rounded-lg" />;
+    case "audio":
+      return <audio src={src} controls preload="metadata" className="w-56 max-w-full" />;
+    case "document":
+      return (
+        <a
+          href={src}
+          target="_blank"
+          rel="noreferrer"
+          download={message.mediaFilename ?? undefined}
+          className="flex items-center gap-2 rounded-lg border border-veil/10 bg-veil/4 px-3 py-2 hover:bg-veil/8"
+        >
+          <FileText className="h-5 w-5 shrink-0 text-jade" />
+          <span className="min-w-0 truncate">{message.mediaFilename ?? "Documento"}</span>
+          <Download className="h-4 w-4 shrink-0 opacity-60" />
+        </a>
+      );
+    default:
+      return <p className="text-xs italic text-ink-faint">{mediaLabel(message.messageType)}</p>;
+  }
+}
+
+/** Corpo da bolha: texto puro, ou mídia + legenda opcional. */
+function MessageBody({ message }: { message: WhatsAppMessage }) {
+  if (message.messageType === "text") {
+    return <p className="whitespace-pre-wrap">{message.body}</p>;
+  }
+
+  const caption = message.body?.trim();
+  return (
+    <div className="flex flex-col gap-1">
+      <MediaElement message={message} />
+      {caption && <p className="whitespace-pre-wrap">{caption}</p>}
+    </div>
+  );
+}
 
 const POLL_INTERVAL_MS = 4000;
 
@@ -127,7 +192,7 @@ export function ConversationThread({
                         onClick={() =>
                           setReplyingTo({
                             id: message.id,
-                            body: message.body,
+                            body: messagePreview(message.messageType, message.body),
                             direction: message.direction,
                           })
                         }
@@ -149,7 +214,7 @@ export function ConversationThread({
                             <p className="truncate text-ink-faint">{message.replyTo.body}</p>
                           </div>
                         )}
-                        <p className="whitespace-pre-wrap">{message.body}</p>
+                        <MessageBody message={message} />
                         {isLast && (
                           <div
                             className={cn(

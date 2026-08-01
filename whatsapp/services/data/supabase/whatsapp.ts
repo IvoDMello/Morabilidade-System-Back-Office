@@ -15,6 +15,9 @@ import {
 
 const UNDEFINED_COLUMN = "42703";
 
+/** Bucket privado das mídias recebidas do WhatsApp (criado na migration 0016). */
+const MEDIA_BUCKET = "whatsapp-media";
+
 export const supabaseWhatsapp: DataSource["whatsapp"] = {
   async listConversations() {
     const supabase = getSupabaseServerClient();
@@ -108,6 +111,9 @@ export const supabaseWhatsapp: DataSource["whatsapp"] = {
         reply_to_id: input.replyTo?.id ?? null,
         reply_to_body: input.replyTo?.body ?? null,
         reply_to_direction: input.replyTo?.direction ?? null,
+        media_url: input.mediaUrl ?? null,
+        media_mime_type: input.mediaMimeType ?? null,
+        media_filename: input.mediaFilename ?? null,
         wa_timestamp: input.waTimestamp,
       })
       .select("*")
@@ -321,5 +327,21 @@ export const supabaseWhatsapp: DataSource["whatsapp"] = {
       .update({ last_alert_at: whenIso })
       .eq("id", conversationId);
     if (error) throw error;
+  },
+
+  async uploadMedia(path: string, data: Uint8Array, mimeType: string) {
+    const supabase = getSupabaseServerClient();
+    const { error } = await supabase.storage
+      .from(MEDIA_BUCKET)
+      .upload(path, data, { contentType: mimeType, upsert: true });
+    if (error) throw error;
+    return path;
+  },
+
+  async getMediaObject(path: string) {
+    const supabase = getSupabaseServerClient();
+    const { data, error } = await supabase.storage.from(MEDIA_BUCKET).download(path);
+    if (error || !data) return null;
+    return { data, mimeType: data.type || "application/octet-stream" };
   },
 };

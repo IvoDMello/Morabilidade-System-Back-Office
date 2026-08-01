@@ -138,6 +138,20 @@ Nenhuma mudança de código é necessária — a rota `/api/whatsapp/webhook` e 
 envio de mensagens já funcionam com as variáveis reais assim que
 `WHATSAPP_PROVIDER=cloud-api` estiver definido (ver `services/whatsapp/`).
 
+### Mídia recebida (foto/áudio/vídeo/documento/figurinha)
+
+Mensagens de mídia recebidas são exibidas de verdade no chat (a foto aparece, o
+áudio/vídeo tocam, o documento vira link). No modo `cloud-api`, o webhook baixa
+os bytes da Meta e os guarda num **bucket privado** do Supabase Storage
+(`whatsapp-media`, criado pela migration `0016`); o navegador do atendente
+logado acessa via o proxy autenticado `/api/whatsapp/media` (nada fica público).
+É um passo *best-effort*: se o download falhar, a mensagem ainda entra como
+"📷 Foto" (etc.), só sem a mídia carregada.
+
+No modo `mock`, o formulário "Simular mensagem recebida" (em `/conversas`) tem um
+campo **URL de mídia** + **Tipo** para testar toda a exibição sem a Meta — basta
+colar a URL de uma imagem/áudio/vídeo pública.
+
 ## Jobs de follow-up (esfriamento, alerta e resumo diário)
 
 Três rotas de job, mas só uma está de fato agendada em `vercel.json` hoje:
@@ -242,9 +256,6 @@ consumidor, sem reescrever a UI.
 - Múltiplos atendentes e controle de permissões (`created_by` já existe como
   texto livre nas tabelas de anotação/lembrete/mensagem — ver comentário `TODO`
   na migration para a futura FK em `auth.users`)
-- Mensagens de mídia (imagem/áudio/documento) recebidas do WhatsApp são
-  guardadas com um texto de aviso, mas não exibidas de fato — suporte completo
-  fica para depois
 - Gestão global de etiquetas (renomear, mesclar duplicadas)
 - Agenda e automações de atendimento
 

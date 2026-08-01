@@ -16,17 +16,33 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   simulateMessageFormSchema,
+  SIMULATE_MEDIA_TYPES,
   type SimulateMessageFormValues,
 } from "@/lib/validations/simulate-message.schema";
 import { simulateIncomingMessageAction } from "@/app/conversas/actions";
+
+const MEDIA_TYPE_LABELS: Record<(typeof SIMULATE_MEDIA_TYPES)[number], string> = {
+  image: "Foto",
+  audio: "Áudio",
+  video: "Vídeo",
+  document: "Documento",
+};
 
 export function SimulateMessageForm() {
   const [isPending, startTransition] = useTransition();
   const form = useForm<SimulateMessageFormValues>({
     resolver: zodResolver(simulateMessageFormSchema),
-    defaultValues: { phone: "", profileName: "", body: "" },
+    defaultValues: { phone: "", profileName: "", body: "", mediaUrl: "", mediaType: "image" },
   });
+  const mediaUrl = form.watch("mediaUrl");
 
   function handleSubmit(values: SimulateMessageFormValues) {
     startTransition(async () => {
@@ -76,14 +92,57 @@ export function SimulateMessageForm() {
           name="body"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Mensagem *</FormLabel>
+              <FormLabel>{mediaUrl ? "Legenda (opcional)" : "Mensagem *"}</FormLabel>
               <FormControl>
-                <Textarea rows={2} placeholder="Texto da mensagem recebida" {...field} />
+                <Textarea
+                  rows={2}
+                  placeholder={mediaUrl ? "Legenda da mídia (opcional)" : "Texto da mensagem recebida"}
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
+        <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
+          <FormField
+            control={form.control}
+            name="mediaUrl"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>URL de mídia (opcional)</FormLabel>
+                <FormControl>
+                  <Input placeholder="https://…/foto.jpg" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="mediaType"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Tipo</FormLabel>
+                <Select value={field.value} onValueChange={field.onChange} disabled={!mediaUrl}>
+                  <FormControl>
+                    <SelectTrigger className="sm:w-36">
+                      <SelectValue />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {SIMULATE_MEDIA_TYPES.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {MEDIA_TYPE_LABELS[type]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
         <div className="flex justify-center">
           <Button type="submit" loading={isPending} className="w-full sm:w-auto">
             {isPending ? "Enviando..." : "Simular mensagem recebida"}

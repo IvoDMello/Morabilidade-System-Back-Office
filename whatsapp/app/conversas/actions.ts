@@ -88,7 +88,9 @@ export async function simulateIncomingMessageAction(values: SimulateMessageFormV
     JSON.stringify({
       from: parsed.phone,
       profileName: parsed.profileName || null,
-      body: parsed.body,
+      body: parsed.body ?? "",
+      mediaUrl: parsed.mediaUrl || null,
+      mediaType: parsed.mediaUrl ? (parsed.mediaType ?? "image") : null,
     }),
   );
 

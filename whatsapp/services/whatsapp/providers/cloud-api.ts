@@ -1,6 +1,11 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import type { WhatsAppMessageStatus } from "@/constants/whatsapp-message-status";
-import type { NormalizedWebhookEvent, WhatsAppProvider } from "../types";
+import type { WhatsAppMessageType } from "@/types/whatsapp";
+import type {
+  NormalizedIncomingMedia,
+  NormalizedWebhookEvent,
+  WhatsAppProvider,
+} from "../types";
 
 const GRAPH_API_VERSION = "v22.0";
 
@@ -11,6 +16,36 @@ function mapMetaStatus(status: string): WhatsAppMessageStatus {
     return status;
   }
   return "sent";
+}
+
+/** Tipos de mídia da Cloud API que sabemos exibir. */
+const SUPPORTED_MEDIA_TYPES = ["image", "audio", "video", "document", "sticker"] as const;
+
+/** Traduz uma mensagem crua da Meta em (tipo, legenda, referência de mídia). */
+function parseIncomingContent(message: any): {
+  messageType: WhatsAppMessageType;
+  body: string;
+  media: NormalizedIncomingMedia | null;
+} {
+  if (message.type === "text") {
+    return { messageType: "text", body: message.text?.body ?? "", media: null };
+  }
+
+  if ((SUPPORTED_MEDIA_TYPES as readonly string[]).includes(message.type)) {
+    const payload = message[message.type] ?? {};
+    return {
+      messageType: message.type as WhatsAppMessageType,
+      body: payload.caption ?? "",
+      media: {
+        metaMediaId: payload.id ?? null,
+        mimeType: payload.mime_type ?? null,
+        filename: payload.filename ?? null,
+      },
+    };
+  }
+
+  // location, contacts, reação, etc.: registrado como não suportado (sem mídia).
+  return { messageType: "unsupported", body: "", media: null };
 }
 
 export const cloudApiWhatsAppProvider: WhatsAppProvider = {
@@ -39,6 +74,32 @@ export const cloudApiWhatsAppProvider: WhatsAppProvider = {
 
     const data = (await response.json()) as { messages?: { id: string }[] };
     return { providerMessageId: data.messages?.[0]?.id ?? null };
+  },
+
+  async fetchMediaBytes(metaMediaId: string) {
+    const token = process.env.WHATSAPP_CLOUD_API_TOKEN;
+    const authHeaders = { Authorization: `Bearer ${token}` };
+
+    // 1ª chamada: resolve o id da mídia numa URL de download (curta duração).
+    const metaResponse = await fetch(
+      `https://graph.facebook.com/${GRAPH_API_VERSION}/${metaMediaId}`,
+      { headers: authHeaders },
+    );
+    if (!metaResponse.ok) return null;
+
+    const meta = (await metaResponse.json()) as { url?: string; mime_type?: string };
+    if (!meta.url) return null;
+
+    // 2ª chamada: baixa os bytes de fato (também exige o mesmo bearer).
+    const binaryResponse = await fetch(meta.url, { headers: authHeaders });
+    if (!binaryResponse.ok) return null;
+
+    const buffer = new Uint8Array(await binaryResponse.arrayBuffer());
+    return {
+      data: buffer,
+      mimeType:
+        binaryResponse.headers.get("content-type") ?? meta.mime_type ?? "application/octet-stream",
+    };
   },
 
   verifyWebhookHandshake({ mode, token, challenge }) {
@@ -74,17 +135,17 @@ export const cloudApiWhatsAppProvider: WhatsAppProvider = {
           const profileName =
             value.contacts?.find((c: any) => c.wa_id === message.from)?.profile?.name ?? null;
 
+          const { messageType, body, media } = parseIncomingContent(message);
+
           events.push({
             type: "message",
             data: {
               waMessageId: message.id,
               fromPhone: message.from,
               profileName,
-              body:
-                message.type === "text"
-                  ? (message.text?.body ?? "")
-                  : "[Mensagem de mídia não suportada ainda]",
-              messageType: message.type === "text" ? "text" : "unsupported",
+              body,
+              messageType,
+              media,
               timestamp: new Date(Number(message.timestamp) * 1000).toISOString(),
             },
           });
