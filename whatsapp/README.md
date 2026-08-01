@@ -156,16 +156,21 @@ colar a URL de uma imagem/áudio/vídeo pública.
 
 Três rotas de job, mas só uma está de fato agendada em `vercel.json` hoje:
 
-> **Pendência conhecida**: o projeto está no plano **Hobby** da Vercel, que só
-> executa cron 1x/dia — e **rejeita o deploy inteiro** se o `vercel.json`
-> tiver algum cron mais frequente que isso. Por isso `follow-up-cooldown` e
-> `awaiting-alerts` (pensados para hora em hora) **não estão** no
-> `vercel.json`; só `daily-summary` (1x/dia) está. As rotas em si não
-> dependem da Vercel (só checam `CRON_SECRET`), então o gatilho horário pode
-> vir de qualquer lugar — a ideia é usar um GitHub Actions agendado, mas isso
-> fica pra depois da unificação deste repositório no repositório principal
-> (sistema + site + captações). Até lá, os dois primeiros jobs só rodam via
-> disparo manual (`curl`, ver abaixo).
+> **Por que o gatilho horário mora no GitHub Actions**: o projeto está no plano
+> **Hobby** da Vercel, que só executa cron 1x/dia — e **rejeita o deploy
+> inteiro** se o `vercel.json` tiver algum cron mais frequente que isso. Por
+> isso `follow-up-cooldown` e `awaiting-alerts` (hora em hora) **não estão** no
+> `vercel.json`; só `daily-summary` (1x/dia) está. As rotas em si não dependem
+> da Vercel (só checam `CRON_SECRET`), então quem as chama de hora em hora é o
+> workflow agendado `.github/workflows/whatsapp-crons.yml` do monorepo, batendo
+> nas rotas com o mesmo `Authorization: Bearer $CRON_SECRET`.
+>
+> Para ligá-lo, configure em **Settings → Secrets and variables → Actions**:
+> a *variable* `WHATSAPP_APP_URL` (base do app publicado, sem barra final) e o
+> *secret* `WHATSAPP_CRON_SECRET` (mesmo valor do `CRON_SECRET` na Vercel).
+> Sem os dois, o workflow só registra um aviso e sai — não falha. Workflows
+> agendados só rodam a partir do branch `main`. Disparo manual continua
+> possível via `curl` (ver abaixo) ou pela aba Actions (`workflow_dispatch`).
 
 - `/api/cron/follow-up-cooldown` (pensado para hora em hora): conversas
   `respondida` em que o cliente sumiu há 3 dias ou mais viram

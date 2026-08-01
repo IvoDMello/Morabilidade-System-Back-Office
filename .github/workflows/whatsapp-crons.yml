@@ -1,0 +1,72 @@
+name: WhatsApp CRM — crons horários
+
+# Dispara os jobs de follow-up do CRM de WhatsApp de hora em hora.
+#
+# Por que aqui e não no vercel.json: o projeto está no plano Hobby da Vercel,
+# que só executa cron 1x/dia e REJEITA o deploy inteiro se o vercel.json tiver
+# algo mais frequente. Só `daily-summary` (1x/dia) fica na Vercel; os dois jobs
+# horários (esfriamento e alerta) são disparados por este workflow, batendo nas
+# rotas /api/cron/* com o mesmo Bearer CRON_SECRET que a Vercel usaria.
+#
+# Configuração (Settings → Secrets and variables → Actions):
+#   - Variable  WHATSAPP_APP_URL      → base do app no ar, sem barra final
+#                                        (ex.: https://atendimento.morabilidade.com)
+#   - Secret    WHATSAPP_CRON_SECRET  → mesmo valor do CRON_SECRET do app na Vercel
+# Sem os dois configurados, o workflow apenas registra um aviso e sai (não falha),
+# para não gerar alertas antes de o app estar publicado.
+#
+# Nota: workflows agendados só rodam a partir do branch padrão (main).
+
+on:
+  schedule:
+    - cron: "0 * * * *" # de hora em hora (UTC)
+  workflow_dispatch: {} # permite disparo manual para teste
+
+# Não deixa duas execuções se sobreporem se uma demorar mais que o intervalo.
+concurrency:
+  group: whatsapp-crons
+  cancel-in-progress: false
+
+jobs:
+  disparo:
+    name: follow-up-cooldown + awaiting-alerts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verifica configuração
+        id: cfg
+        env:
+          APP_URL: ${{ vars.WHATSAPP_APP_URL }}
+          CRON_SECRET: ${{ secrets.WHATSAPP_CRON_SECRET }}
+        run: |
+          if [ -z "$APP_URL" ] || [ -z "$CRON_SECRET" ]; then
+            echo "::notice::WHATSAPP_APP_URL (variable) ou WHATSAPP_CRON_SECRET (secret) ausentes — pulando. Configure-os quando o app estiver publicado."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Dispara os crons
+        if: steps.cfg.outputs.skip != 'true'
+        env:
+          APP_URL: ${{ vars.WHATSAPP_APP_URL }}
+          CRON_SECRET: ${{ secrets.WHATSAPP_CRON_SECRET }}
+        run: |
+          set -u
+          base="${APP_URL%/}" # tolera barra final na variável
+          fail=0
+          hit() {
+            path="$1"
+            echo "→ GET ${base}${path}"
+            code=$(curl -sS -m 60 --retry 2 --retry-delay 5 \
+              -o /tmp/cron-resp.txt -w '%{http_code}' \
+              -H "Authorization: Bearer ${CRON_SECRET}" \
+              "${base}${path}") || code=000
+            echo "HTTP ${code}"
+            cat /tmp/cron-resp.txt 2>/dev/null || true
+            echo
+            if [ "$code" -lt 200 ] || [ "$code" -ge 300 ]; then
+              echo "::error::${path} devolveu HTTP ${code}"
+              fail=1
+            fi
+          }
+          hit "/api/cron/follow-up-cooldown"
+          hit "/api/cron/awaiting-alerts"
+          exit $fail
