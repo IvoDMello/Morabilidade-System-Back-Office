@@ -39,6 +39,8 @@ export interface WhatsAppConversationSummary extends WhatsAppConversation {
   contactIsBlocked: boolean;
   /** Etiquetas do contato — alimentam o filtro de listas do inbox. */
   contactTagIds: ID[];
+  /** Corretor responsável pelo contato — alimenta o filtro por corretor do inbox. */
+  contactCorretorId: ID | null;
 }
 
 /** Trecho citado numa resposta (snapshot da mensagem original). */

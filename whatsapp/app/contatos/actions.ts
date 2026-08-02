@@ -24,6 +24,7 @@ import {
   updateReminder,
 } from "@/services/reminders.service";
 import { addTagToContact, createTag, getTags, removeTagFromContact } from "@/services/tags.service";
+import { getCorretores } from "@/services/corretores.service";
 import { logEvent } from "@/services/events.service";
 import {
   createProperty,
@@ -31,6 +32,7 @@ import {
   linkPropertyToContact,
   unlinkPropertyFromContact,
   updateContactPropertyStage,
+  updateContactPropertyRelacao,
 } from "@/services/properties.service";
 import { fetchImovelByCodigo } from "@/lib/backoffice-api";
 import { propertyLinkFormSchema, type PropertyLinkFormValues } from "@/lib/validations/property.schema";
@@ -39,6 +41,7 @@ import type { ID } from "@/types/common";
 import { CONTACT_STATUS_LABELS, type ContactStatus } from "@/constants/contact-status";
 import type { LossReason } from "@/constants/loss-reasons";
 import { PROPERTY_STAGE_LABELS, type PropertyStage } from "@/constants/property-stages";
+import { PROPERTY_RELATION_LABELS, type PropertyRelation } from "@/constants/property-relations";
 
 function toContactInput(values: ContactFormValues) {
   const parsed = contactFormSchema.parse(values);
@@ -267,6 +270,21 @@ export async function updateContactStatusAction(
   revalidatePath("/dashboard");
 }
 
+export async function assignCorretorAction(contactId: ID, corretorId: string | null) {
+  await updateContact(contactId, { corretorId });
+  const corretor = corretorId
+    ? (await getCorretores()).find((c) => c.id === corretorId)
+    : null;
+  await logEvent({
+    contactId,
+    type: "contact_assigned",
+    summary: corretor ? `Responsável definido: ${corretor.nome}` : "Responsável removido",
+  });
+  revalidatePath(`/contatos/${contactId}`);
+  revalidatePath("/contatos");
+  revalidatePath("/");
+}
+
 export async function linkPropertyAction(contactId: ID, values: PropertyLinkFormValues) {
   const parsed = propertyLinkFormSchema.parse(values);
   let property = await findPropertyByCode(parsed.code);
@@ -277,14 +295,29 @@ export async function linkPropertyAction(contactId: ID, values: PropertyLinkForm
     const imovel = await fetchImovelByCodigo(parsed.code);
     property = await createProperty({ code: parsed.code, title: imovel?.titulo ?? null });
   }
-  await linkPropertyToContact(contactId, property.id, parsed.stage);
+  await linkPropertyToContact(contactId, property.id, parsed.relacao, parsed.stage);
   await logEvent({
     contactId,
     type: "property_linked",
-    summary: `Imóvel "${property.code}" vinculado (${PROPERTY_STAGE_LABELS[parsed.stage]})`,
+    summary: `Imóvel "${property.code}" vinculado (${PROPERTY_RELATION_LABELS[parsed.relacao]})`,
   });
   revalidatePath(`/contatos/${contactId}`);
   revalidatePath("/contatos");
+}
+
+export async function updatePropertyRelacaoAction(
+  contactId: ID,
+  propertyId: ID,
+  propertyCode: string,
+  relacao: PropertyRelation,
+) {
+  await updateContactPropertyRelacao(contactId, propertyId, relacao);
+  await logEvent({
+    contactId,
+    type: "property_relation_changed",
+    summary: `Imóvel "${propertyCode}" — papel alterado para ${PROPERTY_RELATION_LABELS[relacao]}`,
+  });
+  revalidatePath(`/contatos/${contactId}`);
 }
 
 export async function updatePropertyStageAction(

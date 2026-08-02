@@ -53,6 +53,7 @@ export const supabaseReminders: DataSource["reminders"] = {
         reminder_at: input.reminderAt,
         status: "pendente",
         created_by: input.createdBy,
+        corretor_id: input.corretorId ?? null,
       })
       .select("*")
       .single();

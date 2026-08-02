@@ -23,7 +23,7 @@ export const supabaseWhatsapp: DataSource["whatsapp"] = {
     const supabase = getSupabaseServerClient();
     const { data, error } = await supabase
       .from("whatsapp_conversations")
-      .select("*, contacts(name, phone, is_favorite, is_blocked, contact_tags(tag_id))")
+      .select("*, contacts(name, phone, is_favorite, is_blocked, corretor_id, contact_tags(tag_id))")
       .order("pinned_at", { ascending: false, nullsFirst: false })
       .order("last_message_at", { ascending: false, nullsFirst: false });
     if (error) {
@@ -312,7 +312,7 @@ export const supabaseWhatsapp: DataSource["whatsapp"] = {
     const supabase = getSupabaseServerClient();
     const { data, error } = await supabase
       .from("whatsapp_conversations")
-      .select("*, contacts(name, phone, is_favorite, is_blocked, contact_tags(tag_id))")
+      .select("*, contacts(name, phone, is_favorite, is_blocked, corretor_id, contact_tags(tag_id))")
       .eq("status", "aguardando_resposta")
       .lte("last_inbound_at", alertCutoffIso)
       .or(`last_alert_at.is.null,last_alert_at.lt.${todayStartIso}`);

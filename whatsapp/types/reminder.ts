@@ -9,6 +9,8 @@ export interface ContactReminder {
   reminderAt: string;
   status: ReminderStatus;
   createdBy: string;
+  /** Corretor responsável por executar a visita/tarefa; null se não atribuído. */
+  corretorId: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -25,6 +27,7 @@ export interface CreateReminderInput {
   description?: string | null;
   reminderAt: string;
   createdBy: string;
+  corretorId?: string | null;
 }
 
 export interface UpdateReminderInput {

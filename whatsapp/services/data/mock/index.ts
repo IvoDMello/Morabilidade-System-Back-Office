@@ -8,6 +8,7 @@ import { mockTemplates } from "./templates";
 import { mockProperties } from "./properties";
 import { mockWhatsapp } from "./whatsapp";
 import { mockPushSubscriptions } from "./push-subscriptions";
+import { mockCorretores } from "./corretores";
 
 export const mockDataSource: DataSource = {
   contacts: mockContacts,
@@ -19,4 +20,5 @@ export const mockDataSource: DataSource = {
   properties: mockProperties,
   whatsapp: mockWhatsapp,
   pushSubscriptions: mockPushSubscriptions,
+  corretores: mockCorretores,
 };

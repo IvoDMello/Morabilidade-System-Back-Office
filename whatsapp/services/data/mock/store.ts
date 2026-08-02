@@ -7,6 +7,7 @@ import type { MessageTemplate } from "@/types/template";
 import type { ContactProperty, Property } from "@/types/property";
 import type { WhatsAppConversation, WhatsAppMessage } from "@/types/whatsapp";
 import type { PushSubscriptionRecord } from "@/types/push";
+import type { Corretor } from "@/types/corretor";
 import {
   seedContacts,
   seedNotes,
@@ -19,6 +20,7 @@ import {
   seedTemplates,
   seedProperties,
   seedContactProperties,
+  seedCorretores,
 } from "./seed";
 
 /**
@@ -38,6 +40,7 @@ interface MockStore {
   templates: MessageTemplate[];
   properties: Property[];
   contactProperties: ContactProperty[];
+  corretores: Corretor[];
   pushSubscriptions: PushSubscriptionRecord[];
 }
 
@@ -57,6 +60,7 @@ export const mockStore: MockStore =
     templates: seedTemplates,
     properties: seedProperties,
     contactProperties: seedContactProperties,
+    corretores: seedCorretores,
     pushSubscriptions: [],
   });
 

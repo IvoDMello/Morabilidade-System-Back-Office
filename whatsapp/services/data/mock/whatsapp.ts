@@ -30,6 +30,7 @@ function withContact(conversation: WhatsAppConversation): WhatsAppConversationSu
     contactTagIds: mockStore.contactTags
       .filter((ct) => ct.contactId === conversation.contactId)
       .map((ct) => ct.tagId),
+    contactCorretorId: contact?.corretorId ?? null,
   };
 }
 

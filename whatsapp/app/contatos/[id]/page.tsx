@@ -12,6 +12,7 @@ import { StatusBadge } from "@/features/contacts/components/status-badge";
 import { FavoriteToggle } from "@/features/contacts/components/favorite-toggle";
 import { ContactStageStepper } from "@/features/contacts/components/contact-stage-stepper";
 import { TagPicker } from "@/features/contacts/tags/components/tag-picker";
+import { CorretorPicker } from "@/features/contacts/components/corretor-picker";
 import { PropertyPicker } from "@/features/contacts/properties/components/property-picker";
 import { AiSummaryCard } from "@/features/contacts/ai/components/ai-summary-card";
 import { FollowUpSuggestion } from "@/features/contacts/ai/components/follow-up-suggestion";
@@ -28,6 +29,7 @@ import { getTags, getTagsByContact } from "@/services/tags.service";
 import { getEventsByContact } from "@/services/events.service";
 import { getTemplates } from "@/services/templates.service";
 import { getProperties, getPropertiesByContact } from "@/services/properties.service";
+import { getCorretores } from "@/services/corretores.service";
 import { fetchImoveisByCodigos } from "@/lib/backoffice-api";
 import { getConversationMessages } from "@/services/whatsapp.service";
 import { createReminderAction } from "@/app/contatos/actions";
@@ -60,6 +62,7 @@ export default async function ContatoDetalhePage({
     templates,
     contactProperties,
     allProperties,
+    corretores,
   ] = await Promise.all([
     getNotesByContact(id),
     getRemindersByContact(id),
@@ -70,6 +73,7 @@ export default async function ContatoDetalhePage({
     getTemplates(),
     getPropertiesByContact(id),
     getProperties(),
+    getCorretores(),
   ]);
 
   // Detalhes ao vivo dos imóveis vinculados (status/bairro/preço do catálogo
@@ -136,6 +140,12 @@ export default async function ContatoDetalhePage({
             <p className="text-sm text-muted-foreground">
               Próxima ação: <span className="font-medium text-foreground">{NEXT_ACTION_LABELS[contact.nextAction]}</span>
             </p>
+
+            <CorretorPicker
+              contactId={contact.id}
+              corretorId={contact.corretorId}
+              corretores={corretores}
+            />
 
             <TagPicker contactId={contact.id} contactTags={contactTags} allTags={allTags} />
 

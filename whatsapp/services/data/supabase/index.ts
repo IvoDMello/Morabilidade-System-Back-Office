@@ -8,6 +8,7 @@ import { supabaseTemplates } from "./templates";
 import { supabaseProperties } from "./properties";
 import { supabaseWhatsapp } from "./whatsapp";
 import { supabasePushSubscriptions } from "./push-subscriptions";
+import { supabaseCorretores } from "./corretores";
 
 export const supabaseDataSource: DataSource = {
   contacts: supabaseContacts,
@@ -19,4 +20,5 @@ export const supabaseDataSource: DataSource = {
   properties: supabaseProperties,
   whatsapp: supabaseWhatsapp,
   pushSubscriptions: supabasePushSubscriptions,
+  corretores: supabaseCorretores,
 };

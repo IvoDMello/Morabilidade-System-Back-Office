@@ -12,7 +12,9 @@ export type ContactEventType =
   | "property_stage_changed"
   | "property_unlinked"
   | "contact_blocked"
-  | "contact_unblocked";
+  | "contact_unblocked"
+  | "contact_assigned"
+  | "property_relation_changed";
 
 /** Log automático de eventos do sistema — resumo curto, sem duplicar conteúdo
  * já guardado em ContactNote/WhatsAppMessage. Ver ActivityFeed. */

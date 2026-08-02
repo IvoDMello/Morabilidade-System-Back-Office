@@ -87,6 +87,7 @@ export const mockContacts: DataSource["contacts"] = {
       aiSummaryGeneratedAt: input.aiSummaryGeneratedAt ?? null,
       clienteId: input.clienteId ?? null,
       clienteCodigo: input.clienteCodigo ?? null,
+      corretorId: input.corretorId ?? null,
       createdAt: nowIso,
       updatedAt: nowIso,
     };

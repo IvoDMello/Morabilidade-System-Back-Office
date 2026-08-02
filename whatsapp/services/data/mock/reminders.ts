@@ -62,6 +62,7 @@ export const mockReminders: DataSource["reminders"] = {
       reminderAt: input.reminderAt,
       status: "pendente",
       createdBy: input.createdBy,
+      corretorId: input.corretorId ?? null,
       createdAt: nowIso,
       updatedAt: nowIso,
     };

@@ -7,6 +7,7 @@ import type { ContactEvent } from "@/types/event";
 import type { MessageTemplate } from "@/types/template";
 import type { ContactProperty, Property } from "@/types/property";
 import type { WhatsAppConversation, WhatsAppMessage } from "@/types/whatsapp";
+import type { Corretor } from "@/types/corretor";
 
 function at(daysOffset: number, hours: number, minutes = 0): string {
   return setMinutes(setHours(addDays(new Date(), daysOffset), hours), minutes).toISOString();
@@ -29,11 +30,18 @@ function contact(
     aiSummaryGeneratedAt: null,
     clienteId: null,
     clienteCodigo: null,
+    corretorId: null,
     createdAt: subDays(now, 30).toISOString(),
     updatedAt: subDays(now, 30).toISOString(),
     ...partial,
   };
 }
+
+export const seedCorretores: Corretor[] = [
+  { id: "co1", nome: "Rodrigo", authUserId: null, cor: "blue", ativo: true, createdAt: subDays(now, 60).toISOString() },
+  { id: "co2", nome: "Leandro", authUserId: null, cor: "emerald", ativo: true, createdAt: subDays(now, 60).toISOString() },
+  { id: "co3", nome: "Ivo", authUserId: null, cor: "violet", ativo: true, createdAt: subDays(now, 60).toISOString() },
+];
 
 export const seedContacts: Contact[] = [
   contact({
@@ -199,7 +207,8 @@ export const seedNotes: ContactNote[] = [
   },
 ];
 
-export const seedReminders: ContactReminder[] = [
+// corretorId preenchido no export abaixo (seed não atribui corretor).
+const seedRemindersData: Omit<ContactReminder, "corretorId">[] = [
   {
     id: "r1",
     contactId: "c1",
@@ -300,6 +309,11 @@ export const seedReminders: ContactReminder[] = [
     updatedAt: subDays(now, 4).toISOString(),
   },
 ];
+
+export const seedReminders: ContactReminder[] = seedRemindersData.map((r) => ({
+  ...r,
+  corretorId: null,
+}));
 
 export const seedTags: Tag[] = [
   { id: "t1", name: "Urgente", color: "amber", createdAt: subDays(now, 20).toISOString() },
@@ -549,7 +563,8 @@ export const seedProperties: Property[] = [
   },
 ];
 
-export const seedContactProperties: ContactProperty[] = [
+// relacao preenchido no export abaixo (todos os vínculos seed são de interesse).
+const seedContactPropertiesData: Omit<ContactProperty, "relacao">[] = [
   {
     contactId: "c2",
     propertyId: "p1",
@@ -572,6 +587,11 @@ export const seedContactProperties: ContactProperty[] = [
     updatedAt: subDays(now, 3).toISOString(),
   },
 ];
+
+export const seedContactProperties: ContactProperty[] = seedContactPropertiesData.map((cp) => ({
+  ...cp,
+  relacao: "interesse" as const,
+}));
 
 export const seedMessages: WhatsAppMessage[] = [
   {

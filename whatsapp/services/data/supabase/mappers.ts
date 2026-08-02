@@ -12,6 +12,7 @@ import type {
   WhatsAppMessageSearchResult,
 } from "@/types/whatsapp";
 import type { PushSubscriptionRecord } from "@/types/push";
+import type { Corretor } from "@/types/corretor";
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- linhas cruas do Supabase (snake_case) */
 
@@ -33,6 +34,7 @@ export function mapContactRow(row: any): Contact {
     aiSummaryGeneratedAt: row.ai_summary_generated_at,
     clienteId: row.cliente_id ?? null,
     clienteCodigo: row.cliente_codigo ?? null,
+    corretorId: row.corretor_id ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -57,6 +59,7 @@ export function mapReminderRow(row: any): ContactReminder {
     reminderAt: row.reminder_at,
     status: row.status,
     createdBy: row.created_by,
+    corretorId: row.corretor_id ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -110,6 +113,7 @@ export function mapConversationSummaryRow(row: any): WhatsAppConversationSummary
     contactTagIds: (row.contacts?.contact_tags ?? []).map(
       (ct: { tag_id: string }) => ct.tag_id,
     ),
+    contactCorretorId: row.contacts?.corretor_id ?? null,
   };
 }
 
@@ -145,11 +149,23 @@ export function mapContactPropertyRow(row: any): ContactPropertyWithDetails {
   return {
     contactId: row.contact_id,
     propertyId: row.property_id,
+    relacao: row.relacao ?? "interesse",
     stage: row.stage,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     code: row.properties?.code ?? "",
     title: row.properties?.title ?? null,
+  };
+}
+
+export function mapCorretorRow(row: any): Corretor {
+  return {
+    id: row.id,
+    nome: row.nome,
+    authUserId: row.auth_user_id ?? null,
+    cor: row.cor ?? "slate",
+    ativo: row.ativo ?? true,
+    createdAt: row.created_at,
   };
 }
 

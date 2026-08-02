@@ -16,6 +16,7 @@ import {
 } from "@/services/whatsapp.service";
 import { getContactById } from "@/services/contacts.service";
 import { getTags } from "@/services/tags.service";
+import { getCorretores } from "@/services/corretores.service";
 import { getTemplates } from "@/services/templates.service";
 
 interface HomePageProps {
@@ -29,10 +30,11 @@ interface HomePageProps {
 export default async function HomePage({ searchParams }: HomePageProps) {
   const { c: selectedContactId, q: query } = await searchParams;
 
-  const [conversations, messageResults, tags] = await Promise.all([
+  const [conversations, messageResults, tags, corretores] = await Promise.all([
     getConversations(),
     query?.trim() ? searchMessages(query) : Promise.resolve([]),
     getTags(),
+    getCorretores(),
   ]);
 
   const selected = selectedContactId
@@ -71,6 +73,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             conversations={conversations}
             messageResults={messageResults}
             tags={tags}
+            corretores={corretores}
             query={query?.trim() ?? ""}
             selectedContactId={selectedContactId}
           />

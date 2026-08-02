@@ -40,8 +40,10 @@ const EVENT_ICONS: Record<ContactEventType, LucideIcon> = {
   property_linked: Building2,
   property_stage_changed: Building2,
   property_unlinked: Building2,
+  property_relation_changed: Building2,
   contact_blocked: Ban,
   contact_unblocked: Ban,
+  contact_assigned: UserPlus,
 };
 
 type TimelineItem =

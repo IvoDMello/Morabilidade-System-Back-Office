@@ -18,6 +18,8 @@ import type { ContactEvent, CreateEventInput } from "@/types/event";
 import type { CreateTemplateInput, MessageTemplate } from "@/types/template";
 import type { ContactPropertyWithDetails, CreatePropertyInput, Property } from "@/types/property";
 import type { PropertyStage } from "@/constants/property-stages";
+import type { PropertyRelation } from "@/constants/property-relations";
+import type { Corretor } from "@/types/corretor";
 import type {
   CreateWhatsAppMessageInput,
   WhatsAppConversation,
@@ -76,9 +78,19 @@ export interface DataSource {
     findByCode(code: string): Promise<Property | null>;
     create(input: CreatePropertyInput): Promise<Property>;
     listByContact(contactId: ID): Promise<ContactPropertyWithDetails[]>;
-    addToContact(contactId: ID, propertyId: ID, stage: PropertyStage): Promise<void>;
+    addToContact(
+      contactId: ID,
+      propertyId: ID,
+      relacao: PropertyRelation,
+      stage: PropertyStage,
+    ): Promise<void>;
     updateStage(contactId: ID, propertyId: ID, stage: PropertyStage): Promise<void>;
+    updateRelacao(contactId: ID, propertyId: ID, relacao: PropertyRelation): Promise<void>;
     removeFromContact(contactId: ID, propertyId: ID): Promise<void>;
+  };
+  corretores: {
+    list(): Promise<Corretor[]>;
+    getByAuthUserId(authUserId: string): Promise<Corretor | null>;
   };
   whatsapp: {
     listConversations(): Promise<WhatsAppConversationSummary[]>;

@@ -1,7 +1,7 @@
 import { getSupabaseCaptacoesClient } from "@/lib/supabase/server";
 import { getContactById } from "@/services/contacts.service";
 import { createReminder } from "@/services/reminders.service";
-import { CURRENT_USER_NAME } from "@/constants/current-user";
+import { getCurrentCorretor, getCurrentUserName } from "@/services/corretores.service";
 import { agendarVisitaArgs, criarCaptacaoArgs, type ToolName } from "./tools";
 import { AcaoInvalidaError, validarHorarioVisita } from "./visita-range";
 
@@ -16,13 +16,18 @@ async function executarAgendarVisita(rawArgs: unknown): Promise<string> {
   }
   const quando = validarHorarioVisita(args.data_hora);
 
+  // A visita fica com o responsável pelo contato; sem responsável, cai no
+  // corretor logado (se o login estiver ligado a um corretor).
+  const corretorId = contato.corretorId ?? (await getCurrentCorretor())?.id ?? null;
+
   const tituloImovel = args.imovel_codigo ? ` — ${args.imovel_codigo}` : "";
   await createReminder({
     contactId: contato.id,
     title: `Visita${tituloImovel}`,
     description: args.observacao ?? null,
     reminderAt: quando.toISOString(),
-    createdBy: CURRENT_USER_NAME,
+    createdBy: await getCurrentUserName(),
+    corretorId,
   });
 
   return `Visita agendada com ${contato.name}.`;

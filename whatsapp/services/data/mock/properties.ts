@@ -1,4 +1,5 @@
 import type { PropertyStage } from "@/constants/property-stages";
+import type { PropertyRelation } from "@/constants/property-relations";
 import type {
   ContactPropertyWithDetails,
   CreatePropertyInput,
@@ -45,7 +46,12 @@ export const mockProperties: DataSource["properties"] = {
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   },
 
-  async addToContact(contactId: ID, propertyId: ID, stage: PropertyStage) {
+  async addToContact(
+    contactId: ID,
+    propertyId: ID,
+    relacao: PropertyRelation,
+    stage: PropertyStage,
+  ) {
     const existing = mockStore.contactProperties.find(
       (cp) => cp.contactId === contactId && cp.propertyId === propertyId,
     );
@@ -55,6 +61,7 @@ export const mockProperties: DataSource["properties"] = {
     mockStore.contactProperties.push({
       contactId,
       propertyId,
+      relacao,
       stage,
       createdAt: nowIso,
       updatedAt: nowIso,
@@ -69,6 +76,18 @@ export const mockProperties: DataSource["properties"] = {
     mockStore.contactProperties[index] = {
       ...mockStore.contactProperties[index],
       stage,
+      updatedAt: new Date().toISOString(),
+    };
+  },
+
+  async updateRelacao(contactId: ID, propertyId: ID, relacao: PropertyRelation) {
+    const index = mockStore.contactProperties.findIndex(
+      (cp) => cp.contactId === contactId && cp.propertyId === propertyId,
+    );
+    if (index === -1) return;
+    mockStore.contactProperties[index] = {
+      ...mockStore.contactProperties[index],
+      relacao,
       updatedAt: new Date().toISOString(),
     };
   },
