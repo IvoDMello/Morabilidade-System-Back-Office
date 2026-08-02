@@ -12,6 +12,7 @@ import type {
   ReminderFilters,
   ReminderWithContact,
   UpdateReminderInput,
+  VisitaParaFicha,
 } from "@/types/reminder";
 import type { CreateTagInput, Tag } from "@/types/tag";
 import type { ContactEvent, CreateEventInput } from "@/types/event";
@@ -56,6 +57,9 @@ export interface DataSource {
     create(input: CreateReminderInput): Promise<ContactReminder>;
     update(id: ID, input: UpdateReminderInput): Promise<ContactReminder>;
     remove(id: ID): Promise<void>;
+    /** Visitas pendentes entre `fromIso` e `toIso` que ainda não tiveram a ficha
+     * enviada — a fila do cron de ficha de visita. */
+    listVisitasParaFicha(fromIso: string, toIso: string): Promise<VisitaParaFicha[]>;
   };
   tags: {
     list(): Promise<Tag[]>;

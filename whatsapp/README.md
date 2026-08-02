@@ -216,6 +216,8 @@ Três rotas de job, mas só uma está de fato agendada em `vercel.json` hoje:
 - `/api/cron/awaiting-alerts` (pensado para hora em hora): conversas
   `aguardando_resposta` há mais de 2h disparam um alerta via WhatsApp para
   `ALERT_PHONE_NUMBER`, no máximo uma vez por dia por conversa.
+- `/api/cron/visita-fichas` (hora em hora): ficha de visita automática das
+  visitas que começam nos próximos 90 minutos — ver a seção dedicada acima.
 - `/api/cron/daily-summary` (18h America/Sao_Paulo = 21h UTC no
   `vercel.json`, offset fixo já que o Brasil não tem mais horário de verão):
   resumo do dia — quantas conversas aguardando resposta (e há quanto tempo
@@ -236,6 +238,7 @@ Pra testar localmente sem esperar o horário virar:
 ```bash
 curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron/follow-up-cooldown
 curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron/awaiting-alerts
+curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron/visita-fichas
 curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron/daily-summary
 ```
 
@@ -247,6 +250,66 @@ curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron/dail
 > seguinte). Pra alertas e resumos confiáveis a qualquer hora, criar um
 > template de utilidade na Meta Business Manager e trocar `sendTextMessage`
 > por um envio de template em `services/jobs.service.ts`.
+
+## Captações pelo chat e copiloto da conversa
+
+Na tela de conversa, o botão **Copiloto** (cabeçalho da thread) abre um painel
+com tudo que a operação precisa sem sair do WhatsApp:
+
+- **Captações deste contato**: as captações do board (`captacoes/`) cujo campo
+  "contato do proprietário" bate com o telefone da conversa (comparação pelos
+  8 dígitos finais), mais um bloco recolhível com as recentes do board.
+- **Nova captação**: formulário curto (endereço obrigatório; quartos,
+  banheiros, portaria e observações opcionais) que cria o cartão direto na
+  coluna inicial do Kanban, já com o contato preenchido como proprietário.
+- **Analisar conversa**: manda o histórico para a IA, que propõe as ações do
+  processo de captação — `criar_captacao` com os dados que o proprietário já
+  passou, `agendar_visita` e `sugerir_resposta` (o texto da próxima mensagem,
+  pedindo só o que ainda falta). **Nada é executado sem confirmação**: cada
+  proposta aparece com os campos que serão gravados, a resposta sugerida pode
+  ser editada no próprio painel antes de enviar, e dá para dispensar qualquer
+  uma.
+
+O prompt conhece as captações já ligadas ao telefone, então não propõe
+duplicata do mesmo imóvel. A execução revalida tudo no servidor
+(`services/assistant/handlers.ts`) — a proposta do modelo nunca é confiada.
+
+Configure `CAPTACOES_BOARD_URL` para o painel mostrar o atalho "Abrir board de
+captações". O resto funciona sem nenhuma variável nova (usa o mesmo Supabase,
+schema `captacoes`).
+
+## Ficha de visita automática (1h antes)
+
+O cron `/api/cron/visita-fichas` (de hora em hora, mesmo workflow dos demais)
+varre as visitas agendadas que começam nos próximos 90 minutos e, para cada
+uma: gera a **ficha de visita** na API principal (server-to-server, mesmo
+`X-Internal-Token` do resto da integração) e entrega o link de assinatura
+nesta ordem:
+
+1. **texto livre pro cliente** — entrega se ele falou com a gente nas últimas
+   24h (janela da Meta);
+2. **template pro cliente** (`WHATSAPP_FICHA_TEMPLATE`, dois parâmetros:
+   `{{1}}` hora e `{{2}}` link) — vale a qualquer hora, se aprovado na Meta;
+3. **pendência pro plantão** (`PENDING_PHONE_NUMBERS`, 1 ou 2 números) — a
+   mensagem pronta com o link, para alguém encaminhar na mão.
+
+Quando a ficha não pode ser gerada (visita sem imóvel vinculado, corretor sem
+CRECI, imóvel fora do catálogo), a pendência sai mesmo assim com o **motivo
+exato** devolvido pela API, para a ação ser óbvia.
+
+Cada visita é notificada **uma única vez** (`ficha_notificada_em` no lembrete)
+— por isso a janela de 90 minutos com gatilho horário resulta num aviso entre
+~30 e ~90 minutos antes. A ficha nunca é recriada: o id fica guardado no
+lembrete, então se o envio falhar, o plantão encaminha o mesmo link.
+
+Variáveis: `PENDING_PHONE_NUMBERS`, `NEXT_PUBLIC_SITE_URL` (base de
+`/ficha/<token>`), `WHATSAPP_FICHA_TEMPLATE` + `_LANG`, além das já
+existentes `BACKOFFICE_API_URL`/`BACKOFFICE_INTERNAL_TOKEN` e `CRON_SECRET`.
+Requer a migration `0019_ficha_visita_lembrete.sql`.
+
+> O código do imóvel vem da coluna `imovel_codigo` do lembrete (preenchida
+> quando a visita é agendada pelo assistente). Para visitas antigas, o cron
+> ainda tenta extrair o código do título (`Visita — MB-00033`).
 
 ## Recursos de IA (resumo e sugestão de follow-up)
 

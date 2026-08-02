@@ -4,9 +4,10 @@ name: WhatsApp CRM — crons horários
 #
 # Por que aqui e não no vercel.json: o projeto está no plano Hobby da Vercel,
 # que só executa cron 1x/dia e REJEITA o deploy inteiro se o vercel.json tiver
-# algo mais frequente. Só `daily-summary` (1x/dia) fica na Vercel; os dois jobs
-# horários (esfriamento e alerta) são disparados por este workflow, batendo nas
-# rotas /api/cron/* com o mesmo Bearer CRON_SECRET que a Vercel usaria.
+# algo mais frequente. Só `daily-summary` (1x/dia) fica na Vercel; os três jobs
+# horários (esfriamento, alerta e ficha de visita) são disparados por este
+# workflow, batendo nas rotas /api/cron/* com o mesmo Bearer CRON_SECRET que a
+# Vercel usaria.
 #
 # Configuração (Settings → Secrets and variables → Actions):
 #   - Variable  WHATSAPP_APP_URL      → base do app no ar, sem barra final
@@ -29,7 +30,7 @@ concurrency:
 
 jobs:
   disparo:
-    name: follow-up-cooldown + awaiting-alerts
+    name: follow-up-cooldown + awaiting-alerts + visita-fichas
     runs-on: ubuntu-latest
     steps:
       - name: Verifica configuração
@@ -69,4 +70,5 @@ jobs:
           }
           hit "/api/cron/follow-up-cooldown"
           hit "/api/cron/awaiting-alerts"
+          hit "/api/cron/visita-fichas"
           exit $fail

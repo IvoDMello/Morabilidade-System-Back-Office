@@ -60,6 +60,9 @@ export function mapReminderRow(row: any): ContactReminder {
     status: row.status,
     createdBy: row.created_by,
     corretorId: row.corretor_id ?? null,
+    imovelCodigo: row.imovel_codigo ?? null,
+    fichaVisitaId: row.ficha_visita_id ?? null,
+    fichaNotificadaEm: row.ficha_notificada_em ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

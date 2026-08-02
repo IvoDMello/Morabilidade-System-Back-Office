@@ -27,6 +27,8 @@ export interface ClienteResumo {
 
 /** Subconjunto do ImovelOut da API que o CRM realmente usa. */
 export interface ImovelResumo {
+  /** UUID do imóvel — necessário para criar uma ficha de visita. */
+  id: string | null;
   codigo: string;
   titulo: string | null;
   bairro: string | null;
@@ -78,6 +80,7 @@ export async function fetchImovelByCodigo(codigo: string): Promise<ImovelResumo 
     if (!res.ok) return null;
     const data = (await res.json()) as Record<string, unknown>;
     return {
+      id: data.id ? String(data.id) : null,
       codigo: String(data.codigo ?? code),
       titulo: (data.titulo as string) ?? null,
       bairro: (data.bairro as string) ?? null,
@@ -126,6 +129,74 @@ export async function fetchClienteByTelefone(telefone: string): Promise<ClienteR
     };
   } catch {
     return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+/** Ficha de visita recém-criada na API principal (o que o CRM usa do retorno). */
+export interface FichaVisitaCriada {
+  id: string;
+  token: string;
+  imovelCodigo: string | null;
+  imovelEndereco: string | null;
+}
+
+export interface CriarFichaVisitaInput {
+  imovelId: string;
+  visitanteNome: string;
+  visitanteTelefone?: string | null;
+  clienteId?: string | null;
+  /** Usuário da API principal responsável pela ficha (usuarios.id = auth.users.id). */
+  corretorId: string;
+}
+
+/**
+ * Cria uma ficha de visita na API principal (server-to-server, X-Internal-Token).
+ * Diferente do resto deste módulo, LANÇA em caso de falha: quem chama é o cron
+ * da ficha, que precisa distinguir "não deu para gerar" (vira pendência com o
+ * motivo) de "gerou". A mensagem do erro é a que a API devolveu, porque
+ * costuma ser acionável (ex.: corretor sem CRECI cadastrado).
+ */
+export async function criarFichaVisita(input: CriarFichaVisitaInput): Promise<FichaVisitaCriada> {
+  const config = getConfig();
+  if (!config) throw new Error("Integração com a API principal não configurada.");
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    const res = await fetch(`${config.apiUrl}/fichas-visita`, {
+      method: "POST",
+      headers: {
+        "X-Internal-Token": config.token,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        imovel_id: input.imovelId,
+        visitante_nome: input.visitanteNome,
+        visitante_telefone: input.visitanteTelefone ?? null,
+        cliente_id: input.clienteId ?? null,
+        corretor_id: input.corretorId,
+      }),
+      signal: controller.signal,
+      cache: "no-store",
+    });
+
+    if (!res.ok) {
+      const detalhe = await res
+        .json()
+        .then((b: { detail?: string }) => b?.detail)
+        .catch(() => null);
+      throw new Error(detalhe || `A API recusou a criação da ficha (HTTP ${res.status}).`);
+    }
+
+    const data = (await res.json()) as Record<string, unknown>;
+    return {
+      id: String(data.id),
+      token: String(data.token),
+      imovelCodigo: (data.imovel_codigo as string) ?? null,
+      imovelEndereco: (data.imovel_endereco as string) ?? null,
+    };
   } finally {
     clearTimeout(timeout);
   }

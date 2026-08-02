@@ -63,6 +63,9 @@ export const mockReminders: DataSource["reminders"] = {
       status: "pendente",
       createdBy: input.createdBy,
       corretorId: input.corretorId ?? null,
+      imovelCodigo: input.imovelCodigo ?? null,
+      fichaVisitaId: null,
+      fichaNotificadaEm: null,
       createdAt: nowIso,
       updatedAt: nowIso,
     };
@@ -85,5 +88,32 @@ export const mockReminders: DataSource["reminders"] = {
 
   async remove(id: ID) {
     mockStore.reminders = mockStore.reminders.filter((r) => r.id !== id);
+  },
+
+  async listVisitasParaFicha(fromIso: string, toIso: string) {
+    const from = new Date(fromIso).getTime();
+    const to = new Date(toIso).getTime();
+    return mockStore.reminders
+      .filter((r) => {
+        const at = new Date(r.reminderAt).getTime();
+        return r.status === "pendente" && !r.fichaNotificadaEm && at >= from && at <= to;
+      })
+      .sort((a, b) => new Date(a.reminderAt).getTime() - new Date(b.reminderAt).getTime())
+      .map((r) => {
+        const contact = mockStore.contacts.find((c) => c.id === r.contactId);
+        const corretor = mockStore.corretores.find((c) => c.id === r.corretorId);
+        return {
+          reminderId: r.id,
+          reminderAt: r.reminderAt,
+          contactId: r.contactId,
+          contactName: contact?.name ?? "",
+          contactPhone: contact?.phone ?? "",
+          clienteId: contact?.clienteId ?? null,
+          imovelCodigo: r.imovelCodigo,
+          title: r.title,
+          fichaVisitaId: r.fichaVisitaId,
+          corretorAuthUserId: corretor?.authUserId ?? null,
+        };
+      });
   },
 };

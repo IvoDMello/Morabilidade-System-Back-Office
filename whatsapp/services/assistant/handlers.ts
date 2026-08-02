@@ -26,7 +26,10 @@ async function executarAgendarVisita(rawArgs: unknown): Promise<string> {
   // corretor logado (se o login estiver ligado a um corretor).
   const corretorId = contato.corretorId ?? (await getCurrentCorretor())?.id ?? null;
 
-  const tituloImovel = args.imovel_codigo ? ` — ${args.imovel_codigo}` : "";
+  // O código também vai numa coluna própria: é o que o cron da ficha de visita
+  // usa para resolver o imóvel na API principal (ver ficha-visita.service.ts).
+  const codigoImovel = args.imovel_codigo?.trim().toUpperCase() || null;
+  const tituloImovel = codigoImovel ? ` — ${codigoImovel}` : "";
   await createReminder({
     contactId: contato.id,
     title: `Visita${tituloImovel}`,
@@ -34,6 +37,7 @@ async function executarAgendarVisita(rawArgs: unknown): Promise<string> {
     reminderAt: quando.toISOString(),
     createdBy: await getCurrentUserName(),
     corretorId,
+    imovelCodigo: codigoImovel,
   });
 
   return `Visita agendada com ${contato.name}.`;

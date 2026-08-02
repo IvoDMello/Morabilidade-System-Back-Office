@@ -32,7 +32,12 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.auth.dependencies import get_current_user, require_admin, require_admin_or_internal
+from app.auth.dependencies import (
+    USUARIO_INTEGRACAO,
+    get_current_user,
+    require_admin,
+    require_admin_or_internal,
+)
 
 # ── Usuários de teste ────────────────────────────────────────────────────────
 
@@ -93,6 +98,15 @@ def corretor_client():
     """Cliente autenticado como corretor (mesmas permissões de alteração do admin)."""
     app.dependency_overrides[get_current_user] = lambda: REGULAR_USER
     app.dependency_overrides[require_admin_or_internal] = lambda: REGULAR_USER
+    yield TestClient(app)
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def integracao_client():
+    """Cliente server-to-server (X-Internal-Token): sem usuário humano, então
+    `id` é None — o que obriga o chamador a informar ids explicitamente."""
+    app.dependency_overrides[require_admin_or_internal] = lambda: USUARIO_INTEGRACAO
     yield TestClient(app)
     app.dependency_overrides.clear()
 

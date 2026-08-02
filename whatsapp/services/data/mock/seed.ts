@@ -207,8 +207,12 @@ export const seedNotes: ContactNote[] = [
   },
 ];
 
-// corretorId preenchido no export abaixo (seed não atribui corretor).
-const seedRemindersData: Omit<ContactReminder, "corretorId">[] = [
+// corretorId e os campos de ficha são preenchidos no export abaixo (o seed não
+// atribui corretor nem tem visita com ficha gerada).
+const seedRemindersData: Omit<
+  ContactReminder,
+  "corretorId" | "imovelCodigo" | "fichaVisitaId" | "fichaNotificadaEm"
+>[] = [
   {
     id: "r1",
     contactId: "c1",
@@ -313,6 +317,9 @@ const seedRemindersData: Omit<ContactReminder, "corretorId">[] = [
 export const seedReminders: ContactReminder[] = seedRemindersData.map((r) => ({
   ...r,
   corretorId: null,
+  imovelCodigo: null,
+  fichaVisitaId: null,
+  fichaNotificadaEm: null,
 }));
 
 export const seedTags: Tag[] = [

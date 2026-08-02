@@ -100,6 +100,36 @@ def test_criar_ficha_admin_emite_em_nome_de_outro(client):
     assert res.status_code == 201
 
 
+def test_criar_ficha_integracao_exige_corretor_id(integracao_client):
+    """A integração (cron da ficha no CRM) não tem usuário próprio: sem
+    corretor_id explícito não há como assinar o documento."""
+    db = make_db_mock(MagicMock(data=IMOVEL))
+    with patch(ROUTER, db):
+        res = integracao_client.post("/fichas-visita", json=CRIAR_BODY)
+    assert res.status_code == 400
+    assert "corretor_id" in res.json()["detail"]
+
+
+def test_criar_ficha_integracao_com_corretor_id(integracao_client):
+    """Com corretor_id, a integração cria a ficha sem passar pela trava de
+    "emitir em nome de outro" (que só vale para usuário humano)."""
+    db = make_db_mock(
+        MagicMock(data=IMOVEL),
+        MagicMock(data=CORRETOR),
+        MagicMock(data=[FICHA_ROW]),
+    )
+    crm = make_db_mock()
+    corretor_id = "33333333-3333-3333-3333-333333333333"
+    with patch(ROUTER, db), patch(CRM, crm):
+        res = integracao_client.post(
+            "/fichas-visita", json=dict(CRIAR_BODY, corretor_id=corretor_id)
+        )
+    assert res.status_code == 201
+    gravado = db.insert.call_args[0][0]
+    assert gravado["corretor_id"] == corretor_id
+    assert gravado["created_by"] is None  # sem usuário humano por trás
+
+
 def test_criar_ficha_corretor_inexistente_400(client):
     """Sem corretor válido não há documento: o PDF sairia sem nome/CRECI."""
     db = make_db_mock(

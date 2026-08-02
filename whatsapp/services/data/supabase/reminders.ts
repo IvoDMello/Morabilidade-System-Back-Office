@@ -54,6 +54,7 @@ export const supabaseReminders: DataSource["reminders"] = {
         status: "pendente",
         created_by: input.createdBy,
         corretor_id: input.corretorId ?? null,
+        imovel_codigo: input.imovelCodigo ?? null,
       })
       .select("*")
       .single();
@@ -68,6 +69,9 @@ export const supabaseReminders: DataSource["reminders"] = {
     if (input.description !== undefined) payload.description = input.description;
     if (input.reminderAt !== undefined) payload.reminder_at = input.reminderAt;
     if (input.status !== undefined) payload.status = input.status;
+    if (input.imovelCodigo !== undefined) payload.imovel_codigo = input.imovelCodigo;
+    if (input.fichaVisitaId !== undefined) payload.ficha_visita_id = input.fichaVisitaId;
+    if (input.fichaNotificadaEm !== undefined) payload.ficha_notificada_em = input.fichaNotificadaEm;
 
     const { data, error } = await supabase
       .from("contact_reminders")
@@ -83,5 +87,35 @@ export const supabaseReminders: DataSource["reminders"] = {
     const supabase = getSupabaseServerClient();
     const { error } = await supabase.from("contact_reminders").delete().eq("id", id);
     if (error) throw error;
+  },
+
+  async listVisitasParaFicha(fromIso: string, toIso: string) {
+    const supabase = getSupabaseServerClient();
+    const { data, error } = await supabase
+      .from("contact_reminders")
+      .select(
+        "id, reminder_at, contact_id, title, imovel_codigo, ficha_visita_id, " +
+          "contacts(name, phone, cliente_id), corretores(auth_user_id)",
+      )
+      .eq("status", "pendente")
+      .is("ficha_notificada_em", null)
+      .gte("reminder_at", fromIso)
+      .lte("reminder_at", toIso)
+      .order("reminder_at", { ascending: true });
+    if (error) throw error;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- linha crua do Supabase (snake_case + joins)
+    return (data ?? []).map((row: any) => ({
+      reminderId: row.id,
+      reminderAt: row.reminder_at,
+      contactId: row.contact_id,
+      contactName: row.contacts?.name ?? "",
+      contactPhone: row.contacts?.phone ?? "",
+      clienteId: row.contacts?.cliente_id ?? null,
+      imovelCodigo: row.imovel_codigo ?? null,
+      title: row.title ?? "",
+      fichaVisitaId: row.ficha_visita_id ?? null,
+      corretorAuthUserId: row.corretores?.auth_user_id ?? null,
+    }));
   },
 };
