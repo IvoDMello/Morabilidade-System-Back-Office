@@ -1,0 +1,131 @@
+PENDÊNCIAS PARA LIGAR: Copiloto de captações + Ficha de visita automática
+==========================================================================
+
+Branch: feat/whatsapp-copiloto-captacoes  (commits f722ebd + 959a453)
+Status do código: pronto, testes/build verdes, NÃO mergeado, NÃO em produção.
+
+A ORDEM IMPORTA. O passo 1 tem que vir antes do passo 3 (merge/deploy): o
+código novo grava a coluna `imovel_codigo` em TODO lembrete criado. Se o
+deploy subir antes da migration, criar lembrete quebra (PostgREST 400).
+A migration é aditiva e inofensiva para o código que está no ar hoje — dá
+pra rodar agora sem pressa de mergear depois.
+
+
+[ ] 1. MIGRATION 0019 (fazer PRIMEIRO)
+    Caminho: Supabase Dashboard -> SQL Editor -> New query
+    Arquivo: whatsapp/supabase/migrations/0019_ficha_visita_lembrete.sql
+    Cole o conteúdo inteiro e rode. Adiciona 3 colunas opcionais em
+    whatsapp.contact_reminders (imovel_codigo, ficha_visita_id,
+    ficha_notificada_em) + um índice parcial.
+
+    Conferir depois:
+      select column_name from information_schema.columns
+      where table_schema = 'whatsapp' and table_name = 'contact_reminders'
+        and column_name in ('imovel_codigo','ficha_visita_id','ficha_notificada_em');
+    Esperado: 3 linhas.
+
+
+[ ] 2. VARIÁVEIS DE AMBIENTE (Vercel, projeto do app whatsapp)
+    Caminho: Vercel -> projeto morabilidade-system-back-office-lgep
+             -> Settings -> Environment Variables (escopo Production)
+
+    [ ] PENDING_PHONE_NUMBERS   1 ou 2 números que concentram as pendências,
+                                formato 55DDDNNNNNNNNN, separados por vírgula.
+                                Ex.: 5583999990000,5583988887777
+                                ATENÇÃO: se ficar vazia, cai no ALERT_PHONE_NUMBER
+                                (que já existe) — ou seja, o cron NÃO fica mudo.
+    [ ] NEXT_PUBLIC_SITE_URL    https://morabilidade.com
+                                (base do link /ficha/<token> que o cliente abre)
+    [ ] CAPTACOES_BOARD_URL     https://captacoes.morabilidade.com
+                                (opcional: só o atalho "Abrir board" no painel)
+
+    Já devem existir (CONFERIR, não recriar):
+    [ ] BACKOFFICE_API_URL        https://api.morabilidade.com
+    [ ] BACKOFFICE_INTERNAL_TOKEN mesmo valor do INTERNAL_API_TOKEN na API (Railway)
+    [ ] CRON_SECRET               mesmo valor do secret WHATSAPP_CRON_SECRET no GitHub
+    [ ] ANTHROPIC_API_KEY         sem ela, o botão "Analisar conversa" só dá erro amigável
+
+    Se BACKOFFICE_* não estiverem preenchidas, o cron não consegue gerar ficha
+    nenhuma e tudo vira pendência com esse motivo.
+
+
+[ ] 3. MERGE E DEPLOY
+    git checkout main
+    git merge feat/whatsapp-copiloto-captacoes
+    git push
+    (Production da Vercel segue a main — o deploy sai sozinho.)
+
+    ANTES de mergear, olhe o que está agendado para as próximas 2 horas:
+      select id, title, reminder_at from whatsapp.contact_reminders
+      where status = 'pendente' and reminder_at between now() and now() + interval '2 hours';
+    Cada linha dessas vira uma mensagem de verdade na primeira rodada do cron.
+    Se preferir estrear sem susto, deixe PENDING_PHONE_NUMBERS só com o SEU
+    número no primeiro dia.
+
+
+[ ] 4. LIGAR CADA CORRETOR AO LOGIN (auth_user_id)
+    SEM ISSO, TODA VISITA CAI EM PENDÊNCIA em vez de virar envio automático:
+    a ficha é documento jurídico e a API exige um corretor identificado
+    (nome + CRECI) para assinar. O CRM descobre quem é pelo auth_user_id.
+
+    Ver a situação atual:
+      select c.id, c.nome, c.auth_user_id, u.email
+      from whatsapp.corretores c
+      left join auth.users u on u.id = c.auth_user_id
+      order by c.nome;
+
+    Ligar por e-mail (repetir para cada corretor):
+      update whatsapp.corretores c
+      set auth_user_id = u.id
+      from auth.users u
+      where lower(u.email) = lower('rodrigo@morabilidade.com')
+        and lower(c.nome) = 'rodrigo';
+
+    Conferir que o usuário correspondente tem CRECI na API principal:
+      select id, nome_completo, creci, ativo, ocultar_creci_ficha
+      from usuarios where id = '<auth_user_id>';
+    Sem creci (e sem ocultar_creci_ficha = true), a API recusa a ficha — a
+    pendência vai chegar dizendo exatamente isso.
+
+
+[ ] 5. TEMPLATE NA META (opcional, mas é o que permite envio direto ao cliente
+       fora da janela de 24h)
+    Caminho: WhatsApp Manager -> Message Templates -> Create template
+    Categoria: Utilidade (Utility). Idioma: Português (BR).
+    Corpo com DOIS parâmetros, nesta ordem — {{1}} é a hora, {{2}} é o link:
+
+      Olá! Lembrete da sua visita hoje às {{1}}. Antes de entrarmos, precisamos
+      da sua ficha de visita assinada, leva menos de 1 minuto: {{2}}
+
+    Depois de APROVADO, preencher na Vercel:
+    [ ] WHATSAPP_FICHA_TEMPLATE       (o nome exato do template)
+    [ ] WHATSAPP_FICHA_TEMPLATE_LANG  pt_BR
+
+    Sem esse template nada quebra: quando a janela de 24h estiver fechada, o
+    link simplesmente vai pro número de plantão em vez de ir pro cliente.
+    Aprovação leva de minutos a dias — dá pra criar depois.
+
+
+[ ] 6. SMOKE TEST
+    [ ] Copiloto: abrir uma conversa -> botão "Copiloto" -> ver as captações,
+        criar uma captação de teste e conferir que ela apareceu no board.
+    [ ] IA: "Analisar conversa" numa conversa de proprietário -> confirmar que
+        aparecem propostas e que dá pra editar o texto antes de enviar.
+    [ ] Cron manual (não espera a hora virar):
+        curl -H "Authorization: Bearer $CRON_SECRET" \
+          https://atendimento.morabilidade.com/api/cron/visita-fichas
+        Resposta esperada: {"total":N,"paraCliente":N,"paraPlantao":N,"semEntrega":N}
+        Com total 0 significa que não havia visita nos próximos 90 min — normal.
+
+
+COMO O ENVIO DECIDE (para ler a resposta do cron)
+--------------------------------------------------
+Para cada visita que começa nos próximos 90 minutos, nesta ordem:
+  1. texto livre pro CLIENTE      -> só entrega se ele falou com a gente nas
+                                     últimas 24h (regra da Meta, não nossa)
+  2. template pro CLIENTE          -> a qualquer hora, se o passo 5 estiver feito
+  3. pendência pro PLANTÃO         -> mensagem pronta + link, para encaminhar
+Cada visita é avisada UMA vez só. Como o gatilho é horário e a janela é de 90
+minutos, o aviso sai entre ~30 e ~90 minutos antes da visita.
+Quando a ficha não pôde ser gerada, a pendência vem com o motivo exato da API
+(ex.: corretor sem CRECI) — é para a ação ser óbvia sem precisar investigar.
