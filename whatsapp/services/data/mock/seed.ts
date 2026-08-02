@@ -38,7 +38,9 @@ function contact(
 }
 
 export const seedCorretores: Corretor[] = [
-  { id: "co1", nome: "Rodrigo", authUserId: null, cor: "blue", ativo: true, createdAt: subDays(now, 60).toISOString() },
+  // Rodrigo já ligado a um login: é o corretor que assina as fichas geradas
+  // pelo cron no modo mock (em produção esse vínculo vem do auth_user_id).
+  { id: "co1", nome: "Rodrigo", authUserId: "auth-mock-rodrigo", cor: "blue", ativo: true, createdAt: subDays(now, 60).toISOString() },
   { id: "co2", nome: "Leandro", authUserId: null, cor: "emerald", ativo: true, createdAt: subDays(now, 60).toISOString() },
   { id: "co3", nome: "Ivo", authUserId: null, cor: "violet", ativo: true, createdAt: subDays(now, 60).toISOString() },
 ];
@@ -314,13 +316,94 @@ const seedRemindersData: Omit<
   },
 ];
 
-export const seedReminders: ContactReminder[] = seedRemindersData.map((r) => ({
-  ...r,
-  corretorId: null,
-  imovelCodigo: null,
-  fichaVisitaId: null,
-  fichaNotificadaEm: null,
-}));
+/**
+ * Cenários da ficha de visita automática (cron /api/cron/visita-fichas).
+ * Ficam fora do array acima porque precisam de horário RELATIVO ao agora e de
+ * campos próprios — são o roteiro de simulação: rodando o cron no modo mock,
+ * cada um destes cai num ramo diferente da regra de entrega, e a resposta do
+ * cron traz o texto que cada número receberia (campo `previa`).
+ */
+const minutosAdiante = (min: number): string =>
+  new Date(now.getTime() + min * 60 * 1000).toISOString();
+
+const seedVisitasFicha: ContactReminder[] = [
+  {
+    // Caminho feliz: imóvel vinculado + corretor responsável.
+    id: "rv1",
+    contactId: "c2", // Fernanda Lima, cliente com visita marcada
+    title: "Visita — MB-00033",
+    description: "Primeira visita ao apartamento.",
+    reminderAt: minutosAdiante(60),
+    status: "pendente",
+    createdBy: "Ana Valadares",
+    corretorId: "co1", // Rodrigo
+    imovelCodigo: "MB-00033",
+    fichaVisitaId: null,
+    fichaNotificadaEm: null,
+    createdAt: subDays(now, 2).toISOString(),
+    updatedAt: subDays(now, 2).toISOString(),
+  },
+  {
+    // Sem imóvel vinculado: o cron não tem como gerar a ficha → pendência.
+    id: "rv2",
+    contactId: "c3", // Ricardo Souza
+    title: "Visita com o Ricardo",
+    description: null,
+    reminderAt: minutosAdiante(75),
+    status: "pendente",
+    createdBy: "Ana Valadares",
+    corretorId: "co2", // Leandro
+    imovelCodigo: null,
+    fichaVisitaId: null,
+    fichaNotificadaEm: null,
+    createdAt: subDays(now, 1).toISOString(),
+    updatedAt: subDays(now, 1).toISOString(),
+  },
+  {
+    // Código só no título (visita criada antes da migration 0019): o cron
+    // extrai "MB-00021" do texto — é o fallback de compatibilidade.
+    id: "rv3",
+    contactId: "c1", // Marcos Andrade
+    title: "Visita — MB-00021",
+    description: null,
+    reminderAt: minutosAdiante(85),
+    status: "pendente",
+    createdBy: "Bruno Castro",
+    corretorId: null, // sem responsável → exercita FICHA_CORRETOR_PADRAO
+    imovelCodigo: null,
+    fichaVisitaId: null,
+    fichaNotificadaEm: null,
+    createdAt: subDays(now, 3).toISOString(),
+    updatedAt: subDays(now, 3).toISOString(),
+  },
+  {
+    // Fora da janela de 90 min: NÃO deve ser tocada nesta rodada.
+    id: "rv4",
+    contactId: "c2",
+    title: "Visita — MB-00099",
+    description: "Só amanhã de manhã.",
+    reminderAt: minutosAdiante(300),
+    status: "pendente",
+    createdBy: "Ana Valadares",
+    corretorId: "co1",
+    imovelCodigo: "MB-00099",
+    fichaVisitaId: null,
+    fichaNotificadaEm: null,
+    createdAt: subDays(now, 1).toISOString(),
+    updatedAt: subDays(now, 1).toISOString(),
+  },
+];
+
+export const seedReminders: ContactReminder[] = [
+  ...seedRemindersData.map((r) => ({
+    ...r,
+    corretorId: null,
+    imovelCodigo: null,
+    fichaVisitaId: null,
+    fichaNotificadaEm: null,
+  })),
+  ...seedVisitasFicha,
+];
 
 export const seedTags: Tag[] = [
   { id: "t1", name: "Urgente", color: "amber", createdAt: subDays(now, 20).toISOString() },

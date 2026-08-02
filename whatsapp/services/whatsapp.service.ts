@@ -199,21 +199,57 @@ export async function sendMessage(contactId: ID, body: string, replyTo?: Message
     body,
   });
 
-  const nowIso = new Date().toISOString();
-  const created = await dataSource.whatsapp.createMessage({
+  return registerOutboundMessage({
     conversationId: conversation.id,
-    waMessageId: providerMessageId,
-    direction: "outbound",
     body,
-    status: "sent",
+    providerMessageId,
     createdBy: CURRENT_USER_NAME,
     replyTo: replyTo ?? null,
+  });
+}
+
+/** Autor das mensagens disparadas pelo cron da ficha de visita. */
+export const FICHA_AUTOMATICA_CREATED_BY = "Ficha automática";
+
+/**
+ * Grava na conversa uma mensagem que JÁ FOI enviada ao provedor. Existe porque
+ * nem todo envio passa por `sendMessage`: o cron da ficha de visita pode
+ * entregar via template, e mesmo assim o atendente precisa ver na thread que
+ * aquele link foi mandado — senão ele abre o chat e acha que ninguém avisou.
+ */
+export async function registerOutboundMessage(input: {
+  conversationId: ID;
+  body: string;
+  providerMessageId: string | null;
+  createdBy: string;
+  replyTo?: MessageReply | null;
+}) {
+  const nowIso = new Date().toISOString();
+  const created = await dataSource.whatsapp.createMessage({
+    conversationId: input.conversationId,
+    waMessageId: input.providerMessageId,
+    direction: "outbound",
+    body: input.body,
+    status: "sent",
+    createdBy: input.createdBy,
+    replyTo: input.replyTo ?? null,
     waTimestamp: nowIso,
   });
 
-  await dataSource.whatsapp.touchConversationOnNewMessage(conversation.id, body, nowIso, "outbound");
+  await dataSource.whatsapp.touchConversationOnNewMessage(
+    input.conversationId,
+    input.body,
+    nowIso,
+    "outbound",
+  );
 
   return created;
+}
+
+/** Conversa do contato, criando-a se ainda não existir (o cron precisa disso
+ * para registrar a mensagem da ficha mesmo em contato que nunca escreveu). */
+export async function getOrCreateConversation(contactId: ID, phone: string) {
+  return dataSource.whatsapp.getOrCreateConversationForContact(contactId, phone);
 }
 
 export function getConversations() {

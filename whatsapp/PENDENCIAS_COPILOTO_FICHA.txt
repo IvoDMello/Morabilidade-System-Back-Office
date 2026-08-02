@@ -30,10 +30,16 @@ pra rodar agora sem pressa de mergear depois.
              -> Settings -> Environment Variables (escopo Production)
 
     [ ] PENDING_PHONE_NUMBERS   1 ou 2 números que concentram as pendências,
-                                formato 55DDDNNNNNNNNN, separados por vírgula.
-                                Ex.: 5583999990000,5583988887777
+                                separados por vírgula. Valor para começar só com
+                                o seu número:  5521971957245
+                                (o código completa o DDI 55 sozinho se você
+                                digitar 21971957245, mas prefira o formato cheio)
                                 ATENÇÃO: se ficar vazia, cai no ALERT_PHONE_NUMBER
                                 (que já existe) — ou seja, o cron NÃO fica mudo.
+    [ ] FICHA_CORRETOR_PADRAO   Rodrigo
+                                Quem assina a ficha quando a visita não tem
+                                responsável definido. Sem isso, boa parte das
+                                visitas vira pendência em vez de ficha gerada.
     [ ] NEXT_PUBLIC_SITE_URL    https://morabilidade.com
                                 (base do link /ficha/<token> que o cliente abre)
     [ ] CAPTACOES_BOARD_URL     https://captacoes.morabilidade.com
@@ -63,7 +69,11 @@ pra rodar agora sem pressa de mergear depois.
     número no primeiro dia.
 
 
-[ ] 4. LIGAR CADA CORRETOR AO LOGIN (auth_user_id)
+[ ] 4. LIGAR O RODRIGO AO LOGIN (auth_user_id)
+    Por ora tudo que sai do chat assina como Rodrigo (FICHA_CORRETOR_PADRAO
+    acima). Basta ligar ELE; a separação por corretor fica para depois — quando
+    cada um tiver auth_user_id, o responsável da visita passa a valer sozinho,
+    sem mexer em código.
     SEM ISSO, TODA VISITA CAI EM PENDÊNCIA em vez de virar envio automático:
     a ficha é documento jurídico e a API exige um corretor identificado
     (nome + CRECI) para assinar. O CRM descobre quem é pelo auth_user_id.
@@ -106,6 +116,17 @@ pra rodar agora sem pressa de mergear depois.
     Aprovação leva de minutos a dias — dá pra criar depois.
 
 
+[!] PARA A MENSAGEM CHEGAR DE VERDADE NO SEU CELULAR
+    O app só envia WhatsApp real com WHATSAPP_PROVIDER=cloud-api. Enquanto
+    estiver em "mock" (padrão), o envio é simulado: nada sai, nada chega — o
+    cron responde certinho mas nenhum celular toca. Conferir na Vercel:
+      Settings -> Environment Variables -> WHATSAPP_PROVIDER
+    Se não existir ou estiver "mock", o pré-requisito é o onboarding de
+    coexistência na Meta (já mapeado no README, seção "Conectando o WhatsApp").
+    Ou seja: receber a pendência no 5521971957245 depende de terminar o setup
+    da Meta primeiro — não é um passo desta entrega.
+
+
 [ ] 6. SMOKE TEST
     [ ] Copiloto: abrir uma conversa -> botão "Copiloto" -> ver as captações,
         criar uma captação de teste e conferir que ela apareceu no board.
@@ -114,8 +135,18 @@ pra rodar agora sem pressa de mergear depois.
     [ ] Cron manual (não espera a hora virar):
         curl -H "Authorization: Bearer $CRON_SECRET" \
           https://atendimento.morabilidade.com/api/cron/visita-fichas
-        Resposta esperada: {"total":N,"paraCliente":N,"paraPlantao":N,"semEntrega":N}
-        Com total 0 significa que não havia visita nos próximos 90 min — normal.
+        A resposta traz um `detalhes` com uma linha por visita: contato,
+        horário, para onde foi (cliente/plantao/nenhum) e o motivo quando não
+        foi pro cliente. Com total 0, não havia visita nos próximos 90 min.
+
+    [ ] Ensaio local, sem tocar em produção (opcional):
+        npm run build && npx next start -p 3111
+        curl -H "Authorization: Bearer <CRON_SECRET local>" \
+          http://localhost:3111/api/cron/visita-fichas
+        O seed do modo mock já traz 4 visitas de ensaio (rv1..rv4) cobrindo:
+        caminho feliz, visita sem imóvel, código só no título e visita fora da
+        janela. No modo mock a resposta inclui `previa` com o TEXTO exato que
+        cada número receberia — é a forma de ler as mensagens sem enviar nada.
 
 
 COMO O ENVIO DECIDE (para ler a resposta do cron)

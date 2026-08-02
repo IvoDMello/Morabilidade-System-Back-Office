@@ -1,6 +1,14 @@
 import { dataSource } from "./data";
-import { whatsappProvider } from "./whatsapp";
+import { isMockWhatsAppProvider, whatsappProvider } from "./whatsapp";
+import {
+  FICHA_AUTOMATICA_CREATED_BY,
+  getOrCreateConversation,
+  registerOutboundMessage,
+  sendMessage,
+} from "./whatsapp.service";
+import { getCorretores } from "./corretores.service";
 import { criarFichaVisita, fetchImovelByCodigo, isBackofficeConfigured } from "@/lib/backoffice-api";
+import { normalizePhone } from "@/lib/phone";
 import { formatPhone } from "@/lib/utils";
 import type { VisitaParaFicha } from "@/types/reminder";
 
@@ -39,8 +47,28 @@ export function getPendingPhones(): string[] {
   const raw = process.env.PENDING_PHONE_NUMBERS || process.env.ALERT_PHONE_NUMBER || "";
   return raw
     .split(",")
-    .map((p) => p.replace(/\D/g, ""))
-    .filter(Boolean);
+    .map((p) => p.trim())
+    .filter(Boolean)
+    // normalizePhone garante o DDI 55: a Cloud API rejeita número sem país, e
+    // digitar "21971957245" no painel é o erro natural de quem configura.
+    .map(normalizePhone);
+}
+
+/**
+ * Usuário da API principal que assina a ficha. Preferência para o corretor
+ * responsável pela visita; sem ele (ou sem o vínculo com o login), cai no
+ * corretor padrão configurado em FICHA_CORRETOR_PADRAO — pelo nome, como
+ * aparece no cadastro de corretores (ex.: "Rodrigo").
+ */
+export async function resolverCorretorDaFicha(visita: VisitaParaFicha): Promise<string | null> {
+  if (visita.corretorAuthUserId) return visita.corretorAuthUserId;
+
+  const nomePadrao = process.env.FICHA_CORRETOR_PADRAO?.trim();
+  if (!nomePadrao) return null;
+
+  const corretores = await getCorretores();
+  const padrao = corretores.find((c) => c.nome.toLowerCase() === nomePadrao.toLowerCase());
+  return padrao?.authUserId ?? null;
 }
 
 function getSiteUrl(): string | null {
@@ -120,29 +148,52 @@ async function enviarParaPlantao(body: string): Promise<number> {
   return enviados;
 }
 
-type Entrega = { destino: "cliente" | "plantao" | "nenhum"; motivo?: string };
+type Entrega = {
+  destino: "cliente" | "plantao" | "nenhum";
+  motivo?: string;
+  /** Texto efetivamente despachado — só preenchido no modo mock (ver `detalhes`). */
+  previa?: string;
+};
 
-/** Passo 1 e 2 da regra de entrega: tenta o cliente, texto livre → template. */
+/**
+ * Passo 1 e 2 da regra de entrega: tenta o cliente, texto livre → template.
+ * Os dois caminhos gravam a mensagem na conversa do CRM — o atendente precisa
+ * ver na thread que o link foi enviado, senão abre o chat achando que ninguém
+ * avisou o cliente. O texto livre entra via `sendMessage` (que já persiste);
+ * o template é registrado à mão porque não passa por lá.
+ */
 async function tentarEnviarAoCliente(input: {
+  contactId: string;
   phone: string;
   mensagem: string;
   hora: string;
   link: string;
 }): Promise<boolean> {
   try {
-    await whatsappProvider.sendTextMessage({ toPhone: input.phone, body: input.mensagem });
+    await sendMessage(input.contactId, input.mensagem);
     return true;
   } catch {
     const templateName = process.env.WHATSAPP_FICHA_TEMPLATE;
     if (!templateName) return false;
     try {
       // Template de utilidade com dois parâmetros: {{1}} hora, {{2}} link.
-      await whatsappProvider.sendTemplateMessage({
+      const { providerMessageId } = await whatsappProvider.sendTemplateMessage({
         toPhone: input.phone,
         templateName,
         languageCode: process.env.WHATSAPP_FICHA_TEMPLATE_LANG ?? "pt_BR",
         bodyParams: [toTemplateParam(input.hora), toTemplateParam(input.link)],
       });
+      try {
+        const conversa = await getOrCreateConversation(input.contactId, input.phone);
+        await registerOutboundMessage({
+          conversationId: conversa.id,
+          body: input.mensagem,
+          providerMessageId,
+          createdBy: FICHA_AUTOMATICA_CREATED_BY,
+        });
+      } catch {
+        // O cliente já recebeu; falhar o registro na thread não desfaz o envio.
+      }
       return true;
     } catch {
       return false;
@@ -170,9 +221,11 @@ async function garantirFicha(visita: VisitaParaFicha, codigo: string): Promise<{
   if (!isBackofficeConfigured()) {
     throw new Error("integração com a API principal não configurada — gerar a ficha manualmente.");
   }
-  if (!visita.corretorAuthUserId) {
+
+  const corretorId = await resolverCorretorDaFicha(visita);
+  if (!corretorId) {
     throw new Error(
-      "o corretor responsável não está ligado a um login do sistema — gerar a ficha manualmente.",
+      "nenhum corretor ligado a um login do sistema (nem o responsável, nem o padrão) — gerar a ficha manualmente.",
     );
   }
 
@@ -184,7 +237,7 @@ async function garantirFicha(visita: VisitaParaFicha, codigo: string): Promise<{
     visitanteNome: visita.contactName,
     visitanteTelefone: visita.contactPhone,
     clienteId: visita.clienteId,
-    corretorId: visita.corretorAuthUserId,
+    corretorId,
   });
 
   return {
@@ -199,17 +252,20 @@ async function processarVisita(visita: VisitaParaFicha): Promise<Entrega> {
   const codigo = visita.imovelCodigo ?? extrairCodigoImovel(visita.title);
 
   if (!codigo) {
-    const enviados = await enviarParaPlantao(
-      montarMensagemPendencia({
-        contactName: visita.contactName,
-        contactPhone: visita.contactPhone,
-        hora,
-        endereco: null,
-        link: null,
-        motivo: "visita sem imóvel vinculado — gerar a ficha manualmente.",
-      }),
-    );
-    return { destino: enviados > 0 ? "plantao" : "nenhum", motivo: "sem imóvel" };
+    const textoPendencia = montarMensagemPendencia({
+      contactName: visita.contactName,
+      contactPhone: visita.contactPhone,
+      hora,
+      endereco: null,
+      link: null,
+      motivo: "visita sem imóvel vinculado — gerar a ficha manualmente.",
+    });
+    const enviados = await enviarParaPlantao(textoPendencia);
+    return {
+      destino: enviados > 0 ? "plantao" : "nenhum",
+      motivo: "sem imóvel",
+      previa: textoPendencia,
+    };
   }
 
   let ficha: { fichaId: string; link: string; endereco: string | null };
@@ -217,17 +273,16 @@ async function processarVisita(visita: VisitaParaFicha): Promise<Entrega> {
     ficha = await garantirFicha(visita, codigo);
   } catch (e) {
     const motivo = e instanceof Error ? e.message : "falha ao gerar a ficha.";
-    const enviados = await enviarParaPlantao(
-      montarMensagemPendencia({
-        contactName: visita.contactName,
-        contactPhone: visita.contactPhone,
-        hora,
-        endereco: codigo,
-        link: null,
-        motivo,
-      }),
-    );
-    return { destino: enviados > 0 ? "plantao" : "nenhum", motivo };
+    const textoPendencia = montarMensagemPendencia({
+      contactName: visita.contactName,
+      contactPhone: visita.contactPhone,
+      hora,
+      endereco: codigo,
+      link: null,
+      motivo,
+    });
+    const enviados = await enviarParaPlantao(textoPendencia);
+    return { destino: enviados > 0 ? "plantao" : "nenhum", motivo, previa: textoPendencia };
   }
 
   // Guarda o id antes de tentar entregar: se o envio falhar, a ficha já existe
@@ -242,26 +297,27 @@ async function processarVisita(visita: VisitaParaFicha): Promise<Entrega> {
   });
 
   const entregueAoCliente = await tentarEnviarAoCliente({
+    contactId: visita.contactId,
     phone: visita.contactPhone,
     mensagem,
     hora,
     link: ficha.link,
   });
-  if (entregueAoCliente) return { destino: "cliente" };
+  if (entregueAoCliente) return { destino: "cliente", previa: mensagem };
 
-  const enviados = await enviarParaPlantao(
-    montarMensagemPendencia({
-      contactName: visita.contactName,
-      contactPhone: visita.contactPhone,
-      hora,
-      endereco: ficha.endereco ?? codigo,
-      link: ficha.link,
-      motivo: "janela de 24h fechada — encaminhar o link para o cliente.",
-    }),
-  );
+  const textoPendencia = montarMensagemPendencia({
+    contactName: visita.contactName,
+    contactPhone: visita.contactPhone,
+    hora,
+    endereco: ficha.endereco ?? codigo,
+    link: ficha.link,
+    motivo: "janela de 24h fechada — encaminhar o link para o cliente.",
+  });
+  const enviados = await enviarParaPlantao(textoPendencia);
   return {
     destino: enviados > 0 ? "plantao" : "nenhum",
     motivo: "janela de 24h fechada",
+    previa: textoPendencia,
   };
 }
 
@@ -270,6 +326,17 @@ export interface FichaVisitaJobResult {
   paraCliente: number;
   paraPlantao: number;
   semEntrega: number;
+  /** Uma linha por visita processada — o job roda sem ninguém olhando, então o
+   * retorno precisa explicar o que aconteceu com cada uma. */
+  detalhes: Array<{
+    contato: string;
+    visitaEm: string;
+    destino: Entrega["destino"];
+    motivo?: string;
+    /** Texto que foi despachado. Só no modo mock: em produção seria vazar o
+     * conteúdo enviado ao cliente na resposta HTTP do cron. */
+    previa?: string;
+  }>;
 }
 
 /**
@@ -290,6 +357,7 @@ export async function runFichaVisitaJob(): Promise<FichaVisitaJobResult> {
     paraCliente: 0,
     paraPlantao: 0,
     semEntrega: 0,
+    detalhes: [],
   };
 
   for (const visita of visitas) {
@@ -303,6 +371,14 @@ export async function runFichaVisitaJob(): Promise<FichaVisitaJobResult> {
     if (entrega.destino === "cliente") resultado.paraCliente++;
     else if (entrega.destino === "plantao") resultado.paraPlantao++;
     else resultado.semEntrega++;
+
+    resultado.detalhes.push({
+      contato: visita.contactName,
+      visitaEm: horaFmt.format(new Date(visita.reminderAt)),
+      destino: entrega.destino,
+      motivo: entrega.motivo,
+      previa: isMockWhatsAppProvider ? entrega.previa : undefined,
+    });
 
     // Marca sempre: o cron é horário e não pode reenviar a mesma visita a cada
     // rodada. Uma falha total aparece no resultado do job e no log da Action.

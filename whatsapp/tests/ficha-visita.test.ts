@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { dataSource } from "@/services/data";
 import { mockStore } from "@/services/data/mock/store";
 import { whatsappProvider } from "@/services/whatsapp";
+import { getConversationMessages } from "@/services/whatsapp.service";
 import {
   extrairCodigoImovel,
   getPendingPhones,
@@ -20,7 +21,8 @@ const PLANTAO_PHONE_2 = "5511940003333";
 
 /** Resposta da API principal para os dois endpoints que o job consome. */
 function stubBackofficeFetch(overrides: { imovelId?: string | null; falhaFicha?: string } = {}) {
-  const fetchMock = vi.fn(async (input: string | URL | Request) => {
+  const fetchMock = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+    void init;
     const url = String(input);
     if (url.includes("/imoveis/interno/")) {
       return new Response(
@@ -87,6 +89,15 @@ describe("helpers da ficha de visita", () => {
 
     vi.stubEnv("PENDING_PHONE_NUMBERS", "+55 (11) 94000-2222, 5511940003333");
     expect(getPendingPhones()).toEqual(["5511940002222", "5511940003333"]);
+  });
+
+  it("completa o DDI 55 em número digitado sem país", () => {
+    // Erro natural de quem configura o painel; a Cloud API rejeitaria o envio.
+    vi.stubEnv("PENDING_PHONE_NUMBERS", "21971957245");
+    expect(getPendingPhones()).toEqual(["5521971957245"]);
+
+    vi.stubEnv("PENDING_PHONE_NUMBERS", "(21) 97195-7245");
+    expect(getPendingPhones()).toEqual(["5521971957245"]);
   });
 
   it("cai no número de alertas quando não há números de plantão", () => {
@@ -229,6 +240,52 @@ describe("cron da ficha de visita", () => {
 
     expect(segunda.total).toBe(0);
     expect(enviar).toHaveBeenCalledTimes(1);
+  });
+
+  it("mensagem enviada ao cliente fica registrada na conversa do CRM", async () => {
+    stubBackofficeFetch();
+    const { contact } = await criarVisita();
+
+    await runFichaVisitaJob();
+
+    const mensagens = await getConversationMessages(contact.id);
+    const daFicha = mensagens.at(-1);
+    expect(daFicha?.direction).toBe("outbound");
+    expect(daFicha?.body).toContain("https://morabilidade.com/ficha/tok123");
+  });
+
+  it("sem corretor no lembrete, usa o corretor padrão (FICHA_CORRETOR_PADRAO)", async () => {
+    vi.stubEnv("FICHA_CORRETOR_PADRAO", "Rodrigo");
+    const fetchMock = stubBackofficeFetch();
+    await criarVisita();
+    // Rodrigo é quem tem login ligado; a visita fica SEM responsável nenhum.
+    mockStore.corretores[0] = {
+      ...mockStore.corretores[0],
+      nome: "Rodrigo",
+      authUserId: "auth-rodrigo",
+    };
+    mockStore.reminders = mockStore.reminders.map((r) => ({ ...r, corretorId: null }));
+
+    const resultado = await runFichaVisitaJob();
+
+    expect(resultado).toMatchObject({ paraCliente: 1 });
+    const corpoFicha = JSON.parse(
+      String(fetchMock.mock.calls.find((c) => String(c[0]).includes("/fichas-visita"))?.[1]?.body),
+    );
+    expect(corpoFicha.corretor_id).toBe("auth-rodrigo");
+  });
+
+  it("sem responsável e sem corretor padrão, vira pendência explicando", async () => {
+    vi.stubEnv("FICHA_CORRETOR_PADRAO", "");
+    stubBackofficeFetch();
+    const enviar = vi.spyOn(whatsappProvider, "sendTextMessage");
+    await criarVisita();
+    mockStore.reminders = mockStore.reminders.map((r) => ({ ...r, corretorId: null }));
+
+    const resultado = await runFichaVisitaJob();
+
+    expect(resultado).toMatchObject({ paraPlantao: 1 });
+    expect(enviar.mock.calls[0][0].body).toContain("nenhum corretor ligado");
   });
 
   it("visita que já tem ficha não gera uma segunda (documento jurídico)", async () => {
