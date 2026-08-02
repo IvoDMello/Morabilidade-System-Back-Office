@@ -1,6 +1,10 @@
 import { revalidatePath } from "next/cache";
 import { whatsappProvider } from "@/services/whatsapp";
-import { processIncomingMessage, processStatusUpdate } from "@/services/whatsapp.service";
+import {
+  processEchoMessage,
+  processIncomingMessage,
+  processStatusUpdate,
+} from "@/services/whatsapp.service";
 
 /** Handshake de verificação exigido pela Meta ao configurar o webhook. */
 export async function GET(request: Request) {
@@ -27,6 +31,8 @@ export async function POST(request: Request) {
   for (const event of events) {
     if (event.type === "message") {
       await processIncomingMessage(event.data);
+    } else if (event.type === "echo") {
+      await processEchoMessage(event.data);
     } else {
       await processStatusUpdate(event.data);
     }

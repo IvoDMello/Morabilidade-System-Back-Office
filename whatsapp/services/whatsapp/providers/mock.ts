@@ -13,6 +13,10 @@ export const mockWhatsAppProvider: WhatsAppProvider = {
     return { providerMessageId: `mock-${crypto.randomUUID()}` };
   },
 
+  async sendTemplateMessage() {
+    return { providerMessageId: `mock-template-${crypto.randomUUID()}` };
+  },
+
   verifyWebhookHandshake({ challenge }) {
     return challenge;
   },
@@ -29,10 +33,30 @@ export const mockWhatsAppProvider: WhatsAppProvider = {
       // Simulação de mídia recebida: uma URL já hospedada (acessível pelo navegador).
       mediaUrl?: string | null;
       mediaType?: WhatsAppMessageType | null;
+      // Simulação de echo da coexistência: mensagem enviada pelo celular pro
+      // número em `from` (que aqui vira o destinatário).
+      echo?: boolean;
     };
 
     const mediaUrl = parsed.mediaUrl?.trim() || null;
     const messageType: WhatsAppMessageType = mediaUrl ? (parsed.mediaType ?? "image") : "text";
+    const media = mediaUrl ? { url: mediaUrl } : null;
+
+    if (parsed.echo) {
+      return [
+        {
+          type: "echo",
+          data: {
+            waMessageId: null,
+            toPhone: normalizePhone(parsed.from),
+            body: parsed.body,
+            messageType,
+            media,
+            timestamp: new Date().toISOString(),
+          },
+        },
+      ];
+    }
 
     return [
       {
@@ -43,7 +67,7 @@ export const mockWhatsAppProvider: WhatsAppProvider = {
           profileName: parsed.profileName?.trim() || null,
           body: parsed.body,
           messageType,
-          media: mediaUrl ? { url: mediaUrl } : null,
+          media,
           timestamp: new Date().toISOString(),
         },
       },

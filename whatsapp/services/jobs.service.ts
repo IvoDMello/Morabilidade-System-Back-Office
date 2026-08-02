@@ -45,6 +45,35 @@ async function buildPendenciasSection(todayStartIso: string): Promise<string> {
 const FOLLOW_UP_COOLDOWN_DAYS = 3;
 const AWAITING_ALERT_HOURS = 2;
 
+/** Parâmetros de template não aceitam quebra de linha, tab ou 4+ espaços
+ * seguidos (regra da Meta) — achata o texto e limita o tamanho. */
+function toTemplateParam(text: string): string {
+  return text.replace(/\n+/g, " | ").replace(/\s+/g, " ").trim().slice(0, 900);
+}
+
+/**
+ * Envia um alerta operacional pro time. Texto livre só entrega se o
+ * destinatário tiver janela de 24h aberta com o número; se falhar e houver um
+ * template aprovado configurado (WHATSAPP_ALERT_TEMPLATE, com um único {{1}}
+ * no corpo), reenvia como template — que a Meta aceita a qualquer hora.
+ */
+async function sendAlertMessage(toPhone: string, body: string) {
+  try {
+    await whatsappProvider.sendTextMessage({ toPhone, body });
+    return;
+  } catch (error) {
+    const templateName = process.env.WHATSAPP_ALERT_TEMPLATE;
+    if (!templateName) throw error;
+
+    await whatsappProvider.sendTemplateMessage({
+      toPhone,
+      templateName,
+      languageCode: process.env.WHATSAPP_ALERT_TEMPLATE_LANG ?? "pt_BR",
+      bodyParams: [toTemplateParam(body)],
+    });
+  }
+}
+
 /** Fase 3: conversas "respondida" que esfriaram (cliente sumiu há 3+ dias) viram follow_up_sugerido. */
 export async function runFollowUpCooldownJob() {
   const cutoff = new Date(Date.now() - FOLLOW_UP_COOLDOWN_DAYS * 24 * 60 * 60 * 1000).toISOString();
@@ -55,9 +84,9 @@ export async function runFollowUpCooldownJob() {
 /**
  * Fase 3: alerta via WhatsApp (pro meu número) para cada conversa aguardando
  * resposta há mais de 2h, no máximo uma vez por dia por conversa. Envio é
- * best-effort: sem template aprovado, texto livre só entrega se
- * ALERT_PHONE_NUMBER tiver janela de 24h aberta com o bot — mesmo numa falha,
- * marcamos o alerta como enviado pra não tentar de novo até amanhã.
+ * best-effort (texto livre → fallback de template, ver sendAlertMessage) —
+ * mesmo numa falha, marcamos o alerta como enviado pra não tentar de novo
+ * até amanhã.
  */
 export async function runAwaitingAlertJob() {
   const alertPhone = process.env.ALERT_PHONE_NUMBER;
@@ -75,10 +104,10 @@ export async function runAwaitingAlertJob() {
 
   for (const conversation of overdue) {
     try {
-      await whatsappProvider.sendTextMessage({
-        toPhone: alertPhone,
-        body: `⏰ ${conversation.contactName} está aguardando resposta há mais de 2h.\n${formatPhone(conversation.contactPhone)}`,
-      });
+      await sendAlertMessage(
+        alertPhone,
+        `⏰ ${conversation.contactName} está aguardando resposta há mais de 2h.\n${formatPhone(conversation.contactPhone)}`,
+      );
       sent++;
     } catch {
       failed++;
@@ -168,7 +197,7 @@ export async function runDailySummaryJob() {
   }
 
   try {
-    await whatsappProvider.sendTextMessage({ toPhone: alertPhone, body: summaryText });
+    await sendAlertMessage(alertPhone, summaryText);
     return { sent: true, summaryText };
   } catch {
     return { sent: false, summaryText };

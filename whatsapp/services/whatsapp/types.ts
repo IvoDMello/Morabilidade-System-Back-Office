@@ -22,6 +22,18 @@ export interface NormalizedIncomingMessage {
   timestamp: string;
 }
 
+/** Mensagem enviada pelo app WhatsApp Business do celular (modo coexistência).
+ * A Meta ecoa essas mensagens no webhook (campo smb_message_echoes) para o CRM
+ * espelhar a conversa — aqui `toPhone` é o cliente, não quem enviou. */
+export interface NormalizedEchoMessage {
+  waMessageId: string | null;
+  toPhone: string;
+  body: string;
+  messageType: WhatsAppMessageType;
+  media: NormalizedIncomingMedia | null;
+  timestamp: string;
+}
+
 export interface NormalizedStatusUpdate {
   waMessageId: string;
   status: WhatsAppMessageStatus;
@@ -31,12 +43,22 @@ export interface NormalizedStatusUpdate {
 
 export type NormalizedWebhookEvent =
   | { type: "message"; data: NormalizedIncomingMessage }
+  | { type: "echo"; data: NormalizedEchoMessage }
   | { type: "status"; data: NormalizedStatusUpdate };
 
 export interface WhatsAppProvider {
   sendTextMessage(input: {
     toPhone: string;
     body: string;
+  }): Promise<{ providerMessageId: string | null }>;
+  /** Envia um template pré-aprovado pela Meta — único formato aceito fora da
+   * janela de 24h desde a última mensagem do destinatário. `bodyParams`
+   * preenche os {{1}}, {{2}}… do corpo do template, na ordem. */
+  sendTemplateMessage(input: {
+    toPhone: string;
+    templateName: string;
+    languageCode: string;
+    bodyParams: string[];
   }): Promise<{ providerMessageId: string | null }>;
   verifyWebhookHandshake(params: {
     mode: string | null;

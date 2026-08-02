@@ -2,7 +2,12 @@ import { dataSource } from "./data";
 import { createContact, getContactByPhone } from "./contacts.service";
 import { notifyNewMessage } from "./push.service";
 import { whatsappProvider } from "./whatsapp";
-import type { NormalizedIncomingMessage, NormalizedStatusUpdate } from "./whatsapp";
+import type {
+  NormalizedEchoMessage,
+  NormalizedIncomingMedia,
+  NormalizedIncomingMessage,
+  NormalizedStatusUpdate,
+} from "./whatsapp";
 import { CURRENT_USER_NAME } from "@/constants/current-user";
 import { formatPhone } from "@/lib/utils";
 import { extFromMime, messagePreview } from "@/lib/whatsapp-media";
@@ -23,10 +28,9 @@ interface ResolvedMedia {
  * seu tipo (foto/áudio/…), só sem a mídia carregada.
  */
 async function resolveIncomingMedia(
-  message: NormalizedIncomingMessage,
+  media: NormalizedIncomingMedia | null,
   conversationId: ID,
 ): Promise<ResolvedMedia | null> {
-  const media = message.media;
   if (!media) return null;
 
   if (media.url) {
@@ -82,7 +86,7 @@ export async function processIncomingMessage(message: NormalizedIncomingMessage)
     message.fromPhone,
   );
 
-  const media = await resolveIncomingMedia(message, conversation.id);
+  const media = await resolveIncomingMedia(message.media, conversation.id);
   const preview = messagePreview(message.messageType, message.body);
 
   const created = await dataSource.whatsapp.createMessage({
@@ -110,6 +114,64 @@ export async function processIncomingMessage(message: NormalizedIncomingMessage)
     body: `${contact.name}: ${preview}`,
     url: `/?c=${contact.id}`,
   }).catch(() => {});
+
+  return created;
+}
+
+/** Autor registrado nas mensagens ecoadas do app do celular (coexistência). */
+export const ECHO_CREATED_BY = "WhatsApp Business (celular)";
+
+/**
+ * Coexistência: registra no CRM uma mensagem que a equipe enviou pelo app
+ * WhatsApp Business do celular. Entra como outbound na conversa do cliente —
+ * inclusive tirando a conversa de "aguardando resposta", já que o cliente foi
+ * de fato respondido (só que por fora do CRM).
+ */
+export async function processEchoMessage(message: NormalizedEchoMessage) {
+  if (message.waMessageId) {
+    const existing = await dataSource.whatsapp.findMessageByWaId(message.waMessageId);
+    if (existing) return existing;
+  }
+
+  // O cliente pode nem existir no CRM ainda (conversa iniciada pelo celular).
+  const contact =
+    (await getContactByPhone(message.toPhone)) ??
+    (await createContact({
+      name: formatPhone(message.toPhone),
+      phone: message.toPhone,
+      category: "lead",
+      status: "novo",
+      nextAction: "ligar",
+    }));
+
+  const conversation = await dataSource.whatsapp.getOrCreateConversationForContact(
+    contact.id,
+    message.toPhone,
+  );
+
+  const media = await resolveIncomingMedia(message.media, conversation.id);
+  const preview = messagePreview(message.messageType, message.body);
+
+  const created = await dataSource.whatsapp.createMessage({
+    conversationId: conversation.id,
+    waMessageId: message.waMessageId,
+    direction: "outbound",
+    messageType: message.messageType,
+    body: message.body,
+    status: "sent",
+    createdBy: ECHO_CREATED_BY,
+    mediaUrl: media?.mediaUrl ?? null,
+    mediaMimeType: media?.mediaMimeType ?? null,
+    mediaFilename: media?.mediaFilename ?? null,
+    waTimestamp: message.timestamp,
+  });
+
+  await dataSource.whatsapp.touchConversationOnNewMessage(
+    conversation.id,
+    preview,
+    message.timestamp,
+    "outbound",
+  );
 
   return created;
 }

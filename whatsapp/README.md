@@ -132,11 +132,49 @@ Quando você tiver uma conta Meta Business com a WhatsApp Cloud API configurada:
 5. Publique o app (ou use um túnel como `ngrok` para testar localmente) e, no
    painel da Meta, configure o webhook apontando para
    `https://SEU_DOMINIO/api/whatsapp/webhook`, usando o mesmo
-   `WHATSAPP_VERIFY_TOKEN` do passo 3. Inscreva o campo `messages`.
+   `WHATSAPP_VERIFY_TOKEN` do passo 3. Inscreva os campos `messages` **e**
+   `smb_message_echoes` (este último é o echo da coexistência, abaixo).
 
 Nenhuma mudança de código é necessária — a rota `/api/whatsapp/webhook` e o
 envio de mensagens já funcionam com as variáveis reais assim que
 `WHATSAPP_PROVIDER=cloud-api` estiver definido (ver `services/whatsapp/`).
+
+### Coexistência com o app WhatsApp Business (mesmo número)
+
+O número pode continuar funcionando **no app WhatsApp Business do celular** ao
+mesmo tempo em que fica ligado à Cloud API — é o modo *coexistência* da Meta. No
+onboarding (Embedded Signup), escolha o fluxo de coexistência e escaneie o QR
+code pelo app; o app do celular não para de funcionar em nenhum momento.
+
+O que o CRM já trata:
+
+- **Echo do celular** (`smb_message_echoes`): quando alguém do time responde
+  pelo app, a Meta ecoa a mensagem no webhook e o CRM a registra como enviada
+  ("WhatsApp Business (celular)") na conversa certa — inclusive tirando a
+  conversa de "aguardando resposta". Mídia enviada pelo celular também aparece.
+  Entrega duplicada é idempotente (dedupe por `wamid`).
+- No modo `mock`, dá pra simular um echo enviando `{"echo": true}` no JSON da
+  simulação (ver `tests/coexistence.test.ts`).
+
+Limitações do modo (regras da Meta, não nossas): grupos não passam pela API (só
+pelo app) e o histórico sincronizado no onboarding é limitado (~6 meses) — o
+histórico completo permanece intacto no app do celular. A importação do
+histórico sincronizado para o CRM ainda não está implementada.
+
+### Janela de 24h e templates
+
+Fora da janela de 24h desde a última mensagem do destinatário, a Cloud API só
+aceita **templates pré-aprovados** pela Meta. Os alertas operacionais (alerta de
+2h e resumo diário, enviados ao `ALERT_PHONE_NUMBER`) tentam texto livre e, se
+falhar, reenviam como template — configure:
+
+- `WHATSAPP_ALERT_TEMPLATE`: nome de um template aprovado cujo corpo seja só
+  `{{1}}` (ex.: "Alerta da Central de Atendimento: {{1}}");
+- `WHATSAPP_ALERT_TEMPLATE_LANG` (opcional, padrão `pt_BR`).
+
+Sem `WHATSAPP_ALERT_TEMPLATE`, o comportamento continua o de antes: o envio só
+entrega com janela aberta. A aprovação de templates na Meta leva de minutos a
+dias — crie-os cedo (WhatsApp Manager → Message Templates).
 
 ### Mídia recebida (foto/áudio/vídeo/documento/figurinha)
 

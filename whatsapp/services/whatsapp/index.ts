@@ -14,6 +14,7 @@ export const isMockWhatsAppProvider = process.env.WHATSAPP_PROVIDER !== "cloud-a
 
 export type {
   WhatsAppProvider,
+  NormalizedEchoMessage,
   NormalizedIncomingMessage,
   NormalizedIncomingMedia,
   NormalizedStatusUpdate,

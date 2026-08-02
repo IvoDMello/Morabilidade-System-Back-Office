@@ -48,32 +48,51 @@ function parseIncomingContent(message: any): {
   return { messageType: "unsupported", body: "", media: null };
 }
 
+/** POST em /{phone-number-id}/messages — caminho único de envio (texto e template). */
+async function postOutboundMessage(payload: Record<string, unknown>) {
+  const response = await fetch(
+    `https://graph.facebook.com/${GRAPH_API_VERSION}/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.WHATSAPP_CLOUD_API_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ messaging_product: "whatsapp", ...payload }),
+    },
+  );
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(`Falha ao enviar mensagem pela Cloud API: ${errorBody}`);
+  }
+
+  const data = (await response.json()) as { messages?: { id: string }[] };
+  return { providerMessageId: data.messages?.[0]?.id ?? null };
+}
+
 export const cloudApiWhatsAppProvider: WhatsAppProvider = {
   async sendTextMessage({ toPhone, body }) {
-    const response = await fetch(
-      `https://graph.facebook.com/${GRAPH_API_VERSION}/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.WHATSAPP_CLOUD_API_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          messaging_product: "whatsapp",
-          to: toPhone,
-          type: "text",
-          text: { body },
+    return postOutboundMessage({ to: toPhone, type: "text", text: { body } });
+  },
+
+  async sendTemplateMessage({ toPhone, templateName, languageCode, bodyParams }) {
+    return postOutboundMessage({
+      to: toPhone,
+      type: "template",
+      template: {
+        name: templateName,
+        language: { code: languageCode },
+        ...(bodyParams.length > 0 && {
+          components: [
+            {
+              type: "body",
+              parameters: bodyParams.map((text) => ({ type: "text", text })),
+            },
+          ],
         }),
       },
-    );
-
-    if (!response.ok) {
-      const errorBody = await response.text();
-      throw new Error(`Falha ao enviar mensagem pela Cloud API: ${errorBody}`);
-    }
-
-    const data = (await response.json()) as { messages?: { id: string }[] };
-    return { providerMessageId: data.messages?.[0]?.id ?? null };
+    });
   },
 
   async fetchMediaBytes(metaMediaId: string) {
@@ -147,6 +166,26 @@ export const cloudApiWhatsAppProvider: WhatsAppProvider = {
               messageType,
               media,
               timestamp: new Date(Number(message.timestamp) * 1000).toISOString(),
+            },
+          });
+        }
+
+        // Coexistência: mensagens enviadas pelo app WhatsApp Business do celular
+        // chegam ecoadas no campo smb_message_echoes (exige assinatura desse
+        // campo no webhook). `to` é o cliente; `from` é o número da empresa.
+        for (const echo of value?.message_echoes ?? []) {
+          if (!echo.to) continue;
+          const { messageType, body, media } = parseIncomingContent(echo);
+
+          events.push({
+            type: "echo",
+            data: {
+              waMessageId: echo.id ?? null,
+              toPhone: echo.to,
+              body,
+              messageType,
+              media,
+              timestamp: new Date(Number(echo.timestamp) * 1000).toISOString(),
             },
           });
         }
