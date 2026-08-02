@@ -278,6 +278,75 @@ Configure `CAPTACOES_BOARD_URL` para o painel mostrar o atalho "Abrir board de
 captações". O resto funciona sem nenhuma variável nova (usa o mesmo Supabase,
 schema `captacoes`).
 
+## O copiloto chega antes (pré-computação) e o manual de voz
+
+Até aqui toda a IA era **botão**: alguém precisava abrir a conversa e clicar
+para o copiloto pensar. Agora a análise dispara **quando a mensagem chega**, e o
+rascunho já está esperando quando alguém abre o painel.
+
+Requer a migration `0020_propostas_agente.sql`.
+
+### Como funciona
+
+1. O webhook grava a mensagem e responde 200 na hora (a Meta reentrega se
+   demorar). A análise roda **depois da resposta**, via `after` do Next
+   (`lib/after-response.ts`), ainda dentro da mesma invocação — por isso a rota
+   do webhook declara `maxDuration = 60`.
+2. As propostas vão para a tabela `agent_proposals` com status `pendente`.
+3. Ao abrir a conversa, o painel já mostra as propostas — sem clique e sem
+   espera. O botão "Analisar conversa" continua existindo para reanalisar
+   depois de responder algo à mão.
+
+Três guardas evitam desperdício, todas em `services/agent-proposals.service.ts`:
+
+- **dedupe** — a mesma mensagem nunca é analisada duas vezes;
+- **rajada** — se o cliente mandou três mensagens seguidas, só a última paga a
+  chamada de modelo;
+- **supersessão** — pendentes viram `superada` quando chega coisa nova, para o
+  painel não dar conselho sobre um assunto que já mudou.
+
+**A trava de segurança não mudou:** proposta continua sendo proposta. Nada é
+enviado ou criado sem confirmação humana, e a execução revalida tudo no servidor
+(`services/assistant/handlers.ts`).
+
+### `VOZ.md` — o jeito de falar da casa
+
+O tom das mensagens sugeridas vem de **`VOZ.md`**, na raiz do projeto, injetado
+literalmente no prompt. É um arquivo de texto comum, feito para quem atende
+editar sem saber nada de código — inclusive as travas que nunca podem sair numa
+mensagem (preço, disponibilidade, condição jurídica, negociação).
+
+Em `npm run dev` a mudança vale na próxima análise, sem reiniciar. Em produção
+o arquivo é lido uma vez por processo, e o build precisa empacotá-lo —
+`outputFileTracingIncludes` no `next.config.ts` cuida disso. Se a leitura
+falhar, o copiloto cai num texto mínimo que preserva só as travas.
+
+Cada proposta guarda `voz_hash` e `modelo`: quando a qualidade cair, dá para
+saber se mexeram no `VOZ.md` ou se o modelo mudou.
+
+### Aprender a voz: validar já é coletar
+
+Todo desfecho é um exemplo rotulado, e o mais valioso é a **edição** — o par
+entre o que o agente escreveu e o que de fato foi enviado é literalmente "como
+eu teria dito". Por isso os dois textos ficam guardados.
+
+- Confirmou sem mexer no texto → `aprovada`
+- Reescreveu antes de enviar → `editada` (guarda sugerido + enviado)
+- Dispensou → `descartada`
+
+`listEdicoesParaVoz()` devolve esses pares — é a matéria-prima para atualizar o
+`VOZ.md` com o que a equipe realmente diz.
+
+### Placar de graduação
+
+`/pendencias` mostra, por ferramenta, a **taxa de edição** e a **sequência de
+aprovações sem edição**. A meta sugerida (em `services/data/agent-proposal-score.ts`)
+é 20 aprovações seguidas com taxa de edição até 15%.
+
+É **indicador, não gatilho**: nada no sistema muda de comportamento sozinho ao
+bater a meta. Quem decide promover um processo para mais autonomia é gente,
+olhando o número.
+
 ## Ficha de visita automática (1h antes)
 
 O cron `/api/cron/visita-fichas` (de hora em hora, mesmo workflow dos demais)

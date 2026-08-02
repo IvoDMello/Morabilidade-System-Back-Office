@@ -24,6 +24,8 @@ import {
   type CaptacaoResumo,
 } from "@/services/captacoes.service";
 import { ConversationCopilot } from "@/features/assistant/components/conversation-copilot";
+import { listPropostasPendentes } from "@/services/agent-proposals.service";
+import type { AgentProposal } from "@/types/agent-proposal";
 
 interface HomePageProps {
   searchParams: Promise<{ c?: string; q?: string }>;
@@ -56,10 +58,14 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   // board não pode derrubar o inbox inteiro.
   let captacoesContato: CaptacaoResumo[] = [];
   let captacoesRecentes: CaptacaoResumo[] = [];
+  // Propostas que o agente já preparou quando a mensagem chegou — chegam
+  // prontas com a página, sem clique. Também best-effort.
+  let propostasPendentes: AgentProposal[] = [];
   if (selectedContact) {
-    [captacoesContato, captacoesRecentes] = await Promise.all([
+    [captacoesContato, captacoesRecentes, propostasPendentes] = await Promise.all([
       listCaptacoesDoTelefone(selectedContact.phone).catch(() => []),
       listCaptacoesRecentes().catch(() => []),
+      listPropostasPendentes(selectedContact.id).catch(() => []),
     ]);
   }
 
@@ -123,6 +129,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                       captacoesContato={captacoesContato}
                       captacoesRecentes={captacoesRecentes}
                       captacoesUrl={process.env.CAPTACOES_BOARD_URL ?? null}
+                      propostasPendentes={propostasPendentes}
                     />
                   }
                 />

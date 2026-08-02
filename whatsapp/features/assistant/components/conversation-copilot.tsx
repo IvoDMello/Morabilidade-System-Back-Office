@@ -28,12 +28,13 @@ import {
 import {
   analisarConversaAction,
   criarCaptacaoDaConversaAction,
+  dispensarPropostaAction,
   executarAcaoDaConversaAction,
   type AnaliseResultado,
 } from "@/app/conversas/copilot-actions";
-import type { AcaoProposta } from "@/services/assistant";
 import type { ToolName } from "@/services/assistant/tools";
 import type { CaptacaoResumo } from "@/services/captacoes.service";
+import type { AgentProposal } from "@/types/agent-proposal";
 
 type ItemStatus =
   | { kind: "pending" }
@@ -41,10 +42,17 @@ type ItemStatus =
   | { kind: "error"; message: string }
   | { kind: "dismissed" };
 
-interface Item extends AcaoProposta {
+/** O `status` do servidor é sempre "pendente" aqui (só pendentes chegam à tela),
+ * então trocamos por um estado de UI mais rico — que também cobre "executando"
+ * e "deu erro", situações que não existem no banco. */
+interface Item extends Omit<AgentProposal, "status"> {
   status: ItemStatus;
   /** Texto editável da resposta sugerida (só em sugerir_resposta). */
   textoEditado?: string;
+}
+
+function paraItens(propostas: AgentProposal[]): Item[] {
+  return propostas.map((p) => ({ ...p, status: { kind: "pending" } }));
 }
 
 const TOOL_ICON: Record<ToolName, typeof CalendarClock> = {
@@ -61,6 +69,9 @@ interface ConversationCopilotProps {
   captacoesRecentes: CaptacaoResumo[];
   /** URL do board de captações (abre em nova aba); null se não configurada. */
   captacoesUrl: string | null;
+  /** Propostas pré-computadas quando a mensagem chegou — o trabalho que o
+   * agente já adiantou. Vêm prontas do servidor; ninguém precisa clicar. */
+  propostasPendentes: AgentProposal[];
 }
 
 /** Painel do copiloto dentro da conversa (CV — captações): mostra as captações
@@ -74,8 +85,11 @@ export function ConversationCopilot({
   captacoesContato,
   captacoesRecentes,
   captacoesUrl,
+  propostasPendentes,
 }: ConversationCopilotProps) {
-  const [items, setItems] = useState<Item[]>([]);
+  // Semeado com o que o agente já adiantou: ao abrir o painel o trabalho está
+  // feito, sem clique e sem espera. Reanalisar substitui a lista.
+  const [items, setItems] = useState<Item[]>(() => paraItens(propostasPendentes));
   const [erro, setErro] = useState<string | null>(null);
   const [isAnalyzing, startAnalyzing] = useTransition();
   const [executingIdx, setExecutingIdx] = useState<number | null>(null);
@@ -86,7 +100,7 @@ export function ConversationCopilot({
     setErro(null);
     startAnalyzing(async () => {
       const res: AnaliseResultado = await analisarConversaAction(contactId);
-      setItems(res.propostas.map((p) => ({ ...p, status: { kind: "pending" } })));
+      setItems(paraItens(res.propostas));
       if (!res.ok || res.propostas.length === 0) setErro(res.erro ?? "Nenhuma ação sugerida.");
     });
   }
@@ -98,7 +112,15 @@ export function ConversationCopilot({
         ? { ...item.args, texto: item.textoEditado }
         : item.args;
     setExecutingIdx(idx);
-    executarAcaoDaConversaAction(contactId, item.tool, args).then((res) => {
+    // `textoSugerido` vai junto para o servidor saber se o texto foi editado —
+    // é essa diferença que ensina a voz da casa ao agente.
+    executarAcaoDaConversaAction(
+      contactId,
+      item.tool,
+      args,
+      item.id,
+      item.textoSugerido,
+    ).then((res) => {
       setExecutingIdx(null);
       setItems((prev) =>
         prev.map((it, i) =>
@@ -118,7 +140,10 @@ export function ConversationCopilot({
   }
 
   function dispensar(idx: number) {
+    const item = items[idx];
     setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, status: { kind: "dismissed" } } : it)));
+    // Descartar também é sinal de treino: registra que a proposta não servia.
+    void dispensarPropostaAction(item.id);
   }
 
   const todasDoContato = [...criadas, ...captacoesContato];
@@ -171,12 +196,16 @@ export function ConversationCopilot({
             <p className="text-xs font-semibold tracking-[0.08em] text-muted-foreground uppercase">
               Ações propostas — confirme para executar
             </p>
+            <p className="text-xs text-muted-foreground">
+              Você pode editar a resposta antes de enviar. O que você reescrever ensina o
+              copiloto a escrever como a Morabilidade escreve.
+            </p>
             {items.map((item, idx) => {
               if (item.status.kind === "dismissed") return null;
               const Icon = TOOL_ICON[item.tool] ?? Sparkles;
               const isResposta = item.tool === "sugerir_resposta";
               return (
-                <div key={idx} className="flex flex-col gap-2 rounded-lg border bg-card p-3">
+                <div key={item.id} className="flex flex-col gap-2 rounded-lg border bg-card p-3">
                   <div className="flex items-start gap-2">
                     <Icon className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                     <p className="min-w-0 flex-1 text-sm">{item.resumo}</p>

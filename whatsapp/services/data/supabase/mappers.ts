@@ -13,6 +13,7 @@ import type {
 } from "@/types/whatsapp";
 import type { PushSubscriptionRecord } from "@/types/push";
 import type { Corretor } from "@/types/corretor";
+import type { AgentProposal } from "@/types/agent-proposal";
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- linhas cruas do Supabase (snake_case) */
 
@@ -191,6 +192,27 @@ export function mapMessageSearchResultRow(row: any): WhatsAppMessageSearchResult
     direction: row.direction,
     body: row.body,
     waTimestamp: row.wa_timestamp,
+  };
+}
+
+export function mapAgentProposalRow(row: any): AgentProposal {
+  return {
+    id: row.id,
+    conversationId: row.conversation_id,
+    contactId: row.contact_id,
+    triggerMessageId: row.trigger_message_id ?? null,
+    tool: row.tool,
+    args: (row.args ?? {}) as Record<string, unknown>,
+    resumo: row.resumo,
+    status: row.status,
+    textoSugerido: row.texto_sugerido ?? null,
+    textoFinal: row.texto_final ?? null,
+    decididoPor: row.decidido_por ?? null,
+    decididoEm: row.decidido_em ?? null,
+    modelo: row.modelo ?? null,
+    vozHash: row.voz_hash ?? null,
+    origem: row.origem,
+    createdAt: row.created_at,
   };
 }
 

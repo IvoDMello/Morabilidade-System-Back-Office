@@ -8,6 +8,7 @@ import type { ContactProperty, Property } from "@/types/property";
 import type { WhatsAppConversation, WhatsAppMessage } from "@/types/whatsapp";
 import type { PushSubscriptionRecord } from "@/types/push";
 import type { Corretor } from "@/types/corretor";
+import type { AgentProposal } from "@/types/agent-proposal";
 import {
   seedContacts,
   seedNotes,
@@ -42,6 +43,7 @@ interface MockStore {
   contactProperties: ContactProperty[];
   corretores: Corretor[];
   pushSubscriptions: PushSubscriptionRecord[];
+  agentProposals: AgentProposal[];
 }
 
 const globalForMockStore = globalThis as unknown as { __mockStore?: MockStore };
@@ -62,6 +64,7 @@ export const mockStore: MockStore =
     contactProperties: seedContactProperties,
     corretores: seedCorretores,
     pushSubscriptions: [],
+    agentProposals: [],
   });
 
 export function generateId(): string {

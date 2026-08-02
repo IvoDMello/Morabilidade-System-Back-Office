@@ -3,6 +3,7 @@ import { getContacts, getContactById } from "@/services/contacts.service";
 import { getConversationMessages } from "@/services/whatsapp.service";
 import { listCaptacoesDoTelefone, type CaptacaoResumo } from "@/services/captacoes.service";
 import { ASSISTANT_TOOLS, SUGERIR_RESPOSTA_TOOL, type ToolName } from "./tools";
+import { getVoz } from "./voz";
 
 const MAX_CONTATOS_CONTEXTO = 200;
 
@@ -102,16 +103,31 @@ function descreverCaptacao(c: CaptacaoResumo): string {
   return partes.join(" · ");
 }
 
+/** Resultado da análise, com o rastro de como ela foi produzida. Modelo e
+ * versão do manual de voz ficam gravados em cada proposta — sem isso, quando a
+ * qualidade cair, não dá pra saber se mexeram no VOZ.md ou se o modelo mudou. */
+export interface AnaliseDaConversa {
+  propostas: AcaoProposta[];
+  modelo: string;
+  vozHash: string;
+}
+
 /**
- * Copiloto da CONVERSA (fase captações): analisa o histórico do WhatsApp com o
- * contato e propõe ações — criar captação com os dados que o proprietário já
- * passou, agendar visita e/ou sugerir a próxima resposta. Mesmo contrato do
- * /assistente: o modelo só PROPÕE; nada executa sem confirmação humana
- * (handlers.ts), e a resposta sugerida pode ser editada antes do envio.
+ * Copiloto da CONVERSA: analisa o histórico do WhatsApp com o contato e propõe
+ * ações — criar captação com os dados que o proprietário já passou, agendar
+ * visita e/ou sugerir a próxima resposta. O modelo só PROPÕE; nada executa sem
+ * confirmação humana (handlers.ts), e a resposta sugerida pode ser editada
+ * antes do envio.
+ *
+ * O jeito de escrever vem de `VOZ.md` (ver ./voz.ts), não daqui: quem ajusta o
+ * tom é quem atende. Este prompt cuida do *processo*; o manual cuida da *voz*.
  */
-export async function proporAcoesDaConversa(contactId: string): Promise<AcaoProposta[]> {
+export async function proporAcoesDaConversa(contactId: string): Promise<AnaliseDaConversa> {
+  const voz = getVoz();
+  const vazio: AnaliseDaConversa = { propostas: [], modelo: AI_MODEL, vozHash: voz.hash };
+
   const contato = await getContactById(contactId);
-  if (!contato) return [];
+  if (!contato) return vazio;
 
   const [mensagens, captacoes] = await Promise.all([
     getConversationMessages(contactId),
@@ -139,6 +155,12 @@ export async function proporAcoesDaConversa(contactId: string): Promise<AcaoProp
       {
         role: "user",
         content: `Você é o copiloto de atendimento de uma imobiliária (Morabilidade). Analise a conversa de WhatsApp abaixo e proponha ações usando as ferramentas. Nunca invente dados que não estejam na conversa.
+
+=== MANUAL DE VOZ (como escrever) ===
+Toda mensagem que você propuser em sugerir_resposta precisa seguir o manual abaixo. Ele foi escrito pela equipe que atende e vale mais que qualquer instinto seu de estilo.
+
+${voz.texto}
+=== FIM DO MANUAL DE VOZ ===
 
 Processo de captação (quando o contato é um proprietário oferecendo um imóvel):
 1. Coletar: endereço completo, quartos, banheiros, tipo de portaria, e pedir fotos.
@@ -171,5 +193,5 @@ ${historico || "(sem mensagens)"}`,
     if (tool === "sugerir_resposta" && !args.contato_id) args.contato_id = contato.id;
     propostas.push({ tool, args, resumo: resumirAcao(tool, args, nomePorId) });
   }
-  return propostas;
+  return { propostas, modelo: AI_MODEL, vozHash: voz.hash };
 }

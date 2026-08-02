@@ -5,6 +5,13 @@ import {
   processIncomingMessage,
   processStatusUpdate,
 } from "@/services/whatsapp.service";
+import { analisarConversaDoTelefone } from "@/services/agent-proposals.service";
+import { depoisDaResposta } from "@/lib/after-response";
+
+/** A análise do copiloto roda depois da resposta (ver `depoisDaResposta`), mas
+ * ainda dentro desta invocação — o teto precisa cobrir uma chamada de modelo
+ * sobre o histórico da conversa. */
+export const maxDuration = 60;
 
 /** Handshake de verificação exigido pela Meta ao configurar o webhook. */
 export async function GET(request: Request) {
@@ -30,7 +37,13 @@ export async function POST(request: Request) {
   const events = whatsappProvider.parseWebhookPayload(rawBody);
   for (const event of events) {
     if (event.type === "message") {
-      await processIncomingMessage(event.data);
+      const gravada = await processIncomingMessage(event.data);
+      // Nível 1 — o agente chega antes do humano: a análise dispara agora, e o
+      // rascunho já espera pronto quando alguém abrir a conversa. Fora do
+      // caminho da resposta, senão a Meta reentrega por timeout. O dedupe por
+      // mensagem vive no service, então uma reentrega não analisa duas vezes.
+      const { fromPhone } = event.data;
+      depoisDaResposta(() => analisarConversaDoTelefone(fromPhone, gravada.id));
     } else if (event.type === "echo") {
       await processEchoMessage(event.data);
     } else {

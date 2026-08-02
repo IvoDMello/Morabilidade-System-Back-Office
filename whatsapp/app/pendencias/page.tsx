@@ -1,9 +1,15 @@
 import { PendenciasTabs } from "@/features/pendencias/components/pendencias-tabs";
 import { AiPendencias } from "@/features/pendencias/components/ai-pendencias";
+import { PlacarAgente } from "@/features/pendencias/components/placar-agente";
 import { getPendingQueue } from "@/services/whatsapp.service";
+import { getPlacar } from "@/services/agent-proposals.service";
 
 export default async function PendenciasPage() {
-  const queue = await getPendingQueue();
+  // Placar é best-effort: sem a migration 0020 aplicada, a página segue inteira.
+  const [queue, placar] = await Promise.all([
+    getPendingQueue(),
+    getPlacar().catch(() => null),
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -17,6 +23,8 @@ export default async function PendenciasPage() {
       </div>
 
       <AiPendencias />
+
+      {placar && <PlacarAgente placar={placar} />}
 
       <PendenciasTabs queue={queue} />
     </div>

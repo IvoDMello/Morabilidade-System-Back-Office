@@ -32,6 +32,12 @@ import type {
 import type { ConversationStatus } from "@/constants/conversation-status";
 import type { WhatsAppMessageStatus } from "@/constants/whatsapp-message-status";
 import type { CreatePushSubscriptionInput, PushSubscriptionRecord } from "@/types/push";
+import type {
+  AgentProposal,
+  AgentToolScore,
+  CreateAgentProposalInput,
+  DecidirAgentProposalInput,
+} from "@/types/agent-proposal";
 
 /**
  * Contrato que toda fonte de dados (mock ou Supabase) precisa implementar.
@@ -145,5 +151,23 @@ export interface DataSource {
     list(): Promise<PushSubscriptionRecord[]>;
     upsert(input: CreatePushSubscriptionInput): Promise<PushSubscriptionRecord>;
     remove(endpoint: string): Promise<void>;
+  };
+  /** Propostas do agente: o que ele sugeriu e o que o humano decidiu.
+   * Ver `types/agent-proposal.ts` e a migration 0020. */
+  agentProposals: {
+    /** Pendentes de um contato — o que o painel mostra ao abrir a conversa. */
+    listPendentesPorContato(contactId: ID): Promise<AgentProposal[]>;
+    createMany(inputs: CreateAgentProposalInput[]): Promise<AgentProposal[]>;
+    decidir(id: ID, input: DecidirAgentProposalInput): Promise<void>;
+    /** Marca as pendentes da conversa como `superada` (chegou coisa nova). */
+    superarPendentes(conversationId: ID): Promise<number>;
+    /** Dedupe da análise: esta mensagem recebida já foi analisada? */
+    jaAnalisouMensagem(messageId: ID): Promise<boolean>;
+    /** Placar por ferramenta — a régua de graduação de autonomia. */
+    placar(): Promise<AgentToolScore[]>;
+    /** Pares (sugerido, enviado) de respostas editadas — matéria-prima do VOZ.md. */
+    listEdicoesRecentes(limit?: number): Promise<
+      { sugerido: string; enviado: string; decididoEm: string }[]
+    >;
   };
 }
