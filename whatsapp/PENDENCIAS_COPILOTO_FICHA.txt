@@ -78,24 +78,50 @@ pra rodar agora sem pressa de mergear depois.
     a ficha é documento jurídico e a API exige um corretor identificado
     (nome + CRECI) para assinar. O CRM descobre quem é pelo auth_user_id.
 
-    Ver a situação atual:
-      select c.id, c.nome, c.auth_user_id, u.email
-      from whatsapp.corretores c
-      left join auth.users u on u.id = c.auth_user_id
-      order by c.nome;
+    O QUE É: existem duas listas de pessoas que hoje não se conhecem.
+      - whatsapp.corretores  -> "Rodrigo", "Leandro", "Ivo". São só nomes,
+                                usados para atribuir contatos e visitas no CRM.
+      - public.usuarios      -> os logins de verdade do back-office, com CRECI.
+    A coluna auth_user_id é a ponte entre as duas ("o corretor Rodrigo é o
+    usuário tal"). Ela está vazia, e é por isso que a ficha não sai.
 
-    Ligar por e-mail (repetir para cada corretor):
+    Tudo no Supabase Dashboard -> SQL Editor.
+
+    PASSO A) Ver os dois lados e escolher o e-mail do Rodrigo:
+
+      select id, nome, auth_user_id from whatsapp.corretores order by nome;
+
+      select id, nome_completo, email, creci, ativo
+      from public.usuarios order by nome_completo;
+
+    Repare na coluna `creci` do segundo resultado: o usuário escolhido precisa
+    ter CRECI preenchido (ou ocultar_creci_ficha = true), senão a API recusa a
+    ficha e a pendência chega dizendo exatamente isso.
+
+    PASSO B) Ligar (trocar só o e-mail pelo que apareceu acima):
+
       update whatsapp.corretores c
       set auth_user_id = u.id
-      from auth.users u
-      where lower(u.email) = lower('rodrigo@morabilidade.com')
-        and lower(c.nome) = 'rodrigo';
+      from public.usuarios u
+      where lower(c.nome) = 'rodrigo'
+        and lower(u.email) = lower('TROCAR_PELO_EMAIL_DO_RODRIGO');
 
-    Conferir que o usuário correspondente tem CRECI na API principal:
-      select id, nome_completo, creci, ativo, ocultar_creci_ficha
-      from usuarios where id = '<auth_user_id>';
-    Sem creci (e sem ocultar_creci_ficha = true), a API recusa a ficha — a
-    pendência vai chegar dizendo exatamente isso.
+    Esperado: "UPDATE 1". Se vier "UPDATE 0", o e-mail não bateu — volte ao
+    passo A e copie exatamente como está lá.
+
+    PASSO C) Conferir que ficou de pé:
+
+      select c.nome, u.nome_completo, u.email, u.creci, u.ativo
+      from whatsapp.corretores c
+      join public.usuarios u on u.id = c.auth_user_id
+      where lower(c.nome) = 'rodrigo';
+
+    Esperado: 1 linha, com creci preenchido e ativo = true.
+
+    E SE O RODRIGO NÃO TIVER LOGIN? Não tem problema: o que importa é que
+    FICHA_CORRETOR_PADRAO aponte para um corretor ligado a um usuário COM
+    CRECI. Se o login for seu, ligue o "Ivo" (mesmo SQL, trocando o nome) e
+    mude FICHA_CORRETOR_PADRAO para Ivo na Vercel.
 
 
 [ ] 5. TEMPLATE NA META (opcional, mas é o que permite envio direto ao cliente
