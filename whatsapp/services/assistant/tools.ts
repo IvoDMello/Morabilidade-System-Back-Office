@@ -48,9 +48,17 @@ export const criarCaptacaoArgs = z.object({
 });
 export type CriarCaptacaoArgs = z.infer<typeof criarCaptacaoArgs>;
 
+// ── sugerir_resposta ─────────────────────────────────────────────────────────
+
+export const sugerirRespostaArgs = z.object({
+  contato_id: z.string().describe("id do contato que receberá a resposta"),
+  texto: z.string().min(1).describe("texto da mensagem sugerida, pronto para enviar via WhatsApp"),
+});
+export type SugerirRespostaArgs = z.infer<typeof sugerirRespostaArgs>;
+
 // ── Registro ─────────────────────────────────────────────────────────────────
 
-export type ToolName = "agendar_visita" | "criar_captacao";
+export type ToolName = "agendar_visita" | "criar_captacao" | "sugerir_resposta";
 
 /** Schemas de input passados ao modelo (JSON Schema, espelham os zod acima). */
 export const ASSISTANT_TOOLS: Anthropic.Tool[] = [
@@ -91,3 +99,21 @@ export const ASSISTANT_TOOLS: Anthropic.Tool[] = [
     },
   },
 ];
+
+/** Ferramenta extra do copiloto de conversa: propor uma resposta ao cliente.
+ * Só entra no fluxo da conversa (nunca no /assistente solto) porque a resposta
+ * precisa de um destinatário concreto — e o envio só acontece após confirmação
+ * (e possível edição) do operador. */
+export const SUGERIR_RESPOSTA_TOOL: Anthropic.Tool = {
+  name: "sugerir_resposta",
+  description:
+    "Sugere o texto da próxima mensagem a enviar ao cliente nesta conversa de WhatsApp. Use sempre que houver algo útil a responder — especialmente para conduzir o processo de captação com um proprietário (pedir endereço, quartos, banheiros, portaria, fotos, documentação). O texto será revisado por um humano antes do envio.",
+  input_schema: {
+    type: "object",
+    properties: {
+      contato_id: { type: "string", description: "id do contato desta conversa" },
+      texto: { type: "string", description: "mensagem pronta para enviar, em português, tom cordial e direto" },
+    },
+    required: ["contato_id", "texto"],
+  },
+};

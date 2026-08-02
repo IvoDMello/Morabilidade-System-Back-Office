@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { CalendarClock, Check, Sparkles, X } from "lucide-react";
+import { CalendarClock, Check, MessageCircle, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -26,6 +26,7 @@ interface Item extends AcaoProposta {
 const TOOL_ICON: Record<ToolName, typeof CalendarClock> = {
   agendar_visita: CalendarClock,
   criar_captacao: Sparkles,
+  sugerir_resposta: MessageCircle,
 };
 
 const EXEMPLOS = [

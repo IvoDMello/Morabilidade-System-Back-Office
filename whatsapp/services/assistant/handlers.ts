@@ -1,8 +1,14 @@
-import { getSupabaseCaptacoesClient } from "@/lib/supabase/server";
 import { getContactById } from "@/services/contacts.service";
 import { createReminder } from "@/services/reminders.service";
 import { getCurrentCorretor, getCurrentUserName } from "@/services/corretores.service";
-import { agendarVisitaArgs, criarCaptacaoArgs, type ToolName } from "./tools";
+import { criarCaptacao } from "@/services/captacoes.service";
+import { sendMessage } from "@/services/whatsapp.service";
+import {
+  agendarVisitaArgs,
+  criarCaptacaoArgs,
+  sugerirRespostaArgs,
+  type ToolName,
+} from "./tools";
 import { AcaoInvalidaError, validarHorarioVisita } from "./visita-range";
 
 // A trava de horário da visita vive em ./visita-range (módulo puro, testável).
@@ -40,19 +46,33 @@ async function executarCriarCaptacao(rawArgs: unknown): Promise<string> {
     throw new AcaoInvalidaError("A captação precisa de um endereço.");
   }
 
-  const supabase = getSupabaseCaptacoesClient();
-  const { error } = await supabase.from("captacao").insert({
-    endereco,
-    quartos: args.quartos ?? null,
-    banheiros: args.banheiros ?? null,
-    tipo_portaria: args.tipo_portaria ?? null,
-    contato_proprietario: args.contato_proprietario ?? null,
-    observacoes: args.observacoes ?? null,
-  });
-  if (error) {
-    throw new AcaoInvalidaError(`Não foi possível criar a captação: ${error.message}`);
+  try {
+    const captacao = await criarCaptacao({
+      endereco,
+      quartos: args.quartos ?? null,
+      banheiros: args.banheiros ?? null,
+      tipoPortaria: args.tipo_portaria ?? null,
+      contatoProprietario: args.contato_proprietario ?? null,
+      observacoes: args.observacoes ?? null,
+    });
+    return `Captação criada para "${captacao.endereco}".`;
+  } catch (e) {
+    throw new AcaoInvalidaError(e instanceof Error ? e.message : "Não foi possível criar a captação.");
   }
-  return `Captação criada para "${endereco}".`;
+}
+
+async function executarSugerirResposta(rawArgs: unknown): Promise<string> {
+  const args = sugerirRespostaArgs.parse(rawArgs);
+  const texto = args.texto.trim();
+  if (!texto) {
+    throw new AcaoInvalidaError("A resposta sugerida está vazia.");
+  }
+  const contato = await getContactById(args.contato_id);
+  if (!contato) {
+    throw new AcaoInvalidaError("Contato não encontrado para enviar a resposta.");
+  }
+  await sendMessage(contato.id, texto);
+  return `Mensagem enviada para ${contato.name}.`;
 }
 
 /**
@@ -66,6 +86,8 @@ export async function executarAcao(tool: ToolName, rawArgs: unknown): Promise<st
       return executarAgendarVisita(rawArgs);
     case "criar_captacao":
       return executarCriarCaptacao(rawArgs);
+    case "sugerir_resposta":
+      return executarSugerirResposta(rawArgs);
     default:
       throw new AcaoInvalidaError("Ação desconhecida.");
   }

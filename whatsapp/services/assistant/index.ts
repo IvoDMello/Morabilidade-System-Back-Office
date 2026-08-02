@@ -1,6 +1,8 @@
 import { getAnthropicClient, AI_MODEL } from "@/lib/anthropic";
-import { getContacts } from "@/services/contacts.service";
-import { ASSISTANT_TOOLS, type ToolName } from "./tools";
+import { getContacts, getContactById } from "@/services/contacts.service";
+import { getConversationMessages } from "@/services/whatsapp.service";
+import { listCaptacoesDoTelefone, type CaptacaoResumo } from "@/services/captacoes.service";
+import { ASSISTANT_TOOLS, SUGERIR_RESPOSTA_TOOL, type ToolName } from "./tools";
 
 const MAX_CONTATOS_CONTEXTO = 200;
 
@@ -37,6 +39,10 @@ function resumirAcao(
     if (args.quartos) partes.push(`${args.quartos} quarto(s)`);
     if (args.contato_proprietario) partes.push(`contato ${args.contato_proprietario}`);
     return `Criar captação: ${partes.filter(Boolean).join(" · ")}.`;
+  }
+  if (tool === "sugerir_resposta") {
+    const nome = nomePorId.get(String(args.contato_id)) ?? "o contato";
+    return `Enviar resposta para ${nome}.`;
   }
   return "Ação proposta.";
 }
@@ -83,6 +89,86 @@ ${instrucao}`,
     if (bloco.type !== "tool_use") continue;
     const tool = bloco.name as ToolName;
     const args = (bloco.input ?? {}) as Record<string, unknown>;
+    propostas.push({ tool, args, resumo: resumirAcao(tool, args, nomePorId) });
+  }
+  return propostas;
+}
+
+const MAX_MENSAGENS_CONTEXTO = 60;
+
+function descreverCaptacao(c: CaptacaoResumo): string {
+  const partes = [c.endereco, c.statusLabel];
+  if (c.quartos) partes.push(`${c.quartos} quarto(s)`);
+  return partes.join(" · ");
+}
+
+/**
+ * Copiloto da CONVERSA (fase captações): analisa o histórico do WhatsApp com o
+ * contato e propõe ações — criar captação com os dados que o proprietário já
+ * passou, agendar visita e/ou sugerir a próxima resposta. Mesmo contrato do
+ * /assistente: o modelo só PROPÕE; nada executa sem confirmação humana
+ * (handlers.ts), e a resposta sugerida pode ser editada antes do envio.
+ */
+export async function proporAcoesDaConversa(contactId: string): Promise<AcaoProposta[]> {
+  const contato = await getContactById(contactId);
+  if (!contato) return [];
+
+  const [mensagens, captacoes] = await Promise.all([
+    getConversationMessages(contactId),
+    listCaptacoesDoTelefone(contato.phone).catch(() => [] as CaptacaoResumo[]),
+  ]);
+
+  const historico = mensagens
+    .slice(-MAX_MENSAGENS_CONTEXTO)
+    .map((m) => `${m.direction === "inbound" ? "Cliente" : "Nós"}: ${m.body || `[${m.messageType}]`}`)
+    .join("\n");
+
+  const captacoesExistentes = captacoes.length
+    ? captacoes.map((c) => `- ${descreverCaptacao(c)}`).join("\n")
+    : "(nenhuma captação vinculada a este telefone)";
+
+  const nomePorId = new Map([[contato.id, contato.name]]);
+  const agoraSP = dataFmt.format(new Date());
+  const client = getAnthropicClient();
+  const response = await client.messages.create({
+    model: AI_MODEL,
+    max_tokens: 1536,
+    tools: [...ASSISTANT_TOOLS, SUGERIR_RESPOSTA_TOOL],
+    tool_choice: { type: "auto" },
+    messages: [
+      {
+        role: "user",
+        content: `Você é o copiloto de atendimento de uma imobiliária (Morabilidade). Analise a conversa de WhatsApp abaixo e proponha ações usando as ferramentas. Nunca invente dados que não estejam na conversa.
+
+Processo de captação (quando o contato é um proprietário oferecendo um imóvel):
+1. Coletar: endereço completo, quartos, banheiros, tipo de portaria, e pedir fotos.
+2. Assim que houver ao menos o endereço, proponha criar_captacao com tudo que já foi dito (inclua o telefone do contato em contato_proprietario).
+3. Se ainda faltar informação, proponha sugerir_resposta com UMA mensagem cordial pedindo só o que falta (não repita o que já foi respondido).
+4. Se o cliente pedir/combinar uma visita com data e hora claras, proponha agendar_visita.
+
+Se a conversa não for de captação, ainda assim proponha sugerir_resposta quando houver algo útil a responder. Se não houver nada a fazer, não proponha ferramenta nenhuma.
+
+Agora em São Paulo: ${agoraSP}.
+
+Contato desta conversa (use exatamente este id):
+- ${contato.id} · ${contato.name} · ${contato.phone} · categoria: ${contato.category}
+
+Captações já existentes ligadas a este telefone (não crie duplicada):
+${captacoesExistentes}
+
+Conversa (mais antiga primeiro):
+${historico || "(sem mensagens)"}`,
+      },
+    ],
+  });
+
+  const propostas: AcaoProposta[] = [];
+  for (const bloco of response.content) {
+    if (bloco.type !== "tool_use") continue;
+    const tool = bloco.name as ToolName;
+    const args = (bloco.input ?? {}) as Record<string, unknown>;
+    // O modelo às vezes esquece o contato_id em sugerir_resposta — é sempre o da conversa.
+    if (tool === "sugerir_resposta" && !args.contato_id) args.contato_id = contato.id;
     propostas.push({ tool, args, resumo: resumirAcao(tool, args, nomePorId) });
   }
   return propostas;

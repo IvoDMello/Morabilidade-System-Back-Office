@@ -10,8 +10,15 @@ import { formatPhone } from "@/lib/utils";
 import type { Contact } from "@/types/contact";
 
 /** Cabeçalho sticky da thread (CV-3): identidade do contato sempre visível
- * durante a rolagem de conversas longas, com atalho para a ficha completa. */
-export function ConversationThreadHeader({ contact }: { contact: Contact }) {
+ * durante a rolagem de conversas longas, com atalho para a ficha completa.
+ * `actions` é o slot de ações contextuais (ex.: painel do copiloto). */
+export function ConversationThreadHeader({
+  contact,
+  actions,
+}: {
+  contact: Contact;
+  actions?: React.ReactNode;
+}) {
   return (
     <div className="sticky top-0 z-10 flex items-center gap-3 border-b bg-card px-4 py-3">
       <Link href="/" className="shrink-0 md:hidden" aria-label="Voltar para a lista">
@@ -43,6 +50,7 @@ export function ConversationThreadHeader({ contact }: { contact: Contact }) {
         <CategoryBadge category={contact.category} />
         <StatusBadge status={contact.status} />
       </div>
+      {actions}
       <WhatsAppButton phone={contact.phone} className="hidden lg:flex" />
       <Button
         variant="ghost"

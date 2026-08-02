@@ -18,6 +18,12 @@ import { getContactById } from "@/services/contacts.service";
 import { getTags } from "@/services/tags.service";
 import { getCorretores } from "@/services/corretores.service";
 import { getTemplates } from "@/services/templates.service";
+import {
+  listCaptacoesDoTelefone,
+  listCaptacoesRecentes,
+  type CaptacaoResumo,
+} from "@/services/captacoes.service";
+import { ConversationCopilot } from "@/features/assistant/components/conversation-copilot";
 
 interface HomePageProps {
   searchParams: Promise<{ c?: string; q?: string }>;
@@ -45,6 +51,17 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       ])
     : null;
   const [selectedContact, selectedMessages, templates] = selected ?? [null, [], []];
+
+  // Captações do painel do copiloto — best-effort: uma indisponibilidade do
+  // board não pode derrubar o inbox inteiro.
+  let captacoesContato: CaptacaoResumo[] = [];
+  let captacoesRecentes: CaptacaoResumo[] = [];
+  if (selectedContact) {
+    [captacoesContato, captacoesRecentes] = await Promise.all([
+      listCaptacoesDoTelefone(selectedContact.phone).catch(() => []),
+      listCaptacoesRecentes().catch(() => []),
+    ]);
+  }
 
   return (
     <div className="flex flex-col gap-4 md:h-[calc(100vh-3rem)]">
@@ -96,7 +113,19 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           {selectedContact ? (
             <ReplyProvider key={selectedContact.id}>
               <div className="flex h-full min-h-0 flex-col animate-in fade-in duration-200">
-                <ConversationThreadHeader contact={selectedContact} />
+                <ConversationThreadHeader
+                  contact={selectedContact}
+                  actions={
+                    <ConversationCopilot
+                      contactId={selectedContact.id}
+                      contactName={selectedContact.name}
+                      contactPhone={selectedContact.phone}
+                      captacoesContato={captacoesContato}
+                      captacoesRecentes={captacoesRecentes}
+                      captacoesUrl={process.env.CAPTACOES_BOARD_URL ?? null}
+                    />
+                  }
+                />
                 <ConversationThread
                   contactId={selectedContact.id}
                   contactName={selectedContact.name}
