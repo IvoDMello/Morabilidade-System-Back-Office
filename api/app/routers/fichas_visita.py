@@ -166,7 +166,7 @@ def criar_ficha(body: FichaVisitaCreate, current_user: dict = Depends(require_ad
         "corretor_nome": corretor_data.get("nome_completo"),
         "corretor_creci": None if ocultar_creci else corretor_data.get("creci"),
         "ocultar_creci": ocultar_creci,
-        "clausula_texto": montar_clausula(body.prazo_meses),
+        "clausula_texto": montar_clausula(),
         "prazo_meses": body.prazo_meses,
         "status": "pendente",
         "token": gerar_token(),
