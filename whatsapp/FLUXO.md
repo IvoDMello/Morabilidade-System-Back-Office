@@ -236,8 +236,22 @@ humano escreveu nunca são sobrescritos por inferência.
 | 14 | ~~Envio que falha esconde a pendência.~~ | ✅ **Resolvido** — a conversa volta para `aguardando_resposta` |
 | 15 | ~~`failed` e o motivo da Meta nunca apareciam.~~ | ✅ **Resolvido** — aba "Não entregues" em `/pendencias` |
 | 16 | ~~Alerta que falha marca como alertado.~~ | ✅ **Resolvido** — `markAlerted` saiu do `finally` |
-| 17 | **Assinatura inválida perde tudo em silêncio.** `WHATSAPP_APP_SECRET` errado → 401 em toda mensagem, Meta desiste, nenhum registro. | Aberto — próximo da fila de perdas |
-| 18 | **Grupos não passam pela Cloud API** e o **histórico de ~6 meses da coexistência não é importado.** | Limite da Meta / não implementado |
+| 17 | ~~Assinatura inválida perde tudo em silêncio.~~ | ✅ **Resolvido** — livro `webhook_deliveries` (0022) + alarme em `/pendencias` |
+| 18 | ~~Erro no lote impedia os eventos seguintes.~~ | ✅ **Resolvido** — cada evento é processado de forma independente |
+| 19 | **Grupos não passam pela Cloud API** e o **histórico de ~6 meses da coexistência não é importado.** | Limite da Meta / não implementado — ver abaixo |
+
+### O que a Meta não entrega (não tem conserto do nosso lado)
+
+Precisa estar dito, senão vira "sumiu mensagem" na boca da operação:
+
+- **Grupos não passam pela Cloud API.** Mensagem de grupo existe só no app do
+  celular e nunca aparecerá no CRM. Não é falha nossa e não há workaround.
+- **O histórico sincronizado no onboarding (~6 meses) não é importado.** No dia
+  do go-live, todo o passado das conversas fica só no celular. Implementável no
+  futuro; hoje não existe.
+- **Enquanto `WHATSAPP_PROVIDER` estiver em `mock`**, nada entra nem sai de
+  verdade. É a causa-raiz de "mensagem perdida" hoje, e depende do onboarding de
+  coexistência na Meta, não de código.
 
 ---
 

@@ -1,8 +1,10 @@
 import { PendenciasView } from "@/features/pendencias/components/pendencias-view";
 import { PlacarAgente } from "@/features/pendencias/components/placar-agente";
+import { FalhasEntregaAlerta } from "@/features/pendencias/components/falhas-entrega-alerta";
 import { isPendenciasTab, PENDENCIAS_TAB_PADRAO } from "@/features/pendencias/lib/tabs";
 import { partitionReminders } from "@/features/reminders-hub/lib/partition-reminders";
 import { getFailedOutbound, getPendingQueue } from "@/services/whatsapp.service";
+import { getFalhasDeEntrega } from "@/services/webhook-log.service";
 import { getPlacar } from "@/services/agent-proposals.service";
 import { getAllReminders } from "@/services/reminders.service";
 import { getContacts } from "@/services/contacts.service";
@@ -24,7 +26,7 @@ export default async function PendenciasPage({ searchParams }: PendenciasPagePro
   const params = await searchParams;
 
   // Placar é best-effort: sem a migration 0020 aplicada, a página segue inteira.
-  const [queue, placar, reminders, contacts, falhas] = await Promise.all([
+  const [queue, placar, reminders, contacts, falhas, falhasEntrega] = await Promise.all([
     getPendingQueue(),
     getPlacar().catch(() => null),
     getAllReminders({
@@ -34,6 +36,7 @@ export default async function PendenciasPage({ searchParams }: PendenciasPagePro
     }),
     getContacts({ sortBy: "name" }),
     getFailedOutbound(),
+    getFalhasDeEntrega(),
   ]);
 
   const grupos = partitionReminders(reminders);
@@ -55,6 +58,10 @@ export default async function PendenciasPage({ searchParams }: PendenciasPagePro
           </span>
         )}
       </div>
+
+      {/* Antes de tudo: se mensagem está sendo recusada no webhook, nenhuma
+          das filas abaixo está completa. */}
+      <FalhasEntregaAlerta falhas={falhasEntrega} />
 
       {placar && <PlacarAgente placar={placar} />}
 

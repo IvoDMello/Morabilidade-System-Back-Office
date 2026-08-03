@@ -11,6 +11,7 @@ import { mockPushSubscriptions } from "./push-subscriptions";
 import { mockCorretores } from "./corretores";
 import { mockAgentProposals } from "./agent-proposals";
 import { mockAgentRuns } from "./agent-runs";
+import { mockWebhookDeliveries } from "./webhook-deliveries";
 
 export const mockDataSource: DataSource = {
   contacts: mockContacts,
@@ -25,4 +26,5 @@ export const mockDataSource: DataSource = {
   corretores: mockCorretores,
   agentProposals: mockAgentProposals,
   agentRuns: mockAgentRuns,
+  webhookDeliveries: mockWebhookDeliveries,
 };

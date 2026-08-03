@@ -10,6 +10,7 @@ import type { PushSubscriptionRecord } from "@/types/push";
 import type { Corretor } from "@/types/corretor";
 import type { AgentProposal } from "@/types/agent-proposal";
 import type { AgentRun } from "@/types/agent-run";
+import type { WebhookDelivery } from "@/types/webhook-delivery";
 import {
   seedContacts,
   seedNotes,
@@ -46,6 +47,7 @@ interface MockStore {
   pushSubscriptions: PushSubscriptionRecord[];
   agentProposals: AgentProposal[];
   agentRuns: AgentRun[];
+  webhookDeliveries: WebhookDelivery[];
 }
 
 const globalForMockStore = globalThis as unknown as { __mockStore?: MockStore };
@@ -68,6 +70,7 @@ export const mockStore: MockStore =
     pushSubscriptions: [],
     agentProposals: [],
     agentRuns: [],
+    webhookDeliveries: [],
   });
 
 export function generateId(): string {

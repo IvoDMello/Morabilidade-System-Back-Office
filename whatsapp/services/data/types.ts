@@ -40,6 +40,10 @@ import type {
   DecidirAgentProposalInput,
 } from "@/types/agent-proposal";
 import type { AgentRun, AgentRunConsumo, CreateAgentRunInput } from "@/types/agent-run";
+import type {
+  CreateWebhookDeliveryInput,
+  WebhookDelivery,
+} from "@/types/webhook-delivery";
 
 /**
  * Contrato que toda fonte de dados (mock ou Supabase) precisa implementar.
@@ -181,6 +185,12 @@ export interface DataSource {
   };
   /** Livro-razão das chamadas de modelo: mede o custo e sustenta o teto do
    * caminho automático. Ver `services/ai-budget.service.ts` e a migration 0021. */
+  /** Entregas do webhook que foram recusadas ou não puderam ser processadas.
+   * Só guarda problema — ver a migration 0022. */
+  webhookDeliveries: {
+    registrar(input: CreateWebhookDeliveryInput): Promise<void>;
+    listRecentes(desdeIso: string, limit?: number): Promise<WebhookDelivery[]>;
+  };
   agentRuns: {
     registrar(input: CreateAgentRunInput): Promise<void>;
     /** Consumo das chamadas AUTOMÁTICAS (webhook/cron) desde um instante —

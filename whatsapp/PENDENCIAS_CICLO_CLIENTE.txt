@@ -10,6 +10,27 @@ então nada quebra — mas o teto simplesmente não existe até a migration roda
 que é justamente o que esta entrega veio resolver.
 
 
+[ ] 0. MIGRATION 0022 — livro de entregas recusadas
+    Supabase Dashboard -> SQL Editor -> New query
+    Arquivo: whatsapp/supabase/migrations/0022_webhook_deliveries.sql
+
+    Cria whatsapp.webhook_deliveries. Registra APENAS entregas com problema,
+    então a invariante é: qualquer linha ali é uma mensagem de cliente que se
+    perdeu. Tabela vazia = sistema saudável.
+
+    O caso que isto pega: WHATSAPP_APP_SECRET ausente ou errada faz a Meta
+    receber 401 em TODA mensagem. Ela reentrega algumas vezes e desiste. Antes
+    disso não sobrava log nem linha nenhuma — o sintoma era "não chega
+    mensagem", igual a dez outras causas.
+
+    Conferir depois:
+      select count(*) from whatsapp.webhook_deliveries;
+    Esperado: 0 linhas, sem erro.
+
+    Sem a migration nada quebra: o registro é best-effort e o webhook segue
+    igual — só continua sem deixar rastro.
+
+
 [ ] 1. MIGRATION 0021 (fazer PRIMEIRO)
     Supabase Dashboard -> SQL Editor -> New query
     Arquivo: whatsapp/supabase/migrations/0021_agent_runs.sql
