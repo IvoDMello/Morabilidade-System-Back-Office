@@ -29,7 +29,10 @@ export function RemindersFilters({ contacts }: { contacts: Contact[] }) {
     } else {
       params.delete(key);
     }
-    router.push(`/lembretes?${params.toString()}`);
+    // Mantém a aba na URL: sem isso um refresh depois de filtrar cairia na
+    // aba padrão e o usuário perderia de vista o que acabou de filtrar.
+    params.set("tab", "lembretes");
+    router.push(`/pendencias?${params.toString()}`, { scroll: false });
   }
 
   return (

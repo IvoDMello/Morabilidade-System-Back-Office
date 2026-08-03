@@ -14,6 +14,7 @@ import type {
 import type { PushSubscriptionRecord } from "@/types/push";
 import type { Corretor } from "@/types/corretor";
 import type { AgentProposal } from "@/types/agent-proposal";
+import type { AgentRun } from "@/types/agent-run";
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- linhas cruas do Supabase (snake_case) */
 
@@ -212,6 +213,23 @@ export function mapAgentProposalRow(row: any): AgentProposal {
     modelo: row.modelo ?? null,
     vozHash: row.voz_hash ?? null,
     origem: row.origem,
+    createdAt: row.created_at,
+  };
+}
+
+export function mapAgentRunRow(row: any): AgentRun {
+  return {
+    id: row.id,
+    conversationId: row.conversation_id ?? null,
+    origem: row.origem,
+    recurso: row.recurso,
+    modelo: row.modelo,
+    modo: row.modo ?? "organizacional",
+    inputTokens: row.input_tokens ?? 0,
+    outputTokens: row.output_tokens ?? 0,
+    cacheCreationTokens: row.cache_creation_tokens ?? 0,
+    cacheReadTokens: row.cache_read_tokens ?? 0,
+    erro: row.erro ?? null,
     createdAt: row.created_at,
   };
 }

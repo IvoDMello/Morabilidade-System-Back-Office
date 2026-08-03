@@ -192,7 +192,9 @@ export function ChatListPanel({
             type="button"
             onClick={() => setFilter(value)}
             className={cn(
-              "rounded-full border px-3 py-1 text-[13px] transition-colors",
+              // min-h-9: os chips tinham ~30px de altura, apertado para o
+              // polegar. 36px é confortável sem engordar a barra de filtros.
+              "inline-flex min-h-9 items-center rounded-full border px-3.5 text-[13px] transition-colors",
               filter === value
                 ? "border-transparent bg-primary/12 font-medium text-primary"
                 : "border-border text-muted-foreground hover:bg-veil/4",
@@ -206,7 +208,7 @@ export function ChatListPanel({
             type="button"
             onClick={() => setActiveTagId(null)}
             title="Remover filtro de lista"
-            className="flex items-center gap-1 rounded-full border border-transparent bg-primary/12 px-3 py-1 text-[13px] font-medium text-primary"
+            className="inline-flex min-h-9 items-center gap-1 rounded-full border border-transparent bg-primary/12 px-3.5 text-[13px] font-medium text-primary"
           >
             {activeTag.name}
             <X className="h-3.5 w-3.5" />
@@ -217,7 +219,7 @@ export function ChatListPanel({
             type="button"
             onClick={() => setActiveCorretorId(null)}
             title="Remover filtro de corretor"
-            className="flex items-center gap-1 rounded-full border border-transparent bg-primary/12 px-3 py-1 text-[13px] font-medium text-primary"
+            className="inline-flex min-h-9 items-center gap-1 rounded-full border border-transparent bg-primary/12 px-3.5 text-[13px] font-medium text-primary"
           >
             {activeCorretor.nome}
             <X className="h-3.5 w-3.5" />

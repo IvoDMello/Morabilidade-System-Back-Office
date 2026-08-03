@@ -1,6 +1,8 @@
 import { dataSource } from "./data";
 import { getContactByPhone } from "./contacts.service";
 import { proporAcoesDaConversa } from "./assistant";
+import { dentroDoOrcamento, mensagemMereceAnalise, registrarUso } from "./ai-budget.service";
+import { getModoAgente } from "./assistant/modo";
 import { atingiuMeta, META_GRADUACAO } from "./data/agent-proposal-score";
 import type { ID } from "@/types/common";
 import type {
@@ -40,14 +42,16 @@ export interface AnalisarEGuardarInput {
 /**
  * Analisa a conversa e guarda as propostas. Devolve o que ficou pendente.
  *
- * Três guardas, nesta ordem — todas existem para não gastar chamada de modelo à
- * toa nem encher a tela de proposta velha:
+ * Quatro guardas, nesta ordem — todas existem para não gastar chamada de modelo
+ * à toa nem encher a tela de proposta velha:
  *
  *  1. **Dedupe** — a mesma mensagem recebida nunca é analisada duas vezes
  *     (a Meta reentrega webhooks).
  *  2. **Rajada** — se o cliente mandou três mensagens seguidas, só a última
  *     vale a análise; as anteriores desistem sozinhas em vez de disputarem.
- *  3. **Supersessão** — propostas pendentes da conversa viram `superada` antes
+ *  3. **Orçamento** — o caminho automático respeita um teto por hora. O painel
+ *     nunca é barrado: quem clicou tem intenção (ver `ai-budget.service.ts`).
+ *  4. **Supersessão** — propostas pendentes da conversa viram `superada` antes
  *     das novas entrarem, senão o painel mostraria conselho sobre um assunto
  *     que já mudou.
  */
@@ -66,9 +70,51 @@ export async function analisarEGuardar(
     const mensagens = await dataSource.whatsapp.listMessages(conversa.id);
     const ultimaInbound = [...mensagens].reverse().find((m) => m.direction === "inbound");
     if (ultimaInbound && ultimaInbound.id !== input.triggerMessageId) return [];
+
+    // Guarda de conteúdo: "ok", "obrigado" e figurinha não têm o que organizar.
+    // A chamada que não acontece é a mais barata de todas, e boa parte do
+    // tráfego de WhatsApp é exatamente isso. Só no caminho automático — quem
+    // clicou no painel quer a análise mesmo de uma conversa curta.
+    if (
+      input.origem !== "painel" &&
+      ultimaInbound &&
+      !mensagemMereceAnalise(ultimaInbound.body, ultimaInbound.messageType)
+    ) {
+      return [];
+    }
   }
 
-  const analise = await proporAcoesDaConversa(input.contactId);
+  // O teto vale só para quem não tem gente esperando do outro lado.
+  if (input.origem !== "painel") {
+    const orcamento = await dentroDoOrcamento();
+    if (!orcamento.liberado) {
+      console.warn(
+        `[agent-proposals] orçamento de IA esgotado (${orcamento.motivo}: ` +
+          `${orcamento.usadas}/${orcamento.teto} chamadas/h, ` +
+          `${orcamento.tokensDia ?? 0}/${orcamento.tetoTokensDia ?? 0} tokens/dia); ` +
+          "análise automática pulada — a conversa segue na fila e o botão do painel continua valendo.",
+      );
+      return [];
+    }
+  }
+
+  // O caminho automático é sempre organizacional: o agente arruma o CRM, não
+  // escreve para o cliente. O painel respeita o modo configurado.
+  const modo = input.origem === "painel" ? getModoAgente() : "organizacional";
+  const analise = await proporAcoesDaConversa(input.contactId, { modo });
+
+  // Registra o gasto ANTES de decidir se houve proposta: uma análise que não
+  // propôs nada custou exatamente o mesmo que uma que propôs três.
+  await registrarUso({
+    // AgentProposalOrigem ("webhook" | "painel") é subconjunto de AgentRunOrigem.
+    origem: input.origem,
+    recurso: "copiloto-conversa",
+    modelo: analise.modelo,
+    modo: analise.modo,
+    conversationId: conversa.id,
+    uso: analise.uso,
+  });
+
   if (analise.propostas.length === 0) return [];
 
   await dataSource.agentProposals.superarPendentes(conversa.id);

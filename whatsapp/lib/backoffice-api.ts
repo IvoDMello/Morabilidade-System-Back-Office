@@ -134,6 +134,77 @@ export async function fetchClienteByTelefone(telefone: string): Promise<ClienteR
   }
 }
 
+export interface UpsertClienteInput {
+  telefone: string;
+  nome: string;
+  /** Canal por onde o lead apareceu. Padrão da API é `whatsapp`; passamos
+   * `site` quando a primeira mensagem trouxe o código de um imóvel — assinatura
+   * do botão do site público. */
+  origemLead?: "whatsapp" | "site" | "indicacao" | "instagram" | "outro" | null;
+  tipoCliente?: "comprador" | "locatario" | "proprietario" | "investidor" | null;
+  observacoes?: string | null;
+}
+
+export interface ClienteUpsertResultado extends ClienteResumo {
+  /** True quando este contato acabou de entrar na base do sistema. */
+  criado: boolean;
+}
+
+/**
+ * Encontra ou cria o cliente correspondente a um telefone na API principal.
+ *
+ * É a ponte que faltava: até aqui o CRM só sabia CONSULTAR clientes, então um
+ * lead que chegava pelo WhatsApp ficava preso no schema do chat — fora dos
+ * relatórios, do matching e da ficha de visita.
+ *
+ * Best-effort como o resto do módulo: sem integração configurada, com a API
+ * fora do ar ou com recusa, devolve null e o CRM segue funcionando sem o
+ * vínculo. Criar cliente é enriquecimento, não pode ser caminho crítico.
+ */
+export async function upsertClienteByTelefone(
+  input: UpsertClienteInput,
+): Promise<ClienteUpsertResultado | null> {
+  const config = getConfig();
+  const tel = input.telefone.replace(/\D/g, "");
+  const nome = input.nome.trim();
+  if (!config || tel.length < 10 || !nome) return null;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    const res = await fetch(`${config.apiUrl}/clientes/interno/upsert-por-telefone`, {
+      method: "POST",
+      headers: {
+        "X-Internal-Token": config.token,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        telefone: tel,
+        nome_completo: nome,
+        origem_lead: input.origemLead ?? "whatsapp",
+        tipo_cliente: input.tipoCliente ?? null,
+        observacoes: input.observacoes ?? null,
+      }),
+      signal: controller.signal,
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+
+    const data = (await res.json()) as Record<string, unknown>;
+    if (!data?.id) return null;
+    return {
+      id: String(data.id),
+      codigo: (data.codigo as string) ?? null,
+      nome: (data.nome_completo as string) ?? null,
+      criado: Boolean(data.criado),
+    };
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 /** Ficha de visita recém-criada na API principal (o que o CRM usa do retorno). */
 export interface FichaVisitaCriada {
   id: string;

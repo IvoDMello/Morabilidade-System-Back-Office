@@ -10,6 +10,8 @@ export async function GET(request: Request) {
 
   const result = await runFollowUpCooldownJob();
   revalidatePath("/pendencias");
+  // O job muda o status de conversas, e o número da visão geral vem daí.
+  revalidatePath("/dashboard");
 
   return Response.json(result);
 }

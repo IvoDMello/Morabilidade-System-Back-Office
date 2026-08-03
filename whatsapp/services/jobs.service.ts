@@ -109,10 +109,15 @@ export async function runAwaitingAlertJob() {
         `⏰ ${conversation.contactName} está aguardando resposta há mais de 2h.\n${formatPhone(conversation.contactPhone)}`,
       );
       sent++;
-    } catch {
-      failed++;
-    } finally {
+      // Só marca depois de entregar. Estava num `finally`, o que dava o pior
+      // dos mundos: um alerta que falhou contava como enviado e a conversa
+      // ficava fora do filtro até o dia seguinte (o corte é `last_alert_at <
+      // início do dia`). Perdia-se o alerta inteiro justamente na hora em que
+      // o canal estava com problema — quando ele mais importa.
       await dataSource.whatsapp.markAlerted(conversation.id, now);
+    } catch {
+      // Sem marcar: a próxima rodada horária tenta de novo.
+      failed++;
     }
   }
 

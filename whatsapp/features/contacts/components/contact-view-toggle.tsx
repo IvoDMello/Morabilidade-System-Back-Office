@@ -23,7 +23,7 @@ export function ContactViewToggle() {
       <Link
         href={hrefFor("list")}
         className={cn(
-          "flex items-center gap-1.5 rounded-md px-3 py-1 text-[12.5px] font-medium transition-colors",
+          "flex min-h-9 items-center gap-1.5 rounded-md px-3.5 text-[12.5px] font-medium transition-colors",
           view === "list"
             ? "bg-veil/10 text-foreground"
             : "text-muted-foreground hover:text-ink-mid",
@@ -35,7 +35,7 @@ export function ContactViewToggle() {
       <Link
         href={hrefFor("pipeline")}
         className={cn(
-          "flex items-center gap-1.5 rounded-md px-3 py-1 text-[12.5px] font-medium transition-colors",
+          "flex min-h-9 items-center gap-1.5 rounded-md px-3.5 text-[12.5px] font-medium transition-colors",
           view === "pipeline"
             ? "bg-veil/10 text-foreground"
             : "text-muted-foreground hover:text-ink-mid",
