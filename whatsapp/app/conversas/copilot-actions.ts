@@ -82,7 +82,7 @@ export async function executarAcaoDaConversaAction(
 
     revalidatePath("/");
     revalidatePath(`/contatos/${contactId}`);
-    revalidatePath("/lembretes");
+    revalidatePath("/pendencias");
     return { ok: true, message };
   } catch (e) {
     if (e instanceof AcaoInvalidaError) return { ok: false, message: e.message };

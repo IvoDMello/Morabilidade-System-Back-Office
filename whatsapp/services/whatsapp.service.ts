@@ -12,7 +12,12 @@ import { CURRENT_USER_NAME } from "@/constants/current-user";
 import { formatPhone } from "@/lib/utils";
 import { extFromMime, messagePreview } from "@/lib/whatsapp-media";
 import type { ID } from "@/types/common";
-import type { MessageReply, WhatsAppConversationSummary } from "@/types/whatsapp";
+import type {
+  FailedOutboundMessage,
+  MessageReply,
+  WhatsAppConversationSummary,
+  WhatsAppMessage,
+} from "@/types/whatsapp";
 
 interface ResolvedMedia {
   mediaUrl: string;
@@ -176,12 +181,71 @@ export async function processEchoMessage(message: NormalizedEchoMessage) {
   return created;
 }
 
+/**
+ * True se a conversa continua sem resposta ENTREGUE depois da última mensagem
+ * do cliente. Um envio que falhou não conta como resposta — é exatamente essa
+ * a confusão que este módulo existe para desfazer.
+ */
+function seguemSemRespostaEntregue(mensagens: WhatsAppMessage[]): boolean {
+  const ultimaInbound = [...mensagens]
+    .reverse()
+    .find((m) => m.direction === "inbound");
+  if (!ultimaInbound) return false;
+
+  const corte = new Date(ultimaInbound.waTimestamp).getTime();
+  return !mensagens.some(
+    (m) =>
+      m.direction === "outbound" &&
+      m.status !== "failed" &&
+      new Date(m.waTimestamp).getTime() >= corte,
+  );
+}
+
+/**
+ * Devolve a conversa para "aguardando resposta" quando o envio que a tirou da
+ * fila acabou falhando.
+ *
+ * O problema que isto corrige: a mensagem é gravada como `sent` no instante do
+ * envio, e o trigger de banco (`sync_conversation_status_on_message`, migration
+ * 0009) põe a conversa em `respondida` no insert — antes de a Meta confirmar
+ * qualquer coisa. O `failed` chega depois, por webhook de status, e atualizava
+ * só a linha da mensagem. Resultado: o cliente não recebeu nada e a conversa
+ * sumia das pendências. **Falhar no envio deixava o sistema num estado melhor
+ * do que não ter respondido** — o modo de falha mais perverso do fluxo.
+ *
+ * Só reabre a partir de `respondida`, que é o estado que aquele envio causou.
+ * `encerrada` foi decisão humana e não é desfeita por uma falha de entrega;
+ * `follow_up_sugerido` já está sinalizada em outra fila e reabrir só trocaria
+ * a etiqueta do problema de lugar.
+ */
+async function reabrirConversaSeEnvioFalhou(mensagem: WhatsAppMessage): Promise<void> {
+  const conversa = await dataSource.whatsapp.getConversationById(mensagem.conversationId);
+  if (!conversa || conversa.status !== "respondida") return;
+
+  const mensagens = await dataSource.whatsapp.listMessages(mensagem.conversationId);
+  if (!seguemSemRespostaEntregue(mensagens)) return;
+
+  await dataSource.whatsapp.reopenConversationAsAwaiting(mensagem.conversationId);
+}
+
 export async function processStatusUpdate(update: NormalizedStatusUpdate) {
-  return dataSource.whatsapp.updateMessageStatus(
+  const mensagem = await dataSource.whatsapp.updateMessageStatus(
     update.waMessageId,
     update.status,
     update.errorMessage ?? null,
   );
+
+  if (mensagem && update.status === "failed") {
+    // Best-effort: a falha já está gravada na mensagem, e não conseguir
+    // reabrir a conversa não pode derrubar o webhook (a Meta reentregaria o
+    // status e nada melhoraria). O pior caso volta a ser o comportamento
+    // antigo, não um erro novo.
+    await reabrirConversaSeEnvioFalhou(mensagem).catch((erro) => {
+      console.error("[whatsapp] envio falhou e a conversa não voltou para a fila:", erro);
+    });
+  }
+
+  return mensagem;
 }
 
 export async function sendMessage(contactId: ID, body: string, replyTo?: MessageReply | null) {
@@ -315,6 +379,28 @@ export interface PendingQueue {
   aguardandoResposta: PendingConversationItem[];
   followUpSugerido: PendingConversationItem[];
   todasAtivas: PendingConversationItem[];
+}
+
+/** Quanto tempo a fila de falhas olha para trás. Uma semana cobre a semana de
+ * trabalho e mantém a lista acionável — falha de 20 dias atrás não é pendência,
+ * é histórico. */
+const DIAS_FALHAS_VISIVEIS = 7;
+
+/**
+ * Envios recusados pela Meta, mais recentes primeiro.
+ *
+ * Best-effort de propósito: esta é uma aba a mais numa tela que já funciona.
+ * Se a consulta falhar, a lista vem vazia e o resto de /pendencias continua
+ * inteiro — o mesmo tratamento que o placar do agente recebe.
+ */
+export async function getFailedOutbound(): Promise<FailedOutboundMessage[]> {
+  const desde = new Date(Date.now() - DIAS_FALHAS_VISIVEIS * 24 * 60 * 60 * 1000).toISOString();
+  try {
+    return await dataSource.whatsapp.listFailedOutbound(desde);
+  } catch (erro) {
+    console.error("[whatsapp] não foi possível listar os envios falhados:", erro);
+    return [];
+  }
 }
 
 function sortByOldestInbound(a: PendingConversationItem, b: PendingConversationItem) {

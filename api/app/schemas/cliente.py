@@ -92,6 +92,47 @@ class ClienteOut(ClienteCreate):
     tags: List[TagSimples] = []
 
 
+class ClienteUpsertInterno(BaseModel):
+    """Entrada do upsert server-to-server por telefone (CRM do WhatsApp).
+
+    Deliberadamente menor que ClienteCreate: uma integração só deve mandar o que
+    ela realmente sabe. Tudo que um atendente preencheria à mão (CPF, endereço,
+    renda) fica de fora — não é papel do chat inventar esses campos.
+    """
+    telefone: str
+    nome_completo: str
+    origem_lead: Optional[OrigemLead] = OrigemLead.whatsapp
+    tipo_cliente: Optional[TipoCliente] = None
+    status: Optional[StatusCliente] = None
+    observacoes: Optional[str] = None
+    imovel_codigo: Optional[str] = None
+
+    @model_validator(mode="after")
+    def exige_telefone_util(self) -> "ClienteUpsertInterno":
+        tel = (self.telefone or "").strip()
+        # Menos de 10 dígitos (sem DDD) não casa com ninguém de forma confiável
+        # e criaria um cliente impossível de reencontrar depois.
+        if len([c for c in tel if c.isdigit()]) < 10:
+            raise ValueError("Telefone inválido: informe DDD + número.")
+        self.telefone = tel
+        nome = (self.nome_completo or "").strip()
+        if not nome:
+            raise ValueError("Informe o nome do cliente.")
+        self.nome_completo = nome
+        return self
+
+
+class ClienteUpsertOut(BaseModel):
+    """Resultado do upsert. `criado` diz ao CRM se ele acabou de trazer alguém
+    novo para a base ou se apenas reencontrou quem já existia — os dois casos
+    são normais, mas só o primeiro é notícia."""
+    id: str
+    codigo: Optional[str] = None
+    nome_completo: str
+    telefone: Optional[str] = None
+    criado: bool
+
+
 class ClienteListOut(BaseModel):
     id: str
     codigo: Optional[str] = None

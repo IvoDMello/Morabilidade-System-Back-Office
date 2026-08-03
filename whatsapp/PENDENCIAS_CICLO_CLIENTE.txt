@@ -1,0 +1,133 @@
+PENDÊNCIAS PARA LIGAR: teto de custo da IA + ciclo de dados do lead
+====================================================================
+
+Branch: feat/whatsapp-copiloto-captacoes
+Status do código: pronto. 141 testes no CRM + 637 na API, build verde.
+
+A ORDEM IMPORTA. O passo 1 vem antes do deploy: sem a tabela, a apuração do
+teto falha. Ela falha ABERTA de propósito (libera a análise em vez de bloquear),
+então nada quebra — mas o teto simplesmente não existe até a migration rodar,
+que é justamente o que esta entrega veio resolver.
+
+
+[ ] 0. MIGRATION 0022 — livro de entregas recusadas
+    Supabase Dashboard -> SQL Editor -> New query
+    Arquivo: whatsapp/supabase/migrations/0022_webhook_deliveries.sql
+
+    Cria whatsapp.webhook_deliveries. Registra APENAS entregas com problema,
+    então a invariante é: qualquer linha ali é uma mensagem de cliente que se
+    perdeu. Tabela vazia = sistema saudável.
+
+    O caso que isto pega: WHATSAPP_APP_SECRET ausente ou errada faz a Meta
+    receber 401 em TODA mensagem. Ela reentrega algumas vezes e desiste. Antes
+    disso não sobrava log nem linha nenhuma — o sintoma era "não chega
+    mensagem", igual a dez outras causas.
+
+    Conferir depois:
+      select count(*) from whatsapp.webhook_deliveries;
+    Esperado: 0 linhas, sem erro.
+
+    Sem a migration nada quebra: o registro é best-effort e o webhook segue
+    igual — só continua sem deixar rastro.
+
+
+[ ] 1. MIGRATION 0021 (fazer PRIMEIRO)
+    Supabase Dashboard -> SQL Editor -> New query
+    Arquivo: whatsapp/supabase/migrations/0021_agent_runs.sql
+    Cria whatsapp.agent_runs (livro-razão das chamadas de modelo) + 2 índices.
+
+    Conferir depois:
+      select count(*) from whatsapp.agent_runs;
+    Esperado: 0 linhas, sem erro.
+
+
+[ ] 2. VARIÁVEIS DE AMBIENTE (Vercel, projeto do app whatsapp)
+
+    Todas opcionais — o padrão já é o comportamento seguro e barato.
+
+    [ ] AGENTE_MODO            Padrão: organizacional. O agente arruma o CRM e
+                               NÃO redige resposta a cliente. Só ponha
+                               "completo" quando decidirem liberar rascunho de
+                               texto (o placar em /pendencias é a régua).
+
+    [ ] AI_MODEL_TRIAGEM       Padrão: cai em AI_MODEL (hoje claude-sonnet-5),
+                               ou seja, nada muda sozinho.
+                               >>> ECONOMIA DE 3x: claude-haiku-4-5
+                               A triagem só extrai endereço/data de conversa
+                               curta — é o trabalho em que o modelo barato
+                               empata com o caro. Preços por milhão de tokens:
+                                 sonnet-5 = US$ 3 entrada / US$ 15 saída
+                                 haiku-4-5 = US$ 1 entrada / US$ 5  saída
+                               Decisão de vocês; o código não troca sozinho.
+
+    [ ] AI_MAX_CHAMADAS_HORA   Padrão 60. Teto contra RAJADA (loop de
+                               reentrega da Meta). Só webhook/cron — clique no
+                               painel nunca é barrado. 0 desliga o automático
+                               sem deploy (válvula de emergência).
+
+    [ ] AI_MAX_TOKENS_DIA      Padrão 2.000.000. Teto contra CUSTO. Contar
+                               chamadas não limita gasto: uma análise sobre
+                               conversa longa custa muitas vezes o que custa
+                               uma sobre três mensagens, e as duas contam "1".
+                               2M/dia ≈ US$ 2/dia em Haiku, US$ 6 em Sonnet.
+
+    Já devem existir (CONFERIR, não recriar) — sem estas duas, TODO o ciclo de
+    cliente desta entrega fica inerte (best-effort, não quebra nada, só não faz):
+    [ ] BACKOFFICE_API_URL        https://api.morabilidade.com
+    [ ] BACKOFFICE_INTERNAL_TOKEN mesmo valor do INTERNAL_API_TOKEN na API
+
+
+[ ] 3. DEPLOY DA API (Railway) ANTES do CRM
+    O CRM passa a chamar POST /clientes/interno/upsert-por-telefone. Se o app
+    subir antes da API, a chamada dá 404 -> o upsert devolve null e o lead
+    simplesmente não é promovido (sem erro visível). Não quebra, mas a entrega
+    fica pela metade até a API subir.
+
+    Lembrete do healthcheck: /health precisa continuar respondendo, senão o
+    Railway mantém a versão antiga no ar e a rota nova some sem aviso.
+
+
+[ ] 4. SMOKE TEST
+    [ ] Upsert (não cria nada de verdade se o telefone já existir):
+        curl -X POST https://api.morabilidade.com/clientes/interno/upsert-por-telefone \
+          -H "X-Internal-Token: $INTERNAL_API_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d '{"telefone":"5521971957245","nome_completo":"Teste Ciclo"}'
+        Resposta traz {"criado": true|false}. Rodar DUAS vezes: a segunda tem
+        que voltar criado=false com o mesmo id — é o teste do "não duplica".
+
+    [ ] Promoção pelo painel: abrir um contato com nome real, trocar a categoria
+        de "lead" para "cliente" e salvar. Conferir em /clientes do back-office
+        que ele apareceu.
+
+    [ ] Rastro do site (precisa de WHATSAPP_PROVIDER=cloud-api para valer com
+        mensagem real; no mock dá para simular): mandar uma mensagem contendo
+        "(código *MB-00033*)" com um código que EXISTA no catálogo. Conferir na
+        ficha do contato que o imóvel apareceu vinculado como "Interesse" e que
+        a timeline registrou o vínculo.
+        Com um código que NÃO existe, nada deve acontecer — é a consulta ao
+        catálogo, não o texto, que decide.
+
+    [ ] Custo: depois de algumas mensagens, conferir o livro-razão:
+          select modo, modelo, count(*) as chamadas,
+                 sum(input_tokens) as entrada, sum(output_tokens) as saida,
+                 sum(cache_read_tokens) as cache_lido
+          from whatsapp.agent_runs
+          where created_at > now() - interval '1 day'
+          group by modo, modelo;
+
+        Como ler: `modo` deve ser 'organizacional' em tudo que veio do webhook.
+        `cache_lido` zerado por várias rodadas significa que o prefixo é curto
+        demais para cachear (mínimo 1.024 tokens no Sonnet, 4.096 no Haiku) —
+        é informação, não defeito: o prompt organizacional é enxuto de propósito.
+
+
+O QUE MUDA NA PRÁTICA
+---------------------
+- Lead que chega pelo WhatsApp passa a existir em /clientes — e portanto nos
+  relatórios, no matching e na ficha de visita (que antes saía com cliente_id
+  nulo justamente para quem tinha visita marcada).
+- A promoção é conservadora de propósito: contato cujo nome ainda é o telefone
+  formatado NÃO vira cadastro, e campo que um humano preencheu NUNCA é
+  sobrescrito por inferência. Nome, em particular, jamais é tocado.
+- Custo de IA passa a ser medido e limitado antes de o volume real chegar.

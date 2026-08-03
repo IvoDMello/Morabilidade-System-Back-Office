@@ -35,6 +35,7 @@ import {
   updateContactPropertyRelacao,
 } from "@/services/properties.service";
 import { fetchImovelByCodigo } from "@/lib/backoffice-api";
+import { garantirClienteDoContato } from "@/services/clientes.service";
 import { propertyLinkFormSchema, type PropertyLinkFormValues } from "@/lib/validations/property.schema";
 import { generateConversationSummary, saveConversationSummary } from "@/services/ai.service";
 import type { ID } from "@/types/common";
@@ -93,6 +94,20 @@ export async function updateContactAction(id: ID, values: ContactFormValues) {
       summary: `Status alterado para ${CONTACT_STATUS_LABELS[input.status]}`,
     });
   }
+
+  // Um atendente que salvou a ficha com nome e categoria reais qualificou este
+  // contato — é o momento certo de ele existir no cadastro do sistema, e não
+  // só no chat. Best-effort: nunca atrapalha o salvamento.
+  if (input.category !== "lead") {
+    await garantirClienteDoContato({
+      id,
+      name: input.name,
+      phone: input.phone,
+      clienteId: before?.clienteId ?? null,
+      category: input.category,
+    });
+  }
+
   revalidatePath("/contatos");
   revalidatePath(`/contatos/${id}`);
   revalidatePath("/dashboard");
@@ -127,7 +142,7 @@ export async function createReminderAction(contactId: ID, values: ReminderFormVa
     summary: `Lembrete criado: ${reminder.title}`,
   });
   revalidatePath(`/contatos/${contactId}`);
-  revalidatePath("/lembretes");
+  revalidatePath("/pendencias");
   revalidatePath("/dashboard");
 }
 
@@ -143,7 +158,7 @@ export async function updateReminderAction(
     reminderAt: toReminderAtIso(parsed),
   });
   revalidatePath(`/contatos/${contactId}`);
-  revalidatePath("/lembretes");
+  revalidatePath("/pendencias");
   revalidatePath("/dashboard");
 }
 
@@ -155,7 +170,7 @@ export async function completeReminderAction(contactId: ID, reminderId: ID) {
     summary: `Lembrete concluído: ${reminder.title}`,
   });
   revalidatePath(`/contatos/${contactId}`);
-  revalidatePath("/lembretes");
+  revalidatePath("/pendencias");
   revalidatePath("/dashboard");
 }
 
@@ -167,14 +182,14 @@ export async function cancelReminderAction(contactId: ID, reminderId: ID) {
     summary: `Lembrete cancelado: ${reminder.title}`,
   });
   revalidatePath(`/contatos/${contactId}`);
-  revalidatePath("/lembretes");
+  revalidatePath("/pendencias");
   revalidatePath("/dashboard");
 }
 
 export async function deleteReminderAction(contactId: ID, reminderId: ID) {
   await deleteReminder(reminderId);
   revalidatePath(`/contatos/${contactId}`);
-  revalidatePath("/lembretes");
+  revalidatePath("/pendencias");
   revalidatePath("/dashboard");
 }
 

@@ -21,6 +21,7 @@ import { NEXT_ACTION_LABELS } from "@/constants/next-actions";
 import { ReminderList } from "@/features/contacts/reminders/components/reminder-list";
 import { ReminderFormDialog } from "@/features/contacts/reminders/components/reminder-form-dialog";
 import { ActivityFeed } from "@/features/contacts/timeline/components/activity-feed";
+import { ContactPanels } from "@/features/contacts/components/contact-panels";
 import { formatDateTime, formatPhone } from "@/lib/utils";
 import { ensureClienteVinculo, getContactById } from "@/services/contacts.service";
 import { getNotesByContact } from "@/services/notes.service";
@@ -95,150 +96,160 @@ export default async function ContatoDetalhePage({
         <ContactStageStepper status={contact.status} />
       </div>
 
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-        {/* Painel fixo (FC-2): dados + tags + IA + lembretes + imóveis, sempre visível */}
-        <div className="flex w-full flex-col gap-4 lg:sticky lg:top-6 lg:w-[340px] lg:shrink-0">
-          <div className="flex flex-col gap-3 rounded-lg border bg-card p-4">
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex min-w-0 gap-3">
-                <AvatarInitials name={contact.name} size="lg" />
-                <div className="min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <Tooltip>
-                      <TooltipTrigger
-                        render={<h1 className="truncate font-heading text-xl font-semibold" />}
-                      >
-                        {contact.name}
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        Criado em {formatDateTime(contact.createdAt)}
-                        <br />
-                        Atualizado em {formatDateTime(contact.updatedAt)}
-                      </TooltipContent>
-                    </Tooltip>
-                    <FavoriteToggle contactId={contact.id} isFavorite={contact.isFavorite} size="icon-sm" />
+      {/* Painel (FC-2) e atividade (FC-1): lado a lado no desktop, duas abas no
+          celular — ver ContactPanels. */}
+      <ContactPanels
+        dados={
+          <>
+            <div className="flex flex-col gap-3 rounded-lg border bg-card p-4">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex min-w-0 gap-3">
+                  <AvatarInitials name={contact.name} size="lg" />
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <Tooltip>
+                        <TooltipTrigger
+                          render={<h1 className="truncate font-heading text-xl font-semibold" />}
+                        >
+                          {contact.name}
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          Criado em {formatDateTime(contact.createdAt)}
+                          <br />
+                          Atualizado em {formatDateTime(contact.updatedAt)}
+                        </TooltipContent>
+                      </Tooltip>
+                      <FavoriteToggle contactId={contact.id} isFavorite={contact.isFavorite} size="icon-sm" />
+                    </div>
+                    <p className="truncate text-sm text-muted-foreground">{formatPhone(contact.phone)}</p>
+                    {contact.email && (
+                      <p className="truncate text-sm text-muted-foreground">{contact.email}</p>
+                    )}
+                    {contact.clienteCodigo && (
+                      <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                        <BadgeCheck className="h-3 w-3" />
+                        Cliente {contact.clienteCodigo}
+                      </span>
+                    )}
                   </div>
-                  <p className="truncate text-sm text-muted-foreground">{formatPhone(contact.phone)}</p>
-                  {contact.email && (
-                    <p className="truncate text-sm text-muted-foreground">{contact.email}</p>
-                  )}
-                  {contact.clienteCodigo && (
-                    <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                      <BadgeCheck className="h-3 w-3" />
-                      Cliente {contact.clienteCodigo}
-                    </span>
-                  )}
                 </div>
               </div>
-            </div>
 
-            <div className="flex flex-wrap items-center gap-1.5">
-              <CategoryBadge category={contact.category} />
-              <StatusBadge status={contact.status} />
-            </div>
-
-            <p className="text-sm text-muted-foreground">
-              Próxima ação: <span className="font-medium text-foreground">{NEXT_ACTION_LABELS[contact.nextAction]}</span>
-            </p>
-
-            <CorretorPicker
-              contactId={contact.id}
-              corretorId={contact.corretorId}
-              corretores={corretores}
-            />
-
-            <TagPicker contactId={contact.id} contactTags={contactTags} allTags={allTags} />
-
-            {contact.status === "perdido" && contact.lossReason && (
-              <div className="rounded-lg bg-destructive/5 p-3 text-sm text-destructive">
-                <p className="font-medium">Motivo da perda: {LOSS_REASON_LABELS[contact.lossReason]}</p>
-                {contact.lossReasonNote && (
-                  <p className="mt-0.5 text-destructive/80">{contact.lossReasonNote}</p>
-                )}
+              <div className="flex flex-wrap items-center gap-1.5">
+                <CategoryBadge category={contact.category} />
+                <StatusBadge status={contact.status} />
               </div>
-            )}
 
-            {contact.generalNotes && (
-              <p className="whitespace-pre-wrap text-sm text-muted-foreground">
-                {contact.generalNotes}
+              <p className="text-sm text-muted-foreground">
+                Próxima ação: <span className="font-medium text-foreground">{NEXT_ACTION_LABELS[contact.nextAction]}</span>
               </p>
-            )}
 
-            <div className="flex gap-2">
-              <WhatsAppButton phone={contact.phone} className="flex-1" />
-              <Button
-                variant="outline"
-                size="icon"
-                nativeButton={false}
-                render={<Link href={`/contatos/${contact.id}/editar`} aria-label="Editar contato" />}
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-              <DeleteContactButton contactId={contact.id} contactName={contact.name} />
+              <CorretorPicker
+                contactId={contact.id}
+                corretorId={contact.corretorId}
+                corretores={corretores}
+              />
+
+              <TagPicker contactId={contact.id} contactTags={contactTags} allTags={allTags} />
+
+              {contact.status === "perdido" && contact.lossReason && (
+                <div className="rounded-lg bg-destructive/5 p-3 text-sm text-destructive">
+                  <p className="font-medium">Motivo da perda: {LOSS_REASON_LABELS[contact.lossReason]}</p>
+                  {contact.lossReasonNote && (
+                    <p className="mt-0.5 text-destructive/80">{contact.lossReasonNote}</p>
+                  )}
+                </div>
+              )}
+
+              {contact.generalNotes && (
+                <p className="whitespace-pre-wrap text-sm text-muted-foreground">
+                  {contact.generalNotes}
+                </p>
+              )}
+
+              <div className="flex gap-2">
+                <WhatsAppButton phone={contact.phone} className="flex-1" />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  nativeButton={false}
+                  render={<Link href={`/contatos/${contact.id}/editar`} aria-label="Editar contato" />}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <DeleteContactButton contactId={contact.id} contactName={contact.name} />
+              </div>
             </div>
-          </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Resumo com IA</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <AiSummaryCard
-                contactId={contact.id}
-                summary={contact.aiSummary}
-                generatedAt={contact.aiSummaryGeneratedAt}
-              />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Lembretes</CardTitle>
-              <ReminderFormDialog
-                trigger={
-                  <Button size="sm">
-                    <Plus className="h-4 w-4" />
-                    Novo
-                  </Button>
-                }
-                title="Novo lembrete"
-                onSubmit={createReminderAction.bind(null, contact.id)}
-                defaultOpen={novoLembrete === "1"}
-              />
-            </CardHeader>
-            <CardContent>
-              <ReminderList contactId={contact.id} reminders={reminders} />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Imóveis</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <PropertyPicker
-                contactId={contact.id}
-                contactProperties={contactProperties}
-                allProperties={allProperties}
-                liveDetails={liveDetails}
-              />
-            </CardContent>
-          </Card>
-
-          {isInactive && (
+            {/* Um cartão de IA, não dois. Resumo e follow-up são perguntas
+                diferentes ("quem é este contato" e "o que dizer agora"), então
+                ambos ficam — mas como seções do mesmo bloco: dois cartões com o
+                mesmo ícone disputavam a atenção sem que a diferença aparecesse. */}
             <Card>
               <CardHeader>
-                <CardTitle>Sugestão de Follow-up</CardTitle>
+                <CardTitle>Assistente</CardTitle>
               </CardHeader>
-              <CardContent>
-                <FollowUpSuggestion contactId={contact.id} />
+              <CardContent className="flex flex-col gap-4">
+                <section className="flex flex-col gap-2">
+                  <h3 className="text-xs font-semibold tracking-[0.08em] text-muted-foreground uppercase">
+                    Resumo do contato
+                  </h3>
+                  <AiSummaryCard
+                    contactId={contact.id}
+                    summary={contact.aiSummary}
+                    generatedAt={contact.aiSummaryGeneratedAt}
+                  />
+                </section>
+
+                {isInactive && (
+                  <section className="flex flex-col gap-2 border-t pt-4">
+                    <h3 className="text-xs font-semibold tracking-[0.08em] text-muted-foreground uppercase">
+                      Retomar o contato
+                    </h3>
+                    <FollowUpSuggestion contactId={contact.id} />
+                  </section>
+                )}
               </CardContent>
             </Card>
-          )}
-        </div>
 
-        {/* Atividade unificada (FC-1): mensagens + anotações + eventos, filtrável, composer fixo */}
-        <div className="flex min-w-0 flex-1 flex-col rounded-lg border bg-card p-4 lg:h-[calc(100vh-11rem)]">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Lembretes</CardTitle>
+                <ReminderFormDialog
+                  trigger={
+                    <Button size="sm">
+                      <Plus className="h-4 w-4" />
+                      Novo
+                    </Button>
+                  }
+                  title="Novo lembrete"
+                  onSubmit={createReminderAction.bind(null, contact.id)}
+                  defaultOpen={novoLembrete === "1"}
+                />
+              </CardHeader>
+              <CardContent>
+                <ReminderList contactId={contact.id} reminders={reminders} />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Imóveis</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <PropertyPicker
+                  contactId={contact.id}
+                  contactProperties={contactProperties}
+                  allProperties={allProperties}
+                  liveDetails={liveDetails}
+                />
+              </CardContent>
+            </Card>
+          </>
+        }
+        atividade={
+          /* Atividade unificada (FC-1): mensagens + anotações + eventos,
+             filtrável, com o composer fixo no rodapé. */
           <ActivityFeed
             contactId={contact.id}
             notes={notes}
@@ -246,8 +257,8 @@ export default async function ContatoDetalhePage({
             messages={messages}
             templates={templates}
           />
-        </div>
-      </div>
+        }
+      />
     </div>
   );
 }

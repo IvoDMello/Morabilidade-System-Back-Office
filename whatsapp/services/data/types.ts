@@ -23,6 +23,7 @@ import type { PropertyRelation } from "@/constants/property-relations";
 import type { Corretor } from "@/types/corretor";
 import type {
   CreateWhatsAppMessageInput,
+  FailedOutboundMessage,
   WhatsAppConversation,
   WhatsAppConversationSummary,
   WhatsAppMessage,
@@ -38,6 +39,11 @@ import type {
   CreateAgentProposalInput,
   DecidirAgentProposalInput,
 } from "@/types/agent-proposal";
+import type { AgentRun, AgentRunConsumo, CreateAgentRunInput } from "@/types/agent-run";
+import type {
+  CreateWebhookDeliveryInput,
+  WebhookDelivery,
+} from "@/types/webhook-delivery";
 
 /**
  * Contrato que toda fonte de dados (mock ou Supabase) precisa implementar.
@@ -109,7 +115,14 @@ export interface DataSource {
       contactId: ID,
       waPhoneNumber: string,
     ): Promise<WhatsAppConversation>;
+    getConversationById(conversationId: ID): Promise<WhatsAppConversation | null>;
     listMessages(conversationId: ID): Promise<WhatsAppMessage[]>;
+    /** Devolve a conversa para `aguardando_resposta` — usada quando o envio que
+     * a tirou da fila falhou. Ver `processStatusUpdate`. */
+    reopenConversationAsAwaiting(conversationId: ID): Promise<void>;
+    /** Envios que a Meta recusou, mais recentes primeiro, com o contato junto.
+     * Alimenta a aba "Falhas" de /pendencias. */
+    listFailedOutbound(sinceIso: string, limit?: number): Promise<FailedOutboundMessage[]>;
     searchMessages(query: string, limit?: number): Promise<WhatsAppMessageSearchResult[]>;
     createMessage(input: CreateWhatsAppMessageInput): Promise<WhatsAppMessage>;
     findMessageByWaId(waMessageId: string): Promise<WhatsAppMessage | null>;
@@ -169,5 +182,20 @@ export interface DataSource {
     listEdicoesRecentes(limit?: number): Promise<
       { sugerido: string; enviado: string; decididoEm: string }[]
     >;
+  };
+  /** Livro-razão das chamadas de modelo: mede o custo e sustenta o teto do
+   * caminho automático. Ver `services/ai-budget.service.ts` e a migration 0021. */
+  /** Entregas do webhook que foram recusadas ou não puderam ser processadas.
+   * Só guarda problema — ver a migration 0022. */
+  webhookDeliveries: {
+    registrar(input: CreateWebhookDeliveryInput): Promise<void>;
+    listRecentes(desdeIso: string, limit?: number): Promise<WebhookDelivery[]>;
+  };
+  agentRuns: {
+    registrar(input: CreateAgentRunInput): Promise<void>;
+    /** Consumo das chamadas AUTOMÁTICAS (webhook/cron) desde um instante —
+     * é sobre isto que o teto decide. Clique de painel não entra na conta. */
+    consumoAutomaticoDesde(desdeIso: string): Promise<AgentRunConsumo>;
+    listRecentes(limit?: number): Promise<AgentRun[]>;
   };
 }

@@ -12,6 +12,9 @@ export default defineConfig({
     // Padrão Node (testes de lógica). Testes de componente pedem jsdom via
     // docblock `// @vitest-environment jsdom` no topo do arquivo.
     environment: "node",
+    // Preenche o que falta no jsdom (matchMedia). Roda em todos os arquivos e
+    // se protege sozinho no ambiente node — ver tests/setup.ts.
+    setupFiles: ["./tests/setup.ts"],
     include: ["**/*.{test,spec}.{ts,tsx}"],
     exclude: ["node_modules/**", ".next/**"],
   },

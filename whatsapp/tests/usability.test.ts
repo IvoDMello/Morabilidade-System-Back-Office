@@ -194,6 +194,38 @@ describe("acessibilidade: botões só de ícone têm nome acessível", () => {
   });
 });
 
+describe("mobile: links só de ícone têm área de toque", () => {
+  // Classes que garantem um alvo confortável — altura explícita, tamanho fixo,
+  // padding generoso, ou o truque de padding com margem negativa (`-m-2 p-2`),
+  // que amplia a área sem mexer no layout ao redor.
+  const AREA_DE_TOQUE =
+    /\b(h-(8|9|10|11|12|14)|size-(8|9|10|11|12)|min-h-(8|9|10|11|12)|p-(2|2\.5|3|4)|py-(2|2\.5|3|4)|-m-(1\.5|2))\b/;
+
+  it("nenhum <Link>/<a> com um ícone solto fica sem dimensão ou padding", () => {
+    const offenders: string[] = [];
+    // <Link ...><Icon … /></Link> — conteúdo é um único componente auto-fechado.
+    const re = /<(Link|a)(\s[^>]*?)?>([\s\S]*?)<\/\1>/g;
+    for (const file of FILES) {
+      if (isExcluded(file.path)) continue;
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(file.text)) !== null) {
+        const attrs = m[2] ?? "";
+        const inner = (m[3] ?? "").trim();
+        // Só interessa o caso "ícone sozinho": qualquer texto ou segundo
+        // elemento já dá área de toque por conta própria.
+        if (!/^<[A-Z][A-Za-z0-9]*\s[^>]*\/>$/.test(inner)) continue;
+        const className = /className="([^"]*)"/.exec(attrs)?.[1] ?? "";
+        if (AREA_DE_TOQUE.test(className)) continue;
+        offenders.push(`${file.path}:${lineOf(file.text, m.index)}`);
+      }
+    }
+    expect(
+      offenders,
+      `Um ícone de 16–20px é alvo pequeno demais para o polegar. Dê altura/padding ao link (ex.: "flex h-10 w-10 items-center justify-center" ou "-m-2 p-2"):\n${offenders.join("\n")}`,
+    ).toEqual([]);
+  });
+});
+
 describe("mobile: a tela de login não força rolagem vertical", () => {
   const login = FILES.find((f) => f.path === join("app", "login", "page.tsx"));
 

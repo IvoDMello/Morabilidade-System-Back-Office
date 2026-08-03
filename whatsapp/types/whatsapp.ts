@@ -43,6 +43,27 @@ export interface WhatsAppConversationSummary extends WhatsAppConversation {
   contactCorretorId: ID | null;
 }
 
+/**
+ * Um envio que a Meta recusou, com o contato junto — o que a fila de falhas
+ * precisa mostrar sem uma segunda consulta.
+ *
+ * `errorMessage` é o motivo que a Meta devolveu (janela de 24h fechada, número
+ * inválido, template recusado). Ele já era gravado no banco e não aparecia em
+ * lugar nenhum da interface: quem via o triângulo vermelho na thread não tinha
+ * como saber por quê, nem o que fazer a respeito.
+ */
+export interface FailedOutboundMessage {
+  id: ID;
+  conversationId: ID;
+  contactId: ID;
+  contactName: string;
+  contactPhone: string;
+  body: string;
+  errorMessage: string | null;
+  createdBy: string | null;
+  waTimestamp: string;
+}
+
 /** Trecho citado numa resposta (snapshot da mensagem original). */
 export interface MessageReply {
   id: ID | null;

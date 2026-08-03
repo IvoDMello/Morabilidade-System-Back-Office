@@ -12,7 +12,8 @@ from fastapi import (
 from app.auth.dependencies import get_current_user, require_admin, require_admin_or_internal
 from app.database import supabase_admin
 from app.schemas.cliente import (
-    ClienteCreate, ClienteListOut, ClienteOut, ClienteUpdate, StatusCliente,
+    ClienteCreate, ClienteListOut, ClienteOut, ClienteUpdate, ClienteUpsertInterno,
+    ClienteUpsertOut, StatusCliente,
 )
 
 router = APIRouter()
@@ -554,6 +555,33 @@ def _telefones_batem(a: Optional[str], b: Optional[str]) -> bool:
     return ca == cb or ca.endswith(cb) or cb.endswith(ca)
 
 
+def _localizar_cliente_por_telefone(telefone: str, campos: str) -> Optional[dict]:
+    """Varre os clientes procurando quem tenha este telefone (principal ou
+    secundário). A comparação é por dígitos porque o campo é texto livre —
+    ver `_telefones_batem`. Retorna o primeiro que casa, ou None.
+
+    A varredura é em memória de propósito: sem uma coluna canônica de telefone
+    no banco, não há índice que sirva. Se a base de clientes crescer a ponto de
+    isso pesar, a saída é uma coluna gerada + índice, não paginar aqui.
+    """
+    alvo = _telefone_canonico(telefone)
+    if len(alvo) < 10:
+        return None
+
+    candidatos = (
+        supabase_admin.table("clientes")
+        .select(campos)
+        .or_("telefone.not.is.null,telefone_secundario.not.is.null")
+        .execute()
+    )
+    for cliente in candidatos.data or []:
+        if _telefones_batem(telefone, cliente.get("telefone")) or _telefones_batem(
+            telefone, cliente.get("telefone_secundario")
+        ):
+            return cliente
+    return None
+
+
 @router.get("/interno/por-telefone/{telefone}", response_model=Optional[ClienteListOut],
             tags=["Integração"])
 def buscar_cliente_por_telefone_interno(
@@ -567,23 +595,92 @@ def buscar_cliente_por_telefone_interno(
     (absorvendo o DDI 55). Retorna o cliente correspondente ou `null` (200) quando
     nenhum bate — o CRM trata ausência de vínculo como estado normal.
     """
-    alvo = _telefone_canonico(telefone)
-    if len(alvo) < 10:
-        return None
-
-    candidatos = (
-        supabase_admin.table("clientes")
-        .select("id, codigo, nome_completo, email, telefone, telefone_secundario, "
-                "status, tipo_cliente")
-        .or_("telefone.not.is.null,telefone_secundario.not.is.null")
-        .execute()
+    return _localizar_cliente_por_telefone(
+        telefone,
+        "id, codigo, nome_completo, email, telefone, telefone_secundario, "
+        "status, tipo_cliente",
     )
-    for cliente in candidatos.data or []:
-        if _telefones_batem(telefone, cliente.get("telefone")) or _telefones_batem(
-            telefone, cliente.get("telefone_secundario")
-        ):
-            return cliente
-    return None
+
+
+# Campos que o upsert PODE preencher num cliente que já existe. A regra é a
+# mesma para todos: só escreve onde está vazio (ver abaixo).
+_CAMPOS_COMPLEMENTAVEIS = ("origem_lead", "tipo_cliente", "observacoes", "imovel_codigo")
+
+
+@router.post("/interno/upsert-por-telefone", response_model=ClienteUpsertOut,
+             tags=["Integração"])
+def upsert_cliente_por_telefone_interno(
+    body: ClienteUpsertInterno,
+    current_user: dict = Depends(require_admin_or_internal),
+):
+    """Encontra um cliente pelo telefone ou cria um novo — o caminho pelo qual um
+    lead do WhatsApp entra de verdade na base do sistema.
+
+    Existe porque o CRM de chat só sabia CONSULTAR clientes. Quem chegava pelo
+    WhatsApp — que é como quase todo lead chega — ficava preso no schema do chat:
+    invisível para /clientes, para os relatórios, para o matching e até para a
+    própria ficha de visita, que ia com `cliente_id` nulo.
+
+    **Nunca sobrescreve dado existente.** Num cliente que já existe, o upsert só
+    preenche campo VAZIO. Um atendente que corrigiu o nome, classificou o tipo ou
+    escreveu uma observação sabe mais do que a integração: perder isso para uma
+    inferência automática seria pior do que não ter integração nenhuma. Por isso
+    o nome, em particular, jamais é tocado — só serve na criação.
+    """
+    existente = _localizar_cliente_por_telefone(
+        body.telefone,
+        "id, codigo, nome_completo, telefone, telefone_secundario, "
+        + ", ".join(_CAMPOS_COMPLEMENTAVEIS),
+    )
+
+    if existente:
+        complementos = {}
+        for campo in _CAMPOS_COMPLEMENTAVEIS:
+            atual = existente.get(campo)
+            novo = getattr(body, campo, None)
+            # `atual` vazio: None ou string em branco. Só então a integração fala.
+            if novo is not None and (atual is None or str(atual).strip() == ""):
+                complementos[campo] = novo.value if hasattr(novo, "value") else novo
+
+        if complementos:
+            complementos = _normalizar_imovel_codigo(
+                {**{c: existente.get(c) for c in _CAMPOS_COMPLEMENTAVEIS}, **complementos}
+            )
+            # Reenvia só o que mudou, já normalizado.
+            atualizacao = {k: v for k, v in complementos.items() if existente.get(k) != v}
+            if atualizacao:
+                supabase_admin.table("clientes").update(atualizacao).eq(
+                    "id", existente["id"]
+                ).execute()
+
+        return ClienteUpsertOut(
+            id=existente["id"],
+            codigo=existente.get("codigo"),
+            nome_completo=existente["nome_completo"],
+            telefone=existente.get("telefone"),
+            criado=False,
+        )
+
+    dados = _normalizar_imovel_codigo({
+        "nome_completo": body.nome_completo,
+        "telefone": body.telefone,
+        "origem_lead": body.origem_lead.value if body.origem_lead else None,
+        "tipo_cliente": body.tipo_cliente.value if body.tipo_cliente else None,
+        # Sem status explícito o lead nasce "ativo": ele acabou de falar com a
+        # gente, então qualquer outro estado inicial seria mentira.
+        "status": (body.status.value if body.status else StatusCliente.ativo.value),
+        "observacoes": body.observacoes,
+        "imovel_codigo": body.imovel_codigo,
+    })
+
+    criado = supabase_admin.table("clientes").insert(dados).execute().data[0]
+    return ClienteUpsertOut(
+        id=criado["id"],
+        codigo=criado.get("codigo"),
+        nome_completo=criado["nome_completo"],
+        telefone=criado.get("telefone"),
+        criado=True,
+    )
 
 
 @router.post("/", response_model=ClienteOut, status_code=status.HTTP_201_CREATED)

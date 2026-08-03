@@ -87,6 +87,15 @@ O botão "Adiar" grava `follow_up_snoozed_until = +1 dia`. Ele **não muda o
 status** — só tira a conversa da fila. Qualquer mensagem nova, de qualquer lado,
 cancela o adiamento.
 
+**Exceção ao "o estado vive no trigger" (2026-08-03):** o trigger dispara no
+*insert* da mensagem, e a mensagem nasce como `sent` — antes de a Meta confirmar
+qualquer coisa. Quando o status vira `failed` depois, `processStatusUpdate`
+devolve a conversa para `aguardando_resposta`. Sem isso, um envio que falhava
+punha a conversa em `respondida` e ela **sumia das pendências com o cliente sem
+ter recebido nada** — falhar no envio deixava o sistema num estado melhor do que
+não ter respondido. Só reabre a partir de `respondida`: `encerrada` foi decisão
+humana, e `follow_up_sugerido` já está sinalizada em outra fila.
+
 **Limitação estrutural:** este estado descreve *quem falou por último*, não *em
 que ponto do processo a conversa está*. Não existe nenhum campo dizendo "captação
 na etapa 2 de 5" ou "esperando as fotos". Por isso o copiloto reconstrói o
@@ -171,17 +180,39 @@ flowchart LR
     API --> I1["GET /imoveis/interno/:codigo"]
     API --> I2["GET /clientes/interno/por-telefone/:tel"]
     API --> I3["POST /fichas-visita"]
+    API --> I4["POST /clientes/interno/upsert-por-telefone"]
 
     W -->|"mesmo Supabase, schema captacoes"| K["Kanban de captações"]
     W -->|"schema whatsapp"| DB["Contatos · conversas · lembretes · etiquetas"]
     W -->|"Cloud API"| META["Meta / WhatsApp"]
 
     style W fill:#ebeadf,stroke:#585a4f,color:#2d2f28
+    style I4 fill:#e4f0e8,stroke:#2e7d4a,color:#2d2f28
 ```
 
 Tudo em `lib/backoffice-api.ts` é best-effort e devolve `null` em falha — exceto
 `criarFichaVisita`, que lança de propósito: o cron precisa distinguir "não deu
 para gerar" (vira pendência com o motivo exato) de "gerou".
+
+**O fluxo deixou de ser de mão única.** Até 2026-08-03 o CRM só sabia *consultar*
+clientes: quem chegava pelo WhatsApp — que é como quase todo lead chega — ficava
+preso no schema do chat, invisível para `/clientes`, para os relatórios, para o
+matching e para a própria ficha de visita, que saía com `cliente_id` nulo
+justamente para quem tinha visita marcada. O upsert fecha esse ciclo.
+
+A promoção acontece em **evento de compromisso**, nunca por passagem de olho —
+abrir uma conversa não cria cliente. Hoje são três:
+
+| Evento | Onde |
+|---|---|
+| Atendente salva a ficha com categoria ≠ lead | `app/contatos/actions.ts` |
+| Visita vira ficha (1h antes) | `services/ficha-visita.service.ts` |
+| 1ª mensagem cita um imóvel do catálogo | `services/lead-origem.service.ts` |
+
+Duas travas valem para os três: `qualificaParaCliente` recusa contato cujo nome
+é só o telefone formatado (senão a base encheria de "(21) 97195-7245"), e o
+upsert da API **só preenche campo vazio** — nome, tipo e observação que um
+humano escreveu nunca são sobrescritos por inferência.
 
 ---
 
@@ -196,6 +227,31 @@ para gerar" (vira pendência com o motivo exato) de "gerou".
 | 5 | ~~As propostas do copiloto não persistem.~~ | ✅ **Resolvido** — tabela `agent_proposals` (migration 0020) |
 | 6 | **`follow_up_sugerido` não vem com texto.** O cron marca o status; a mensagem só existe se alguém abrir a ficha e clicar. | Aberto — mesma tabela serve, falta ligar no cron |
 | 7 | **Fora do horário e fim de semana: silêncio total.** | Aberto — Nível 3 |
+| 8 | ~~O lead do WhatsApp não existe no sistema.~~ | ✅ **Resolvido** — upsert por telefone + promoção em evento de compromisso |
+| 9 | ~~O código de imóvel que o site injeta na 1ª mensagem é jogado fora.~~ | ✅ **Resolvido** — `lead-origem.service.ts` vincula o imóvel e atribui a origem |
+| 10 | ~~Custo de IA sem teto nem medição.~~ | ✅ **Resolvido** — livro-razão `agent_runs` (0021) + teto horário do caminho automático |
+| 11 | **O copiloto não enxerga o catálogo.** As três ferramentas são de escrita; nenhuma de leitura. Ele não pode responder "tem 2 quartos em Botafogo?". | Aberto — é o próximo teto de qualidade do agente |
+| 12 | **Matching não chega ao chat.** A API tem preferências e matches; a conversa é onde a preferência é dita. | Aberto |
+| 13 | **Ficha assinada não volta pro chat.** Nem mensagem, nem timeline, nem lembrete de pós-visita. | Aberto |
+| 14 | ~~Envio que falha esconde a pendência.~~ | ✅ **Resolvido** — a conversa volta para `aguardando_resposta` |
+| 15 | ~~`failed` e o motivo da Meta nunca apareciam.~~ | ✅ **Resolvido** — aba "Não entregues" em `/pendencias` |
+| 16 | ~~Alerta que falha marca como alertado.~~ | ✅ **Resolvido** — `markAlerted` saiu do `finally` |
+| 17 | ~~Assinatura inválida perde tudo em silêncio.~~ | ✅ **Resolvido** — livro `webhook_deliveries` (0022) + alarme em `/pendencias` |
+| 18 | ~~Erro no lote impedia os eventos seguintes.~~ | ✅ **Resolvido** — cada evento é processado de forma independente |
+| 19 | **Grupos não passam pela Cloud API** e o **histórico de ~6 meses da coexistência não é importado.** | Limite da Meta / não implementado — ver abaixo |
+
+### O que a Meta não entrega (não tem conserto do nosso lado)
+
+Precisa estar dito, senão vira "sumiu mensagem" na boca da operação:
+
+- **Grupos não passam pela Cloud API.** Mensagem de grupo existe só no app do
+  celular e nunca aparecerá no CRM. Não é falha nossa e não há workaround.
+- **O histórico sincronizado no onboarding (~6 meses) não é importado.** No dia
+  do go-live, todo o passado das conversas fica só no celular. Implementável no
+  futuro; hoje não existe.
+- **Enquanto `WHATSAPP_PROVIDER` estiver em `mock`**, nada entra nem sai de
+  verdade. É a causa-raiz de "mensagem perdida" hoje, e depende do onboarding de
+  coexistência na Meta, não de código.
 
 ---
 
@@ -219,6 +275,46 @@ deixa o trabalho pronto.
 sozinho — nem os triviais. O placar em `/pendencias` (taxa de edição e sequência
 de aprovações sem edição) é a régua para promover caso a caso, quando houver
 base. Ele é indicador, não gatilho: nada muda de comportamento sozinho.
+
+**O papel do agente é organizacional (2026-08-03).** Ele arruma o CRM a partir
+do que já foi dito — captação com os dados que o proprietário passou, visita que
+ficou combinada — e **não redige resposta a cliente**, nem como rascunho. O
+atendimento continua sendo de gente. `AGENTE_MODO=completo` religa
+`sugerir_resposta`; o padrão é `organizacional`, e valor inválido cai no
+restrito.
+
+Isso é decisão de produto e de custo na mesma direção: escrever para o cliente
+exige o `VOZ.md` inteiro no prompt (~1.500 tokens de entrada em toda chamada) e
+devolve um texto na saída, que é o token mais caro que existe.
+
+**Controle de custo.** Quatro camadas, da mais barata para a mais cara:
+
+| Camada | O que faz |
+|---|---|
+| Guarda de conteúdo | "ok", "obrigado", figurinha e mídia sem legenda não viram chamada. A chamada que não acontece custa zero. |
+| Prompt enxuto | Sem manual de voz, 20 mensagens de histórico (em vez de 60), `max_tokens` 512 (em vez de 1536) |
+| Prefixo cacheável | Instruções estáticas no `system` com `cache_control`; relógio, contato e histórico **depois** do corte — antes o relógio invalidava o cache a cada minuto |
+| Tetos | `AI_MAX_CHAMADAS_HORA` (padrão 60, contra rajada) e `AI_MAX_TOKENS_DIA` (padrão 2M, contra custo). Qualquer um em `0` desliga o automático sem redeploy |
+
+**Clique de painel nunca é barrado**: quem clicou tem intenção, e negar isso
+custa mais em confiança do que a chamada custa em dinheiro.
+
+**Escolha de modelo.** `AI_MODEL_TRIAGEM` separa o caminho de alto volume do
+resto. **O padrão cai em `AI_MODEL`, ou seja, nada muda sozinho** — trocar
+modelo é decisão de quem opera. A conta: Haiku 4.5 custa US$ 1/US$ 5 por milhão
+de tokens contra US$ 3/US$ 15 do Sonnet 5 — **um terço**, na entrada e na saída.
+Extrair endereço e data de uma conversa curta é exatamente o trabalho em que o
+modelo barato empata com o caro.
+
+**Sobre o cache, uma ressalva honesta:** o prefixo só entra em cache acima de um
+mínimo (1.024 tokens no Sonnet, 4.096 no Haiku), e o prompt organizacional é
+curto — pode ficar abaixo dos dois, e a API não avisa. Por isso `agent_runs`
+grava `cache_read_tokens` separado: a resposta é observar, não supor. Escrever
+no cache custa 25% **a mais** que entrada normal, então cache só compensa com
+releitura de verdade.
+
+A contabilidade toda sai de `agent_runs` (migration 0021), convertida em dólares
+por `lib/ai-pricing.ts` — não dá para pôr teto no que não se mede.
 
 ### Nível 2 — executar com veto (reversível, avisa depois)
 

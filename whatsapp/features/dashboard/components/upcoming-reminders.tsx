@@ -5,11 +5,19 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { formatDateTime } from "@/lib/utils";
 import type { ReminderWithContact } from "@/types/reminder";
 
+/** Vitrine dos lembretes de hoje. Quem age sobre eles é a tela de Pendências —
+ * daí o link no cabeçalho: aqui se olha, lá se resolve. */
 export function UpcomingReminders({ reminders }: { reminders: ReminderWithContact[] }) {
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between gap-3">
         <CardTitle>Próximos lembretes de hoje</CardTitle>
+        <Link
+          href="/pendencias?tab=lembretes"
+          className="shrink-0 text-xs font-medium text-muted-foreground hover:text-foreground hover:underline"
+        >
+          Ver em Pendências
+        </Link>
       </CardHeader>
       <CardContent>
         {reminders.length === 0 ? (

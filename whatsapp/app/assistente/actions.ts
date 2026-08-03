@@ -42,7 +42,7 @@ export async function executarAcaoAction(
   try {
     const message = await executarAcao(tool, args);
     // A ação pode ter criado lembrete/captação — atualiza as telas afetadas.
-    revalidatePath("/lembretes");
+    revalidatePath("/pendencias");
     revalidatePath("/dashboard");
     return { ok: true, message };
   } catch (e) {

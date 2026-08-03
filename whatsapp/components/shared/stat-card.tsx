@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,13 +11,16 @@ interface StatCardProps {
   icon: LucideIcon;
   /** Variação percentual dos últimos 7 dias (DB-3) — omitido quando não há base de comparação. */
   delta?: WeeklyDelta;
+  /** Para onde o número leva. Sem isso o KPI é um beco sem saída: avisa que há
+   * algo a fazer e não oferece caminho para fazer. */
+  href?: string;
 }
 
 /** KPI do redesign: rótulo à esquerda, chip de ícone à direita e número grande
- * abaixo, com variação semanal ao lado do número. */
-export function StatCard({ label, value, icon: Icon, delta }: StatCardProps) {
-  return (
-    <Card>
+ * abaixo, com variação semanal ao lado do número. Vira link quando há `href`. */
+export function StatCard({ label, value, icon: Icon, delta, href }: StatCardProps) {
+  const card = (
+    <Card className={cn(href && "h-full transition-colors group-hover/stat:border-veil/20")}>
       <CardContent className="py-1">
         <div className="flex items-center justify-between gap-2">
           <p className="truncate text-xs text-muted-foreground">{label}</p>
@@ -44,5 +48,19 @@ export function StatCard({ label, value, icon: Icon, delta }: StatCardProps) {
         </div>
       </CardContent>
     </Card>
+  );
+
+  if (!href) return card;
+
+  return (
+    <Link
+      href={href}
+      // O nome acessível junta rótulo e número: sem ele o leitor de tela
+      // anuncia "link" e dois textos soltos, sem dizer o que é o quê.
+      aria-label={`${label}: ${value}`}
+      className="group/stat rounded-xl outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+    >
+      {card}
+    </Link>
   );
 }

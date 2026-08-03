@@ -60,7 +60,15 @@ export type SugerirRespostaArgs = z.infer<typeof sugerirRespostaArgs>;
 
 export type ToolName = "agendar_visita" | "criar_captacao" | "sugerir_resposta";
 
-/** Schemas de input passados ao modelo (JSON Schema, espelham os zod acima). */
+/**
+ * Ferramentas ORGANIZACIONAIS: as que arrumam a casa sem falar com o cliente.
+ *
+ * A separação existe porque o papel do agente hoje é organizacional. Ele não
+ * redige resposta a cliente no caminho automático — nem como rascunho. Isso é
+ * decisão de produto (o time quer o WhatsApp na mão de gente por enquanto) e
+ * corta custo de tabela: sem `sugerir_resposta` o manual de voz não precisa
+ * entrar no prompt, e a saída deixa de carregar um texto inteiro.
+ */
 export const ASSISTANT_TOOLS: Anthropic.Tool[] = [
   {
     name: "agendar_visita",
