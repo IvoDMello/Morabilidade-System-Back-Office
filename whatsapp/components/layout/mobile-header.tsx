@@ -15,7 +15,7 @@ export function MobileHeader() {
   const { title, subtitle } = getMobileSectionInfo(pathname);
 
   return (
-    <header className="sticky top-0 z-10 border-b border-veil/6 bg-background/95 px-4 pt-3.5 pb-3 backdrop-blur-sm md:hidden">
+    <header className="sticky top-0 z-10 border-b border-veil/6 bg-background/95 px-4 pt-[calc(0.875rem+env(safe-area-inset-top))] pb-3 backdrop-blur-sm md:hidden">
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0">
           <h1 className="truncate text-[19px] font-semibold tracking-[-0.02em] text-foreground">
