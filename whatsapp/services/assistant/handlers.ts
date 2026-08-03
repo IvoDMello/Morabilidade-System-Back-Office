@@ -1,6 +1,7 @@
 import { getContactById } from "@/services/contacts.service";
 import { createReminder } from "@/services/reminders.service";
 import { getCurrentCorretor, getCurrentUserName } from "@/services/corretores.service";
+import { criarEventoDeVisita } from "@/services/google-calendar.service";
 import { criarCaptacao } from "@/services/captacoes.service";
 import { sendMessage } from "@/services/whatsapp.service";
 import {
@@ -38,6 +39,14 @@ async function executarAgendarVisita(rawArgs: unknown): Promise<string> {
     createdBy: await getCurrentUserName(),
     corretorId,
     imovelCodigo: codigoImovel,
+  });
+
+  await criarEventoDeVisita({
+    contactName: contato.name,
+    contactPhone: contato.phone,
+    when: quando,
+    imovelCodigo: codigoImovel,
+    observacao: args.observacao ?? null,
   });
 
   return `Visita agendada com ${contato.name}.`;
