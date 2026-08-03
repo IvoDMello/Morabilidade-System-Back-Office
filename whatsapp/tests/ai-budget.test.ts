@@ -128,7 +128,13 @@ describe("livro-razão", () => {
     const consumo = await dataSource.agentRuns.consumoAutomaticoDesde(
       new Date(Date.now() - 60 * 60 * 1000).toISOString(),
     );
-    expect(consumo).toEqual({ chamadas: 2, inputTokens: 2000, outputTokens: 200 });
+    expect(consumo).toEqual({
+      chamadas: 2,
+      inputTokens: 2000,
+      outputTokens: 200,
+      cacheCreationTokens: 0,
+      cacheReadTokens: 0,
+    });
   });
 
   it("registrar nunca lança, mesmo com a escrita falhando", async () => {

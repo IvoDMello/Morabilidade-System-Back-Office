@@ -41,6 +41,19 @@ create table if not exists agent_runs (
   input_tokens integer not null default 0,
   output_tokens integer not null default 0,
 
+  -- Tokens de cache, separados porque têm preço próprio: leitura custa ~10% de
+  -- uma entrada normal, e escrita custa 25% A MAIS. Somados aos de entrada
+  -- esconderiam exatamente o número que diz se o cache está valendo a pena.
+  -- Zero em `cache_read` por várias rodadas seguidas significa que o prefixo
+  -- não está sendo reaproveitado (curto demais, ou algo volátil no meio dele).
+  cache_creation_tokens integer not null default 0,
+  cache_read_tokens integer not null default 0,
+
+  -- Qual conjunto de ferramentas a chamada usou. É o que separa a triagem
+  -- organizacional (barata, sem manual de voz no prompt) da análise completa.
+  modo text not null default 'organizacional'
+    check (modo in ('organizacional', 'completo')),
+
   -- Preenchido quando a chamada falhou. Uma chamada que deu erro também custou
   -- tempo e pode ter custado tokens, então ela entra no livro do mesmo jeito.
   erro text,

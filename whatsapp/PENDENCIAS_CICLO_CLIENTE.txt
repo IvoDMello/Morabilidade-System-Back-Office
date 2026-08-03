@@ -22,11 +22,33 @@ que é justamente o que esta entrega veio resolver.
 
 [ ] 2. VARIÁVEIS DE AMBIENTE (Vercel, projeto do app whatsapp)
 
-    [ ] AI_MAX_CHAMADAS_HORA   Opcional. Sem ela o teto é 60 chamadas
-                               automáticas por hora corrida. Só vale para
-                               webhook/cron — clique no painel nunca é barrado.
-                               Ponha 0 para desligar a análise automática sem
-                               precisar de deploy (válvula de emergência).
+    Todas opcionais — o padrão já é o comportamento seguro e barato.
+
+    [ ] AGENTE_MODO            Padrão: organizacional. O agente arruma o CRM e
+                               NÃO redige resposta a cliente. Só ponha
+                               "completo" quando decidirem liberar rascunho de
+                               texto (o placar em /pendencias é a régua).
+
+    [ ] AI_MODEL_TRIAGEM       Padrão: cai em AI_MODEL (hoje claude-sonnet-5),
+                               ou seja, nada muda sozinho.
+                               >>> ECONOMIA DE 3x: claude-haiku-4-5
+                               A triagem só extrai endereço/data de conversa
+                               curta — é o trabalho em que o modelo barato
+                               empata com o caro. Preços por milhão de tokens:
+                                 sonnet-5 = US$ 3 entrada / US$ 15 saída
+                                 haiku-4-5 = US$ 1 entrada / US$ 5  saída
+                               Decisão de vocês; o código não troca sozinho.
+
+    [ ] AI_MAX_CHAMADAS_HORA   Padrão 60. Teto contra RAJADA (loop de
+                               reentrega da Meta). Só webhook/cron — clique no
+                               painel nunca é barrado. 0 desliga o automático
+                               sem deploy (válvula de emergência).
+
+    [ ] AI_MAX_TOKENS_DIA      Padrão 2.000.000. Teto contra CUSTO. Contar
+                               chamadas não limita gasto: uma análise sobre
+                               conversa longa custa muitas vezes o que custa
+                               uma sobre três mensagens, e as duas contam "1".
+                               2M/dia ≈ US$ 2/dia em Haiku, US$ 6 em Sonnet.
 
     Já devem existir (CONFERIR, não recriar) — sem estas duas, TODO o ciclo de
     cliente desta entrega fica inerte (best-effort, não quebra nada, só não faz):
@@ -65,11 +87,18 @@ que é justamente o que esta entrega veio resolver.
         Com um código que NÃO existe, nada deve acontecer — é a consulta ao
         catálogo, não o texto, que decide.
 
-    [ ] Teto: depois de algumas mensagens, conferir que o livro está enchendo:
-          select origem, count(*), sum(input_tokens), sum(output_tokens)
+    [ ] Custo: depois de algumas mensagens, conferir o livro-razão:
+          select modo, modelo, count(*) as chamadas,
+                 sum(input_tokens) as entrada, sum(output_tokens) as saida,
+                 sum(cache_read_tokens) as cache_lido
           from whatsapp.agent_runs
           where created_at > now() - interval '1 day'
-          group by origem;
+          group by modo, modelo;
+
+        Como ler: `modo` deve ser 'organizacional' em tudo que veio do webhook.
+        `cache_lido` zerado por várias rodadas significa que o prefixo é curto
+        demais para cachear (mínimo 1.024 tokens no Sonnet, 4.096 no Haiku) —
+        é informação, não defeito: o prompt organizacional é enxuto de propósito.
 
 
 O QUE MUDA NA PRÁTICA

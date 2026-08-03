@@ -224,8 +224,11 @@ export function mapAgentRunRow(row: any): AgentRun {
     origem: row.origem,
     recurso: row.recurso,
     modelo: row.modelo,
+    modo: row.modo ?? "organizacional",
     inputTokens: row.input_tokens ?? 0,
     outputTokens: row.output_tokens ?? 0,
+    cacheCreationTokens: row.cache_creation_tokens ?? 0,
+    cacheReadTokens: row.cache_read_tokens ?? 0,
     erro: row.erro ?? null,
     createdAt: row.created_at,
   };

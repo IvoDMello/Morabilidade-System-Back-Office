@@ -1,3 +1,4 @@
+import type { ModoAgente } from "@/services/assistant/modo";
 import type { ID } from "./common";
 
 /** De onde a chamada de modelo partiu. O teto de orçamento só barra as
@@ -12,8 +13,15 @@ export interface AgentRun {
   /** Qual recurso gastou (ex.: "copiloto-conversa", "pendencias-do-dia"). */
   recurso: string;
   modelo: string;
+  /** Qual conjunto de ferramentas rodou — separa a triagem barata da completa. */
+  modo: ModoAgente;
   inputTokens: number;
   outputTokens: number;
+  /** Tokens gravados no cache (custam 25% a mais que entrada normal). */
+  cacheCreationTokens: number;
+  /** Tokens lidos do cache (custam ~10% de uma entrada normal). Zero por
+   * várias rodadas seguidas significa que o prefixo não está sendo reusado. */
+  cacheReadTokens: number;
   erro: string | null;
   createdAt: string;
 }
@@ -23,8 +31,11 @@ export interface CreateAgentRunInput {
   origem: AgentRunOrigem;
   recurso: string;
   modelo: string;
+  modo?: ModoAgente;
   inputTokens?: number;
   outputTokens?: number;
+  cacheCreationTokens?: number;
+  cacheReadTokens?: number;
   erro?: string | null;
 }
 
@@ -33,4 +44,6 @@ export interface AgentRunConsumo {
   chamadas: number;
   inputTokens: number;
   outputTokens: number;
+  cacheCreationTokens: number;
+  cacheReadTokens: number;
 }

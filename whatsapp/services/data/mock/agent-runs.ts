@@ -10,8 +10,11 @@ export const mockAgentRuns: DataSource["agentRuns"] = {
       origem: input.origem,
       recurso: input.recurso,
       modelo: input.modelo,
+      modo: input.modo ?? "organizacional",
       inputTokens: input.inputTokens ?? 0,
       outputTokens: input.outputTokens ?? 0,
+      cacheCreationTokens: input.cacheCreationTokens ?? 0,
+      cacheReadTokens: input.cacheReadTokens ?? 0,
       erro: input.erro ?? null,
       createdAt: new Date().toISOString(),
     };
@@ -27,8 +30,10 @@ export const mockAgentRuns: DataSource["agentRuns"] = {
           chamadas: acc.chamadas + 1,
           inputTokens: acc.inputTokens + r.inputTokens,
           outputTokens: acc.outputTokens + r.outputTokens,
+          cacheCreationTokens: acc.cacheCreationTokens + r.cacheCreationTokens,
+          cacheReadTokens: acc.cacheReadTokens + r.cacheReadTokens,
         }),
-        { chamadas: 0, inputTokens: 0, outputTokens: 0 },
+        { chamadas: 0, inputTokens: 0, outputTokens: 0, cacheCreationTokens: 0, cacheReadTokens: 0 },
       );
   },
 

@@ -1,7 +1,8 @@
 import { dataSource } from "./data";
 import { getContactByPhone } from "./contacts.service";
 import { proporAcoesDaConversa } from "./assistant";
-import { dentroDoOrcamento, registrarUso } from "./ai-budget.service";
+import { dentroDoOrcamento, mensagemMereceAnalise, registrarUso } from "./ai-budget.service";
+import { getModoAgente } from "./assistant/modo";
 import { atingiuMeta, META_GRADUACAO } from "./data/agent-proposal-score";
 import type { ID } from "@/types/common";
 import type {
@@ -69,6 +70,18 @@ export async function analisarEGuardar(
     const mensagens = await dataSource.whatsapp.listMessages(conversa.id);
     const ultimaInbound = [...mensagens].reverse().find((m) => m.direction === "inbound");
     if (ultimaInbound && ultimaInbound.id !== input.triggerMessageId) return [];
+
+    // Guarda de conteúdo: "ok", "obrigado" e figurinha não têm o que organizar.
+    // A chamada que não acontece é a mais barata de todas, e boa parte do
+    // tráfego de WhatsApp é exatamente isso. Só no caminho automático — quem
+    // clicou no painel quer a análise mesmo de uma conversa curta.
+    if (
+      input.origem !== "painel" &&
+      ultimaInbound &&
+      !mensagemMereceAnalise(ultimaInbound.body, ultimaInbound.messageType)
+    ) {
+      return [];
+    }
   }
 
   // O teto vale só para quem não tem gente esperando do outro lado.
@@ -76,14 +89,19 @@ export async function analisarEGuardar(
     const orcamento = await dentroDoOrcamento();
     if (!orcamento.liberado) {
       console.warn(
-        `[agent-proposals] teto horário de IA atingido (${orcamento.usadas}/${orcamento.teto}); ` +
+        `[agent-proposals] orçamento de IA esgotado (${orcamento.motivo}: ` +
+          `${orcamento.usadas}/${orcamento.teto} chamadas/h, ` +
+          `${orcamento.tokensDia ?? 0}/${orcamento.tetoTokensDia ?? 0} tokens/dia); ` +
           "análise automática pulada — a conversa segue na fila e o botão do painel continua valendo.",
       );
       return [];
     }
   }
 
-  const analise = await proporAcoesDaConversa(input.contactId);
+  // O caminho automático é sempre organizacional: o agente arruma o CRM, não
+  // escreve para o cliente. O painel respeita o modo configurado.
+  const modo = input.origem === "painel" ? getModoAgente() : "organizacional";
+  const analise = await proporAcoesDaConversa(input.contactId, { modo });
 
   // Registra o gasto ANTES de decidir se houve proposta: uma análise que não
   // propôs nada custou exatamente o mesmo que uma que propôs três.
@@ -92,6 +110,7 @@ export async function analisarEGuardar(
     origem: input.origem,
     recurso: "copiloto-conversa",
     modelo: analise.modelo,
+    modo: analise.modo,
     conversationId: conversa.id,
     uso: analise.uso,
   });

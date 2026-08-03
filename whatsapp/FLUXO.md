@@ -248,14 +248,45 @@ sozinho — nem os triviais. O placar em `/pendencias` (taxa de edição e sequ�
 de aprovações sem edição) é a régua para promover caso a caso, quando houver
 base. Ele é indicador, não gatilho: nada muda de comportamento sozinho.
 
-**Teto de gasto (2026-08-03).** O gatilho da análise passou a ser o cliente
-digitando — a variável que não controlamos. O caminho automático respeita um
-teto por hora corrida (`AI_MAX_CHAMADAS_HORA`, padrão 60); estourou, a análise é
-pulada e a conversa segue na fila normalmente. **Clique de painel nunca é
-barrado**: quem clicou tem intenção, e negar isso custa mais em confiança do que
-a chamada custa em dinheiro. `AI_MAX_CHAMADAS_HORA=0` desliga o automático sem
-redeploy. A contagem sai de `agent_runs` (migration 0021), que é também a única
-fonte de "quanto a IA custou ontem" — não dá para pôr teto no que não se mede.
+**O papel do agente é organizacional (2026-08-03).** Ele arruma o CRM a partir
+do que já foi dito — captação com os dados que o proprietário passou, visita que
+ficou combinada — e **não redige resposta a cliente**, nem como rascunho. O
+atendimento continua sendo de gente. `AGENTE_MODO=completo` religa
+`sugerir_resposta`; o padrão é `organizacional`, e valor inválido cai no
+restrito.
+
+Isso é decisão de produto e de custo na mesma direção: escrever para o cliente
+exige o `VOZ.md` inteiro no prompt (~1.500 tokens de entrada em toda chamada) e
+devolve um texto na saída, que é o token mais caro que existe.
+
+**Controle de custo.** Quatro camadas, da mais barata para a mais cara:
+
+| Camada | O que faz |
+|---|---|
+| Guarda de conteúdo | "ok", "obrigado", figurinha e mídia sem legenda não viram chamada. A chamada que não acontece custa zero. |
+| Prompt enxuto | Sem manual de voz, 20 mensagens de histórico (em vez de 60), `max_tokens` 512 (em vez de 1536) |
+| Prefixo cacheável | Instruções estáticas no `system` com `cache_control`; relógio, contato e histórico **depois** do corte — antes o relógio invalidava o cache a cada minuto |
+| Tetos | `AI_MAX_CHAMADAS_HORA` (padrão 60, contra rajada) e `AI_MAX_TOKENS_DIA` (padrão 2M, contra custo). Qualquer um em `0` desliga o automático sem redeploy |
+
+**Clique de painel nunca é barrado**: quem clicou tem intenção, e negar isso
+custa mais em confiança do que a chamada custa em dinheiro.
+
+**Escolha de modelo.** `AI_MODEL_TRIAGEM` separa o caminho de alto volume do
+resto. **O padrão cai em `AI_MODEL`, ou seja, nada muda sozinho** — trocar
+modelo é decisão de quem opera. A conta: Haiku 4.5 custa US$ 1/US$ 5 por milhão
+de tokens contra US$ 3/US$ 15 do Sonnet 5 — **um terço**, na entrada e na saída.
+Extrair endereço e data de uma conversa curta é exatamente o trabalho em que o
+modelo barato empata com o caro.
+
+**Sobre o cache, uma ressalva honesta:** o prefixo só entra em cache acima de um
+mínimo (1.024 tokens no Sonnet, 4.096 no Haiku), e o prompt organizacional é
+curto — pode ficar abaixo dos dois, e a API não avisa. Por isso `agent_runs`
+grava `cache_read_tokens` separado: a resposta é observar, não supor. Escrever
+no cache custa 25% **a mais** que entrada normal, então cache só compensa com
+releitura de verdade.
+
+A contabilidade toda sai de `agent_runs` (migration 0021), convertida em dólares
+por `lib/ai-pricing.ts` — não dá para pôr teto no que não se mede.
 
 ### Nível 2 — executar com veto (reversível, avisa depois)
 
