@@ -55,9 +55,9 @@ export function NavLinks({ reminderCounts, unreadConversations, pendingConversat
                   item.badgeKind === "unreadConversations"
                     ? "bg-[#3a7d5c]"
                     : item.badgeKind === "pendingConversations"
-                      ? "bg-[#c4553e]"
+                      ? "bg-[#ef7a7a]"
                       : isDanger
-                        ? "bg-[#c4553e]"
+                        ? "bg-[#ef7a7a]"
                         : "bg-[#ae9f4a]",
                 )}
               >

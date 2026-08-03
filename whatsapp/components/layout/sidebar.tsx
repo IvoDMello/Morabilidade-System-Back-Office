@@ -17,7 +17,7 @@ export function Sidebar({
   return (
     <aside className="sticky top-0 hidden h-screen w-[60px] shrink-0 flex-col items-center gap-1 border-r border-sidebar-border bg-sidebar py-3.5 text-sidebar-foreground md:flex">
       <div
-        className="mb-2 flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[9px] bg-[linear-gradient(150deg,#e8dea0,#d8cb6a)] text-[#2e302a] shadow-[0_2px_8px_rgba(216,203,106,0.35)]"
+        className="mb-2 flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[9px] bg-[linear-gradient(150deg,#f0e7b8,#e7dda6)] text-[#1b1c16] shadow-[0_2px_8px_rgba(231,221,166,0.35)]"
         title="WhatsApp Morabilidade"
       >
         <MessageCircle className="h-[18px] w-[18px]" strokeWidth={2.2} />

@@ -63,7 +63,7 @@ export function MobileBottomNav({
                     item.badgeKind === "unreadConversations"
                       ? "bg-[#3a7d5c]"
                       : isDanger || item.badgeKind === "pendingConversations"
-                        ? "bg-[#c4553e]"
+                        ? "bg-[#ef7a7a]"
                         : "bg-[#ae9f4a]",
                   )}
                 >

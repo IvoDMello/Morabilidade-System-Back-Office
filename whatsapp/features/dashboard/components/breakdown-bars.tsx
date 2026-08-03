@@ -6,7 +6,7 @@ interface BreakdownBarsProps {
 }
 
 const FILL_CLASSES: Record<NonNullable<BreakdownBarsProps["tone"]>, string> = {
-  gold: "bg-[linear-gradient(90deg,#e8dea0,#d8cb6a)]",
+  gold: "bg-[linear-gradient(90deg,#f0e7b8,#e7dda6)]",
   slate: "bg-[linear-gradient(90deg,#a4a698,#83857a)]",
 };
 
