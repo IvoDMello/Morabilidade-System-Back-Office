@@ -10,6 +10,7 @@ import { supabaseWhatsapp } from "./whatsapp";
 import { supabasePushSubscriptions } from "./push-subscriptions";
 import { supabaseCorretores } from "./corretores";
 import { supabaseAgentProposals } from "./agent-proposals";
+import { supabaseAgentRuns } from "./agent-runs";
 
 export const supabaseDataSource: DataSource = {
   contacts: supabaseContacts,
@@ -23,4 +24,5 @@ export const supabaseDataSource: DataSource = {
   pushSubscriptions: supabasePushSubscriptions,
   corretores: supabaseCorretores,
   agentProposals: supabaseAgentProposals,
+  agentRuns: supabaseAgentRuns,
 };

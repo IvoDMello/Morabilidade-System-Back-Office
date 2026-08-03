@@ -1,0 +1,83 @@
+PENDÊNCIAS PARA LIGAR: teto de custo da IA + ciclo de dados do lead
+====================================================================
+
+Branch: feat/whatsapp-copiloto-captacoes
+Status do código: pronto. 141 testes no CRM + 637 na API, build verde.
+
+A ORDEM IMPORTA. O passo 1 vem antes do deploy: sem a tabela, a apuração do
+teto falha. Ela falha ABERTA de propósito (libera a análise em vez de bloquear),
+então nada quebra — mas o teto simplesmente não existe até a migration rodar,
+que é justamente o que esta entrega veio resolver.
+
+
+[ ] 1. MIGRATION 0021 (fazer PRIMEIRO)
+    Supabase Dashboard -> SQL Editor -> New query
+    Arquivo: whatsapp/supabase/migrations/0021_agent_runs.sql
+    Cria whatsapp.agent_runs (livro-razão das chamadas de modelo) + 2 índices.
+
+    Conferir depois:
+      select count(*) from whatsapp.agent_runs;
+    Esperado: 0 linhas, sem erro.
+
+
+[ ] 2. VARIÁVEIS DE AMBIENTE (Vercel, projeto do app whatsapp)
+
+    [ ] AI_MAX_CHAMADAS_HORA   Opcional. Sem ela o teto é 60 chamadas
+                               automáticas por hora corrida. Só vale para
+                               webhook/cron — clique no painel nunca é barrado.
+                               Ponha 0 para desligar a análise automática sem
+                               precisar de deploy (válvula de emergência).
+
+    Já devem existir (CONFERIR, não recriar) — sem estas duas, TODO o ciclo de
+    cliente desta entrega fica inerte (best-effort, não quebra nada, só não faz):
+    [ ] BACKOFFICE_API_URL        https://api.morabilidade.com
+    [ ] BACKOFFICE_INTERNAL_TOKEN mesmo valor do INTERNAL_API_TOKEN na API
+
+
+[ ] 3. DEPLOY DA API (Railway) ANTES do CRM
+    O CRM passa a chamar POST /clientes/interno/upsert-por-telefone. Se o app
+    subir antes da API, a chamada dá 404 -> o upsert devolve null e o lead
+    simplesmente não é promovido (sem erro visível). Não quebra, mas a entrega
+    fica pela metade até a API subir.
+
+    Lembrete do healthcheck: /health precisa continuar respondendo, senão o
+    Railway mantém a versão antiga no ar e a rota nova some sem aviso.
+
+
+[ ] 4. SMOKE TEST
+    [ ] Upsert (não cria nada de verdade se o telefone já existir):
+        curl -X POST https://api.morabilidade.com/clientes/interno/upsert-por-telefone \
+          -H "X-Internal-Token: $INTERNAL_API_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d '{"telefone":"5521971957245","nome_completo":"Teste Ciclo"}'
+        Resposta traz {"criado": true|false}. Rodar DUAS vezes: a segunda tem
+        que voltar criado=false com o mesmo id — é o teste do "não duplica".
+
+    [ ] Promoção pelo painel: abrir um contato com nome real, trocar a categoria
+        de "lead" para "cliente" e salvar. Conferir em /clientes do back-office
+        que ele apareceu.
+
+    [ ] Rastro do site (precisa de WHATSAPP_PROVIDER=cloud-api para valer com
+        mensagem real; no mock dá para simular): mandar uma mensagem contendo
+        "(código *MB-00033*)" com um código que EXISTA no catálogo. Conferir na
+        ficha do contato que o imóvel apareceu vinculado como "Interesse" e que
+        a timeline registrou o vínculo.
+        Com um código que NÃO existe, nada deve acontecer — é a consulta ao
+        catálogo, não o texto, que decide.
+
+    [ ] Teto: depois de algumas mensagens, conferir que o livro está enchendo:
+          select origem, count(*), sum(input_tokens), sum(output_tokens)
+          from whatsapp.agent_runs
+          where created_at > now() - interval '1 day'
+          group by origem;
+
+
+O QUE MUDA NA PRÁTICA
+---------------------
+- Lead que chega pelo WhatsApp passa a existir em /clientes — e portanto nos
+  relatórios, no matching e na ficha de visita (que antes saía com cliente_id
+  nulo justamente para quem tinha visita marcada).
+- A promoção é conservadora de propósito: contato cujo nome ainda é o telefone
+  formatado NÃO vira cadastro, e campo que um humano preencheu NUNCA é
+  sobrescrito por inferência. Nome, em particular, jamais é tocado.
+- Custo de IA passa a ser medido e limitado antes de o volume real chegar.

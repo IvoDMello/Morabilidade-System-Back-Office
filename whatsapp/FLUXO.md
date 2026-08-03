@@ -171,17 +171,39 @@ flowchart LR
     API --> I1["GET /imoveis/interno/:codigo"]
     API --> I2["GET /clientes/interno/por-telefone/:tel"]
     API --> I3["POST /fichas-visita"]
+    API --> I4["POST /clientes/interno/upsert-por-telefone"]
 
     W -->|"mesmo Supabase, schema captacoes"| K["Kanban de captações"]
     W -->|"schema whatsapp"| DB["Contatos · conversas · lembretes · etiquetas"]
     W -->|"Cloud API"| META["Meta / WhatsApp"]
 
     style W fill:#ebeadf,stroke:#585a4f,color:#2d2f28
+    style I4 fill:#e4f0e8,stroke:#2e7d4a,color:#2d2f28
 ```
 
 Tudo em `lib/backoffice-api.ts` é best-effort e devolve `null` em falha — exceto
 `criarFichaVisita`, que lança de propósito: o cron precisa distinguir "não deu
 para gerar" (vira pendência com o motivo exato) de "gerou".
+
+**O fluxo deixou de ser de mão única.** Até 2026-08-03 o CRM só sabia *consultar*
+clientes: quem chegava pelo WhatsApp — que é como quase todo lead chega — ficava
+preso no schema do chat, invisível para `/clientes`, para os relatórios, para o
+matching e para a própria ficha de visita, que saía com `cliente_id` nulo
+justamente para quem tinha visita marcada. O upsert fecha esse ciclo.
+
+A promoção acontece em **evento de compromisso**, nunca por passagem de olho —
+abrir uma conversa não cria cliente. Hoje são três:
+
+| Evento | Onde |
+|---|---|
+| Atendente salva a ficha com categoria ≠ lead | `app/contatos/actions.ts` |
+| Visita vira ficha (1h antes) | `services/ficha-visita.service.ts` |
+| 1ª mensagem cita um imóvel do catálogo | `services/lead-origem.service.ts` |
+
+Duas travas valem para os três: `qualificaParaCliente` recusa contato cujo nome
+é só o telefone formatado (senão a base encheria de "(21) 97195-7245"), e o
+upsert da API **só preenche campo vazio** — nome, tipo e observação que um
+humano escreveu nunca são sobrescritos por inferência.
 
 ---
 
@@ -196,6 +218,12 @@ para gerar" (vira pendência com o motivo exato) de "gerou".
 | 5 | ~~As propostas do copiloto não persistem.~~ | ✅ **Resolvido** — tabela `agent_proposals` (migration 0020) |
 | 6 | **`follow_up_sugerido` não vem com texto.** O cron marca o status; a mensagem só existe se alguém abrir a ficha e clicar. | Aberto — mesma tabela serve, falta ligar no cron |
 | 7 | **Fora do horário e fim de semana: silêncio total.** | Aberto — Nível 3 |
+| 8 | ~~O lead do WhatsApp não existe no sistema.~~ | ✅ **Resolvido** — upsert por telefone + promoção em evento de compromisso |
+| 9 | ~~O código de imóvel que o site injeta na 1ª mensagem é jogado fora.~~ | ✅ **Resolvido** — `lead-origem.service.ts` vincula o imóvel e atribui a origem |
+| 10 | ~~Custo de IA sem teto nem medição.~~ | ✅ **Resolvido** — livro-razão `agent_runs` (0021) + teto horário do caminho automático |
+| 11 | **O copiloto não enxerga o catálogo.** As três ferramentas são de escrita; nenhuma de leitura. Ele não pode responder "tem 2 quartos em Botafogo?". | Aberto — é o próximo teto de qualidade do agente |
+| 12 | **Matching não chega ao chat.** A API tem preferências e matches; a conversa é onde a preferência é dita. | Aberto |
+| 13 | **Ficha assinada não volta pro chat.** Nem mensagem, nem timeline, nem lembrete de pós-visita. | Aberto |
 
 ---
 
@@ -219,6 +247,15 @@ deixa o trabalho pronto.
 sozinho — nem os triviais. O placar em `/pendencias` (taxa de edição e sequência
 de aprovações sem edição) é a régua para promover caso a caso, quando houver
 base. Ele é indicador, não gatilho: nada muda de comportamento sozinho.
+
+**Teto de gasto (2026-08-03).** O gatilho da análise passou a ser o cliente
+digitando — a variável que não controlamos. O caminho automático respeita um
+teto por hora corrida (`AI_MAX_CHAMADAS_HORA`, padrão 60); estourou, a análise é
+pulada e a conversa segue na fila normalmente. **Clique de painel nunca é
+barrado**: quem clicou tem intenção, e negar isso custa mais em confiança do que
+a chamada custa em dinheiro. `AI_MAX_CHAMADAS_HORA=0` desliga o automático sem
+redeploy. A contagem sai de `agent_runs` (migration 0021), que é também a única
+fonte de "quanto a IA custou ontem" — não dá para pôr teto no que não se mede.
 
 ### Nível 2 — executar com veto (reversível, avisa depois)
 

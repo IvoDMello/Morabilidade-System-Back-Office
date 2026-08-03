@@ -35,6 +35,7 @@ import {
   updateContactPropertyRelacao,
 } from "@/services/properties.service";
 import { fetchImovelByCodigo } from "@/lib/backoffice-api";
+import { garantirClienteDoContato } from "@/services/clientes.service";
 import { propertyLinkFormSchema, type PropertyLinkFormValues } from "@/lib/validations/property.schema";
 import { generateConversationSummary, saveConversationSummary } from "@/services/ai.service";
 import type { ID } from "@/types/common";
@@ -93,6 +94,20 @@ export async function updateContactAction(id: ID, values: ContactFormValues) {
       summary: `Status alterado para ${CONTACT_STATUS_LABELS[input.status]}`,
     });
   }
+
+  // Um atendente que salvou a ficha com nome e categoria reais qualificou este
+  // contato — é o momento certo de ele existir no cadastro do sistema, e não
+  // só no chat. Best-effort: nunca atrapalha o salvamento.
+  if (input.category !== "lead") {
+    await garantirClienteDoContato({
+      id,
+      name: input.name,
+      phone: input.phone,
+      clienteId: before?.clienteId ?? null,
+      category: input.category,
+    });
+  }
+
   revalidatePath("/contatos");
   revalidatePath(`/contatos/${id}`);
   revalidatePath("/dashboard");

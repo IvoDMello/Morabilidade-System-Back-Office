@@ -38,6 +38,7 @@ import type {
   CreateAgentProposalInput,
   DecidirAgentProposalInput,
 } from "@/types/agent-proposal";
+import type { AgentRun, AgentRunConsumo, CreateAgentRunInput } from "@/types/agent-run";
 
 /**
  * Contrato que toda fonte de dados (mock ou Supabase) precisa implementar.
@@ -169,5 +170,14 @@ export interface DataSource {
     listEdicoesRecentes(limit?: number): Promise<
       { sugerido: string; enviado: string; decididoEm: string }[]
     >;
+  };
+  /** Livro-razão das chamadas de modelo: mede o custo e sustenta o teto do
+   * caminho automático. Ver `services/ai-budget.service.ts` e a migration 0021. */
+  agentRuns: {
+    registrar(input: CreateAgentRunInput): Promise<void>;
+    /** Consumo das chamadas AUTOMÁTICAS (webhook/cron) desde um instante —
+     * é sobre isto que o teto decide. Clique de painel não entra na conta. */
+    consumoAutomaticoDesde(desdeIso: string): Promise<AgentRunConsumo>;
+    listRecentes(limit?: number): Promise<AgentRun[]>;
   };
 }

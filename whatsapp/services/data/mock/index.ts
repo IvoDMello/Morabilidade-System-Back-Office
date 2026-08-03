@@ -10,6 +10,7 @@ import { mockWhatsapp } from "./whatsapp";
 import { mockPushSubscriptions } from "./push-subscriptions";
 import { mockCorretores } from "./corretores";
 import { mockAgentProposals } from "./agent-proposals";
+import { mockAgentRuns } from "./agent-runs";
 
 export const mockDataSource: DataSource = {
   contacts: mockContacts,
@@ -23,4 +24,5 @@ export const mockDataSource: DataSource = {
   pushSubscriptions: mockPushSubscriptions,
   corretores: mockCorretores,
   agentProposals: mockAgentProposals,
+  agentRuns: mockAgentRuns,
 };

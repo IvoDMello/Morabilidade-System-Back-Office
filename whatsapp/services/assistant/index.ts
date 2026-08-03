@@ -110,6 +110,10 @@ export interface AnaliseDaConversa {
   propostas: AcaoProposta[];
   modelo: string;
   vozHash: string;
+  /** Tokens que esta análise consumiu, para o livro-razão de custo. Quem chama
+   * é que grava, porque só lá se sabe a conversa e a origem (ver
+   * `services/ai-budget.service.ts`). */
+  uso: { inputTokens: number; outputTokens: number } | null;
 }
 
 /**
@@ -124,7 +128,7 @@ export interface AnaliseDaConversa {
  */
 export async function proporAcoesDaConversa(contactId: string): Promise<AnaliseDaConversa> {
   const voz = getVoz();
-  const vazio: AnaliseDaConversa = { propostas: [], modelo: AI_MODEL, vozHash: voz.hash };
+  const vazio: AnaliseDaConversa = { propostas: [], modelo: AI_MODEL, vozHash: voz.hash, uso: null };
 
   const contato = await getContactById(contactId);
   if (!contato) return vazio;
@@ -193,5 +197,13 @@ ${historico || "(sem mensagens)"}`,
     if (tool === "sugerir_resposta" && !args.contato_id) args.contato_id = contato.id;
     propostas.push({ tool, args, resumo: resumirAcao(tool, args, nomePorId) });
   }
-  return { propostas, modelo: AI_MODEL, vozHash: voz.hash };
+  return {
+    propostas,
+    modelo: AI_MODEL,
+    vozHash: voz.hash,
+    uso: {
+      inputTokens: response.usage.input_tokens,
+      outputTokens: response.usage.output_tokens,
+    },
+  };
 }

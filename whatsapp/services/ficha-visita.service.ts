@@ -7,8 +7,10 @@ import {
   sendMessage,
 } from "./whatsapp.service";
 import { getCorretores } from "./corretores.service";
+import { garantirClienteDoContato } from "./clientes.service";
 import { criarFichaVisita, fetchImovelByCodigo, isBackofficeConfigured } from "@/lib/backoffice-api";
 import { normalizePhone } from "@/lib/phone";
+import { extrairCodigoImovel } from "@/lib/imovel-codigo";
 import { formatPhone } from "@/lib/utils";
 import type { VisitaParaFicha } from "@/types/reminder";
 
@@ -33,11 +35,10 @@ import type { VisitaParaFicha } from "@/types/reminder";
 const JANELA_MINUTOS = 90;
 
 /** Código de imóvel no título do lembrete ("Visita — MB-00033") — fallback para
- * visitas criadas antes da coluna `imovel_codigo` existir (migration 0019). */
-export function extrairCodigoImovel(title: string): string | null {
-  const match = /\b([A-Z]{2,4}-\d{3,6})\b/.exec(title.toUpperCase());
-  return match ? match[1] : null;
-}
+ * visitas criadas antes da coluna `imovel_codigo` existir (migration 0019).
+ * O reconhecimento mora em `lib/imovel-codigo`, compartilhado com a leitura das
+ * mensagens recebidas; reexportado aqui porque os testes da ficha o usam. */
+export { extrairCodigoImovel };
 
 /** Números de plantão que recebem as pendências. Aceita 1 ou 2 (ou mais),
  * separados por vírgula; sem a variável, cai no número de alertas. */
@@ -232,11 +233,22 @@ async function garantirFicha(visita: VisitaParaFicha, codigo: string): Promise<{
   const imovel = await fetchImovelByCodigo(codigo);
   if (!imovel?.id) throw new Error(`imóvel ${codigo} não encontrado no sistema.`);
 
+  // Visita marcada é o compromisso mais claro que existe: quem vai ver imóvel
+  // deixou de ser "um número no chat". Até aqui a ficha saía com cliente_id
+  // nulo justamente para essas pessoas — o documento existia, mas não se ligava
+  // a ninguém no cadastro. Best-effort: se não der, a ficha sai como saía antes.
+  const vinculo = await garantirClienteDoContato({
+    id: visita.contactId,
+    name: visita.contactName,
+    phone: visita.contactPhone,
+    clienteId: visita.clienteId,
+  });
+
   const ficha = await criarFichaVisita({
     imovelId: imovel.id,
     visitanteNome: visita.contactName,
     visitanteTelefone: visita.contactPhone,
-    clienteId: visita.clienteId,
+    clienteId: vinculo?.clienteId ?? visita.clienteId,
     corretorId,
   });
 

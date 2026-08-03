@@ -1,6 +1,7 @@
 import { dataSource } from "./data";
 import { getContactByPhone } from "./contacts.service";
 import { proporAcoesDaConversa } from "./assistant";
+import { dentroDoOrcamento, registrarUso } from "./ai-budget.service";
 import { atingiuMeta, META_GRADUACAO } from "./data/agent-proposal-score";
 import type { ID } from "@/types/common";
 import type {
@@ -40,14 +41,16 @@ export interface AnalisarEGuardarInput {
 /**
  * Analisa a conversa e guarda as propostas. Devolve o que ficou pendente.
  *
- * Três guardas, nesta ordem — todas existem para não gastar chamada de modelo à
- * toa nem encher a tela de proposta velha:
+ * Quatro guardas, nesta ordem — todas existem para não gastar chamada de modelo
+ * à toa nem encher a tela de proposta velha:
  *
  *  1. **Dedupe** — a mesma mensagem recebida nunca é analisada duas vezes
  *     (a Meta reentrega webhooks).
  *  2. **Rajada** — se o cliente mandou três mensagens seguidas, só a última
  *     vale a análise; as anteriores desistem sozinhas em vez de disputarem.
- *  3. **Supersessão** — propostas pendentes da conversa viram `superada` antes
+ *  3. **Orçamento** — o caminho automático respeita um teto por hora. O painel
+ *     nunca é barrado: quem clicou tem intenção (ver `ai-budget.service.ts`).
+ *  4. **Supersessão** — propostas pendentes da conversa viram `superada` antes
  *     das novas entrarem, senão o painel mostraria conselho sobre um assunto
  *     que já mudou.
  */
@@ -68,7 +71,31 @@ export async function analisarEGuardar(
     if (ultimaInbound && ultimaInbound.id !== input.triggerMessageId) return [];
   }
 
+  // O teto vale só para quem não tem gente esperando do outro lado.
+  if (input.origem !== "painel") {
+    const orcamento = await dentroDoOrcamento();
+    if (!orcamento.liberado) {
+      console.warn(
+        `[agent-proposals] teto horário de IA atingido (${orcamento.usadas}/${orcamento.teto}); ` +
+          "análise automática pulada — a conversa segue na fila e o botão do painel continua valendo.",
+      );
+      return [];
+    }
+  }
+
   const analise = await proporAcoesDaConversa(input.contactId);
+
+  // Registra o gasto ANTES de decidir se houve proposta: uma análise que não
+  // propôs nada custou exatamente o mesmo que uma que propôs três.
+  await registrarUso({
+    // AgentProposalOrigem ("webhook" | "painel") é subconjunto de AgentRunOrigem.
+    origem: input.origem,
+    recurso: "copiloto-conversa",
+    modelo: analise.modelo,
+    conversationId: conversa.id,
+    uso: analise.uso,
+  });
+
   if (analise.propostas.length === 0) return [];
 
   await dataSource.agentProposals.superarPendentes(conversa.id);

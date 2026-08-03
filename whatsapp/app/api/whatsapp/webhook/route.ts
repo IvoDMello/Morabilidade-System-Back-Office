@@ -6,6 +6,7 @@ import {
   processStatusUpdate,
 } from "@/services/whatsapp.service";
 import { analisarConversaDoTelefone } from "@/services/agent-proposals.service";
+import { registrarRastroDoTelefone } from "@/services/lead-origem.service";
 import { depoisDaResposta } from "@/lib/after-response";
 
 /** A análise do copiloto roda depois da resposta (ver `depoisDaResposta`), mas
@@ -38,11 +39,17 @@ export async function POST(request: Request) {
   for (const event of events) {
     if (event.type === "message") {
       const gravada = await processIncomingMessage(event.data);
+      const { fromPhone } = event.data;
+
+      // O rastro que a própria mensagem carrega: código de imóvel do botão do
+      // site vira vínculo e origem do lead. Vem antes da análise porque é
+      // barato, determinístico e enriquece o contexto que ela vai ler.
+      depoisDaResposta(() => registrarRastroDoTelefone(fromPhone, event.data.body));
+
       // Nível 1 — o agente chega antes do humano: a análise dispara agora, e o
       // rascunho já espera pronto quando alguém abrir a conversa. Fora do
       // caminho da resposta, senão a Meta reentrega por timeout. O dedupe por
       // mensagem vive no service, então uma reentrega não analisa duas vezes.
-      const { fromPhone } = event.data;
       depoisDaResposta(() => analisarConversaDoTelefone(fromPhone, gravada.id));
     } else if (event.type === "echo") {
       await processEchoMessage(event.data);
