@@ -66,6 +66,7 @@ export interface DataSource {
   reminders: {
     listByContact(contactId: ID): Promise<ContactReminder[]>;
     listAll(filters?: ReminderFilters): Promise<ReminderWithContact[]>;
+    getById(id: ID): Promise<ContactReminder | null>;
     create(input: CreateReminderInput): Promise<ContactReminder>;
     update(id: ID, input: UpdateReminderInput): Promise<ContactReminder>;
     remove(id: ID): Promise<void>;

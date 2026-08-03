@@ -213,7 +213,7 @@ export const seedNotes: ContactNote[] = [
 // atribui corretor nem tem visita com ficha gerada).
 const seedRemindersData: Omit<
   ContactReminder,
-  "corretorId" | "imovelCodigo" | "fichaVisitaId" | "fichaNotificadaEm"
+  "corretorId" | "imovelCodigo" | "fichaVisitaId" | "fichaNotificadaEm" | "googleCalendarEventId"
 >[] = [
   {
     id: "r1",
@@ -340,6 +340,7 @@ const seedVisitasFicha: ContactReminder[] = [
     imovelCodigo: "MB-00033",
     fichaVisitaId: null,
     fichaNotificadaEm: null,
+    googleCalendarEventId: null,
     createdAt: subDays(now, 2).toISOString(),
     updatedAt: subDays(now, 2).toISOString(),
   },
@@ -356,6 +357,7 @@ const seedVisitasFicha: ContactReminder[] = [
     imovelCodigo: null,
     fichaVisitaId: null,
     fichaNotificadaEm: null,
+    googleCalendarEventId: null,
     createdAt: subDays(now, 1).toISOString(),
     updatedAt: subDays(now, 1).toISOString(),
   },
@@ -373,6 +375,7 @@ const seedVisitasFicha: ContactReminder[] = [
     imovelCodigo: null,
     fichaVisitaId: null,
     fichaNotificadaEm: null,
+    googleCalendarEventId: null,
     createdAt: subDays(now, 3).toISOString(),
     updatedAt: subDays(now, 3).toISOString(),
   },
@@ -389,6 +392,7 @@ const seedVisitasFicha: ContactReminder[] = [
     imovelCodigo: "MB-00099",
     fichaVisitaId: null,
     fichaNotificadaEm: null,
+    googleCalendarEventId: null,
     createdAt: subDays(now, 1).toISOString(),
     updatedAt: subDays(now, 1).toISOString(),
   },
@@ -401,6 +405,7 @@ export const seedReminders: ContactReminder[] = [
     imovelCodigo: null,
     fichaVisitaId: null,
     fichaNotificadaEm: null,
+    googleCalendarEventId: null,
   })),
   ...seedVisitasFicha,
 ];

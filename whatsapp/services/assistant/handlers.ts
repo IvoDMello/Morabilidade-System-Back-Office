@@ -31,6 +31,17 @@ async function executarAgendarVisita(rawArgs: unknown): Promise<string> {
   // usa para resolver o imóvel na API principal (ver ficha-visita.service.ts).
   const codigoImovel = args.imovel_codigo?.trim().toUpperCase() || null;
   const tituloImovel = codigoImovel ? ` — ${codigoImovel}` : "";
+
+  // Cria o evento antes do lembrete pra já guardar o ID do evento junto —
+  // é o que permite apagar o evento quando o lembrete for excluído do CRM.
+  const googleCalendarEventId = await criarEventoDeVisita({
+    contactName: contato.name,
+    contactPhone: contato.phone,
+    when: quando,
+    imovelCodigo: codigoImovel,
+    observacao: args.observacao ?? null,
+  });
+
   await createReminder({
     contactId: contato.id,
     title: `Visita${tituloImovel}`,
@@ -39,14 +50,7 @@ async function executarAgendarVisita(rawArgs: unknown): Promise<string> {
     createdBy: await getCurrentUserName(),
     corretorId,
     imovelCodigo: codigoImovel,
-  });
-
-  await criarEventoDeVisita({
-    contactName: contato.name,
-    contactPhone: contato.phone,
-    when: quando,
-    imovelCodigo: codigoImovel,
-    observacao: args.observacao ?? null,
+    googleCalendarEventId,
   });
 
   return `Visita agendada com ${contato.name}.`;

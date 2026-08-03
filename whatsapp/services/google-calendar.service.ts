@@ -28,10 +28,12 @@ interface CriarEventoVisitaInput {
  * SECRET/REFRESH_TOKEN (OAuth autorizado uma vez, escopo calendar.events).
  * Best-effort: sem as credenciais configuradas, ou se a API falhar, a visita
  * continua criada normalmente no CRM — só não aparece na Agenda da conta.
+ * Retorna o ID do evento criado (guardado no lembrete) para permitir apagar
+ * o evento depois; null se não foi criado.
  */
-export async function criarEventoDeVisita(input: CriarEventoVisitaInput): Promise<void> {
+export async function criarEventoDeVisita(input: CriarEventoVisitaInput): Promise<string | null> {
   const calendar = getCalendarClient();
-  if (!calendar) return;
+  if (!calendar) return null;
 
   const titulo = input.imovelCodigo ? `Visita — ${input.imovelCodigo}` : "Visita";
   const descricao = [`Contato: ${input.contactName} (${input.contactPhone})`, input.observacao ? `Obs: ${input.observacao}` : null]
@@ -41,7 +43,7 @@ export async function criarEventoDeVisita(input: CriarEventoVisitaInput): Promis
   const fim = new Date(input.when.getTime() + DURACAO_VISITA_MINUTOS * 60 * 1000);
 
   try {
-    await calendar.events.insert({
+    const res = await calendar.events.insert({
       calendarId: "primary",
       requestBody: {
         summary: titulo,
@@ -50,7 +52,25 @@ export async function criarEventoDeVisita(input: CriarEventoVisitaInput): Promis
         end: { dateTime: fim.toISOString(), timeZone: FUSO_VISITA },
       },
     });
+    return res.data.id ?? null;
   } catch (err) {
     console.error("[google-calendar] falha ao criar evento da visita", err);
+    return null;
+  }
+}
+
+/**
+ * Apaga o evento espelhado quando o lembrete correspondente é excluído do
+ * CRM. Best-effort: sem credenciais, evento já removido manualmente, ou
+ * falha na API, não impede a exclusão do lembrete — só loga o problema.
+ */
+export async function apagarEventoDeVisita(eventId: string): Promise<void> {
+  const calendar = getCalendarClient();
+  if (!calendar) return;
+
+  try {
+    await calendar.events.delete({ calendarId: "primary", eventId });
+  } catch (err) {
+    console.error("[google-calendar] falha ao apagar evento da visita", err);
   }
 }

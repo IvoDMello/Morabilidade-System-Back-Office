@@ -21,8 +21,10 @@ import {
   completeReminder,
   createReminder,
   deleteReminder,
+  getReminderById,
   updateReminder,
 } from "@/services/reminders.service";
+import { apagarEventoDeVisita } from "@/services/google-calendar.service";
 import { addTagToContact, createTag, getTags, removeTagFromContact } from "@/services/tags.service";
 import { getCorretores } from "@/services/corretores.service";
 import { logEvent } from "@/services/events.service";
@@ -187,7 +189,11 @@ export async function cancelReminderAction(contactId: ID, reminderId: ID) {
 }
 
 export async function deleteReminderAction(contactId: ID, reminderId: ID) {
+  const reminder = await getReminderById(reminderId);
   await deleteReminder(reminderId);
+  if (reminder?.googleCalendarEventId) {
+    await apagarEventoDeVisita(reminder.googleCalendarEventId);
+  }
   revalidatePath(`/contatos/${contactId}`);
   revalidatePath("/pendencias");
   revalidatePath("/dashboard");
