@@ -20,7 +20,7 @@ export function ConversationThreadHeader({
   actions?: React.ReactNode;
 }) {
   return (
-    <div className="sticky top-0 z-10 flex items-center gap-3 border-b bg-card px-4 py-3">
+    <div className="sticky top-0 z-10 flex items-center gap-3 border-b bg-card px-4 py-3 max-md:pt-[calc(0.75rem+env(safe-area-inset-top))]">
       {/* Alvo de 40px em volta da seta: é o controle mais usado no celular
           (sair da conversa) e o ícone de 20px sozinho não dava onde tocar. */}
       <Link
