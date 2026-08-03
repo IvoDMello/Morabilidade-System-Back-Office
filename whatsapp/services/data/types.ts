@@ -23,6 +23,7 @@ import type { PropertyRelation } from "@/constants/property-relations";
 import type { Corretor } from "@/types/corretor";
 import type {
   CreateWhatsAppMessageInput,
+  FailedOutboundMessage,
   WhatsAppConversation,
   WhatsAppConversationSummary,
   WhatsAppMessage,
@@ -110,7 +111,14 @@ export interface DataSource {
       contactId: ID,
       waPhoneNumber: string,
     ): Promise<WhatsAppConversation>;
+    getConversationById(conversationId: ID): Promise<WhatsAppConversation | null>;
     listMessages(conversationId: ID): Promise<WhatsAppMessage[]>;
+    /** Devolve a conversa para `aguardando_resposta` — usada quando o envio que
+     * a tirou da fila falhou. Ver `processStatusUpdate`. */
+    reopenConversationAsAwaiting(conversationId: ID): Promise<void>;
+    /** Envios que a Meta recusou, mais recentes primeiro, com o contato junto.
+     * Alimenta a aba "Falhas" de /pendencias. */
+    listFailedOutbound(sinceIso: string, limit?: number): Promise<FailedOutboundMessage[]>;
     searchMessages(query: string, limit?: number): Promise<WhatsAppMessageSearchResult[]>;
     createMessage(input: CreateWhatsAppMessageInput): Promise<WhatsAppMessage>;
     findMessageByWaId(waMessageId: string): Promise<WhatsAppMessage | null>;

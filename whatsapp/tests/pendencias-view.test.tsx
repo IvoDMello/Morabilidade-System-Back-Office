@@ -7,6 +7,7 @@ import { PendenciasView } from "@/features/pendencias/components/pendencias-view
 import type { PendingConversationItem, PendingQueue } from "@/services/whatsapp.service";
 import type { ReminderWithContact } from "@/types/reminder";
 import type { Contact } from "@/types/contact";
+import type { FailedOutboundMessage } from "@/types/whatsapp";
 
 expect.extend(toHaveNoViolations);
 
@@ -97,6 +98,7 @@ function montar() {
       queue={QUEUE}
       reminders={GRUPOS}
       contacts={CONTATOS}
+      falhas={[]}
       defaultTab="aguardando"
     />,
   );
@@ -135,6 +137,7 @@ describe("Central de pendências unificada", () => {
         queue={QUEUE}
         reminders={GRUPOS}
         contacts={CONTATOS}
+        falhas={[]}
         defaultTab="lembretes"
       />,
     );
@@ -171,5 +174,72 @@ describe("Central de pendências unificada", () => {
 
     expect(await screen.findByText(/sem resposta há 2 dias/)).toBeInTheDocument();
     expect(screen.getByText(/Não foi possível revisar agora/)).toBeInTheDocument();
+  });
+});
+
+describe("aba de envios não entregues", () => {
+  afterEach(cleanup);
+
+  const FALHA: FailedOutboundMessage = {
+    id: "msg-falha",
+    conversationId: "conv-1",
+    contactId: "c1",
+    contactName: "Marina Alves",
+    contactPhone: "5521970005555",
+    body: "Segue o link da ficha",
+    errorMessage: "Message failed to send because more than 24 hours have passed",
+    createdBy: "Leandro",
+    waTimestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+  };
+
+  function montarComFalha(falhas: FailedOutboundMessage[]) {
+    return render(
+      <PendenciasView
+        queue={QUEUE}
+        reminders={GRUPOS}
+        contacts={CONTATOS}
+        falhas={falhas}
+        defaultTab="aguardando"
+      />,
+    );
+  }
+
+  it("a aba só existe quando há falha", () => {
+    montarComFalha([]);
+    // Uma aba permanentemente zerada ensina a ignorá-la.
+    expect(screen.queryByRole("tab", { name: /Não entregues/ })).not.toBeInTheDocument();
+  });
+
+  it("mostra o motivo da recusa, que antes não aparecia em lugar nenhum", async () => {
+    montarComFalha([FALHA]);
+
+    fireEvent.click(screen.getByRole("tab", { name: /Não entregues \(1\)/ }));
+
+    expect(await screen.findByText("Marina Alves")).toBeInTheDocument();
+    // O texto que falhou: é o que a pessoa precisa para reenviar.
+    expect(screen.getByText("Segue o link da ficha")).toBeInTheDocument();
+    expect(screen.getByText(/more than 24 hours have passed/)).toBeInTheDocument();
+  });
+
+  it("sem motivo da Meta, diz isso em vez de deixar em branco", async () => {
+    montarComFalha([{ ...FALHA, errorMessage: null }]);
+
+    fireEvent.click(screen.getByRole("tab", { name: /Não entregues/ }));
+
+    expect(await screen.findByText(/a Meta não informou o motivo/)).toBeInTheDocument();
+  });
+
+  it("deep-link para a aba sem falhas cai na fila principal", async () => {
+    render(
+      <PendenciasView
+        queue={QUEUE}
+        reminders={GRUPOS}
+        contacts={CONTATOS}
+        falhas={[]}
+        defaultTab="falhas"
+      />,
+    );
+    // Cairia numa tela vazia sem nenhuma aba marcada.
+    expect(await screen.findByText("Ana Prado")).toBeInTheDocument();
   });
 });

@@ -1,7 +1,13 @@
 /** Abas da central de pendências. Fica fora do componente porque a página
  * (Server Component) precisa validar o `?tab=` da URL — exports de um módulo
  * "use client" viram referências de cliente e não podem ser chamados no servidor. */
-export const PENDENCIAS_TABS = ["aguardando", "lembretes", "followup", "todas"] as const;
+export const PENDENCIAS_TABS = [
+  "aguardando",
+  "falhas",
+  "lembretes",
+  "followup",
+  "todas",
+] as const;
 
 export type PendenciasTab = (typeof PENDENCIAS_TABS)[number];
 

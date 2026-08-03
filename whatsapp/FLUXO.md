@@ -87,6 +87,15 @@ O botão "Adiar" grava `follow_up_snoozed_until = +1 dia`. Ele **não muda o
 status** — só tira a conversa da fila. Qualquer mensagem nova, de qualquer lado,
 cancela o adiamento.
 
+**Exceção ao "o estado vive no trigger" (2026-08-03):** o trigger dispara no
+*insert* da mensagem, e a mensagem nasce como `sent` — antes de a Meta confirmar
+qualquer coisa. Quando o status vira `failed` depois, `processStatusUpdate`
+devolve a conversa para `aguardando_resposta`. Sem isso, um envio que falhava
+punha a conversa em `respondida` e ela **sumia das pendências com o cliente sem
+ter recebido nada** — falhar no envio deixava o sistema num estado melhor do que
+não ter respondido. Só reabre a partir de `respondida`: `encerrada` foi decisão
+humana, e `follow_up_sugerido` já está sinalizada em outra fila.
+
 **Limitação estrutural:** este estado descreve *quem falou por último*, não *em
 que ponto do processo a conversa está*. Não existe nenhum campo dizendo "captação
 na etapa 2 de 5" ou "esperando as fotos". Por isso o copiloto reconstrói o
@@ -224,6 +233,11 @@ humano escreveu nunca são sobrescritos por inferência.
 | 11 | **O copiloto não enxerga o catálogo.** As três ferramentas são de escrita; nenhuma de leitura. Ele não pode responder "tem 2 quartos em Botafogo?". | Aberto — é o próximo teto de qualidade do agente |
 | 12 | **Matching não chega ao chat.** A API tem preferências e matches; a conversa é onde a preferência é dita. | Aberto |
 | 13 | **Ficha assinada não volta pro chat.** Nem mensagem, nem timeline, nem lembrete de pós-visita. | Aberto |
+| 14 | ~~Envio que falha esconde a pendência.~~ | ✅ **Resolvido** — a conversa volta para `aguardando_resposta` |
+| 15 | ~~`failed` e o motivo da Meta nunca apareciam.~~ | ✅ **Resolvido** — aba "Não entregues" em `/pendencias` |
+| 16 | ~~Alerta que falha marca como alertado.~~ | ✅ **Resolvido** — `markAlerted` saiu do `finally` |
+| 17 | **Assinatura inválida perde tudo em silêncio.** `WHATSAPP_APP_SECRET` errado → 401 em toda mensagem, Meta desiste, nenhum registro. | Aberto — próximo da fila de perdas |
+| 18 | **Grupos não passam pela Cloud API** e o **histórico de ~6 meses da coexistência não é importado.** | Limite da Meta / não implementado |
 
 ---
 

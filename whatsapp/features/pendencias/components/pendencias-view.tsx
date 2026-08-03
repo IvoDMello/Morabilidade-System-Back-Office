@@ -9,9 +9,11 @@ import { RemindersFilters } from "@/features/reminders-hub/components/reminders-
 import { RemindersGroup } from "@/features/reminders-hub/components/reminders-group";
 import { NovoLembreteButton } from "@/features/reminders-hub/components/novo-lembrete-button";
 import { PendingConversationCard } from "./pending-conversation-card";
+import { FailedMessageCard } from "./failed-message-card";
 import { AiRevisaoCard } from "./ai-revisao-card";
 import { analisarComIaAction, type AnaliseIaResult } from "@/app/pendencias/actions";
 import type { PendingConversationItem, PendingQueue } from "@/services/whatsapp.service";
+import type { FailedOutboundMessage } from "@/types/whatsapp";
 import type { ReminderGroups } from "@/features/reminders-hub/lib/partition-reminders";
 import type { PendenciasTab } from "@/features/pendencias/lib/tabs";
 import type { Contact } from "@/types/contact";
@@ -51,6 +53,8 @@ interface PendenciasViewProps {
   queue: PendingQueue;
   reminders: ReminderGroups;
   contacts: Contact[];
+  /** Envios recusados pela Meta nos últimos 7 dias. */
+  falhas: FailedOutboundMessage[];
   defaultTab: PendenciasTab;
 }
 
@@ -64,8 +68,18 @@ interface PendenciasViewProps {
  * pode custar uma ida ao servidor. O `defaultTab` vem da URL para que links
  * diretos (e o redirect de /lembretes) caiam na aba certa.
  */
-export function PendenciasView({ queue, reminders, contacts, defaultTab }: PendenciasViewProps) {
-  const [tab, setTab] = useState<PendenciasTab>(defaultTab);
+export function PendenciasView({
+  queue,
+  reminders,
+  contacts,
+  falhas,
+  defaultTab,
+}: PendenciasViewProps) {
+  // Deep-link para uma aba que sumiu (sem falhas hoje) cairia numa tela vazia
+  // sem nenhuma aba marcada — melhor voltar para a fila principal.
+  const [tab, setTab] = useState<PendenciasTab>(
+    defaultTab === "falhas" && falhas.length === 0 ? "aguardando" : defaultTab,
+  );
   const [analise, setAnalise] = useState<AnaliseIaResult | null>(null);
   const [isAnalisando, startAnalise] = useTransition();
 
@@ -96,6 +110,14 @@ export function PendenciasView({ queue, reminders, contacts, defaultTab }: Pende
             <TabsTrigger value="aguardando" className="shrink-0">
               Aguardando ({queue.aguardandoResposta.length})
             </TabsTrigger>
+            {/* Só aparece quando há falha. Uma aba permanentemente zerada
+                ensina a ignorá-la, e aí ela não serve pra nada no dia em que
+                encher. */}
+            {falhas.length > 0 && (
+              <TabsTrigger value="falhas" className="shrink-0 text-ember">
+                Não entregues ({falhas.length})
+              </TabsTrigger>
+            )}
             <TabsTrigger value="lembretes" className="shrink-0">
               Lembretes ({reminders.overdue.length + reminders.today.length})
             </TabsTrigger>
@@ -115,6 +137,18 @@ export function PendenciasView({ queue, reminders, contacts, defaultTab }: Pende
             emptyTitle="Nenhuma conversa aguardando resposta"
             suggestions={analise?.encerramentos}
           />
+        </TabsContent>
+
+        <TabsContent value="falhas" className="mt-3">
+          {falhas.length === 0 ? (
+            <EmptyState icon={CheckCircle2} title="Nenhum envio recusado nos últimos 7 dias" />
+          ) : (
+            <ul className="flex flex-col gap-3">
+              {falhas.map((falha) => (
+                <FailedMessageCard key={falha.id} item={falha} />
+              ))}
+            </ul>
+          )}
         </TabsContent>
 
         <TabsContent value="lembretes" className="mt-3 flex flex-col gap-4">
