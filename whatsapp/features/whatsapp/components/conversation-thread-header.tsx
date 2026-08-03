@@ -21,7 +21,13 @@ export function ConversationThreadHeader({
 }) {
   return (
     <div className="sticky top-0 z-10 flex items-center gap-3 border-b bg-card px-4 py-3">
-      <Link href="/" className="shrink-0 md:hidden" aria-label="Voltar para a lista">
+      {/* Alvo de 40px em volta da seta: é o controle mais usado no celular
+          (sair da conversa) e o ícone de 20px sozinho não dava onde tocar. */}
+      <Link
+        href="/"
+        className="-ml-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-foreground transition-colors hover:bg-veil/6 md:hidden"
+        aria-label="Voltar para a lista"
+      >
         <ArrowLeft className="h-5 w-5" />
       </Link>
       <AvatarInitials name={contact.name} size="md" />

@@ -53,6 +53,11 @@ export async function POST(request: Request) {
 
   revalidatePath("/");
   revalidatePath("/contatos");
+  // A visão geral é pré-renderizada: sem estes dois, "Conversas aguardando"
+  // ficaria congelada até alguém mexer num contato. Mensagem que chega muda a
+  // fila, e a fila é o que essas telas mostram.
+  revalidatePath("/dashboard");
+  revalidatePath("/pendencias");
 
   // Responder 200 rápido evita retry-storm da Meta mesmo que algo interno falhe.
   return new Response("OK", { status: 200 });

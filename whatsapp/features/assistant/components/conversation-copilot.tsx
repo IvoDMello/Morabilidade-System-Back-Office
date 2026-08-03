@@ -1,22 +1,14 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import {
-  CalendarClock,
-  Check,
-  ExternalLink,
-  Home,
-  MessageCircle,
-  Plus,
-  Sparkles,
-  X,
-} from "lucide-react";
+import { ExternalLink, Plus, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ProposalCard, type PropostaStatus } from "./proposal-card";
 import {
   Sheet,
   SheetContent,
@@ -32,34 +24,18 @@ import {
   executarAcaoDaConversaAction,
   type AnaliseResultado,
 } from "@/app/conversas/copilot-actions";
-import type { ToolName } from "@/services/assistant/tools";
 import type { CaptacaoResumo } from "@/services/captacoes.service";
 import type { AgentProposal } from "@/types/agent-proposal";
 
-type ItemStatus =
-  | { kind: "pending" }
-  | { kind: "done"; message: string }
-  | { kind: "error"; message: string }
-  | { kind: "dismissed" };
-
 /** O `status` do servidor é sempre "pendente" aqui (só pendentes chegam à tela),
- * então trocamos por um estado de UI mais rico — que também cobre "executando"
- * e "deu erro", situações que não existem no banco. */
+ * então trocamos pelo estado de UI do cartão compartilhado. */
 interface Item extends Omit<AgentProposal, "status"> {
-  status: ItemStatus;
-  /** Texto editável da resposta sugerida (só em sugerir_resposta). */
-  textoEditado?: string;
+  status: PropostaStatus;
 }
 
 function paraItens(propostas: AgentProposal[]): Item[] {
   return propostas.map((p) => ({ ...p, status: { kind: "pending" } }));
 }
-
-const TOOL_ICON: Record<ToolName, typeof CalendarClock> = {
-  agendar_visita: CalendarClock,
-  criar_captacao: Home,
-  sugerir_resposta: MessageCircle,
-};
 
 interface ConversationCopilotProps {
   contactId: string;
@@ -105,12 +81,9 @@ export function ConversationCopilot({
     });
   }
 
-  function confirmar(idx: number) {
+  function confirmar(idx: number, textoFinal: string | null) {
     const item = items[idx];
-    const args =
-      item.tool === "sugerir_resposta" && item.textoEditado !== undefined
-        ? { ...item.args, texto: item.textoEditado }
-        : item.args;
+    const args = textoFinal === null ? item.args : { ...item.args, texto: textoFinal };
     setExecutingIdx(idx);
     // `textoSugerido` vai junto para o servidor saber se o texto foi editado —
     // é essa diferença que ensina a voz da casa ao agente.
@@ -200,61 +173,18 @@ export function ConversationCopilot({
               Você pode editar a resposta antes de enviar. O que você reescrever ensina o
               copiloto a escrever como a Morabilidade escreve.
             </p>
-            {items.map((item, idx) => {
-              if (item.status.kind === "dismissed") return null;
-              const Icon = TOOL_ICON[item.tool] ?? Sparkles;
-              const isResposta = item.tool === "sugerir_resposta";
-              return (
-                <div key={item.id} className="flex flex-col gap-2 rounded-lg border bg-card p-3">
-                  <div className="flex items-start gap-2">
-                    <Icon className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                    <p className="min-w-0 flex-1 text-sm">{item.resumo}</p>
-                    {(item.status.kind === "pending" || item.status.kind === "error") && (
-                      <Button
-                        size="icon-sm"
-                        variant="ghost"
-                        onClick={() => dispensar(idx)}
-                        aria-label="Dispensar"
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </Button>
-                    )}
-                  </div>
-
-                  {isResposta && item.status.kind !== "done" && (
-                    <Textarea
-                      value={item.textoEditado ?? String(item.args.texto ?? "")}
-                      onChange={(e) =>
-                        setItems((prev) =>
-                          prev.map((it, i) => (i === idx ? { ...it, textoEditado: e.target.value } : it)),
-                        )
-                      }
-                      rows={4}
-                      className="text-sm"
-                      aria-label="Texto da resposta sugerida"
-                    />
-                  )}
-                  {!isResposta && item.status.kind !== "done" && (
-                    <DetalhesArgs args={item.args} />
-                  )}
-
-                  {item.status.kind === "done" && (
-                    <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                      ✓ {item.status.message}
-                    </p>
-                  )}
-                  {item.status.kind === "error" && (
-                    <p className="text-xs font-medium text-destructive">{item.status.message}</p>
-                  )}
-                  {(item.status.kind === "pending" || item.status.kind === "error") && (
-                    <Button size="sm" onClick={() => confirmar(idx)} loading={executingIdx === idx}>
-                      <Check className="h-3.5 w-3.5" />
-                      {isResposta ? "Enviar resposta" : "Confirmar"}
-                    </Button>
-                  )}
-                </div>
-              );
-            })}
+            {items.map((item, idx) =>
+              item.status.kind === "dismissed" ? null : (
+                <ProposalCard
+                  key={item.id}
+                  proposta={item}
+                  status={item.status}
+                  isExecuting={executingIdx === idx}
+                  onConfirm={(textoFinal) => confirmar(idx, textoFinal)}
+                  onDismiss={() => dispensar(idx)}
+                />
+              ),
+            )}
           </div>
         )}
 
@@ -320,23 +250,6 @@ function CaptacaoCard({ captacao }: { captacao: CaptacaoResumo }) {
         <p className="mt-0.5 text-xs text-muted-foreground">{detalhes.join(" · ")}</p>
       )}
     </div>
-  );
-}
-
-/** Campos propostos pela IA (fora a resposta), visíveis antes do confirmar —
- * o operador precisa ver o que vai ser gravado, não só um resumo. */
-function DetalhesArgs({ args }: { args: Record<string, unknown> }) {
-  const entradas = Object.entries(args).filter(([, v]) => v !== undefined && v !== null && v !== "");
-  if (entradas.length === 0) return null;
-  return (
-    <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 rounded-md bg-muted/50 px-2.5 py-1.5 text-xs">
-      {entradas.map(([k, v]) => (
-        <div key={k} className="contents">
-          <dt className="text-muted-foreground">{k.replace(/_/g, " ")}</dt>
-          <dd className="break-words">{String(v)}</dd>
-        </div>
-      ))}
-    </dl>
   );
 }
 

@@ -127,7 +127,7 @@ export async function createReminderAction(contactId: ID, values: ReminderFormVa
     summary: `Lembrete criado: ${reminder.title}`,
   });
   revalidatePath(`/contatos/${contactId}`);
-  revalidatePath("/lembretes");
+  revalidatePath("/pendencias");
   revalidatePath("/dashboard");
 }
 
@@ -143,7 +143,7 @@ export async function updateReminderAction(
     reminderAt: toReminderAtIso(parsed),
   });
   revalidatePath(`/contatos/${contactId}`);
-  revalidatePath("/lembretes");
+  revalidatePath("/pendencias");
   revalidatePath("/dashboard");
 }
 
@@ -155,7 +155,7 @@ export async function completeReminderAction(contactId: ID, reminderId: ID) {
     summary: `Lembrete concluído: ${reminder.title}`,
   });
   revalidatePath(`/contatos/${contactId}`);
-  revalidatePath("/lembretes");
+  revalidatePath("/pendencias");
   revalidatePath("/dashboard");
 }
 
@@ -167,14 +167,14 @@ export async function cancelReminderAction(contactId: ID, reminderId: ID) {
     summary: `Lembrete cancelado: ${reminder.title}`,
   });
   revalidatePath(`/contatos/${contactId}`);
-  revalidatePath("/lembretes");
+  revalidatePath("/pendencias");
   revalidatePath("/dashboard");
 }
 
 export async function deleteReminderAction(contactId: ID, reminderId: ID) {
   await deleteReminder(reminderId);
   revalidatePath(`/contatos/${contactId}`);
-  revalidatePath("/lembretes");
+  revalidatePath("/pendencias");
   revalidatePath("/dashboard");
 }
 

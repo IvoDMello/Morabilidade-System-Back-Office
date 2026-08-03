@@ -1,8 +1,25 @@
 # Painel CRM (WhatsApp)
 
 CRM de atendimento via WhatsApp para operação imobiliária: contatos (proprietários,
-clientes, locatários, leads, parceiros), anotações permanentes, lembretes, central
-de lembretes, etiquetas e conversas de WhatsApp.
+clientes, locatários, leads, parceiros), anotações permanentes, lembretes,
+etiquetas e conversas de WhatsApp.
+
+A tela de entrada é **Conversas** (`/`). O que falta fazer vive todo em
+**Pendências** (`/pendencias`): conversas aguardando resposta, lembretes
+(vencidos/hoje/próximos) e follow-ups sugeridos, na mesma barra de abas — antes
+eram duas seções separadas no menu que respondiam à mesma pergunta. A rota
+antiga `/lembretes` continua de pé como redirect para a aba de lembretes.
+
+A **Visão geral** (`/dashboard`) é leitura, não trabalho: cada indicador é um
+link para a tela que resolve aquilo. Ela é pré-renderizada, então quem muda a
+fila precisa avisá-la — o webhook, o cron de follow-up e as ações de conversa
+chamam `revalidatePath("/dashboard")`. Esquecer isso congela os números.
+
+Na **ficha do contato** (`/contatos/[id]`), dados e atividade convivem lado a
+lado no desktop — é o ponto forte da tela. No celular não cabem, e empilhar
+punia quem só queria a conversa: viram duas abas
+(`features/contacts/components/contact-panels.tsx`), com Atividade na frente.
+O alternador só existe abaixo de `lg`; no desktop não há decisão a tomar.
 
 ## Integração ao monorepo (2026-07-25)
 
@@ -274,6 +291,14 @@ O prompt conhece as captações já ligadas ao telefone, então não propõe
 duplicata do mesmo imóvel. A execução revalida tudo no servidor
 (`services/assistant/handlers.ts`) — a proposta do modelo nunca é confiada.
 
+O cartão de confirmação é um só, em
+`features/assistant/components/proposal-card.tsx`, usado tanto aqui quanto no
+console do `/assistente`. Eram cópias que divergiram: só o copiloto mostrava os
+campos propostos e deixava editar a resposta, então dava para confirmar uma
+visita pelo `/assistente` sem ver a data que o modelo entendeu. Tela de
+confirmação com dois comportamentos é risco — o operador aprende um jeito de
+conferir e encontra outro no dia seguinte.
+
 Configure `CAPTACOES_BOARD_URL` para o painel mostrar o atalho "Abrir board de
 captações". O resto funciona sem nenhuma variável nova (usa o mesmo Supabase,
 schema `captacoes`).
@@ -403,8 +428,10 @@ normalmente.
 ## Estrutura do projeto
 
 ```
-app/            rotas (App Router): dashboard, contatos, conversas, lembretes,
-                webhook do WhatsApp (app/api/whatsapp/webhook), server actions
+app/            rotas (App Router): conversas (/), pendencias, contatos,
+                assistente, dashboard, webhook do WhatsApp
+                (app/api/whatsapp/webhook), server actions
+                /lembretes é redirect para /pendencias?tab=lembretes
 components/     ui/ (shadcn), layout/ (sidebar, topbar), shared/ (genéricos)
 features/       componentes específicos de cada domínio (dashboard, contacts,
                 reminders-hub, whatsapp)

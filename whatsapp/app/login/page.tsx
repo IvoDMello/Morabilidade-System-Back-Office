@@ -49,7 +49,9 @@ export default function LoginPage() {
     }
     // Recarga real (não navegação interna): garante que o cookie de sessão
     // recém-gravado seja enviado ao middleware na 1ª tentativa.
-    window.location.assign("/dashboard");
+    // Entra direto nas conversas — é o que a equipe abre para trabalhar; a
+    // visão geral é consulta, não ponto de partida.
+    window.location.assign("/");
   }
 
   return (
