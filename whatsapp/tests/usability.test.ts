@@ -95,22 +95,30 @@ describe("usabilidade: o projeto foi carregado", () => {
   });
 });
 
-describe("acessibilidade mobile: zoom nunca é bloqueado", () => {
-  it("nenhum viewport desativa o pinch-zoom", () => {
-    const offenders: string[] = [];
-    const patterns = [
-      /userScalable\s*:\s*false/,
-      /maximumScale\s*:\s*1(\.0)?\b/,
-      /user-scalable\s*=\s*no/i,
-      /maximum-scale\s*=\s*1(\.0)?\b/,
-    ];
-    for (const file of FILES) {
-      for (const pattern of patterns) {
-        const m = pattern.exec(file.text);
-        if (m) offenders.push(`${file.path}:${lineOf(file.text, m.index)} — ${m[0]}`);
-      }
-    }
-    expect(offenders, `Bloquear zoom fere WCAG 1.4.4:\n${offenders.join("\n")}`).toEqual([]);
+/** Decisão de produto: o zoom do navegador fica travado (o pinch acidental
+ * durante a rolagem torcia a tela no celular). Vai contra a WCAG 1.4.4, então
+ * o teste existe para que a trava seja *inteira* — meta viewport + touch-action
+ * + os eventos de gesto do Safari. Meia trava é o pior dos mundos: incomoda
+ * quem precisa ampliar e ainda deixa o pinch passar em parte dos aparelhos. */
+describe("mobile: zoom do navegador travado", () => {
+  const layout = FILES.find((f) => f.path === join("app", "layout.tsx"));
+
+  it("o viewport da raiz desativa o pinch-zoom", () => {
+    expect(layout?.text).toMatch(/userScalable\s*:\s*false/);
+    expect(layout?.text).toMatch(/maximumScale\s*:\s*1(\.0)?\b/);
+  });
+
+  it("o duplo-toque também é travado, via touch-action na raiz", () => {
+    const css = readFileSync(join(ROOT, "app", "globals.css"), "utf8");
+    expect(css).toMatch(/touch-action:\s*pan-x pan-y/);
+  });
+
+  it("o Safari do iOS é coberto — ele ignora user-scalable fora do modo PWA", () => {
+    expect(layout?.text).toMatch(/<ZoomLock\s*\/>/);
+    const zoomLock = FILES.find(
+      (f) => f.path === join("components", "layout", "zoom-lock.tsx"),
+    );
+    expect(zoomLock?.text).toMatch(/gesturestart/);
   });
 });
 
@@ -224,6 +232,21 @@ describe("mobile: links só de ícone têm área de toque", () => {
   const AREA_DE_TOQUE =
     /\b(h-(8|9|10|11|12|14)|size-(8|9|10|11|12)|min-h-(8|9|10|11|12)|p-(2|2\.5|3|4)|py-(2|2\.5|3|4)|-m-(1\.5|2))\b/;
 
+  // Um ícone só recebe props de aparência. Um filho que recebe dados (`item`,
+  // `conversation`, …) é um componente de layout, e a área de toque mora nele —
+  // não no link. Sem essa distinção a regra acusaria todo link que delega o
+  // corpo a um subcomponente.
+  const PROPS_DE_ICONE = new Set([
+    "className",
+    "strokeWidth",
+    "size",
+    "fill",
+    "color",
+    "style",
+    "key",
+    "aria-hidden",
+  ]);
+
   it("nenhum <Link>/<a> com um ícone solto fica sem dimensão ou padding", () => {
     const offenders: string[] = [];
     // <Link ...><Icon … /></Link> — conteúdo é um único componente auto-fechado.
@@ -236,7 +259,12 @@ describe("mobile: links só de ícone têm área de toque", () => {
         const inner = (m[3] ?? "").trim();
         // Só interessa o caso "ícone sozinho": qualquer texto ou segundo
         // elemento já dá área de toque por conta própria.
-        if (!/^<[A-Z][A-Za-z0-9]*\s[^>]*\/>$/.test(inner)) continue;
+        const lone = /^<[A-Z][A-Za-z0-9]*(\s[^>]*)?\/>$/.exec(inner);
+        if (!lone) continue;
+        const innerProps = [...(lone[1] ?? "").matchAll(/(?:^|\s)([A-Za-z][\w-]*)=/g)].map(
+          (p) => p[1],
+        );
+        if (innerProps.some((p) => !PROPS_DE_ICONE.has(p))) continue;
         const className = /className="([^"]*)"/.exec(attrs)?.[1] ?? "";
         if (AREA_DE_TOQUE.test(className)) continue;
         offenders.push(`${file.path}:${lineOf(file.text, m.index)}`);

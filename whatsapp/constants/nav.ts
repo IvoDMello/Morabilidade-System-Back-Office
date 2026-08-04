@@ -55,6 +55,30 @@ export function getNavBadge(item: NavItem, counts: NavCounts): NavBadge | null {
   return null;
 }
 
+export interface ParentRoute {
+  href: string;
+  /** Nome da seção de destino, quando ela é um item de navegação. */
+  label: string | null;
+}
+
+/** Rota "acima" da atual, para a seta de voltar. Devolve null nos destinos de
+ * primeiro nível (a própria barra de navegação já é o caminho de volta) e no
+ * login.
+ *
+ * Sobe um segmento da URL em vez de chamar history.back(): assim o destino é o
+ * mesmo para quem navegou pelo app e para quem abriu um link direto — voltar
+ * nunca joga o usuário para fora do app nem para a tela de onde ele veio por
+ * acaso. */
+export function getParentRoute(pathname: string): ParentRoute | null {
+  if (pathname === "/login" || NAV_ITEMS.some((item) => item.href === pathname)) return null;
+
+  const segments = pathname.split("/").filter(Boolean);
+  if (segments.length < 2) return null;
+
+  const href = `/${segments.slice(0, -1).join("/")}`;
+  return { href, label: NAV_ITEMS.find((item) => item.href === href)?.label ?? null };
+}
+
 const MOBILE_SECTION_INFO: Record<string, { title: string; subtitle: string }> = {
   "/dashboard": { title: "Visão geral", subtitle: "Atendimento e contatos em um relance." },
   "/": { title: "Conversas", subtitle: "Mensagens recebidas no WhatsApp." },

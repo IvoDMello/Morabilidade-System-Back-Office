@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { UserMenuItems } from "./user-menu-items";
+import { BackLink } from "./back-link";
 
 export function MobileHeader() {
   const pathname = usePathname();
@@ -17,7 +18,8 @@ export function MobileHeader() {
   return (
     <header className="sticky top-0 z-10 border-b border-veil/6 bg-background/95 px-4 pt-[calc(0.875rem+env(safe-area-inset-top))] pb-3 backdrop-blur-sm md:hidden">
       <div className="flex items-center justify-between gap-2">
-        <div className="min-w-0">
+        <BackLink className="-ml-2" />
+        <div className="min-w-0 flex-1">
           <h1 className="truncate text-[19px] font-semibold tracking-[-0.02em] text-foreground">
             {title}
           </h1>

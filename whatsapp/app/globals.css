@@ -226,6 +226,38 @@
   }
   html {
     @apply font-sans;
+    /* Zoom desativado (ver `viewport` em app/layout.tsx): sem isto o
+       duplo-toque continua ampliando mesmo com user-scalable=no. pan-x/pan-y
+       preserva a rolagem — `none` mataria junto o scroll da página. */
+    touch-action: pan-x pan-y;
+  }
+  /* O preflight do Tailwind v4 devolve `cursor: default` a todo botão — no
+     desktop nada mais parece clicável até o clique acontecer. */
+  button:not(:disabled),
+  summary,
+  [role="button"]:not([aria-disabled="true"]),
+  [role="menuitem"]:not([aria-disabled="true"]),
+  [role="option"]:not([aria-disabled="true"]),
+  [role="tab"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+  button:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+  /* Toque no mobile: touch-action mata o atraso de ~300ms que o navegador
+     guarda esperando um duplo-toque de zoom — é o que faz cada toque parecer
+     lento. E o realce cinza padrão do WebKit vira um flash na cor da marca. */
+  a,
+  button,
+  label,
+  summary,
+  [role="button"],
+  [role="menuitem"],
+  [role="option"],
+  [role="tab"] {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: color-mix(in srgb, var(--veil) 12%, transparent);
   }
   ::-webkit-scrollbar {
     width: 9px;

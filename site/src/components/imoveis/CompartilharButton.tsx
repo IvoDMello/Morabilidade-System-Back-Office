@@ -3,13 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Share2, MessageCircle, Link2, Check } from "lucide-react";
 import { getOrCreateSessionId, sendBeaconJSON } from "@/lib/session";
+import { SITE_URL } from "@/lib/site-url";
 
 interface Props {
   codigo: string;
   titulo: string;
 }
-
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://morabilidade.com";
 
 export function CompartilharButton({ codigo, titulo }: Props) {
   const [aberto, setAberto] = useState(false);

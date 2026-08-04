@@ -2,18 +2,10 @@ import { MessageCircle } from "lucide-react";
 import { NavLinks } from "./nav-links";
 import { CommandPalette } from "./command-palette";
 import { UserMenu } from "./user-menu";
-import type { ReminderCounts } from "@/types/dashboard";
+import type { NavCounts } from "@/constants/nav";
 
 /** Nav rail do redesign: 60px, só ícones, logo no topo e usuário no rodapé. */
-export function Sidebar({
-  reminderCounts,
-  unreadConversations,
-  pendingConversations,
-}: {
-  reminderCounts: ReminderCounts;
-  unreadConversations: number;
-  pendingConversations: number;
-}) {
+export function Sidebar({ countsPromise }: { countsPromise: Promise<NavCounts> }) {
   return (
     <aside className="sticky top-0 hidden h-screen w-[60px] shrink-0 flex-col items-center gap-1 border-r border-sidebar-border bg-sidebar py-3.5 text-sidebar-foreground md:flex">
       <div
@@ -24,11 +16,7 @@ export function Sidebar({
       </div>
       <CommandPalette />
       <div className="my-1.5 h-px w-8 bg-veil/8" />
-      <NavLinks
-        reminderCounts={reminderCounts}
-        unreadConversations={unreadConversations}
-        pendingConversations={pendingConversations}
-      />
+      <NavLinks countsPromise={countsPromise} />
       <div className="flex-1" />
       <UserMenu />
     </aside>

@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { NAV_ITEMS, getMobileSectionInfo, getNavBadge, type NavCounts } from "@/constants/nav";
+import {
+  NAV_ITEMS,
+  getMobileSectionInfo,
+  getNavBadge,
+  getParentRoute,
+  type NavCounts,
+} from "@/constants/nav";
 
 const CONTAGENS: NavCounts = {
   reminderCounts: { pending: 12, overdue: 3 },
@@ -58,5 +64,44 @@ describe("Navegação principal", () => {
 
   it("rotas filhas herdam o título da seção", () => {
     expect(getMobileSectionInfo("/contatos/abc-123").title).toBe("Contatos");
+  });
+});
+
+/**
+ * A seta de voltar sobe um segmento da URL em vez de usar o histórico: quem
+ * abre um link direto para a ficha de um contato tem que sair dela para
+ * Contatos, não para fora do app.
+ */
+describe("Seta de voltar", () => {
+  it("some nas telas de primeiro nível — a barra de navegação já é a saída", () => {
+    for (const item of NAV_ITEMS) {
+      expect(getParentRoute(item.href), `esperava null em ${item.href}`).toBeNull();
+    }
+  });
+
+  it("não aparece no login, que não tem para onde voltar", () => {
+    expect(getParentRoute("/login")).toBeNull();
+  });
+
+  it("da ficha do contato volta para Contatos, com o nome da seção", () => {
+    expect(getParentRoute("/contatos/abc-123")).toEqual({
+      href: "/contatos",
+      label: "Contatos",
+    });
+  });
+
+  it("do formulário de edição volta para a ficha, um degrau de cada vez", () => {
+    expect(getParentRoute("/contatos/abc-123/editar")).toEqual({
+      href: "/contatos/abc-123",
+      label: null,
+    });
+  });
+
+  it("de um cadastro novo volta para a lista", () => {
+    expect(getParentRoute("/contatos/novo")?.href).toBe("/contatos");
+  });
+
+  it("ignora a barra final da URL", () => {
+    expect(getParentRoute("/contatos/abc-123/")?.href).toBe("/contatos");
   });
 });

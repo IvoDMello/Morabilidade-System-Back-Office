@@ -16,13 +16,25 @@ export function getAnthropicClient(): Anthropic {
   return client;
 }
 
+/** Lê uma variável de ambiente tratando vazio como ausente.
+ *
+ * `??` sozinho não serve aqui: uma linha `AI_MODEL=` no .env deixa a variável
+ * como string vazia, não `undefined`, e o fallback nunca acontece. O modelo ia
+ * vazio para a API e a resposta era um 400 ("model: String should have at least
+ * 1 character") — que o catch das actions traduzia para "não foi possível
+ * consultar o assistente". Como o `.env.local.example` traz `AI_MODEL=` sem
+ * valor, todo ambiente novo copiava a armadilha junto. */
+function envOu(nome: string, padrao: string): string {
+  return process.env[nome]?.trim() || padrao;
+}
+
 // Modelo dos recursos de IA. Sonnet 5 é o padrão: dá conta das tarefas do CRM
 // (pendências, resumo, follow-up, propor ação) com ótimo custo-benefício. Para
 // trocar sem mexer no código, defina AI_MODEL no ambiente (ex.: na Vercel):
 //   claude-opus-5    → qualidade máxima (US$ 5 / US$ 25 por milhão de tokens)
 //   claude-sonnet-5  → padrão, equilibrado (US$ 3 / US$ 15)
 //   claude-haiku-4-5 → mais barato/rápido (US$ 1 / US$ 5)
-export const AI_MODEL = process.env.AI_MODEL ?? "claude-sonnet-5";
+export const AI_MODEL = envOu("AI_MODEL", "claude-sonnet-5");
 
 /**
  * Modelo da TRIAGEM organizacional — o caminho de alto volume.
@@ -44,7 +56,7 @@ export const AI_MODEL = process.env.AI_MODEL ?? "claude-sonnet-5";
  * e provavelmente fica abaixo dos dois — por isso o livro-razão mede
  * `cache_read_tokens` em vez de supor economia (ver migration 0021).
  */
-export const AI_MODEL_TRIAGEM = process.env.AI_MODEL_TRIAGEM ?? AI_MODEL;
+export const AI_MODEL_TRIAGEM = envOu("AI_MODEL_TRIAGEM", AI_MODEL);
 
 /** Modelo a usar conforme o papel da chamada. */
 export function getModeloParaModo(modo: "organizacional" | "completo"): string {

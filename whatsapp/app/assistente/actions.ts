@@ -22,6 +22,10 @@ export async function proporAcoesAction(instrucao: string): Promise<ProporResult
     }
     return { ok: true, propostas };
   } catch (e) {
+    // O operador só vê a frase amigável, mas o erro de verdade precisa sobrar em
+    // algum lugar: sem isso, uma falha de rede, de credencial ou de schema de
+    // ferramenta chega no suporte como "não funcionou" e não dá pra distinguir.
+    console.error("[assistente] proporAcoes falhou:", e);
     const msg =
       e instanceof Error && e.message.includes("ANTHROPIC_API_KEY")
         ? "O assistente de IA não está configurado (falta ANTHROPIC_API_KEY)."
