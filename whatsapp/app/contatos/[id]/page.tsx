@@ -122,9 +122,6 @@ export default async function ContatoDetalhePage({
                       <FavoriteToggle contactId={contact.id} isFavorite={contact.isFavorite} size="icon-sm" />
                     </div>
                     <p className="truncate text-sm text-muted-foreground">{formatPhone(contact.phone)}</p>
-                    {contact.email && (
-                      <p className="truncate text-sm text-muted-foreground">{contact.email}</p>
-                    )}
                     {contact.clienteCodigo && (
                       <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                         <BadgeCheck className="h-3 w-3" />
