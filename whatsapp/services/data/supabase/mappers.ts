@@ -65,6 +65,7 @@ export function mapReminderRow(row: any): ContactReminder {
     imovelCodigo: row.imovel_codigo ?? null,
     fichaVisitaId: row.ficha_visita_id ?? null,
     fichaNotificadaEm: row.ficha_notificada_em ?? null,
+    googleCalendarEventId: row.google_calendar_event_id ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

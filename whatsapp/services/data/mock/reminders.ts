@@ -52,6 +52,10 @@ export const mockReminders: DataSource["reminders"] = {
     );
   },
 
+  async getById(id: ID) {
+    return mockStore.reminders.find((r) => r.id === id) ?? null;
+  },
+
   async create(input: CreateReminderInput) {
     const nowIso = new Date().toISOString();
     const newReminder: ContactReminder = {
@@ -66,6 +70,7 @@ export const mockReminders: DataSource["reminders"] = {
       imovelCodigo: input.imovelCodigo ?? null,
       fichaVisitaId: null,
       fichaNotificadaEm: null,
+      googleCalendarEventId: input.googleCalendarEventId ?? null,
       createdAt: nowIso,
       updatedAt: nowIso,
     };

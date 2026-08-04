@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist } from "next/font/google";
+import { Onest } from "next/font/google";
 import "./globals.css";
 import { ConditionalShell } from "@/components/layout/conditional-shell";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -7,10 +7,10 @@ import { Toaster } from "@/components/ui/sonner";
 import { getReminderCounts } from "@/services/dashboard.service";
 import { getPendingConversationsCount, getUnreadConversationsCount } from "@/services/whatsapp.service";
 
-const geist = Geist({
-  variable: "--font-geist",
+const onest = Onest({
+  variable: "--font-onest",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {
@@ -52,7 +52,7 @@ export default async function RootLayout({
     <html
       lang="pt-BR"
       suppressHydrationWarning
-      className={`${geist.variable} h-full antialiased`}
+      className={`${onest.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange>

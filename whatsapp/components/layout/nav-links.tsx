@@ -44,7 +44,7 @@ export function NavLinks(counts: NavCounts) {
               <span
                 className={cn(
                   "absolute right-[1px] top-[1px] flex h-[15px] min-w-[15px] items-center justify-center rounded-full border-2 border-sidebar px-[3px] text-[9.5px] font-semibold leading-none text-white",
-                  badge.tone === "unread" ? "bg-[#3a7d5c]" : "bg-[#c4553e]",
+                  badge.tone === "unread" ? "bg-[#3a7d5c]" : "bg-[#ef7a7a]",
                 )}
               >
                 {badge.count > 99 ? "99+" : badge.count}

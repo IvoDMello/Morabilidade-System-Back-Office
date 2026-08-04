@@ -65,7 +65,7 @@ export function NovoLembreteButton({ contacts }: { contacts: Contact[] }) {
       <button
         type="button"
         onClick={openPicker}
-        className="flex items-center gap-1.5 rounded-lg bg-[#585a4f] px-3 py-1.5 text-[12.5px] font-semibold text-white transition-colors hover:bg-[#42453a]"
+        className="flex items-center gap-1.5 rounded-lg bg-[linear-gradient(150deg,#e8dea0,#d8cb6a)] px-3 py-1.5 text-[12.5px] font-semibold text-[#2e302a] shadow-[0_2px_8px_rgba(216,203,106,0.25)] transition-all hover:brightness-105"
       >
         <BellPlus className="h-4 w-4" strokeWidth={2} />
         Novo lembrete

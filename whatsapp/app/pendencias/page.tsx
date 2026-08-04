@@ -48,12 +48,12 @@ export default async function PendenciasPage({ searchParams }: PendenciasPagePro
       <div className="hidden flex-wrap items-center gap-3 md:flex">
         <h1 className="text-[19px] font-semibold tracking-[-0.02em]">Pendências</h1>
         {aguardando > 0 && (
-          <span className="flex items-center gap-1.5 rounded-lg border border-[rgba(196,85,62,0.28)] bg-[rgba(196,85,62,0.12)] px-2.5 py-1 text-[12.5px] font-semibold text-ember">
+          <span className="flex items-center gap-1.5 rounded-lg border border-[rgba(239,122,122,0.28)] bg-[rgba(239,122,122,0.12)] px-2.5 py-1 text-[12.5px] font-semibold text-ember">
             {aguardando} aguardando resposta
           </span>
         )}
         {vencidos > 0 && (
-          <span className="flex items-center gap-1.5 rounded-lg border border-[rgba(196,85,62,0.28)] bg-[rgba(196,85,62,0.12)] px-2.5 py-1 text-[12.5px] font-semibold text-ember">
+          <span className="flex items-center gap-1.5 rounded-lg border border-[rgba(239,122,122,0.28)] bg-[rgba(239,122,122,0.12)] px-2.5 py-1 text-[12.5px] font-semibold text-ember">
             {vencidos} lembrete{vencidos === 1 ? "" : "s"} vencido{vencidos === 1 ? "" : "s"}
           </span>
         )}

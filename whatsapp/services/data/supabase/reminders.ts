@@ -42,6 +42,17 @@ export const supabaseReminders: DataSource["reminders"] = {
     return (data ?? []).map(mapReminderWithContactRow);
   },
 
+  async getById(id: ID) {
+    const supabase = getSupabaseServerClient();
+    const { data, error } = await supabase
+      .from("contact_reminders")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+    if (error) throw error;
+    return data ? mapReminderRow(data) : null;
+  },
+
   async create(input: CreateReminderInput) {
     const supabase = getSupabaseServerClient();
     const { data, error } = await supabase
@@ -55,6 +66,7 @@ export const supabaseReminders: DataSource["reminders"] = {
         created_by: input.createdBy,
         corretor_id: input.corretorId ?? null,
         imovel_codigo: input.imovelCodigo ?? null,
+        google_calendar_event_id: input.googleCalendarEventId ?? null,
       })
       .select("*")
       .single();

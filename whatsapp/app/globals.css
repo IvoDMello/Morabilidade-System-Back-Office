@@ -81,8 +81,8 @@
    :root traz a variante clara (papel frio + oliva/dourado escuro); .dark é a
    mesma paleta sobre carvão-oliva. O next-themes alterna a classe no <html>. */
 :root {
-  --font-sans: var(--font-geist);
-  --font-heading: var(--font-geist);
+  --font-sans: var(--font-onest);
+  --font-heading: var(--font-onest);
   /* Fonte das bolhas de conversa — a mesma pilha de sistema que o WhatsApp
      usa (SF Pro no iOS/macOS, Roboto no Android, Segoe UI no Windows). */
   --font-chat:
@@ -157,56 +157,56 @@
 }
 
 .dark {
-  --background: #14160f;
-  --foreground: #f1f2e9;
-  --card: #1b1d15;
-  --card-foreground: #f1f2e9;
-  --popover: #21231a;
-  --popover-foreground: #f1f2e9;
-  --primary: #d8cb6a;
-  --primary-foreground: #191b10;
-  --secondary: rgba(235, 237, 222, 0.08);
-  --secondary-foreground: #f1f2e9;
-  --muted: #1d1f16;
-  --muted-foreground: #8b8e7f;
-  --accent: rgba(235, 237, 222, 0.05);
-  --accent-foreground: #f1f2e9;
-  --destructive: #e08267;
-  --border: rgba(235, 237, 222, 0.08);
-  --input: rgba(235, 237, 222, 0.1);
-  --ring: #d8cb6a;
-  --chart-1: #d8cb6a;
-  --chart-2: #5b9bd5;
-  --chart-3: #8b7fd4;
-  --chart-4: #5fb87a;
-  --chart-5: #d47fa8;
-  --sidebar: #10120b;
-  --sidebar-foreground: #f1f2e9;
-  --sidebar-primary: #d8cb6a;
-  --sidebar-primary-foreground: #191b10;
-  --sidebar-accent: rgba(216, 203, 106, 0.14);
-  --sidebar-accent-foreground: #e8dea0;
-  --sidebar-border: rgba(235, 237, 222, 0.06);
-  --sidebar-ring: #d8cb6a;
-  --ink-strong: #e3e5d6;
-  --ink-mid: #cbcec0;
-  --ink-dim: #7b7e6e;
-  --ink-faint: #707365;
-  --ink-ghost: #474a3c;
-  --veil: #eef0dd;
-  --gold: #e8dea0;
-  --jade: #5fb87a;
-  --jade-soft: #8fd4a3;
+  --background: #0a0b0c;
+  --foreground: #eef1f2;
+  --card: #15181b;
+  --card-foreground: #eef1f2;
+  --popover: #1b1f23;
+  --popover-foreground: #eef1f2;
+  --primary: #e7dda6;
+  --primary-foreground: #1b1c16;
+  --secondary: rgba(255, 255, 255, 0.06);
+  --secondary-foreground: #eef1f2;
+  --muted: #1b1f23;
+  --muted-foreground: #6c7379;
+  --accent: rgba(255, 255, 255, 0.05);
+  --accent-foreground: #eef1f2;
+  --destructive: #ef7a7a;
+  --border: rgba(255, 255, 255, 0.06);
+  --input: rgba(255, 255, 255, 0.11);
+  --ring: #e7dda6;
+  --chart-1: #e6c463;
+  --chart-2: #5aa2f7;
+  --chart-3: #a58bf5;
+  --chart-4: #54c98a;
+  --chart-5: #ef82b6;
+  --sidebar: #15181b;
+  --sidebar-foreground: #eef1f2;
+  --sidebar-primary: #e7dda6;
+  --sidebar-primary-foreground: #1b1c16;
+  --sidebar-accent: rgba(231, 221, 166, 0.14);
+  --sidebar-accent-foreground: #f0e7b8;
+  --sidebar-border: rgba(255, 255, 255, 0.06);
+  --sidebar-ring: #e7dda6;
+  --ink-strong: #eef1f2;
+  --ink-mid: #b0b6bb;
+  --ink-dim: #6c7379;
+  --ink-faint: #565b60;
+  --ink-ghost: #33383c;
+  --veil: #ffffff;
+  --gold: #e7dda6;
+  --jade: #54c98a;
+  --jade-soft: #8fe0ad;
   --tick: #7fd49a;
-  --ember: #e8a48f;
-  --sky: #8fc0f0;
-  --lilac: #b1a6ec;
-  --blush: #e3a4c5;
-  --fade: #999c8c;
+  --ember: #f0968a;
+  --sky: #8ab8f2;
+  --lilac: #b3a0f5;
+  --blush: #eda8c7;
+  --fade: #8b9096;
   --avatar-bg: #2a2c3a;
   --avatar-fg: #c9cbe0;
-  --well: #171911;
-  --raised: #22241a;
+  --well: #0e1113;
+  --raised: #232830;
   --bubble-out: #243a2c;
   --bubble-out-fg: #eef3ea;
   --bubble-out-line: rgba(120, 190, 140, 0.12);

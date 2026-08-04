@@ -17,6 +17,9 @@ export interface ContactReminder {
   fichaVisitaId: string | null;
   /** Quando o link da ficha foi enviado (cliente ou pendência) — dedupe do cron. */
   fichaNotificadaEm: string | null;
+  /** ID do evento espelhado na Google Agenda (ver google-calendar.service.ts);
+   * null em lembretes comuns ou se a integração não estava configurada. */
+  googleCalendarEventId: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -35,6 +38,7 @@ export interface CreateReminderInput {
   createdBy: string;
   corretorId?: string | null;
   imovelCodigo?: string | null;
+  googleCalendarEventId?: string | null;
 }
 
 /** Visita elegível à ficha automática, já com o que o cron precisa para

@@ -40,27 +40,27 @@ type ReminderGroupVariant = "overdue" | "today" | "upcoming";
 const VARIANT_CONFIG = {
   overdue: {
     icon: AlertTriangle,
-    tone: "danger" as const,
-    dot: "#c4553e",
-    dotGlow: "rgba(196,85,62,0.18)",
+    dot: "#ef7a7a",
+    dotGlow: "rgba(239,122,122,0.18)",
     title: "text-ember",
-    count: "bg-[rgba(196,85,62,0.14)] text-[#c4553e]",
+    count: "bg-[#ef7a7a] text-white",
+    border: "border-l-[3px] border-l-[#ef7a7a] hover:border-[rgba(239,122,122,0.4)] hover:border-l-[#ef7a7a]",
   },
   today: {
     icon: CalendarClock,
-    tone: "default" as const,
     dot: "var(--primary)",
     dotGlow: "color-mix(in srgb, var(--primary) 18%, transparent)",
     title: "text-gold",
-    count: "bg-veil/6 text-muted-foreground",
+    count: "bg-[#e7dda6] text-[#1b1c16]",
+    border: "border-l-[3px] border-l-[#e7dda6] hover:border-[rgba(231,221,166,0.4)] hover:border-l-[#e7dda6]",
   },
   upcoming: {
     icon: CalendarDays,
-    tone: "default" as const,
-    dot: "#5b9bd5",
-    dotGlow: "rgba(91,155,213,0.18)",
+    dot: "#5aa2f7",
+    dotGlow: "rgba(90,162,247,0.18)",
     title: "text-sky",
-    count: "bg-veil/6 text-muted-foreground",
+    count: "bg-[#5aa2f7] text-white",
+    border: "border-l-[3px] border-l-[#5aa2f7] hover:border-[rgba(90,162,247,0.4)] hover:border-l-[#5aa2f7]",
   },
 };
 
@@ -72,7 +72,7 @@ interface RemindersGroupProps {
 }
 
 export function RemindersGroup({ title, variant, reminders, emptyLabel }: RemindersGroupProps) {
-  const { icon: Icon, tone, dot, dotGlow, title: titleClass, count: countClass } = VARIANT_CONFIG[variant];
+  const { icon: Icon, dot, dotGlow, title: titleClass, count: countClass, border: borderClass } = VARIANT_CONFIG[variant];
   const [isPending, startTransition] = useTransition();
   const [deleteId, setDeleteId] = useState<ID | null>(null);
   const deleteTarget = reminders.find((r) => r.id === deleteId) ?? null;
@@ -139,7 +139,7 @@ export function RemindersGroup({ title, variant, reminders, emptyLabel }: Remind
                   key={reminder.id}
                   className={cn(
                     "rounded-xl border border-veil/7 bg-raised p-3 transition-colors hover:border-veil/14",
-                    tone === "danger" && "border-l-[3px] border-l-[#c4553e] hover:border-[rgba(196,85,62,0.4)] hover:border-l-[#c4553e]",
+                    borderClass,
                   )}
                 >
                   <div className="flex items-start justify-between gap-2">
@@ -171,12 +171,7 @@ export function RemindersGroup({ title, variant, reminders, emptyLabel }: Remind
                         size="sm"
                         loading={isPending}
                         onClick={() => handleComplete(reminder)}
-                        className={cn(
-                          "shadow-none",
-                          variant === "overdue"
-                            ? "bg-[rgba(126,196,145,0.14)] bg-none text-jade-soft hover:bg-[rgba(126,196,145,0.24)] hover:brightness-100"
-                            : "border border-veil/10 bg-transparent bg-none text-ink-mid hover:bg-veil/6 hover:brightness-100",
-                        )}
+                        className="shadow-none bg-[rgba(126,196,145,0.14)] bg-none text-jade-soft hover:bg-[rgba(126,196,145,0.24)] hover:brightness-100"
                       >
                         {!isPending && <Check className="h-3.5 w-3.5" />}
                         Concluir

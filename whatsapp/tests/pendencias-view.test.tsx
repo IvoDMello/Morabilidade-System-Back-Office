@@ -74,6 +74,7 @@ function lembrete(over: Partial<ReminderWithContact> = {}): ReminderWithContact 
     imovelCodigo: "MB-00033",
     fichaVisitaId: null,
     fichaNotificadaEm: null,
+    googleCalendarEventId: null,
     createdAt: "2026-08-01T12:00:00Z",
     updatedAt: "2026-08-01T12:00:00Z",
     contactName: "Bruno Salles",
