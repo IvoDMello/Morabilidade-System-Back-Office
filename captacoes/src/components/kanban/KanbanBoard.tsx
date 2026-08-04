@@ -284,7 +284,9 @@ export function KanbanBoard({
 
   return (
     <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={onDragStart} onDragEnd={onDragEnd}>
-      <div className="flex h-full gap-3 overflow-x-auto px-4 pb-4">
+      {/* overscroll-x-contain: chegar ao fim das colunas não empurra a página
+          nem dispara o "voltar" por gesto do navegador. */}
+      <div className="flex h-full gap-3 overflow-x-auto overscroll-x-contain px-4 pb-4">
         {BOARD_STATUSES.map((status) => (
           <KanbanColumn key={status} status={status} cards={visiveis(byStatus[status])} />
         ))}
