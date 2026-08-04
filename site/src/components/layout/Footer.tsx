@@ -109,6 +109,9 @@ export function Footer() {
         <div className="pt-6 border-t border-white/20 relative flex flex-col sm:grid sm:grid-cols-2 items-center gap-3">
           <p className="text-xs text-white/60 sm:justify-self-start text-center sm:text-left">
             © {new Date().getFullYear()} Morabilidade. Todos os direitos reservados.
+            <span className="block sm:inline sm:before:content-['·'] sm:before:mx-1.5">
+              CRECI J 13167
+            </span>
           </p>
           <p className="text-xs text-white/55 tracking-widest uppercase sm:justify-self-end text-center sm:text-right">
             Simples · Eficiente · Humanizada
