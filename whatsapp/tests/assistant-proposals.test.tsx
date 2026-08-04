@@ -144,7 +144,7 @@ describe("Console do /assistente usa o cartão compartilhado", () => {
   it("mostra os campos propostos antes da confirmação", async () => {
     proporAcoesAction.mockResolvedValue({ ok: true, propostas: [VISITA] });
 
-    render(<AssistantConsole />);
+    render(<AssistantConsole captacoesUrl="https://captacoes.morabilidade.com" />);
     fireEvent.change(screen.getByRole("textbox"), {
       target: { value: "agendar visita com o Marcos amanhã 15h" },
     });
@@ -158,7 +158,7 @@ describe("Console do /assistente usa o cartão compartilhado", () => {
     proporAcoesAction.mockResolvedValue({ ok: true, propostas: [VISITA] });
     executarAcaoAction.mockResolvedValue({ ok: true, message: "Visita agendada." });
 
-    render(<AssistantConsole />);
+    render(<AssistantConsole captacoesUrl="https://captacoes.morabilidade.com" />);
     fireEvent.change(screen.getByRole("textbox"), { target: { value: "agendar visita" } });
     fireEvent.click(screen.getByRole("button", { name: /Analisar/ }));
 
@@ -172,7 +172,7 @@ describe("Console do /assistente usa o cartão compartilhado", () => {
   it("avisa quando a IA não identifica nenhuma ação", async () => {
     proporAcoesAction.mockResolvedValue({ ok: false, propostas: [], erro: "Nenhuma ação identificada." });
 
-    render(<AssistantConsole />);
+    render(<AssistantConsole captacoesUrl="https://captacoes.morabilidade.com" />);
     fireEvent.change(screen.getByRole("textbox"), { target: { value: "bom dia" } });
     fireEvent.click(screen.getByRole("button", { name: /Analisar/ }));
 

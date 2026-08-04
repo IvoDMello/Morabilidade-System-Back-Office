@@ -40,7 +40,8 @@ function resumirAcao(
   if (tool === "criar_captacao") {
     const partes = [String(args.endereco ?? "")];
     if (args.quartos) partes.push(`${args.quartos} quarto(s)`);
-    if (args.contato_proprietario) partes.push(`contato ${args.contato_proprietario}`);
+    const proprietario = args.proprietario_nome ?? args.contato_proprietario;
+    if (proprietario) partes.push(`proprietário ${proprietario}`);
     return `Criar captação: ${partes.filter(Boolean).join(" · ")}.`;
   }
   if (tool === "sugerir_resposta") {
@@ -141,7 +142,7 @@ const PROCESSO_ORGANIZACIONAL = `Você é o assistente de organização de uma i
 Proponha ações apenas com o que está EXPLÍCITO na conversa. Nunca invente, complete ou deduza dado que o cliente não disse.
 
 Quando um proprietário estiver oferecendo um imóvel:
-- Assim que houver ao menos o ENDEREÇO, proponha criar_captacao com tudo que já foi dito (endereço, quartos, banheiros, portaria) e inclua o telefone do contato em contato_proprietario.
+- Assim que houver ao menos o ENDEREÇO, proponha criar_captacao com tudo que já foi dito (endereço, quartos, banheiros, portaria), com o nome do contato em proprietario_nome e o telefone dele em proprietario_whatsapp.
 - Faltando o endereço, não proponha nada: uma captação sem endereço não serve para ninguém.
 
 Quando ficar combinada uma visita com DATA e HORA claras, proponha agendar_visita.
@@ -153,7 +154,7 @@ const PROCESSO_COMPLETO = `Você é o copiloto de atendimento de uma imobiliári
 
 Processo de captação (quando o contato é um proprietário oferecendo um imóvel):
 1. Coletar: endereço completo, quartos, banheiros, tipo de portaria, e pedir fotos.
-2. Assim que houver ao menos o endereço, proponha criar_captacao com tudo que já foi dito (inclua o telefone do contato em contato_proprietario).
+2. Assim que houver ao menos o endereço, proponha criar_captacao com tudo que já foi dito (nome do contato em proprietario_nome, telefone dele em proprietario_whatsapp).
 3. Se ainda faltar informação, proponha sugerir_resposta com UMA mensagem cordial pedindo só o que falta (não repita o que já foi respondido).
 4. Se o cliente pedir/combinar uma visita com data e hora claras, proponha agendar_visita.
 

@@ -40,10 +40,12 @@ export const criarCaptacaoArgs = z.object({
   quartos: z.number().int().optional().describe("número de quartos, se mencionado"),
   banheiros: z.number().int().optional().describe("número de banheiros, se mencionado"),
   tipo_portaria: z.string().optional().describe("tipo de portaria (ex.: 24h, eletrônica), se mencionado"),
-  contato_proprietario: z
-    .string()
-    .optional()
-    .describe("telefone ou nome de contato do proprietário, se mencionado"),
+  proprietario_nome: z.string().optional().describe("nome do proprietário"),
+  proprietario_whatsapp: z.string().optional().describe("WhatsApp do proprietário"),
+  /** Legado: propostas gravadas antes da separação nome/WhatsApp guardaram os
+   * dois num campo livre só. Continua aceito para que uma proposta pendente
+   * antiga ainda possa ser confirmada (ver handlers.ts). */
+  contato_proprietario: z.string().optional(),
   observacoes: z.string().optional().describe("observações livres relevantes para a captação"),
 });
 export type CriarCaptacaoArgs = z.infer<typeof criarCaptacaoArgs>;
@@ -100,7 +102,11 @@ export const ASSISTANT_TOOLS: Anthropic.Tool[] = [
         quartos: { type: "integer", description: "número de quartos, se mencionado" },
         banheiros: { type: "integer", description: "número de banheiros, se mencionado" },
         tipo_portaria: { type: "string", description: "tipo de portaria, se mencionado" },
-        contato_proprietario: { type: "string", description: "contato do proprietário, se mencionado" },
+        proprietario_nome: { type: "string", description: "nome do proprietário, se souber" },
+        proprietario_whatsapp: {
+          type: "string",
+          description: "WhatsApp do proprietário — normalmente o telefone do próprio contato da conversa",
+        },
         observacoes: { type: "string", description: "observações livres" },
       },
       required: ["endereco"],

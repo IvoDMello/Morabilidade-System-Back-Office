@@ -279,12 +279,16 @@ curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron/dail
 Na tela de conversa, o botão **Copiloto** (cabeçalho da thread) abre um painel
 com tudo que a operação precisa sem sair do WhatsApp:
 
-- **Captações deste contato**: as captações do board (`captacoes/`) cujo campo
-  "contato do proprietário" bate com o telefone da conversa (comparação pelos
-  8 dígitos finais), mais um bloco recolhível com as recentes do board.
+- **Captações deste contato**: as captações do board (`captacoes/`) cujo
+  `whatsapp` do proprietário bate com o telefone da conversa (comparação pelos
+  8 dígitos finais, que sobrevive a máscara e DDI), mais um bloco recolhível
+  com as recentes do board. Cada cartão abre a captação no board.
 - **Nova captação**: formulário curto (endereço obrigatório; quartos,
-  banheiros, portaria e observações opcionais) que cria o cartão direto na
-  coluna inicial do Kanban, já com o contato preenchido como proprietário.
+  banheiros, portaria e observações opcionais) que serve de **rascunho**. Ele
+  não grava nada: ao continuar, abre o formulário completo do board já
+  preenchido com esses campos mais o contato como proprietário
+  (`proprietario_nome` + `whatsapp`). A captação nasce quando alguém confirma
+  lá.
 - **Analisar conversa**: manda o histórico para a IA, que propõe as ações do
   processo de captação — `criar_captacao` com os dados que o proprietário já
   passou, `agendar_visita` e `sugerir_resposta` (o texto da próxima mensagem,
@@ -297,6 +301,15 @@ O prompt conhece as captações já ligadas ao telefone, então não propõe
 duplicata do mesmo imóvel. A execução revalida tudo no servidor
 (`services/assistant/handlers.ts`) — a proposta do modelo nunca é confiada.
 
+**O CRM não cria captação.** Nem o botão manual, nem a proposta da IA: os dois
+montam um rascunho e abrem o formulário completo do board pré-preenchido (ver
+`lib/captacao-link.ts` e, do outro lado, `captacoes/src/lib/captacao-link.ts`).
+A ponte com o schema `captacoes` é **somente leitura**. O motivo é concreto: o
+formulário curto daqui não tem bairro, valores, andar nem anexos, e pulava a
+checagem de duplicadas que o board faz no submit — o resultado era cartão pela
+metade que alguém tinha que completar depois. Por isso a captação só aparece
+como criada depois de confirmada lá; até então não existe.
+
 O cartão de confirmação é um só, em
 `features/assistant/components/proposal-card.tsx`, usado tanto aqui quanto no
 console do `/assistente`. Eram cópias que divergiram: só o copiloto mostrava os
@@ -308,6 +321,11 @@ conferir e encontra outro no dia seguinte.
 Configure `CAPTACOES_BOARD_URL` para o painel mostrar o atalho "Abrir board de
 captações". O resto funciona sem nenhuma variável nova (usa o mesmo Supabase,
 schema `captacoes`).
+
+A leitura segue o `NEXT_PUBLIC_DATA_SOURCE` como todo o resto: com `mock` a
+lista de captações vem de um board em memória e nada precisa de chave. O
+hand-off funciona igual nos dois modos — quem grava é o board, do outro lado do
+link.
 
 ## O copiloto chega antes (pré-computação) e o manual de voz
 

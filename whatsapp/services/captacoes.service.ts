@@ -1,15 +1,21 @@
 import { getSupabaseCaptacoesClient } from "@/lib/supabase/server";
+import { mockStore } from "@/services/data/mock/store";
 
 /**
- * Ponte de LEITURA e ESCRITA com o board de captações (schema `captacoes` do
- * mesmo Supabase — app irmão do monorepo). Antes só o assistente escrevia aqui
- * (criar_captacao); agora a tela de conversa também lista as captações do
- * contato e as recentes, e cria novas sem sair do chat.
+ * Ponte de LEITURA com o board de captações (schema `captacoes` do mesmo
+ * Supabase — app irmão do monorepo). Serve o painel do copiloto: as captações
+ * ligadas ao telefone do contato e as recentes do quadro.
  *
- * Nada aqui conhece UI: o painel da conversa e o handler do assistente chamam
- * as mesmas funções — uma captação criada pela IA ou pelo formulário passa pelo
- * mesmo caminho.
+ * SOMENTE LEITURA, de propósito. O CRM já criou captação direto na tabela e o
+ * resultado era cartão pela metade — sem bairro, sem valores, sem foto e sem
+ * passar pela checagem de duplicadas que o board faz no submit. Hoje o botão
+ * daqui monta um rascunho e abre o formulário completo do board (ver
+ * `lib/captacao-link.ts`); a captação nasce lá, com quem confirmou.
+ *
+ * Segue o mesmo `NEXT_PUBLIC_DATA_SOURCE` do resto do painel: em modo mock lê
+ * de um board em memória, sem exigir credencial.
  */
+const USA_SUPABASE = process.env.NEXT_PUBLIC_DATA_SOURCE === "supabase";
 
 /** Status do Kanban de captações (espelho de captacoes/src/types — colunas). */
 export const CAPTACAO_STATUS_LABEL: Record<string, string> = {
@@ -33,23 +39,15 @@ export interface CaptacaoResumo {
   quartos: number | null;
   banheiros: number | null;
   tipoPortaria: string | null;
-  contatoProprietario: string | null;
+  proprietarioNome: string | null;
+  proprietarioWhatsapp: string | null;
   observacoes: string | null;
   criadoEm: string;
   atualizadoEm: string;
 }
 
-export interface CriarCaptacaoInput {
-  endereco: string;
-  quartos?: number | null;
-  banheiros?: number | null;
-  tipoPortaria?: string | null;
-  contatoProprietario?: string | null;
-  observacoes?: string | null;
-}
-
 const CAPTACAO_COLUMNS =
-  "id, status, endereco, quartos, banheiros, tipo_portaria, contato_proprietario, observacoes, criado_em, atualizado_em";
+  "id, status, endereco, quartos, banheiros, tipo_portaria, proprietario_nome, whatsapp, observacoes, criado_em, atualizado_em";
 
 function mapRow(row: Record<string, unknown>): CaptacaoResumo {
   const status = String(row.status ?? "");
@@ -61,7 +59,8 @@ function mapRow(row: Record<string, unknown>): CaptacaoResumo {
     quartos: (row.quartos as number) ?? null,
     banheiros: (row.banheiros as number) ?? null,
     tipoPortaria: (row.tipo_portaria as string) ?? null,
-    contatoProprietario: (row.contato_proprietario as string) ?? null,
+    proprietarioNome: (row.proprietario_nome as string) ?? null,
+    proprietarioWhatsapp: (row.whatsapp as string) ?? null,
     observacoes: (row.observacoes as string) ?? null,
     criadoEm: String(row.criado_em ?? ""),
     atualizadoEm: String(row.atualizado_em ?? ""),
@@ -75,21 +74,27 @@ export function normalizarTelefoneParaBusca(valor: string): string {
 }
 
 /**
- * True se o campo livre `contato_proprietario` da captação menciona o telefone
- * do contato. O campo aceita qualquer texto ("Maria (11) 98888-7777"), então a
- * comparação é por inclusão dos dígitos — exige ao menos os 8 finais para não
- * casar por acidente com números curtos.
+ * True se o WhatsApp do proprietário na captação é o telefone do contato. O
+ * board guarda o número mascarado ("(11) 98888-7777") ou cru, e o CRM guarda
+ * com DDI — a comparação é pelos 8 dígitos finais, que é o que sobrevive a
+ * máscara, DDI e ao nono dígito do celular.
  */
-export function captacaoMencionaTelefone(contatoProprietario: string | null, phone: string): boolean {
-  if (!contatoProprietario) return false;
+export function captacaoMencionaTelefone(whatsappProprietario: string | null, phone: string): boolean {
+  if (!whatsappProprietario) return false;
   const alvo = normalizarTelefoneParaBusca(phone);
-  const doCampo = normalizarTelefoneParaBusca(contatoProprietario);
+  const doCampo = normalizarTelefoneParaBusca(whatsappProprietario);
   if (alvo.length < 8 || doCampo.length < 8) return false;
   return doCampo.slice(-8) === alvo.slice(-8);
 }
 
 /** Captações mais recentes do board (não excluídas), mais novas primeiro. */
 export async function listCaptacoesRecentes(limit = 12): Promise<CaptacaoResumo[]> {
+  if (!USA_SUPABASE) {
+    return [...mockStore.captacoes]
+      .sort((a, b) => b.atualizadoEm.localeCompare(a.atualizadoEm))
+      .slice(0, limit);
+  }
+
   const supabase = getSupabaseCaptacoesClient();
   const { data, error } = await supabase
     .from("captacao")
@@ -102,44 +107,28 @@ export async function listCaptacoesRecentes(limit = 12): Promise<CaptacaoResumo[
 }
 
 /**
- * Captações cujo contato de proprietário menciona o telefone dado. O filtro
- * roda em memória porque `contato_proprietario` é texto livre (não dá pra
- * comparar dígitos no SQL sem função dedicada) — o board é pequeno o
- * suficiente para isso não pesar.
+ * Captações cujo WhatsApp do proprietário é o telefone dado. O filtro roda em
+ * memória porque o número é gravado com máscara livre nos dois apps (com e sem
+ * DDI, com e sem parênteses) — o board é pequeno o suficiente para isso não
+ * pesar.
  */
 export async function listCaptacoesDoTelefone(phone: string): Promise<CaptacaoResumo[]> {
+  if (!USA_SUPABASE) {
+    return mockStore.captacoes
+      .filter((c) => captacaoMencionaTelefone(c.proprietarioWhatsapp, phone))
+      .sort((a, b) => b.atualizadoEm.localeCompare(a.atualizadoEm));
+  }
+
   const supabase = getSupabaseCaptacoesClient();
   const { data, error } = await supabase
     .from("captacao")
     .select(CAPTACAO_COLUMNS)
     .is("excluido_em", null)
-    .not("contato_proprietario", "is", null)
+    .not("whatsapp", "is", null)
     .order("atualizado_em", { ascending: false })
     .limit(300);
   if (error) throw error;
   return (data ?? [])
-    .filter((row) => captacaoMencionaTelefone((row as Record<string, unknown>).contato_proprietario as string, phone))
+    .filter((row) => captacaoMencionaTelefone((row as Record<string, unknown>).whatsapp as string, phone))
     .map(mapRow);
-}
-
-/** Cria uma captação no board (coluna inicial do Kanban). */
-export async function criarCaptacao(input: CriarCaptacaoInput): Promise<CaptacaoResumo> {
-  const endereco = input.endereco.trim();
-  if (!endereco) throw new Error("A captação precisa de um endereço.");
-
-  const supabase = getSupabaseCaptacoesClient();
-  const { data, error } = await supabase
-    .from("captacao")
-    .insert({
-      endereco,
-      quartos: input.quartos ?? null,
-      banheiros: input.banheiros ?? null,
-      tipo_portaria: input.tipoPortaria?.trim() || null,
-      contato_proprietario: input.contatoProprietario?.trim() || null,
-      observacoes: input.observacoes?.trim() || null,
-    })
-    .select(CAPTACAO_COLUMNS)
-    .single();
-  if (error) throw new Error(`Não foi possível criar a captação: ${error.message}`);
-  return mapRow(data);
 }

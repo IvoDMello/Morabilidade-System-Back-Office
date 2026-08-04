@@ -2,14 +2,8 @@ import { getContactById } from "@/services/contacts.service";
 import { createReminder } from "@/services/reminders.service";
 import { getCurrentCorretor, getCurrentUserName } from "@/services/corretores.service";
 import { criarEventoDeVisita } from "@/services/google-calendar.service";
-import { criarCaptacao } from "@/services/captacoes.service";
 import { sendMessage } from "@/services/whatsapp.service";
-import {
-  agendarVisitaArgs,
-  criarCaptacaoArgs,
-  sugerirRespostaArgs,
-  type ToolName,
-} from "./tools";
+import { agendarVisitaArgs, sugerirRespostaArgs, type ToolName } from "./tools";
 import { AcaoInvalidaError, validarHorarioVisita } from "./visita-range";
 
 // A trava de horário da visita vive em ./visita-range (módulo puro, testável).
@@ -56,27 +50,6 @@ async function executarAgendarVisita(rawArgs: unknown): Promise<string> {
   return `Visita agendada com ${contato.name}.`;
 }
 
-async function executarCriarCaptacao(rawArgs: unknown): Promise<string> {
-  const args = criarCaptacaoArgs.parse(rawArgs);
-  const endereco = args.endereco.trim();
-  if (!endereco) {
-    throw new AcaoInvalidaError("A captação precisa de um endereço.");
-  }
-
-  try {
-    const captacao = await criarCaptacao({
-      endereco,
-      quartos: args.quartos ?? null,
-      banheiros: args.banheiros ?? null,
-      tipoPortaria: args.tipo_portaria ?? null,
-      contatoProprietario: args.contato_proprietario ?? null,
-      observacoes: args.observacoes ?? null,
-    });
-    return `Captação criada para "${captacao.endereco}".`;
-  } catch (e) {
-    throw new AcaoInvalidaError(e instanceof Error ? e.message : "Não foi possível criar a captação.");
-  }
-}
 
 async function executarSugerirResposta(rawArgs: unknown): Promise<string> {
   const args = sugerirRespostaArgs.parse(rawArgs);
@@ -102,7 +75,13 @@ export async function executarAcao(tool: ToolName, rawArgs: unknown): Promise<st
     case "agendar_visita":
       return executarAgendarVisita(rawArgs);
     case "criar_captacao":
-      return executarCriarCaptacao(rawArgs);
+      // Captação não é executada no servidor: a confirmação abre o formulário
+      // completo do board, e o cartão nasce lá (ver lib/captacao-link.ts). Se
+      // esta linha for alcançada, alguém religou o caminho antigo — falhar aqui
+      // é melhor que voltar a criar cartão pela metade sem ninguém perceber.
+      throw new AcaoInvalidaError(
+        "Captação agora é criada no board: confirme a proposta para abrir o formulário completo.",
+      );
     case "sugerir_resposta":
       return executarSugerirResposta(rawArgs);
     default:

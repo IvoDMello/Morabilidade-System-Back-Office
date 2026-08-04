@@ -11,6 +11,8 @@ import type { Corretor } from "@/types/corretor";
 import type { AgentProposal } from "@/types/agent-proposal";
 import type { AgentRun } from "@/types/agent-run";
 import type { WebhookDelivery } from "@/types/webhook-delivery";
+// Só o tipo: importar valor daqui fecharia ciclo com captacoes.service.ts.
+import type { CaptacaoResumo } from "@/services/captacoes.service";
 import {
   seedContacts,
   seedNotes,
@@ -48,6 +50,8 @@ interface MockStore {
   agentProposals: AgentProposal[];
   agentRuns: AgentRun[];
   webhookDeliveries: WebhookDelivery[];
+  /** Board de captações (schema `captacoes`, app irmão) — ver captacoes.service.ts. */
+  captacoes: CaptacaoResumo[];
 }
 
 const globalForMockStore = globalThis as unknown as { __mockStore?: MockStore };
@@ -71,6 +75,7 @@ export const mockStore: MockStore =
     agentProposals: [],
     agentRuns: [],
     webhookDeliveries: [],
+    captacoes: [],
   });
 
 export function generateId(): string {

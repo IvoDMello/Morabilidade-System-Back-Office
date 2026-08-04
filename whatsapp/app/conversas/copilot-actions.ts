@@ -1,10 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { z } from "zod";
 import { executarAcao, AcaoInvalidaError } from "@/services/assistant/handlers";
 import type { ToolName } from "@/services/assistant/tools";
-import { criarCaptacao, type CaptacaoResumo } from "@/services/captacoes.service";
 import { getCurrentUserName } from "@/services/corretores.service";
 import {
   analisarEGuardar,
@@ -100,34 +98,26 @@ export async function dispensarPropostaAction(propostaId: string): Promise<void>
   }
 }
 
-const captacaoFormSchema = z.object({
-  endereco: z.string().trim().min(3, "Informe o endereço do imóvel."),
-  quartos: z.number().int().min(0).max(50).nullable().optional(),
-  banheiros: z.number().int().min(0).max(50).nullable().optional(),
-  tipoPortaria: z.string().trim().max(120).optional(),
-  contatoProprietario: z.string().trim().max(200).optional(),
-  observacoes: z.string().trim().max(2000).optional(),
-});
-export type CaptacaoFormValues = z.infer<typeof captacaoFormSchema>;
-
-export interface CriarCaptacaoResultado {
-  ok: boolean;
-  message: string;
-  captacao?: CaptacaoResumo;
-}
-
-/** Criação manual (formulário do painel) — sem IA no meio do caminho. */
-export async function criarCaptacaoDaConversaAction(
-  values: CaptacaoFormValues,
-): Promise<CriarCaptacaoResultado> {
-  const parsed = captacaoFormSchema.safeParse(values);
-  if (!parsed.success) {
-    return { ok: false, message: parsed.error.issues[0]?.message ?? "Dados inválidos." };
-  }
+/**
+ * Proposta de captação encaminhada ao board.
+ *
+ * O CRM não cria mais captação: ele abre o formulário do board pré-preenchido
+ * e o cartão só nasce quando alguém confirma lá. Como não há execução no
+ * servidor, o que sobra é registrar o desfecho da proposta — sem isso o agente
+ * perderia o sinal de treino de "esta sugestão prestou".
+ *
+ * Best-effort de propósito: falhar em anotar estatística não pode impedir o
+ * operador de seguir para o board.
+ */
+export async function registrarCaptacaoEncaminhadaAction(propostaId: string): Promise<void> {
   try {
-    const captacao = await criarCaptacao(parsed.data);
-    return { ok: true, message: `Captação criada para "${captacao.endereco}".`, captacao };
-  } catch (e) {
-    return { ok: false, message: e instanceof Error ? e.message : "Não foi possível criar a captação." };
+    await registrarConfirmacao({
+      propostaId,
+      textoFinal: null,
+      textoSugerido: null,
+      decididoPor: await getCurrentUserName(),
+    });
+  } catch (erro) {
+    console.error("[copiloto] não foi possível registrar a captação encaminhada:", erro);
   }
 }

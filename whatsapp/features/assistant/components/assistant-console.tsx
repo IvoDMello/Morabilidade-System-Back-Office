@@ -11,6 +11,7 @@ import {
   type ProporResultado,
 } from "@/app/assistente/actions";
 import { ProposalCard, type PropostaStatus } from "./proposal-card";
+import { linkNovaCaptacao, rascunhoDaProposta } from "@/lib/captacao-link";
 import type { AcaoProposta } from "@/services/assistant";
 
 interface Item extends AcaoProposta {
@@ -22,7 +23,7 @@ const EXEMPLOS = [
   "Criar captação: Rua das Acácias 120, 3 quartos, portaria 24h",
 ];
 
-export function AssistantConsole() {
+export function AssistantConsole({ captacoesUrl }: { captacoesUrl: string | null }) {
   const [instrucao, setInstrucao] = useState("");
   const [items, setItems] = useState<Item[]>([]);
   // Muda a cada nova rodada de propostas. Entra na `key` dos cartões para que
@@ -50,6 +51,27 @@ export function AssistantConsole() {
   function confirmar(idx: number, textoFinal: string | null) {
     const item = items[idx];
     const args = textoFinal === null ? item.args : { ...item.args, texto: textoFinal };
+
+    // Captação não nasce aqui: vai para o formulário completo do board, onde
+    // ganha os campos obrigatórios e passa pela checagem de duplicadas. Mesma
+    // regra do copiloto da conversa — um caminho só para criar captação.
+    if (item.tool === "criar_captacao") {
+      const href = linkNovaCaptacao(captacoesUrl, rascunhoDaProposta(args));
+      if (!href) {
+        toast.error("Board de captações não configurado (CAPTACOES_BOARD_URL).");
+        return;
+      }
+      window.open(href, "_blank", "noopener,noreferrer");
+      setItems((prev) =>
+        prev.map((it, i) =>
+          i === idx
+            ? { ...it, status: { kind: "done", message: "Aberto no board para você completar." } }
+            : it,
+        ),
+      );
+      return;
+    }
+
     setExecutingIdx(idx);
     executarAcaoAction(item.tool, args).then((res) => {
       setExecutingIdx(null);

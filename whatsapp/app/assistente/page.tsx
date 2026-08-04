@@ -12,7 +12,7 @@ export default function AssistentePage() {
         </p>
       </div>
 
-      <AssistantConsole />
+      <AssistantConsole captacoesUrl={process.env.CAPTACOES_BOARD_URL ?? null} />
     </div>
   );
 }

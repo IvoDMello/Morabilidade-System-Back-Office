@@ -19,11 +19,12 @@ import {
 } from "@/components/ui/sheet";
 import {
   analisarConversaAction,
-  criarCaptacaoDaConversaAction,
   dispensarPropostaAction,
   executarAcaoDaConversaAction,
+  registrarCaptacaoEncaminhadaAction,
   type AnaliseResultado,
 } from "@/app/conversas/copilot-actions";
+import { linkNovaCaptacao, rascunhoDaProposta } from "@/lib/captacao-link";
 import type { CaptacaoResumo } from "@/services/captacoes.service";
 import type { AgentProposal } from "@/types/agent-proposal";
 
@@ -35,6 +36,20 @@ interface Item extends Omit<AgentProposal, "status"> {
 
 function paraItens(propostas: AgentProposal[]): Item[] {
   return propostas.map((p) => ({ ...p, status: { kind: "pending" } }));
+}
+
+/** URL do cartão no board de captações (app irmão); null se o board não estiver
+ * configurado (`CAPTACOES_BOARD_URL`). */
+function linkDaCaptacao(captacoesUrl: string | null, id: string): string | null {
+  return captacoesUrl ? `${captacoesUrl.replace(/\/$/, "")}/captacao/${id}` : null;
+}
+
+/**
+ * Abre o formulário do board numa aba nova. Chamado direto do clique (nunca
+ * depois de um await), senão o navegador trata como popup e bloqueia.
+ */
+function abrirNoBoard(href: string): void {
+  window.open(href, "_blank", "noopener,noreferrer");
 }
 
 interface ConversationCopilotProps {
@@ -70,7 +85,6 @@ export function ConversationCopilot({
   const [isAnalyzing, startAnalyzing] = useTransition();
   const [executingIdx, setExecutingIdx] = useState<number | null>(null);
   const [showForm, setShowForm] = useState(false);
-  const [criadas, setCriadas] = useState<CaptacaoResumo[]>([]);
 
   function analisar() {
     setErro(null);
@@ -84,6 +98,28 @@ export function ConversationCopilot({
   function confirmar(idx: number, textoFinal: string | null) {
     const item = items[idx];
     const args = textoFinal === null ? item.args : { ...item.args, texto: textoFinal };
+
+    // Captação não é executada aqui: vai para o formulário completo do board,
+    // que é onde ela ganha bairro, valores, fotos e a checagem de duplicadas.
+    // O cartão só existe depois que alguém confirmar lá.
+    if (item.tool === "criar_captacao") {
+      const href = linkNovaCaptacao(captacoesUrl, rascunhoDaProposta(args));
+      if (!href) {
+        toast.error("Board de captações não configurado (CAPTACOES_BOARD_URL).");
+        return;
+      }
+      abrirNoBoard(href);
+      setItems((prev) =>
+        prev.map((it, i) =>
+          i === idx
+            ? { ...it, status: { kind: "done", message: "Aberto no board para você completar." } }
+            : it,
+        ),
+      );
+      void registrarCaptacaoEncaminhadaAction(item.id);
+      return;
+    }
+
     setExecutingIdx(idx);
     // `textoSugerido` vai junto para o servidor saber se o texto foi editado —
     // é essa diferença que ensina a voz da casa ao agente.
@@ -119,7 +155,6 @@ export function ConversationCopilot({
     void dispensarPropostaAction(item.id);
   }
 
-  const todasDoContato = [...criadas, ...captacoesContato];
 
   return (
     <Sheet>
@@ -155,10 +190,8 @@ export function ConversationCopilot({
           <NovaCaptacaoForm
             contactName={contactName}
             contactPhone={contactPhone}
-            onCreated={(c) => {
-              setCriadas((prev) => [c, ...prev]);
-              setShowForm(false);
-            }}
+            captacoesUrl={captacoesUrl}
+            onEncaminhada={() => setShowForm(false)}
           />
         )}
 
@@ -193,12 +226,14 @@ export function ConversationCopilot({
           <p className="text-xs font-semibold tracking-[0.08em] text-muted-foreground uppercase">
             Captações deste contato
           </p>
-          {todasDoContato.length === 0 ? (
+          {captacoesContato.length === 0 ? (
             <p className="text-xs text-muted-foreground">
               Nenhuma captação ligada ao telefone {contactPhone}.
             </p>
           ) : (
-            todasDoContato.map((c) => <CaptacaoCard key={c.id} captacao={c} />)
+            captacoesContato.map((c) => (
+              <CaptacaoCard key={c.id} captacao={c} href={linkDaCaptacao(captacoesUrl, c.id)} />
+            ))
           )}
         </div>
 
@@ -210,7 +245,7 @@ export function ConversationCopilot({
             </summary>
             <div className="mt-2 flex flex-col gap-2">
               {captacoesRecentes.map((c) => (
-                <CaptacaoCard key={c.id} captacao={c} />
+                <CaptacaoCard key={c.id} captacao={c} href={linkDaCaptacao(captacoesUrl, c.id)} />
               ))}
             </div>
           </details>
@@ -232,14 +267,14 @@ export function ConversationCopilot({
   );
 }
 
-function CaptacaoCard({ captacao }: { captacao: CaptacaoResumo }) {
+function CaptacaoCard({ captacao, href }: { captacao: CaptacaoResumo; href?: string | null }) {
   const detalhes = [
     captacao.quartos ? `${captacao.quartos}q` : null,
     captacao.banheiros ? `${captacao.banheiros}b` : null,
     captacao.tipoPortaria,
   ].filter(Boolean);
-  return (
-    <div className="rounded-lg border bg-card p-2.5">
+  const conteudo = (
+    <>
       <div className="flex items-start justify-between gap-2">
         <p className="min-w-0 flex-1 text-sm font-medium">{captacao.endereco}</p>
         <Badge variant="secondary" className="shrink-0 text-[10px]">
@@ -249,50 +284,74 @@ function CaptacaoCard({ captacao }: { captacao: CaptacaoResumo }) {
       {detalhes.length > 0 && (
         <p className="mt-0.5 text-xs text-muted-foreground">{detalhes.join(" · ")}</p>
       )}
-    </div>
+    </>
+  );
+
+  if (!href) return <div className="rounded-lg border bg-card p-2.5">{conteudo}</div>;
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="block rounded-lg border bg-card p-2.5 transition-colors hover:bg-accent"
+    >
+      {conteudo}
+    </a>
   );
 }
 
+/**
+ * Rascunho da captação: junta o que se sabe da conversa e leva para o
+ * formulário completo do board. Não grava nada — a captação só passa a existir
+ * quando alguém confirmar lá, com os campos obrigatórios preenchidos e depois
+ * da checagem de duplicadas.
+ */
 function NovaCaptacaoForm({
   contactName,
   contactPhone,
-  onCreated,
+  captacoesUrl,
+  onEncaminhada,
 }: {
   contactName: string;
   contactPhone: string;
-  onCreated: (c: CaptacaoResumo) => void;
+  captacoesUrl: string | null;
+  onEncaminhada: () => void;
 }) {
   const [endereco, setEndereco] = useState("");
   const [quartos, setQuartos] = useState("");
   const [banheiros, setBanheiros] = useState("");
   const [tipoPortaria, setTipoPortaria] = useState("");
   const [observacoes, setObservacoes] = useState("");
-  const [isSaving, startSaving] = useTransition();
 
-  function salvar() {
-    startSaving(async () => {
-      const res = await criarCaptacaoDaConversaAction({
-        endereco,
-        quartos: quartos ? Number(quartos) : null,
-        banheiros: banheiros ? Number(banheiros) : null,
-        tipoPortaria: tipoPortaria || undefined,
-        contatoProprietario: `${contactName} ${contactPhone}`,
-        observacoes: observacoes || undefined,
-      });
-      if (res.ok && res.captacao) {
-        toast.success(res.message);
-        onCreated(res.captacao);
-      } else {
-        toast.error(res.message);
-      }
-    });
+  const href = linkNovaCaptacao(captacoesUrl, {
+    endereco,
+    quartos,
+    banheiros,
+    tipo_portaria: tipoPortaria,
+    proprietario_nome: contactName,
+    whatsapp: contactPhone,
+    observacoes,
+  });
+
+  function completarNoBoard() {
+    if (!href) return;
+    abrirNoBoard(href);
+    onEncaminhada();
   }
 
   return (
     <div className="flex flex-col gap-2.5 rounded-lg border bg-card p-3">
       <p className="text-xs text-muted-foreground">
-        O proprietário ({contactName}) entra automaticamente como contato da captação.
+        {contactName} entra como proprietário, com o WhatsApp {contactPhone}. Isto é um rascunho:
+        ao continuar, o formulário completo do board abre já preenchido, e a captação só é criada
+        quando você confirmar lá.
       </p>
+      {!captacoesUrl && (
+        <p className="rounded-md bg-amber-500/10 px-2 py-1.5 text-xs text-amber-700 dark:text-amber-400">
+          Board de captações não configurado (<code>CAPTACOES_BOARD_URL</code>) — sem ele não há
+          para onde levar o rascunho.
+        </p>
+      )}
       <div className="flex flex-col gap-1">
         <Label htmlFor="cap-endereco" className="text-xs">
           Endereço *
@@ -352,9 +411,13 @@ function NovaCaptacaoForm({
           onChange={(e) => setObservacoes(e.target.value)}
         />
       </div>
-      <Button size="sm" onClick={salvar} loading={isSaving} disabled={!endereco.trim()}>
-        <Plus className="h-3.5 w-3.5" />
-        Criar captação
+      <Button
+        size="sm"
+        onClick={completarNoBoard}
+        disabled={!endereco.trim() || !href}
+      >
+        <ExternalLink className="h-3.5 w-3.5" />
+        Completar no board
       </Button>
     </div>
   );
