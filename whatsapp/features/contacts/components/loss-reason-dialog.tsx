@@ -74,8 +74,9 @@ export function LossReasonDialog({ open, onOpenChange, onConfirm }: LossReasonDi
 
           {noteRequired && (
             <div className="flex flex-col gap-1.5">
-              <Label>Detalhe *</Label>
+              <Label htmlFor="motivo-perda-detalhe">Detalhe *</Label>
               <Textarea
+                id="motivo-perda-detalhe"
                 rows={3}
                 placeholder="Descreva o motivo da perda"
                 value={note}

@@ -21,6 +21,12 @@ punia quem só queria a conversa: viram duas abas
 (`features/contacts/components/contact-panels.tsx`), com Atividade na frente.
 O alternador só existe abaixo de `lg`; no desktop não há decisão a tomar.
 
+No **composer da conversa**, o Enter envia com teclado físico e quebra linha no
+celular (`useMediaQuery("(pointer: coarse)")`). O teclado virtual usa essa tecla
+para quebrar linha, então tratá-la como envio impedia escrever mais de um
+parágrafo e mandava texto pela metade para o cliente. No toque o Enter também
+não escolhe resposta rápida — ali a escolha é tocando no item.
+
 ## Integração ao monorepo (2026-07-25)
 
 Este projeto nasceu isolado (`victorbathich/painel-crm`) e foi incorporado ao

@@ -185,6 +185,7 @@ export function PropertyPicker({
         <PopoverContent align="start" className="w-72">
           <div className="flex flex-col gap-2">
             <Input
+              aria-label="Código do imóvel a vincular"
               placeholder="Código do imóvel (ex.: MB-00033)"
               value={code}
               onChange={(e) => setCode(e.target.value)}

@@ -165,6 +165,29 @@ describe("formulários: todo input tem rótulo acessível", () => {
       `Inputs precisam de rótulo (id + <label htmlFor> ou aria-label):\n${offenders.join("\n")}`,
     ).toEqual([]);
   });
+
+  // A regra acima só enxerga `<input>` minúsculo, e quase todo campo do app
+  // passa pelos primitivos `<Input>`/`<Textarea>` do design system — 13 campos
+  // tinham só `placeholder`, que some ao digitar e não é lido como rótulo.
+  it("todo <Input>/<Textarea> do design system tem rótulo acessível", () => {
+    const offenders: string[] = [];
+    for (const file of FILES) {
+      if (isExcluded(file.path)) continue;
+      for (const tag of ["Input", "Textarea"]) {
+        for (const { attrs, index } of openTags(file.text, tag)) {
+          // `{...field}` vem do react-hook-form dentro de <FormField>, que já
+          // liga o <FormLabel> ao campo pelo id gerado.
+          const labeled =
+            /\b(id|aria-label|aria-labelledby)\s*=/.test(attrs) || /\{\.\.\.field\}/.test(attrs);
+          if (!labeled) offenders.push(`${file.path}:${lineOf(file.text, index)} (<${tag}>)`);
+        }
+      }
+    }
+    expect(
+      offenders,
+      `Campos precisam de nome acessível — placeholder não conta:\n${offenders.join("\n")}`,
+    ).toEqual([]);
+  });
 });
 
 describe("acessibilidade: botões só de ícone têm nome acessível", () => {

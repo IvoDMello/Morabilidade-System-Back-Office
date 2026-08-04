@@ -73,6 +73,7 @@ export function AssistantConsole() {
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-2 rounded-lg border bg-card p-4">
         <Textarea
+          aria-label="O que você quer que o assistente faça"
           value={instrucao}
           onChange={(e) => setInstrucao(e.target.value)}
           placeholder="Descreva o que você quer fazer… (ex.: agendar visita, criar captação)"

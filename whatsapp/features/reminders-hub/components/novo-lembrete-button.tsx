@@ -80,6 +80,7 @@ export function NovoLembreteButton({ contacts }: { contacts: Contact[] }) {
             <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
             <Input
               autoFocus
+              aria-label="Buscar o contato do lembrete"
               value={query}
               onChange={(e) => {
                 setQuery(e.target.value);

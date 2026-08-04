@@ -55,6 +55,7 @@ export function FollowUpSuggestion({ contactId }: { contactId: ID }) {
         <>
           <Textarea
             rows={4}
+            aria-label="Mensagem de retomada sugerida"
             value={suggestion}
             onChange={(e) => setSuggestion(e.target.value)}
           />

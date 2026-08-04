@@ -196,7 +196,10 @@ export function ConversationThread({
                             direction: message.direction,
                           })
                         }
-                        className="shrink-0 rounded-full p-1 text-ink-faint opacity-60 transition-opacity hover:bg-veil/6 hover:text-foreground focus-visible:opacity-100 md:opacity-0 md:group-hover:opacity-100"
+                        // No celular o botão fica sempre visível e encostado na
+                        // bolha: 24px era alvo de errar. No desktop ele só
+                        // aparece no hover, e o ponteiro acerta 24px sem drama.
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-ink-faint opacity-60 transition-opacity hover:bg-veil/6 hover:text-foreground focus-visible:opacity-100 md:h-6 md:w-6 md:opacity-0 md:group-hover:opacity-100"
                       >
                         <Reply className="h-4 w-4" />
                       </button>

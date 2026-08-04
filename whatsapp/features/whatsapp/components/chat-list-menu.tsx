@@ -156,6 +156,7 @@ export function ChatListMenu({
             <DialogTitle>Nova lista</DialogTitle>
           </DialogHeader>
           <Input
+            aria-label="Nome da lista"
             placeholder="Nome da lista (ex.: Proprietários)"
             value={newListName}
             onChange={(e) => setNewListName(e.target.value)}

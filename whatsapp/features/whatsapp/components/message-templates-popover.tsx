@@ -115,6 +115,7 @@ export function MessageTemplatesPopover({
         {creating ? (
           <div className="flex flex-col gap-2">
             <Input
+              aria-label="Título do template"
               placeholder="Título do template"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -122,6 +123,7 @@ export function MessageTemplatesPopover({
             />
             <Textarea
               rows={3}
+              aria-label="Texto do template"
               placeholder="Texto da mensagem"
               value={body}
               onChange={(e) => setBody(e.target.value)}
