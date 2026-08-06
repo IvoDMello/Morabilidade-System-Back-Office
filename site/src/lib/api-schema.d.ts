@@ -340,6 +340,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/clientes/interno/upsert-por-telefone": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upsert Cliente Por Telefone Interno
+         * @description Encontra um cliente pelo telefone ou cria um novo — o caminho pelo qual um
+         *     lead do WhatsApp entra de verdade na base do sistema.
+         *
+         *     Existe porque o CRM de chat só sabia CONSULTAR clientes. Quem chegava pelo
+         *     WhatsApp — que é como quase todo lead chega — ficava preso no schema do chat:
+         *     invisível para /clientes, para os relatórios, para o matching e até para a
+         *     própria ficha de visita, que ia com `cliente_id` nulo.
+         *
+         *     **Nunca sobrescreve dado existente.** Num cliente que já existe, o upsert só
+         *     preenche campo VAZIO. Um atendente que corrigiu o nome, classificou o tipo ou
+         *     escreveu uma observação sabe mais do que a integração: perder isso para uma
+         *     inferência automática seria pior do que não ter integração nenhuma. Por isso
+         *     o nome, em particular, jamais é tocado — só serve na criação.
+         */
+        post: operations["upsert_cliente_por_telefone_interno_clientes_interno_upsert_por_telefone_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/clientes/{cliente_id}": {
         parameters: {
             query?: never;
@@ -497,7 +529,12 @@ export interface paths {
         /** Listar Fichas */
         get: operations["listar_fichas_fichas_visita_get"];
         put?: never;
-        /** Criar Ficha */
+        /**
+         * Criar Ficha
+         * @description Além do painel, aceita integrações server-to-server (X-Internal-Token —
+         *     ex.: o cron do CRM que gera a ficha 1h antes da visita). A integração não
+         *     tem usuário próprio, então precisa mandar `corretor_id` explícito.
+         */
         post: operations["criar_ficha_fichas_visita_post"];
         delete?: never;
         options?: never;
@@ -2239,6 +2276,46 @@ export interface components {
             /** Telefone Secundario */
             telefone_secundario?: string | null;
             tipo_cliente?: components["schemas"]["TipoCliente"] | null;
+        };
+        /**
+         * ClienteUpsertInterno
+         * @description Entrada do upsert server-to-server por telefone (CRM do WhatsApp).
+         *
+         *     Deliberadamente menor que ClienteCreate: uma integração só deve mandar o que
+         *     ela realmente sabe. Tudo que um atendente preencheria à mão (CPF, endereço,
+         *     renda) fica de fora — não é papel do chat inventar esses campos.
+         */
+        ClienteUpsertInterno: {
+            /** Imovel Codigo */
+            imovel_codigo?: string | null;
+            /** Nome Completo */
+            nome_completo: string;
+            /** Observacoes */
+            observacoes?: string | null;
+            /** @default whatsapp */
+            origem_lead: components["schemas"]["OrigemLead"] | null;
+            status?: components["schemas"]["StatusCliente"] | null;
+            /** Telefone */
+            telefone: string;
+            tipo_cliente?: components["schemas"]["TipoCliente"] | null;
+        };
+        /**
+         * ClienteUpsertOut
+         * @description Resultado do upsert. `criado` diz ao CRM se ele acabou de trazer alguém
+         *     novo para a base ou se apenas reencontrou quem já existia — os dois casos
+         *     são normais, mas só o primeiro é notícia.
+         */
+        ClienteUpsertOut: {
+            /** Codigo */
+            codigo?: string | null;
+            /** Criado */
+            criado: boolean;
+            /** Id */
+            id: string;
+            /** Nome Completo */
+            nome_completo: string;
+            /** Telefone */
+            telefone?: string | null;
         };
         /**
          * CondicaoImovel
@@ -4412,6 +4489,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ClienteListOut"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upsert_cliente_por_telefone_interno_clientes_interno_upsert_por_telefone_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClienteUpsertInterno"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClienteUpsertOut"];
                 };
             };
             /** @description Validation Error */
