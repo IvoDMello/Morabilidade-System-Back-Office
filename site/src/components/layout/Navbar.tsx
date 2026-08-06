@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Menu, X, Instagram, ArrowRight } from "lucide-react";
+import { Instagram, ArrowRight } from "lucide-react";
 
 const links = [
   { href: "/", label: "Início" },
@@ -20,6 +20,21 @@ export function Navbar() {
   function isActive(href: string) {
     return href === "/" ? pathname === "/" : pathname.startsWith(href);
   }
+
+  // Trava o scroll da página e fecha o menu com Escape enquanto aberto
+  useEffect(() => {
+    if (!open) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
 
   return (
     <>
@@ -113,9 +128,9 @@ export function Navbar() {
         </div>
       </header>
 
-      {/* Mobile floating hamburger */}
+      {/* Mobile floating hamburger (vira X com animação elástica) */}
       <button
-        className="md:hidden fixed flex items-center justify-center"
+        className="md:hidden fixed flex items-center justify-center active:scale-90"
         style={{
           top: 16,
           right: 16,
@@ -125,30 +140,59 @@ export function Navbar() {
           backgroundColor: "#d8cb6a",
           border: "2px solid rgba(252,252,252,0.85)",
           borderRadius: 12,
-          color: "#3e4037",
           cursor: "pointer",
           padding: 0,
           boxShadow: "0 4px 16px rgba(0,0,0,0.35), 0 0 0 4px rgba(216,203,106,0.18)",
+          transition: "transform 0.2s ease",
         }}
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? "Fechar menu" : "Abrir menu"}
+        aria-expanded={open}
+        aria-controls="mobile-menu"
       >
-        {open ? <X className="w-6 h-6" strokeWidth={2.5} /> : <Menu className="w-6 h-6" strokeWidth={2.5} />}
+        <span className={`nav-burger ${open ? "is-open" : ""}`} aria-hidden>
+          <span />
+          <span />
+          <span />
+        </span>
       </button>
 
-      {/* Mobile menu, fullscreen overlay */}
-      {open && (
-        <div
-          className="md:hidden fixed inset-0 z-50 flex flex-col"
-          style={{ backgroundColor: "#3e4037", padding: "88px 28px 32px" }}
+      {/* Backdrop com blur — fecha ao tocar fora */}
+      <div
+        className={`md:hidden nav-backdrop ${open ? "is-open" : ""}`}
+        onClick={() => setOpen(false)}
+        aria-hidden
+      />
+
+      {/* Painel lateral em slide */}
+      <aside
+        id="mobile-menu"
+        className={`md:hidden nav-drawer ${open ? "is-open" : ""}`}
+        style={{ padding: "92px 28px 28px" }}
+      >
+        <span
+          className="nav-drawer-item"
+          style={{
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: "0.18em",
+            textTransform: "uppercase",
+            color: "#d8cb6a",
+            marginBottom: 8,
+            transitionDelay: open ? "80ms" : "0ms",
+          }}
         >
-          {links.map((link) => {
+          Navegação
+        </span>
+        <nav style={{ display: "flex", flexDirection: "column" }}>
+          {links.map((link, i) => {
             const active = isActive(link.href);
             return (
               <Link
                 key={link.href}
                 href={link.href}
                 onClick={() => setOpen(false)}
+                className="nav-drawer-item"
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -160,6 +204,7 @@ export function Navbar() {
                   textDecoration: "none",
                   borderBottom: "1px solid rgba(252,252,252,0.08)",
                   fontWeight: active ? 600 : 400,
+                  transitionDelay: open ? `${140 + i * 60}ms` : "0ms",
                 }}
               >
                 {active && (
@@ -176,28 +221,58 @@ export function Navbar() {
               </Link>
             );
           })}
-          <Link
-            href="/imoveis"
-            onClick={() => setOpen(false)}
+        </nav>
+        <Link
+          href="/imoveis"
+          onClick={() => setOpen(false)}
+          className="nav-drawer-item"
+          style={{
+            display: "inline-flex",
+            marginTop: 32,
+            backgroundColor: "#d8cb6a",
+            color: "#3e4037",
+            fontWeight: 700,
+            padding: "12px 24px",
+            borderRadius: 8,
+            fontSize: 15,
+            textDecoration: "none",
+            alignItems: "center",
+            gap: 8,
+            width: "fit-content",
+            transitionDelay: open ? `${140 + links.length * 60}ms` : "0ms",
+          }}
+        >
+          Ver imóveis <ArrowRight className="w-4 h-4" />
+        </Link>
+
+        {/* Rodapé do painel */}
+        <div
+          className="nav-drawer-item"
+          style={{
+            marginTop: "auto",
+            paddingTop: 24,
+            borderTop: "1px solid rgba(252,252,252,0.08)",
+            transitionDelay: open ? `${200 + links.length * 60}ms` : "0ms",
+          }}
+        >
+          <a
+            href="https://www.instagram.com/morabilidade"
+            target="_blank"
+            rel="noopener noreferrer"
             style={{
               display: "inline-flex",
-              marginTop: 32,
-              backgroundColor: "#d8cb6a",
-              color: "#3e4037",
-              fontWeight: 700,
-              padding: "12px 24px",
-              borderRadius: 8,
-              fontSize: 15,
-              textDecoration: "none",
               alignItems: "center",
-              gap: 8,
-              width: "fit-content",
+              gap: 10,
+              color: "rgba(252,252,252,0.6)",
+              fontSize: 13,
+              textDecoration: "none",
             }}
           >
-            Ver imóveis <ArrowRight className="w-4 h-4" />
-          </Link>
+            <Instagram className="w-[18px] h-[18px]" />
+            @morabilidade
+          </a>
         </div>
-      )}
+      </aside>
     </>
   );
 }
