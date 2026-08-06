@@ -348,14 +348,15 @@ def test_destaques_publico_vazio(anon_client):
 
 
 def test_atualizar_imovel_empurra_destaque_para_direita(client):
-    """Ao definir destaque_ordem=2 no imóvel A, o B que estava em 2 vai para 3."""
+    """Ao definir destaque_ordem=2 no imóvel A (que já era destaque), o B que estava em 2 vai para 3."""
     atualizado = {**IMOVEL_DB, "destaque_ordem": 2}
+    atual_check = MagicMock(data={"destaque_ordem": 5})  # A já era destaque (posição 5): reordenar, não forçar posição 1
     ocupadas = MagicMock(data=[{"id": "i-b", "destaque_ordem": 2}])  # select do helper
     update_shift = MagicMock(data=[])  # B: 2 → 3
     update_imovel = MagicMock(data=[atualizado])
     tag_del = MagicMock(data=[])
     detail = MagicMock(data=atualizado)
-    db = make_db_mock(ocupadas, update_shift, update_imovel, tag_del, detail)
+    db = make_db_mock(atual_check, ocupadas, update_shift, update_imovel, tag_del, detail)
 
     with patch("app.routers.imoveis.supabase_admin", db):
         res = client.put(
@@ -372,12 +373,13 @@ def test_atualizar_imovel_empurra_destaque_para_direita(client):
 def test_atualizar_imovel_destaque_posicao_10_sai(client):
     """Quem ocupa a posição 10 sai do destaque quando é empurrado."""
     atualizado = {**IMOVEL_DB, "destaque_ordem": 10}
+    atual_check = MagicMock(data={"destaque_ordem": 7})  # já era destaque (posição 7): reordenar, não forçar posição 1
     ocupadas = MagicMock(data=[{"id": "i-b", "destaque_ordem": 10}])
     update_shift = MagicMock(data=[])  # B: 10 → None
     update_imovel = MagicMock(data=[atualizado])
     tag_del = MagicMock(data=[])
     detail = MagicMock(data=atualizado)
-    db = make_db_mock(ocupadas, update_shift, update_imovel, tag_del, detail)
+    db = make_db_mock(atual_check, ocupadas, update_shift, update_imovel, tag_del, detail)
 
     with patch("app.routers.imoveis.supabase_admin", db):
         res = client.put(
@@ -400,6 +402,52 @@ def test_destaque_ordem_invalido_retorna_400(client):
         )
     assert res.status_code == 400
     assert "1 e 10" in res.json()["detail"]
+
+
+def test_atualizar_imovel_destaque_novo_forca_posicao_1(client):
+    """Imóvel que ainda não era destaque sempre entra na Posição 1, mesmo
+    que o formulário tenha enviado outra posição."""
+    atualizado = {**IMOVEL_DB, "destaque_ordem": 1}
+    atual_check = MagicMock(data={"destaque_ordem": None})  # ainda não era destaque
+    ocupadas = MagicMock(data=[{"id": "i-b", "destaque_ordem": 1}])  # B: 1 → 2
+    update_shift = MagicMock(data=[])
+    update_imovel = MagicMock(data=[atualizado])
+    tag_del = MagicMock(data=[])
+    detail = MagicMock(data=atualizado)
+    db = make_db_mock(atual_check, ocupadas, update_shift, update_imovel, tag_del, detail)
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.put(
+            "/imoveis/imovel-uuid-1",
+            # Formulário pediu posição 5, mas como o imóvel ainda não era
+            # destaque, o backend deve ignorar e forçar posição 1.
+            json={**IMOVEL_PAYLOAD, "destaque_ordem": 5},
+        )
+
+    assert res.status_code == 200
+    primeiro_update = db.update.call_args_list[0].args[0]
+    assert primeiro_update == {"destaque_ordem": 2}
+    # 2ª chamada é o update principal do imóvel editado, com o resto do payload
+    segundo_update = db.update.call_args_list[1].args[0]
+    assert segundo_update["destaque_ordem"] == 1
+
+
+def test_criar_imovel_com_destaque_forca_posicao_1(client):
+    """Imóvel recém-criado já marcado como destaque sempre entra na Posição 1."""
+    codigo_mock = MagicMock(data=1)
+    ocupadas = MagicMock(data=[{"id": "i-b", "destaque_ordem": 1}])  # B: 1 → 2
+    update_shift = MagicMock(data=[])
+    insert_mock = MagicMock(data=[{**IMOVEL_DB, "destaque_ordem": 1}])
+    detail_mock = MagicMock(data={**IMOVEL_DB, "destaque_ordem": 1})
+    db = make_db_mock(codigo_mock, ocupadas, update_shift, insert_mock, detail_mock)
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.post("/imoveis/", json={**IMOVEL_PAYLOAD, "destaque_ordem": 5})
+
+    assert res.status_code == 201
+    assert res.json()["destaque_ordem"] == 1
+    primeiro_update = db.update.call_args_list[0].args[0]
+    assert primeiro_update == {"destaque_ordem": 2}
 
 
 # ── GET /imoveis/publico/bairros ──────────────────────────────────────────────

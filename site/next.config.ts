@@ -12,6 +12,9 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Esconde o indicador de dev do Next (o "N" no canto inferior esquerdo).
+  // Ele nunca aparece em produção; isso é só pra não atrapalhar o preview local.
+  devIndicators: false,
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

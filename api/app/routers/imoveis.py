@@ -582,7 +582,11 @@ def criar_imovel(body: ImovelCreate, current_user: dict = Depends(require_admin_
             data[field] = float(data[field])
 
     if data.get("destaque_ordem") is not None:
-        _liberar_posicao_destaque(data["destaque_ordem"])
+        # Imóvel novo já nasce como destaque: sempre entra na Posição 1,
+        # empurrando os demais — não existe "reordenar" pra algo que ainda
+        # nem foi criado.
+        data["destaque_ordem"] = 1
+        _liberar_posicao_destaque(1)
 
     try:
         result = supabase_admin.table("imoveis").insert(data).execute()
@@ -618,6 +622,24 @@ def atualizar_imovel(
             updates[field] = float(updates[field])
 
     if "destaque_ordem" in updates and updates["destaque_ordem"] is not None:
+        if not (1 <= updates["destaque_ordem"] <= MAX_DESTAQUES):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Posição de destaque deve ser entre 1 e {MAX_DESTAQUES}.",
+            )
+        atual = (
+            supabase_admin.table("imoveis")
+            .select("destaque_ordem")
+            .eq("id", imovel_id)
+            .single()
+            .execute()
+        )
+        era_destaque = bool(atual.data and atual.data.get("destaque_ordem") is not None)
+        if not era_destaque:
+            # Imóvel está sendo destacado pela primeira vez: sempre entra na
+            # Posição 1, empurrando os demais. A posição escolhida no
+            # formulário só é respeitada pra reordenar quem já é destaque.
+            updates["destaque_ordem"] = 1
         _liberar_posicao_destaque(updates["destaque_ordem"], exceto_imovel_id=imovel_id)
 
     try:

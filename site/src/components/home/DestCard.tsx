@@ -24,9 +24,9 @@ export function DestCard({ imovel }: { imovel: ImovelCard }) {
   return (
     <Link
       href={`/imoveis/${imovel.codigo}`}
-      className="group flex-shrink-0 block overflow-hidden transition-all duration-300 hover:-translate-y-[3px] hover:shadow-[0_16px_40px_rgba(88,90,79,0.18)] hover:border-transparent"
+      className="group flex-shrink-0 block overflow-hidden hover:-translate-y-[3px] hover:shadow-[0_16px_40px_rgba(88,90,79,0.18)] hover:border-transparent"
       style={{
-        width: "clamp(220px, 75vw, 320px)",
+        width: "clamp(200px, 70vw, 320px)",
         borderRadius: 14,
         backgroundColor: "#fcfcfc",
         border: "1px solid #e4e1d6",
@@ -42,8 +42,7 @@ export function DestCard({ imovel }: { imovel: ImovelCard }) {
       >
         {imovel.foto_capa ? (
           <CardFotoCarousel
-            fotos={imovel.fotos?.length ? imovel.fotos : [imovel.foto_capa]}
-            totalFotos={imovel.total_fotos}
+            fotos={[imovel.foto_capa]}
             alt={`${labelTipoImovel(imovel.tipo_imovel)} em ${imovel.bairro}`}
             sizes="(max-width: 640px) 75vw, 320px"
           />
