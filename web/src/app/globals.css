@@ -49,6 +49,10 @@
   html {
     height: 100%;
     overflow: hidden;
+    /* Zoom desativado (ver `viewport` em app/layout.tsx): sem isto o
+       duplo-toque continua ampliando mesmo com user-scalable=no. pan-x/pan-y
+       preserva a rolagem — `none` mataria junto o scroll das áreas internas. */
+    touch-action: pan-x pan-y;
   }
   body {
     @apply bg-background text-foreground;
