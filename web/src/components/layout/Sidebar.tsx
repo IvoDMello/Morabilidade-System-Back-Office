@@ -72,7 +72,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         style={{ backgroundColor: "#585a4f" }}
       >
         {/* Logo + fechar (mobile) */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-white/10">
+        <div className="h-16 flex items-center justify-between px-4">
           <Image
             src="/Logo_fundoTransparente.png"
             alt="Morabilidade"
