@@ -29,7 +29,7 @@ export function Header({ onMenuClick }: HeaderProps) {
 
   return (
     <header
-      className="h-16 flex items-center justify-between px-4 md:px-6 bg-white dark:bg-slate-900 border-b"
+      className="h-16 flex items-center justify-between px-4 md:px-6 bg-[#fbfaf7] dark:bg-slate-900 border-b"
       style={{ borderColor: "#d8cb6a" }}
     >
       <div className="flex items-center gap-3">

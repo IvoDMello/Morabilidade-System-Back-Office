@@ -764,6 +764,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/imoveis/localidades": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listar Localidades
+         * @description Cidades e bairros já cadastrados, alimenta os selects do filtro do painel.
+         *
+         *     Diferente de /publico/bairros (que só enxerga imóveis disponíveis), aqui
+         *     entram todas as disponibilidades: o painel precisa filtrar também os
+         *     reservados e vendidos/locados.
+         */
+        get: operations["listar_localidades_imoveis_localidades_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/imoveis/publico/bairros": {
         parameters: {
             query?: never;
@@ -3190,6 +3214,17 @@ export interface components {
             /** Valor Venda */
             valor_venda?: number | string | null;
         };
+        /** LocalidadesOut */
+        LocalidadesOut: {
+            /** Bairros */
+            bairros: string[];
+            /** Bairros Por Cidade */
+            bairros_por_cidade: {
+                [key: string]: string[];
+            };
+            /** Cidades */
+            cidades: string[];
+        };
         /** LoginRequest */
         LoginRequest: {
             /**
@@ -5437,6 +5472,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listar_localidades_imoveis_localidades_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocalidadesOut"];
                 };
             };
         };

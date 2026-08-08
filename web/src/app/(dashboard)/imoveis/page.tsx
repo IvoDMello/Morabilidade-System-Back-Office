@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, Suspense } from "react";
+import { useEffect, useMemo, useState, useCallback, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -13,6 +13,7 @@ import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import { formatarMoeda } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { FiltroSelect } from "@/components/ui/FiltroSelect";
 import type { ImovelListOut } from "@/types";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
@@ -28,6 +29,13 @@ interface Filtros {
   preco_min: string;
   preco_max: string;
   sem_foto: boolean;
+}
+
+// Cidades e bairros já cadastrados, vindos de GET /imoveis/localidades.
+interface Localidades {
+  cidades: string[];
+  bairros: string[];
+  bairros_por_cidade: Record<string, string[]>;
 }
 
 const FILTROS_VAZIOS: Filtros = {
@@ -71,9 +79,28 @@ const TIPO_IMOVEL_LABEL: Record<string, string> = {
   cobertura: "Cobertura",
 };
 
+// ── Estilo do painel de filtros (paleta creme do redesign) ────────────────────
+
 const inputCls =
-  "w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-900 " +
-  "focus:outline-none focus:ring-2 focus:ring-[#585a4f]/30 focus:border-[#585a4f] placeholder:text-slate-400";
+  "w-full px-3.5 py-2.5 text-sm border border-[#e8e5da] rounded-xl bg-[#ffffff] text-[#26241c] " +
+  "focus:outline-none focus:ring-2 focus:ring-[#585a4f]/25 focus:border-[#585a4f] " +
+  "placeholder:text-[#a49d8b] transition-colors";
+
+// Rótulo de seção: caps pequeno com tracking largo.
+const labelCls =
+  "block text-[10px] font-semibold uppercase tracking-[0.12em] text-[#938d7c] mb-2";
+
+// ── Máscara de moeda (filtro de valores) ──────────────────────────────────────
+// O estado guarda só dígitos ("1500000"); a tela mostra com separador de
+// milhar ("1.500.000"), o que torna visível um zero a mais ou a menos.
+
+function apenasDigitos(s: string): string {
+  return s.replace(/\D/g, "").replace(/^0+(?=\d)/, "").slice(0, 12);
+}
+
+function formatarMilhar(digitos: string): string {
+  return digitos ? Number(digitos).toLocaleString("pt-BR") : "";
+}
 
 // Checagem de formato (sem rede): o link é um post/reel/tv do Instagram?
 // Posts/reels têm URL permanente, só não detectamos se o post foi apagado lá.
@@ -113,6 +140,10 @@ function ImoveisPageInner() {
     sem_foto: searchParams.get("sem_foto") === "1",
   }));
   const [filtrosOpen, setFiltrosOpen] = useState(false);
+  const [localidades, setLocalidades] = useState<Localidades | null>(null);
+  // Se a busca das localidades falhar, os selects viram inputs de texto para
+  // o filtro não ficar inutilizável.
+  const [localidadesErro, setLocalidadesErro] = useState(false);
   const [deletando, setDeletando] = useState<{ id: string; codigo: string } | null>(null);
   const [deletandoLoading, setDeletandoLoading] = useState(false);
   const [exportando, setExportando] = useState(false);
@@ -189,6 +220,34 @@ setLoading(true);
     buscar(page, filtros);
   }, [page, filtros, buscar]);
 
+  useEffect(() => {
+    api
+      .get<Localidades>("/imoveis/localidades")
+      .then((res) => setLocalidades(res.data))
+      .catch(() => setLocalidadesErro(true));
+  }, []);
+
+  // Com cidade escolhida, só os bairros dela; sem cidade, todos.
+  const bairrosDisponiveis = useMemo(() => {
+    if (!localidades) return [];
+    return filtros.cidade
+      ? localidades.bairros_por_cidade[filtros.cidade] ?? []
+      : localidades.bairros;
+  }, [localidades, filtros.cidade]);
+
+  function selecionarCidade(cidade: string) {
+    const permitidos = cidade
+      ? localidades?.bairros_por_cidade[cidade] ?? []
+      : localidades?.bairros ?? [];
+    setPage(1);
+    setFiltros((f) => ({
+      ...f,
+      cidade,
+      // Bairro que não existe na cidade nova zeraria a busca sem o usuário ver.
+      bairro: permitidos.includes(f.bairro) ? f.bairro : "",
+    }));
+  }
+
   function aplicarFiltros(e: React.FormEvent) {
     e.preventDefault();
     setPage(1);
@@ -252,179 +311,223 @@ setLoading(true);
       {/* ── Sidebar de filtros ── */}
       <aside
         className={[
-          "w-72 shrink-0 bg-white border-r border-slate-200 flex flex-col overflow-hidden",
+          "w-72 shrink-0 bg-[#fbfaf7] border-r border-[#ebe9df] flex flex-col overflow-hidden",
           "fixed top-16 left-0 bottom-0 z-30 transition-transform duration-200",
           filtrosOpen ? "translate-x-0" : "-translate-x-full",
           "md:relative md:top-auto md:bottom-auto md:z-auto md:translate-x-0",
         ].join(" ")}
       >
         {/* Header mobile */}
-        <div className="flex items-center justify-between px-4 py-4 border-b border-slate-100 md:hidden">
-          <span className="text-slate-700 font-semibold text-sm">Filtros</span>
-          <button onClick={() => setFiltrosOpen(false)} className="p-1 text-slate-500 hover:text-slate-700 rounded">
-            <X className="w-4 h-4" />
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#eeece3] md:hidden">
+          <span className="text-[#26241c] font-bold text-base">Filtros</span>
+          <button onClick={() => setFiltrosOpen(false)} className="p-1 text-[#938d7c] hover:text-[#26241c] rounded-lg transition">
+            <X className="w-5 h-5" />
           </button>
         </div>
         {/* Header desktop */}
-        <div className="hidden md:flex items-center gap-2 px-4 py-4 border-b border-slate-100 text-slate-700 font-semibold text-sm shrink-0">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z" />
-          </svg>
+        <div className="hidden md:flex items-center px-5 py-4 border-b border-[#eeece3] text-[#26241c] font-bold text-base shrink-0">
           Filtros
         </div>
 
         <form onSubmit={aplicarFiltros} className="flex flex-col flex-1 overflow-hidden">
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div className="flex-1 overflow-y-auto p-5 space-y-5">
 
             {/* Busca geral */}
             <div className="relative">
-              <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#a49d8b]" />
               <input
                 value={filtros.busca}
                 onChange={(e) => setFiltros((f) => ({ ...f, busca: e.target.value }))}
-                className={inputCls + " pl-9"}
+                className={inputCls + " pl-10"}
                 placeholder="Busque por endereço, código..."
               />
             </div>
 
             {/* Código */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Código</label>
-              <input
-                value={filtros.codigo}
-                onChange={(e) => setFiltros((f) => ({ ...f, codigo: e.target.value }))}
-                className={inputCls}
-                placeholder="Informe um código"
-              />
-            </div>
+            <input
+              value={filtros.codigo}
+              onChange={(e) => setFiltros((f) => ({ ...f, codigo: e.target.value }))}
+              className={inputCls}
+              placeholder="Código do imóvel"
+            />
 
             {/* Contrato */}
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Contrato</label>
-              <div className="flex gap-4">
-                {(["venda", "locacao"] as const).map((tipo) => (
-                  <label key={tipo} className="flex items-center gap-1.5 text-sm text-slate-700 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={filtros.tipo_negocio === tipo}
-                      onChange={() =>
+              <label className={labelCls}>Contrato</label>
+              <div className="grid grid-cols-2 gap-2">
+                {(["venda", "locacao"] as const).map((tipo) => {
+                  const ativo = filtros.tipo_negocio === tipo;
+                  return (
+                    <button
+                      key={tipo}
+                      type="button"
+                      aria-pressed={ativo}
+                      onClick={() =>
                         setFiltros((f) => ({ ...f, tipo_negocio: f.tipo_negocio === tipo ? "" : tipo }))
                       }
-                      className="w-4 h-4 rounded border-slate-300 accent-[#585a4f]"
-                    />
-                    {tipo === "venda" ? "Venda" : "Locação"}
-                  </label>
-                ))}
+                      className={
+                        "py-2.5 text-sm font-medium rounded-xl border transition " +
+                        (ativo
+                          ? "bg-[#26241c] text-white border-[#26241c]"
+                          : "bg-white text-[#4a473d] border-[#e8e5da] hover:border-[#d5d0c0]")
+                      }
+                    >
+                      {tipo === "venda" ? "Venda" : "Locação"}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
             {/* Disponibilidade */}
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Disponibilidade</label>
-              <select
+              <label className={labelCls}>Disponibilidade</label>
+              <FiltroSelect
                 value={filtros.disponibilidade}
-                onChange={(e) => setFiltros((f) => ({ ...f, disponibilidade: e.target.value }))}
-                className={inputCls}
-              >
-                <option value="">Todos</option>
-                <option value="disponivel">Disponível</option>
-                <option value="reservado">Reservado</option>
-                <option value="vendido_locado">Vendido / Locado</option>
-              </select>
-            </div>
-
-            {/* Sem foto */}
-            <div>
-              <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={filtros.sem_foto}
-                  onChange={(e) =>
-                    setFiltros((f) => ({ ...f, sem_foto: e.target.checked }))
-                  }
-                  className="w-4 h-4 rounded border-slate-300 accent-[#585a4f]"
-                />
-                Apenas imóveis sem foto
-              </label>
+                onChange={(disponibilidade) => setFiltros((f) => ({ ...f, disponibilidade }))}
+                todosLabel="Todos"
+                options={[
+                  { value: "disponivel", label: "Disponível" },
+                  { value: "reservado", label: "Reservado" },
+                  { value: "vendido_locado", label: "Vendido / Locado" },
+                ]}
+              />
             </div>
 
             {/* Tipo */}
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Tipo</label>
-              <select
+              <label className={labelCls}>Tipo</label>
+              <FiltroSelect
                 value={filtros.tipo_imovel}
-                onChange={(e) => setFiltros((f) => ({ ...f, tipo_imovel: e.target.value }))}
-                className={inputCls}
-              >
-                <option value="">Todos os tipos</option>
-                <option value="casa">Casa</option>
-                <option value="casa_vila">Casa de vila</option>
-                <option value="casa_condominio">Casa de condomínio</option>
-                <option value="apartamento">Apartamento</option>
-                <option value="cobertura">Cobertura</option>
-              </select>
-            </div>
-
-            {/* Cidade */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Cidade - UF</label>
-              <input
-                value={filtros.cidade}
-                onChange={(e) => setFiltros((f) => ({ ...f, cidade: e.target.value }))}
-                className={inputCls}
-                placeholder="Digite a cidade"
+                onChange={(tipo_imovel) => setFiltros((f) => ({ ...f, tipo_imovel }))}
+                todosLabel="Todos os tipos"
+                options={Object.entries(TIPO_IMOVEL_LABEL).map(([value, label]) => ({ value, label }))}
               />
             </div>
 
-            {/* Bairro */}
+            {/* Localização: cidade + bairro */}
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Bairro</label>
-              <input
-                value={filtros.bairro}
-                onChange={(e) => setFiltros((f) => ({ ...f, bairro: e.target.value }))}
-                className={inputCls}
-                placeholder="Digite o bairro"
-              />
-            </div>
-
-            {/* Valores */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Valores (R$)</label>
-              <div className="grid grid-cols-2 gap-2">
-                <input
-                  type="number"
-                  min={0}
-                  value={filtros.preco_min}
-                  onChange={(e) => setFiltros((f) => ({ ...f, preco_min: e.target.value }))}
-                  className={inputCls}
-                  placeholder="Mín."
-                />
-                <input
-                  type="number"
-                  min={0}
-                  value={filtros.preco_max}
-                  onChange={(e) => setFiltros((f) => ({ ...f, preco_max: e.target.value }))}
-                  className={inputCls}
-                  placeholder="Máx."
-                />
+              <label className={labelCls}>Localização</label>
+              <div className="space-y-2">
+                {localidadesErro ? (
+                  <>
+                    <input
+                      value={filtros.cidade}
+                      onChange={(e) => setFiltros((f) => ({ ...f, cidade: e.target.value }))}
+                      className={inputCls}
+                      placeholder="Digite a cidade"
+                    />
+                    <input
+                      value={filtros.bairro}
+                      onChange={(e) => setFiltros((f) => ({ ...f, bairro: e.target.value }))}
+                      className={inputCls}
+                      placeholder="Digite o bairro"
+                    />
+                  </>
+                ) : (
+                  <>
+                    <FiltroSelect
+                      value={filtros.cidade}
+                      onChange={selecionarCidade}
+                      disabled={!localidades}
+                      todosLabel={localidades ? "Todas as cidades" : "Carregando..."}
+                      options={(localidades?.cidades ?? []).map((c) => ({ value: c, label: c }))}
+                    />
+                    <FiltroSelect
+                      value={filtros.bairro}
+                      onChange={(bairro) => {
+                        setPage(1);
+                        setFiltros((f) => ({ ...f, bairro }));
+                      }}
+                      disabled={bairrosDisponiveis.length === 0}
+                      todosLabel={
+                        !localidades
+                          ? "Carregando..."
+                          : bairrosDisponiveis.length === 0
+                            ? "Nenhum bairro cadastrado"
+                            : "Todos os bairros"
+                      }
+                      options={bairrosDisponiveis.map((b) => ({ value: b, label: b }))}
+                    />
+                  </>
+                )}
               </div>
             </div>
+
+            {/* Faixa de valor */}
+            <div>
+              <label className={labelCls}>Faixa de valor</label>
+              <div className="flex items-center gap-2">
+                {([
+                  ["preco_min", "Mínimo"],
+                  ["preco_max", "Máximo"],
+                ] as const).map(([campo, placeholder], i) => (
+                  <div key={campo} className="contents">
+                    {i > 0 && <span className="shrink-0 text-[#a49d8b] select-none">–</span>}
+                    <div className="relative flex-1 min-w-0">
+                      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-[#a49d8b]">
+                        R$
+                      </span>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={formatarMilhar(filtros[campo])}
+                        onChange={(e) => {
+                          const digitos = apenasDigitos(e.target.value);
+                          setFiltros((f) => ({ ...f, [campo]: digitos }));
+                        }}
+                        className={inputCls + " pl-8 tabular-nums"}
+                        placeholder={placeholder}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {filtros.preco_min && filtros.preco_max &&
+                Number(filtros.preco_min) > Number(filtros.preco_max) && (
+                <p className="mt-1.5 text-[11px] text-amber-600">
+                  O valor mínimo está maior que o máximo — confira os zeros.
+                </p>
+              )}
+            </div>
+
+            {/* Sem foto */}
+            <button
+              type="button"
+              role="switch"
+              aria-checked={filtros.sem_foto}
+              onClick={() => setFiltros((f) => ({ ...f, sem_foto: !f.sem_foto }))}
+              className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-white border border-[#e8e5da] hover:border-[#d5d0c0] transition text-left"
+            >
+              <span className="text-sm text-[#4a473d]">Apenas imóveis sem foto</span>
+              <span
+                className={
+                  "relative shrink-0 w-10 h-[22px] rounded-full transition-colors " +
+                  (filtros.sem_foto ? "bg-[#585a4f]" : "bg-[#dcd8ca]")
+                }
+              >
+                <span
+                  className={
+                    "absolute top-[3px] left-[3px] w-4 h-4 rounded-full bg-white shadow transition-transform " +
+                    (filtros.sem_foto ? "translate-x-[18px]" : "")
+                  }
+                />
+              </span>
+            </button>
           </div>
 
           {/* Botões */}
-          <div className="shrink-0 p-4 border-t border-slate-100 flex gap-2">
+          <div className="shrink-0 p-4 border-t border-[#eeece3] flex gap-2">
             <button
               type="button"
               onClick={limparFiltros}
-              className="flex-1 px-4 py-2 text-sm font-medium border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 transition"
+              className="flex-1 px-4 py-2.5 text-sm font-medium border border-[#e8e5da] rounded-xl text-[#4a473d] bg-white hover:bg-[#f7f6f1] transition"
             >
               Limpar
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2 text-sm font-medium rounded-lg text-white transition hover:opacity-90"
-              style={{ backgroundColor: "#585a4f" }}
+              className="flex-[1.6] px-4 py-2.5 text-sm font-semibold rounded-xl text-white bg-[#26241c] hover:bg-[#3a372c] transition"
             >
               Filtrar
             </button>

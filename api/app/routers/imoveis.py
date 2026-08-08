@@ -412,8 +412,60 @@ def detalhe_imovel_interno(
 
 # ── Endpoints autenticados ────────────────────────────────────────────────────
 
-# IMPORTANTE: /exportar precisa vir ANTES de /{imovel_id},
-# senão "exportar" é capturado como UUID.
+# IMPORTANTE: /exportar e /localidades precisam vir ANTES de /{imovel_id},
+# senão o segmento é capturado como UUID.
+
+
+class LocalidadesOut(BaseModel):
+    cidades: List[str]
+    bairros: List[str]
+    bairros_por_cidade: dict[str, List[str]]
+
+
+def _dedup_por_norm(valores) -> List[str]:
+    """Ordena e remove duplicatas ignorando caixa/acento ('Botafogo' == 'botafogo').
+
+    Mantém o primeiro rótulo em ordem alfabética como forma canônica, então o
+    resultado é estável entre chamadas mesmo com cadastros digitados diferente.
+    """
+    canonicos: dict[str, str] = {}
+    for v in sorted(valores):
+        canonicos.setdefault(_norm(v), v)
+    return list(canonicos.values())
+
+
+@router.get("/localidades", response_model=LocalidadesOut)
+def listar_localidades(current_user: dict = Depends(get_current_user)):
+    """Cidades e bairros já cadastrados, alimenta os selects do filtro do painel.
+
+    Diferente de /publico/bairros (que só enxerga imóveis disponíveis), aqui
+    entram todas as disponibilidades: o painel precisa filtrar também os
+    reservados e vendidos/locados.
+    """
+    result = supabase_admin.table("imoveis").select("cidade, bairro").execute()
+
+    linhas = [
+        ((row.get("cidade") or "").strip(), (row.get("bairro") or "").strip())
+        for row in (result.data or [])
+    ]
+    cidades = _dedup_por_norm({c for c, _ in linhas if c})
+    bairros = _dedup_por_norm({b for _, b in linhas if b})
+
+    # Agrupa pelo rótulo canônico da cidade, senão variações de digitação
+    # criariam chaves paralelas que o front nunca encontraria.
+    canonica = {_norm(c): c for c in cidades}
+    por_cidade: dict[str, set] = {}
+    for cidade, bairro in linhas:
+        if cidade and bairro:
+            por_cidade.setdefault(canonica[_norm(cidade)], set()).add(bairro)
+
+    return {
+        "cidades": cidades,
+        "bairros": bairros,
+        "bairros_por_cidade": {
+            cidade: _dedup_por_norm(bs) for cidade, bs in sorted(por_cidade.items())
+        },
+    }
 
 @router.get("/exportar")
 def exportar_imoveis_csv(

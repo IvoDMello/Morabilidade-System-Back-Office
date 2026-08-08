@@ -508,6 +508,97 @@ def test_bairros_publico_rota_nao_conflita_com_codigo(anon_client):
     assert isinstance(res.json(), list)
 
 
+# ── GET /imoveis/localidades ──────────────────────────────────────────────────
+
+def test_localidades_agrupa_bairros_por_cidade(client):
+    rows = [
+        {"cidade": "Rio de Janeiro", "bairro": "Botafogo"},
+        {"cidade": "Rio de Janeiro", "bairro": "Copacabana"},
+        {"cidade": "Niterói", "bairro": "Icaraí"},
+    ]
+    db = make_db_mock(MagicMock(data=rows))
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/localidades")
+    assert res.status_code == 200
+    body = res.json()
+    assert body["cidades"] == ["Niterói", "Rio de Janeiro"]
+    assert body["bairros"] == ["Botafogo", "Copacabana", "Icaraí"]
+    assert body["bairros_por_cidade"] == {
+        "Niterói": ["Icaraí"],
+        "Rio de Janeiro": ["Botafogo", "Copacabana"],
+    }
+
+
+def test_localidades_inclui_imoveis_nao_disponiveis(client):
+    """Diferente de /publico/bairros, aqui não há filtro por disponibilidade."""
+    db = make_db_mock(MagicMock(data=[{"cidade": "Rio de Janeiro", "bairro": "Urca"}]))
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/localidades")
+    assert res.status_code == 200
+    assert res.json()["bairros"] == ["Urca"]
+    # O select não deve encadear .eq("disponibilidade", ...)
+    assert db.eq.call_count == 0
+
+
+def test_localidades_deduplica_ignorando_caixa_e_acento(client):
+    rows = [
+        {"cidade": "Rio de Janeiro", "bairro": "Botafogo"},
+        {"cidade": "rio de janeiro", "bairro": "botafogo"},
+        {"cidade": "Rio de Janeiro", "bairro": "Jardim Botânico"},
+        {"cidade": "Rio de Janeiro", "bairro": "Jardim Botanico"},
+    ]
+    db = make_db_mock(MagicMock(data=rows))
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/localidades")
+    body = res.json()
+    assert body["cidades"] == ["Rio de Janeiro"]
+    assert body["bairros"] == ["Botafogo", "Jardim Botanico"]
+    # Variação de digitação da cidade não cria chave paralela.
+    assert list(body["bairros_por_cidade"]) == ["Rio de Janeiro"]
+    assert body["bairros_por_cidade"]["Rio de Janeiro"] == ["Botafogo", "Jardim Botanico"]
+
+
+def test_localidades_ignora_nulos_vazios_e_espacos(client):
+    rows = [
+        {"cidade": "  Rio de Janeiro  ", "bairro": "  Leblon  "},
+        {"cidade": None, "bairro": "Sem Cidade"},
+        {"cidade": "Rio de Janeiro", "bairro": None},
+        {"cidade": "", "bairro": ""},
+    ]
+    db = make_db_mock(MagicMock(data=rows))
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/localidades")
+    body = res.json()
+    assert body["cidades"] == ["Rio de Janeiro"]
+    assert body["bairros"] == ["Leblon", "Sem Cidade"]
+    # Bairro sem cidade fica fora do agrupamento, mas continua na lista geral.
+    assert body["bairros_por_cidade"] == {"Rio de Janeiro": ["Leblon"]}
+
+
+def test_localidades_sem_imoveis_retorna_vazio(client):
+    db = make_db_mock(MagicMock(data=[]))
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/localidades")
+    assert res.status_code == 200
+    assert res.json() == {"cidades": [], "bairros": [], "bairros_por_cidade": {}}
+
+
+def test_localidades_exige_autenticacao(anon_client):
+    db = make_db_mock(MagicMock(data=[]))
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = anon_client.get("/imoveis/localidades")
+    assert res.status_code in (401, 403)
+
+
+def test_localidades_rota_nao_conflita_com_imovel_id(client):
+    """/localidades não pode ser capturado por /{imovel_id}."""
+    db = make_db_mock(MagicMock(data=[{"cidade": "Rio de Janeiro", "bairro": "Lagoa"}]))
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/localidades")
+    assert res.status_code == 200
+    assert "cidades" in res.json()
+
+
 # ── GET /imoveis/publico/disponiveis, parâmetro ordenar ─────────────────────
 
 def test_disponiveis_publico_ordenar_preco_asc_usa_campo_valor_venda(anon_client):

@@ -5161,6 +5161,41 @@
         "title": "ImovelUpdate",
         "type": "object"
       },
+      "LocalidadesOut": {
+        "properties": {
+          "bairros": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Bairros",
+            "type": "array"
+          },
+          "bairros_por_cidade": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "title": "Bairros Por Cidade",
+            "type": "object"
+          },
+          "cidades": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Cidades",
+            "type": "array"
+          }
+        },
+        "required": [
+          "cidades",
+          "bairros",
+          "bairros_por_cidade"
+        ],
+        "title": "LocalidadesOut",
+        "type": "object"
+      },
       "LoginRequest": {
         "properties": {
           "email": {
@@ -10157,6 +10192,33 @@
         "tags": [
           "Imóveis",
           "Integração"
+        ]
+      }
+    },
+    "/imoveis/localidades": {
+      "get": {
+        "description": "Cidades e bairros já cadastrados, alimenta os selects do filtro do painel.\n\nDiferente de /publico/bairros (que só enxerga imóveis disponíveis), aqui\nentram todas as disponibilidades: o painel precisa filtrar também os\nreservados e vendidos/locados.",
+        "operationId": "listar_localidades_imoveis_localidades_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocalidadesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Listar Localidades",
+        "tags": [
+          "Imóveis"
         ]
       }
     },
