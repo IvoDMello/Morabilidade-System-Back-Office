@@ -39,48 +39,60 @@ export default async function ImoveisPage({ searchParams }: Props) {
 
   return (
     <>
-      <Navbar />
+      <Navbar variante="clara" />
       <SearchTracker params={params} total={total} />
 
       {/* Header */}
       <div
         style={{
-          backgroundColor: "#585a4f",
-          padding: "clamp(36px,5vw,56px) clamp(20px,5vw,48px) clamp(40px,5vw,52px)",
+          backgroundColor: "#f6f4ec",
+          padding: "clamp(42px,6vw,88px) clamp(24px,5vw,64px) clamp(40px,5vw,72px)",
+          textAlign: "center",
         }}
       >
-        <div style={{ maxWidth: 1080, margin: "0 auto" }}>
+        <div style={{ maxWidth: 1000, margin: "0 auto" }}>
           <p
+            className="flex items-center justify-center"
             style={{
-              fontSize: 11,
-              letterSpacing: "0.18em",
-              fontWeight: 600,
-              color: "#d8cb6a",
+              fontSize: "clamp(11px,1.2vw,12px)",
+              letterSpacing: "0.28em",
+              fontWeight: 700,
+              color: "#9c8b2f",
               textTransform: "uppercase",
-              marginBottom: 12,
+              gap: "clamp(11px,1.4vw,14px)",
             }}
           >
+            <span
+              aria-hidden
+              className="flex-shrink-0"
+              style={{ width: "clamp(20px,2.4vw,28px)", height: 1, backgroundColor: "#9c8b2f" }}
+            />
             Portfólio · Curadoria
+            <span
+              aria-hidden
+              className="flex-shrink-0"
+              style={{ width: "clamp(20px,2.4vw,28px)", height: 1, backgroundColor: "#9c8b2f" }}
+            />
           </p>
           <h1
-            className="font-serif text-white"
+            className="font-serif"
             style={{
-              fontSize: "clamp(32px,5vw,50px)",
+              fontSize: "clamp(36px,5vw,62px)",
               fontWeight: 500,
-              lineHeight: 1.1,
-              marginBottom: 14,
+              lineHeight: 1.12,
+              color: "#3c3d2e",
+              margin: "clamp(18px,2vw,26px) 0 clamp(14px,1.6vw,20px)",
             }}
           >
-            Cada imóvel tem
-            <br />
-            <em>uma história</em>
+            Cada imóvel tem <em style={{ fontWeight: 400 }}>uma história</em>
           </h1>
           <p
             style={{
-              fontSize: 15,
-              color: "rgba(252,252,252,0.6)",
-              maxWidth: 440,
-              lineHeight: 1.75,
+              fontSize: "clamp(14.5px,1.6vw,17px)",
+              color: "#6f7069",
+              maxWidth: 560,
+              margin: "0 auto",
+              lineHeight: 1.65,
             }}
           >
             Selecionamos apenas os imóveis que nos encantam: pela arquitetura, pelo bairro, pelo

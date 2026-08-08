@@ -13,9 +13,32 @@ const links = [
   { href: "/contato", label: "Contato" },
 ];
 
-export function Navbar() {
+/** Altura da navbar por variante, para alinhar os elementos sticky da página. */
+export const NAVBAR_ALTURA = {
+  escura: "clamp(96px, 12vw, 104px)",
+  clara: 78,
+} as const;
+
+// Faixa mobile da variante clara. O hambúrguer é fixed (continua alcançável
+// depois do scroll), então o `top` dele é calculado a partir da altura da faixa
+// pra que os dois fiquem no mesmo eixo vertical.
+const FAIXA_MOBILE_ALTURA = 78;
+const FAIXA_MOBILE_PADDING = 20;
+const BURGER_CLARO = 42;
+const BURGER_CLARO_TOP = (FAIXA_MOBILE_ALTURA - BURGER_CLARO) / 2;
+
+interface NavbarProps {
+  /**
+   * "escura" é o padrão do site (faixa oliva). "clara" é o header do redesign,
+   * usado só na listagem de imóveis.
+   */
+  variante?: "escura" | "clara";
+}
+
+export function Navbar({ variante = "escura" }: NavbarProps) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const clara = variante === "clara";
 
   function isActive(href: string) {
     return href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -40,7 +63,15 @@ export function Navbar() {
     <>
       <header
         className="hidden md:block sticky top-0 z-50"
-        style={{ backgroundColor: "#585a4f", height: "clamp(96px, 12vw, 104px)" }}
+        style={
+          clara
+            ? {
+                backgroundColor: "#f6f4ec",
+                height: NAVBAR_ALTURA.clara,
+                borderBottom: "1px solid rgba(86,87,70,0.14)",
+              }
+            : { backgroundColor: "#585a4f", height: NAVBAR_ALTURA.escura }
+        }
       >
         <div
           className="flex items-center justify-between h-full"
@@ -49,11 +80,19 @@ export function Navbar() {
           {/* Logo */}
           <Link href="/" className="flex-shrink-0 flex items-center">
             <Image
-              src="/Logo_fundoTransparente.png"
+              src={clara ? "/logo-marca-clara.png" : "/Logo_fundoTransparente.png"}
               alt="Morabilidade"
-              width={220}
-              height={64}
-              style={{ height: "clamp(68px, 10vw, 76px)", width: "auto", objectFit: "contain" }}
+              width={clara ? 1855 : 220}
+              height={clara ? 890 : 64}
+              style={
+                clara
+                  ? { width: 146, height: "auto", objectFit: "contain" }
+                  : {
+                      height: "clamp(68px, 10vw, 76px)",
+                      width: "auto",
+                      objectFit: "contain",
+                    }
+              }
               priority
             />
           </Link>
@@ -69,14 +108,20 @@ export function Navbar() {
                   style={{
                     position: "relative",
                     fontSize: 14,
-                    color: active ? "#d8cb6a" : "rgba(252,252,252,0.65)",
+                    color: clara
+                      ? active
+                        ? "#3c3d2e"
+                        : "rgba(60,61,46,0.75)"
+                      : active
+                        ? "#d8cb6a"
+                        : "rgba(252,252,252,0.65)",
                     textDecoration: "none",
                     paddingBottom: 6,
                     transition: "color 0.15s",
                     fontWeight: active ? 600 : 400,
                     letterSpacing: active ? "0.02em" : "0",
                   }}
-                  className="hover:!text-[#fcfcfc]"
+                  className={clara ? "hover:!text-[#3c3d2e]" : "hover:!text-[#fcfcfc]"}
                 >
                   {link.label}
                   {active && (
@@ -87,7 +132,7 @@ export function Navbar() {
                         right: 0,
                         bottom: -2,
                         height: 2,
-                        backgroundColor: "#d8cb6a",
+                        backgroundColor: clara ? "#b9a53a" : "#d8cb6a",
                         borderRadius: 1,
                       }}
                     />
@@ -95,30 +140,58 @@ export function Navbar() {
                 </Link>
               );
             })}
-            <div style={{ width: 1, height: 18, backgroundColor: "rgba(252,252,252,0.18)" }} />
+            <div
+              style={{
+                width: 1,
+                height: 18,
+                backgroundColor: clara ? "rgba(86,87,70,0.25)" : "rgba(252,252,252,0.18)",
+              }}
+            />
             <a
               href="https://www.instagram.com/morabilidade"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Instagram @morabilidade"
-              style={{ color: "rgba(252,252,252,0.6)", display: "flex", alignItems: "center" }}
-              className="hover:!text-[#fcfcfc] transition-colors"
+              style={{
+                color: clara ? "rgba(60,61,46,0.8)" : "rgba(252,252,252,0.6)",
+                display: "flex",
+                alignItems: "center",
+              }}
+              className={
+                clara
+                  ? "hover:!text-[#3c3d2e] transition-colors"
+                  : "hover:!text-[#fcfcfc] transition-colors"
+              }
             >
               <Instagram className="w-[18px] h-[18px]" />
             </a>
             <Link
               href="/imoveis"
-              style={{
-                backgroundColor: "#d8cb6a",
-                color: "#3e4037",
-                fontWeight: 700,
-                padding: "7px 16px",
-                borderRadius: 6,
-                fontSize: 13,
-                textDecoration: "none",
-                letterSpacing: "0.01em",
-                transition: "opacity 0.15s",
-              }}
+              style={
+                clara
+                  ? {
+                      backgroundColor: "#565746",
+                      color: "#f0eee1",
+                      fontWeight: 600,
+                      padding: "10px 20px",
+                      borderRadius: 10,
+                      fontSize: 14,
+                      textDecoration: "none",
+                      letterSpacing: "0.01em",
+                      transition: "opacity 0.15s",
+                    }
+                  : {
+                      backgroundColor: "#d8cb6a",
+                      color: "#3e4037",
+                      fontWeight: 700,
+                      padding: "7px 16px",
+                      borderRadius: 6,
+                      fontSize: 13,
+                      textDecoration: "none",
+                      letterSpacing: "0.01em",
+                      transition: "opacity 0.15s",
+                    }
+              }
               className="hover:opacity-90"
             >
               Ver imóveis
@@ -128,22 +201,60 @@ export function Navbar() {
         </div>
       </header>
 
-      {/* Mobile floating hamburger (vira X com animação elástica) */}
+      {/* Mobile (variante clara): faixa com a marca na mesma linha do hambúrguer.
+          Altura fixa: é ela que centra a marca no mesmo eixo do botão fixo.
+          Sticky (z abaixo do backdrop) pra descer junto com o botão no scroll. */}
+      {clara && (
+        <div
+          className="md:hidden sticky top-0 z-[45] flex items-center justify-between"
+          style={{
+            backgroundColor: "#f6f4ec",
+            borderBottom: "1px solid rgba(86,87,70,0.14)",
+            height: FAIXA_MOBILE_ALTURA,
+            padding: `0 ${FAIXA_MOBILE_PADDING}px`,
+          }}
+        >
+          <Link href="/" className="flex items-center" aria-label="Morabilidade — início">
+            <Image
+              src="/logo-marca-clara.png"
+              alt="Morabilidade"
+              width={1855}
+              height={890}
+              style={{ width: 104, height: "auto", objectFit: "contain" }}
+              priority
+            />
+          </Link>
+          {/* Espaço reservado pro botão fixo do hambúrguer */}
+          <span style={{ width: BURGER_CLARO, height: BURGER_CLARO }} aria-hidden />
+        </div>
+      )}
+
+      {/* Mobile floating hamburger (vira X com animação elástica).
+          Na variante clara ele nasce discreto e assume o dourado ao abrir, pra
+          combinar com o painel lateral. */}
       <button
         className="md:hidden fixed flex items-center justify-center active:scale-90"
         style={{
-          top: 16,
-          right: 16,
+          top: clara ? BURGER_CLARO_TOP : 16,
+          right: clara ? FAIXA_MOBILE_PADDING : 16,
           zIndex: 60,
-          width: 48,
-          height: 48,
-          backgroundColor: "#d8cb6a",
-          border: "2px solid rgba(252,252,252,0.85)",
+          width: clara ? BURGER_CLARO : 48,
+          height: clara ? BURGER_CLARO : 48,
           borderRadius: 12,
           cursor: "pointer",
           padding: 0,
-          boxShadow: "0 4px 16px rgba(0,0,0,0.35), 0 0 0 4px rgba(216,203,106,0.18)",
-          transition: "transform 0.2s ease",
+          transition: "transform 0.2s ease, background-color 0.25s ease, border-color 0.25s ease",
+          ...(clara && !open
+            ? {
+                backgroundColor: "transparent",
+                border: "1px solid rgba(86,87,70,0.3)",
+                boxShadow: "none",
+              }
+            : {
+                backgroundColor: "#d8cb6a",
+                border: "2px solid rgba(252,252,252,0.85)",
+                boxShadow: "0 4px 16px rgba(0,0,0,0.35), 0 0 0 4px rgba(216,203,106,0.18)",
+              }),
         }}
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? "Fechar menu" : "Abrir menu"}
