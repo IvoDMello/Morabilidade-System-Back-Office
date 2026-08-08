@@ -13,32 +13,25 @@ const links = [
   { href: "/contato", label: "Contato" },
 ];
 
-/** Altura da navbar por variante, para alinhar os elementos sticky da página. */
-export const NAVBAR_ALTURA = {
-  escura: "clamp(96px, 12vw, 104px)",
-  clara: 78,
-} as const;
+/** Altura da navbar, para alinhar os elementos sticky da página. */
+export const NAVBAR_ALTURA = "clamp(96px, 12vw, 104px)";
 
-// Faixa mobile da variante clara. O hambúrguer é fixed (continua alcançável
-// depois do scroll), então o `top` dele é calculado a partir da altura da faixa
-// pra que os dois fiquem no mesmo eixo vertical.
+// Faixa mobile com a marca (só a listagem usa). O hambúrguer é fixed pra seguir
+// alcançável depois do scroll, então o `top` dele sai da altura da faixa — é
+// isso que mantém marca e botão no mesmo eixo vertical.
 const FAIXA_MOBILE_ALTURA = 78;
 const FAIXA_MOBILE_PADDING = 20;
-const BURGER_CLARO = 42;
-const BURGER_CLARO_TOP = (FAIXA_MOBILE_ALTURA - BURGER_CLARO) / 2;
+const BURGER = 48;
+const BURGER_TOP_NA_FAIXA = (FAIXA_MOBILE_ALTURA - BURGER) / 2;
 
 interface NavbarProps {
-  /**
-   * "escura" é o padrão do site (faixa oliva). "clara" é o header do redesign,
-   * usado só na listagem de imóveis.
-   */
-  variante?: "escura" | "clara";
+  /** Mostra a faixa com a marca no mobile, alinhada com o hambúrguer. */
+  marcaMobile?: boolean;
 }
 
-export function Navbar({ variante = "escura" }: NavbarProps) {
+export function Navbar({ marcaMobile = false }: NavbarProps) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
-  const clara = variante === "clara";
 
   function isActive(href: string) {
     return href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -63,15 +56,7 @@ export function Navbar({ variante = "escura" }: NavbarProps) {
     <>
       <header
         className="hidden md:block sticky top-0 z-50"
-        style={
-          clara
-            ? {
-                backgroundColor: "#f6f4ec",
-                height: NAVBAR_ALTURA.clara,
-                borderBottom: "1px solid rgba(86,87,70,0.14)",
-              }
-            : { backgroundColor: "#585a4f", height: NAVBAR_ALTURA.escura }
-        }
+        style={{ backgroundColor: "#585a4f", height: NAVBAR_ALTURA }}
       >
         <div
           className="flex items-center justify-between h-full"
@@ -80,19 +65,11 @@ export function Navbar({ variante = "escura" }: NavbarProps) {
           {/* Logo */}
           <Link href="/" className="flex-shrink-0 flex items-center">
             <Image
-              src={clara ? "/logo-marca-clara.png" : "/Logo_fundoTransparente.png"}
+              src="/Logo_fundoTransparente.png"
               alt="Morabilidade"
-              width={clara ? 1855 : 220}
-              height={clara ? 890 : 64}
-              style={
-                clara
-                  ? { width: 146, height: "auto", objectFit: "contain" }
-                  : {
-                      height: "clamp(68px, 10vw, 76px)",
-                      width: "auto",
-                      objectFit: "contain",
-                    }
-              }
+              width={220}
+              height={64}
+              style={{ height: "clamp(68px, 10vw, 76px)", width: "auto", objectFit: "contain" }}
               priority
             />
           </Link>
@@ -108,20 +85,14 @@ export function Navbar({ variante = "escura" }: NavbarProps) {
                   style={{
                     position: "relative",
                     fontSize: 14,
-                    color: clara
-                      ? active
-                        ? "#3c3d2e"
-                        : "rgba(60,61,46,0.75)"
-                      : active
-                        ? "#d8cb6a"
-                        : "rgba(252,252,252,0.65)",
+                    color: active ? "#d8cb6a" : "rgba(252,252,252,0.65)",
                     textDecoration: "none",
                     paddingBottom: 6,
                     transition: "color 0.15s",
                     fontWeight: active ? 600 : 400,
                     letterSpacing: active ? "0.02em" : "0",
                   }}
-                  className={clara ? "hover:!text-[#3c3d2e]" : "hover:!text-[#fcfcfc]"}
+                  className="hover:!text-[#fcfcfc]"
                 >
                   {link.label}
                   {active && (
@@ -132,7 +103,7 @@ export function Navbar({ variante = "escura" }: NavbarProps) {
                         right: 0,
                         bottom: -2,
                         height: 2,
-                        backgroundColor: clara ? "#b9a53a" : "#d8cb6a",
+                        backgroundColor: "#d8cb6a",
                         borderRadius: 1,
                       }}
                     />
@@ -140,58 +111,30 @@ export function Navbar({ variante = "escura" }: NavbarProps) {
                 </Link>
               );
             })}
-            <div
-              style={{
-                width: 1,
-                height: 18,
-                backgroundColor: clara ? "rgba(86,87,70,0.25)" : "rgba(252,252,252,0.18)",
-              }}
-            />
+            <div style={{ width: 1, height: 18, backgroundColor: "rgba(252,252,252,0.18)" }} />
             <a
               href="https://www.instagram.com/morabilidade"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Instagram @morabilidade"
-              style={{
-                color: clara ? "rgba(60,61,46,0.8)" : "rgba(252,252,252,0.6)",
-                display: "flex",
-                alignItems: "center",
-              }}
-              className={
-                clara
-                  ? "hover:!text-[#3c3d2e] transition-colors"
-                  : "hover:!text-[#fcfcfc] transition-colors"
-              }
+              style={{ color: "rgba(252,252,252,0.6)", display: "flex", alignItems: "center" }}
+              className="hover:!text-[#fcfcfc] transition-colors"
             >
               <Instagram className="w-[18px] h-[18px]" />
             </a>
             <Link
               href="/imoveis"
-              style={
-                clara
-                  ? {
-                      backgroundColor: "#565746",
-                      color: "#f0eee1",
-                      fontWeight: 600,
-                      padding: "10px 20px",
-                      borderRadius: 10,
-                      fontSize: 14,
-                      textDecoration: "none",
-                      letterSpacing: "0.01em",
-                      transition: "opacity 0.15s",
-                    }
-                  : {
-                      backgroundColor: "#d8cb6a",
-                      color: "#3e4037",
-                      fontWeight: 700,
-                      padding: "7px 16px",
-                      borderRadius: 6,
-                      fontSize: 13,
-                      textDecoration: "none",
-                      letterSpacing: "0.01em",
-                      transition: "opacity 0.15s",
-                    }
-              }
+              style={{
+                backgroundColor: "#d8cb6a",
+                color: "#3e4037",
+                fontWeight: 700,
+                padding: "7px 16px",
+                borderRadius: 6,
+                fontSize: 13,
+                textDecoration: "none",
+                letterSpacing: "0.01em",
+                transition: "opacity 0.15s",
+              }}
               className="hover:opacity-90"
             >
               Ver imóveis
@@ -201,22 +144,21 @@ export function Navbar({ variante = "escura" }: NavbarProps) {
         </div>
       </header>
 
-      {/* Mobile (variante clara): faixa com a marca na mesma linha do hambúrguer.
-          Altura fixa: é ela que centra a marca no mesmo eixo do botão fixo.
-          Sticky (z abaixo do backdrop) pra descer junto com o botão no scroll. */}
-      {clara && (
+      {/* Mobile: faixa com a marca na mesma linha do hambúrguer. Altura fixa: é
+          ela que centra a marca no mesmo eixo do botão fixo. Sticky (z abaixo do
+          backdrop) pra descer junto com o botão no scroll. */}
+      {marcaMobile && (
         <div
           className="md:hidden sticky top-0 z-[45] flex items-center justify-between"
           style={{
-            backgroundColor: "#f6f4ec",
-            borderBottom: "1px solid rgba(86,87,70,0.14)",
+            backgroundColor: "#585a4f",
             height: FAIXA_MOBILE_ALTURA,
             padding: `0 ${FAIXA_MOBILE_PADDING}px`,
           }}
         >
           <Link href="/" className="flex items-center" aria-label="Morabilidade — início">
             <Image
-              src="/logo-marca-clara.png"
+              src="/logo-marca.png"
               alt="Morabilidade"
               width={1855}
               height={890}
@@ -225,36 +167,26 @@ export function Navbar({ variante = "escura" }: NavbarProps) {
             />
           </Link>
           {/* Espaço reservado pro botão fixo do hambúrguer */}
-          <span style={{ width: BURGER_CLARO, height: BURGER_CLARO }} aria-hidden />
+          <span style={{ width: BURGER, height: BURGER }} aria-hidden />
         </div>
       )}
 
-      {/* Mobile floating hamburger (vira X com animação elástica).
-          Na variante clara ele nasce discreto e assume o dourado ao abrir, pra
-          combinar com o painel lateral. */}
+      {/* Mobile floating hamburger (vira X com animação elástica) */}
       <button
         className="md:hidden fixed flex items-center justify-center active:scale-90"
         style={{
-          top: clara ? BURGER_CLARO_TOP : 16,
-          right: clara ? FAIXA_MOBILE_PADDING : 16,
+          top: marcaMobile ? BURGER_TOP_NA_FAIXA : 16,
+          right: marcaMobile ? FAIXA_MOBILE_PADDING : 16,
           zIndex: 60,
-          width: clara ? BURGER_CLARO : 48,
-          height: clara ? BURGER_CLARO : 48,
+          width: BURGER,
+          height: BURGER,
+          backgroundColor: "#d8cb6a",
+          border: "2px solid rgba(252,252,252,0.85)",
           borderRadius: 12,
           cursor: "pointer",
           padding: 0,
-          transition: "transform 0.2s ease, background-color 0.25s ease, border-color 0.25s ease",
-          ...(clara && !open
-            ? {
-                backgroundColor: "transparent",
-                border: "1px solid rgba(86,87,70,0.3)",
-                boxShadow: "none",
-              }
-            : {
-                backgroundColor: "#d8cb6a",
-                border: "2px solid rgba(252,252,252,0.85)",
-                boxShadow: "0 4px 16px rgba(0,0,0,0.35), 0 0 0 4px rgba(216,203,106,0.18)",
-              }),
+          boxShadow: "0 4px 16px rgba(0,0,0,0.35), 0 0 0 4px rgba(216,203,106,0.18)",
+          transition: "transform 0.2s ease",
         }}
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? "Fechar menu" : "Abrir menu"}

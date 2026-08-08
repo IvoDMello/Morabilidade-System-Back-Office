@@ -351,7 +351,7 @@ export function FiltrosBar({ total, bairros = [] }: Props) {
     <div
       className="md:sticky z-[40] md:z-[90]"
       style={{
-        top: NAVBAR_ALTURA.clara,
+        top: NAVBAR_ALTURA,
         backgroundColor: FUNDO,
         borderTop: DIVIDER,
         borderBottom: DIVIDER,

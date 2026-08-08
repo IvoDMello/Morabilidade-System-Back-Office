@@ -39,13 +39,13 @@ export default async function ImoveisPage({ searchParams }: Props) {
 
   return (
     <>
-      <Navbar variante="clara" />
+      <Navbar marcaMobile />
       <SearchTracker params={params} total={total} />
 
       {/* Header */}
       <div
         style={{
-          backgroundColor: "#f6f4ec",
+          backgroundColor: "#585a4f",
           padding: "clamp(42px,6vw,88px) clamp(24px,5vw,64px) clamp(40px,5vw,72px)",
           textAlign: "center",
         }}
@@ -57,7 +57,7 @@ export default async function ImoveisPage({ searchParams }: Props) {
               fontSize: "clamp(11px,1.2vw,12px)",
               letterSpacing: "0.28em",
               fontWeight: 700,
-              color: "#9c8b2f",
+              color: "#d8cb6a",
               textTransform: "uppercase",
               gap: "clamp(11px,1.4vw,14px)",
             }}
@@ -65,13 +65,13 @@ export default async function ImoveisPage({ searchParams }: Props) {
             <span
               aria-hidden
               className="flex-shrink-0"
-              style={{ width: "clamp(20px,2.4vw,28px)", height: 1, backgroundColor: "#9c8b2f" }}
+              style={{ width: "clamp(20px,2.4vw,28px)", height: 1, backgroundColor: "#d8cb6a" }}
             />
             Portfólio · Curadoria
             <span
               aria-hidden
               className="flex-shrink-0"
-              style={{ width: "clamp(20px,2.4vw,28px)", height: 1, backgroundColor: "#9c8b2f" }}
+              style={{ width: "clamp(20px,2.4vw,28px)", height: 1, backgroundColor: "#d8cb6a" }}
             />
           </p>
           <h1
@@ -80,7 +80,7 @@ export default async function ImoveisPage({ searchParams }: Props) {
               fontSize: "clamp(36px,5vw,62px)",
               fontWeight: 500,
               lineHeight: 1.12,
-              color: "#3c3d2e",
+              color: "#fcfcfc",
               margin: "clamp(18px,2vw,26px) 0 clamp(14px,1.6vw,20px)",
             }}
           >
@@ -89,7 +89,7 @@ export default async function ImoveisPage({ searchParams }: Props) {
           <p
             style={{
               fontSize: "clamp(14.5px,1.6vw,17px)",
-              color: "#6f7069",
+              color: "rgba(252,252,252,0.72)",
               maxWidth: 560,
               margin: "0 auto",
               lineHeight: 1.65,
