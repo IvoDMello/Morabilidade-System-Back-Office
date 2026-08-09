@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Avaliações · Morabilidade</title>
+<style>
+  :root{
+    --olive:#585a4f; --olive-700:#4a4d43; --olive-800:#3d3f36; --olive-900:#2e302a;
+    --olive-100:#e8e8e4; --olive-50:#f5f5f3; --olive-200:#d0d1cb;
+    --gold:#d8cb6a; --gold-600:#b5a94a; --gold-100:#f3f0d0;
+    --radius:14px;
+    --shadow:0 2px 8px rgba(46,48,42,.10), 0 1px 2px rgba(46,48,42,.05);
+    --shadow-h:0 8px 24px rgba(46,48,42,.16), 0 2px 6px rgba(46,48,42,.06);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    color:var(--olive-900); background:var(--olive-50);
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.serif{font-family:'Playfair Display',Georgia,serif}
+  header.top{
+    background:linear-gradient(135deg,#2e302a 0%,#585a4f 55%,#4a4d43 100%);
+    color:#fff; padding:22px 28px; display:flex; align-items:center; gap:18px;
+    box-shadow:var(--shadow);
+  }
+  header.top img{height:46px; width:auto; filter:drop-shadow(0 1px 2px rgba(0,0,0,.3))}
+  header.top .titles h1{margin:0; font-size:22px; font-weight:700; letter-spacing:.2px}
+  header.top .titles p{margin:2px 0 0; font-size:13px; color:var(--gold-100); opacity:.9}
+  main{max-width:1100px; margin:0 auto; padding:26px 20px 80px}
+
+  .panel{
+    background:#fff; border:1px solid var(--olive-100); border-radius:var(--radius);
+    box-shadow:var(--shadow); padding:22px; margin-bottom:26px;
+  }
+  .panel > h2{margin:0 0 4px; font-size:18px; color:var(--olive-800)}
+  .panel > .hint{margin:0 0 18px; font-size:13px; color:var(--olive)}
+
+  .fields{display:grid; grid-template-columns:2fr 1fr 1.4fr; gap:16px}
+  @media(max-width:720px){.fields{grid-template-columns:1fr}}
+  label{display:block; font-size:12px; font-weight:600; text-transform:uppercase;
+    letter-spacing:.4px; color:var(--olive); margin-bottom:6px}
+  input[type=text],input[type=date],textarea{
+    width:100%; padding:11px 13px; border:1px solid var(--olive-200); border-radius:10px;
+    font-size:14px; font-family:inherit; color:var(--olive-900); background:var(--olive-50);
+    transition:border-color .15s, box-shadow .15s;
+  }
+  input:focus,textarea:focus{outline:none; border-color:var(--gold-600); box-shadow:0 0 0 3px var(--gold-100); background:#fff}
+  textarea{resize:vertical; min-height:70px; line-height:1.45}
+  .desc-wrap{padding:4px 16px 0}
+  .desc-wrap label{margin-bottom:6px}
+
+  .deliveries{display:grid; grid-template-columns:1fr 1fr; gap:22px}
+  @media(max-width:720px){.deliveries{grid-template-columns:1fr}}
+  .delivery{
+    border:1px solid var(--olive-100); border-radius:var(--radius); background:#fff;
+    box-shadow:var(--shadow); overflow:hidden; display:flex; flex-direction:column;
+  }
+  .delivery .dhead{
+    padding:14px 16px; border-bottom:1px solid var(--olive-100);
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+  }
+  .delivery .dhead .dname{font-family:'Playfair Display',Georgia,serif; font-size:16px; font-weight:600; color:var(--olive-800)}
+  .badge{background:var(--gold-100); color:var(--olive-800); font-size:12px; font-weight:600;
+    padding:3px 10px; border-radius:999px; min-width:26px; text-align:center}
+  .badge.tag{background:var(--olive-100)}
+
+  .drop{
+    margin:14px 16px 6px; border:2px dashed var(--olive-200); border-radius:12px;
+    padding:22px 14px; text-align:center; color:var(--olive); cursor:pointer;
+    transition:.15s; background:var(--olive-50); font-size:13px;
+  }
+  .drop:hover,.drop.over{border-color:var(--gold-600); background:var(--gold-100); color:var(--olive-800)}
+  .drop b{color:var(--olive-800)}
+
+  .thumbs{display:grid; grid-template-columns:repeat(auto-fill,minmax(84px,1fr)); gap:8px; padding:12px 16px}
+  .thumb{position:relative; aspect-ratio:4/3; border-radius:8px; overflow:hidden;
+    border:1px solid var(--olive-100); background:var(--olive-100); cursor:grab;
+    transition:transform .12s, box-shadow .12s, opacity .12s}
+  .thumb:active{cursor:grabbing}
+  .thumb.dragging{opacity:.35; box-shadow:var(--shadow-h)}
+  .thumb.drop-target{outline:3px solid var(--gold); outline-offset:-1px; transform:scale(1.04)}
+  .thumb img{width:100%; height:100%; object-fit:cover; display:block; pointer-events:none}
+  .thumb .rm{position:absolute; top:3px; right:3px; width:20px; height:20px; border:none;
+    border-radius:50%; background:rgba(46,48,42,.7); color:#fff; font-size:13px; line-height:1;
+    cursor:pointer; display:flex; align-items:center; justify-content:center}
+  .thumb .rm:hover{background:#b23}
+  .thumb .num{position:absolute; bottom:3px; left:3px; background:rgba(46,48,42,.7); color:#fff;
+    font-size:10px; padding:1px 5px; border-radius:6px}
+
+  .dfoot{margin-top:auto; padding:12px 16px 16px}
+  button.btn{
+    font-family:inherit; font-size:14px; font-weight:600; cursor:pointer; border-radius:10px;
+    padding:11px 16px; border:1px solid transparent; transition:.15s; width:100%;
+  }
+  button.btn.primary{background:var(--olive); color:#fff}
+  button.btn.primary:hover{background:var(--olive-800)}
+  button.btn.primary:disabled{background:var(--olive-200); color:#fff; cursor:not-allowed}
+  button.btn.ghost{background:#fff; color:var(--olive-800); border-color:var(--olive-200)}
+  button.btn.ghost:hover{border-color:var(--gold-600); background:var(--gold-100)}
+
+  .actions{position:sticky; bottom:0; margin-top:8px; display:flex; gap:14px; justify-content:center;
+    background:linear-gradient(to top, var(--olive-50) 60%, rgba(245,245,243,0)); padding:18px 0 6px}
+  .actions button{max-width:280px}
+  .toast{position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--olive-900); color:#fff; padding:12px 20px; border-radius:10px; font-size:14px;
+    box-shadow:var(--shadow-h); opacity:0; pointer-events:none; transition:.25s}
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+  .settings{display:flex; gap:20px; flex-wrap:wrap; align-items:center; margin-top:16px; font-size:13px; color:var(--olive)}
+  .settings label{display:inline-flex; align-items:center; gap:8px; text-transform:none; letter-spacing:0; font-weight:500; margin:0; cursor:pointer}
+</style>
+</head>
+<body>
+<header class="top">
+  <img id="logoImg" alt="Morabilidade" />
+  <div class="titles">
+    <h1>Avaliações Fotográficas</h1>
+    <p>Geração de entregas em PDF · Morabilidade</p>
+  </div>
+</header>
+
+<main>
+  <section class="panel">
+    <h2>Dados da avaliação</h2>
+    <p class="hint">Aparecem no cabeçalho de todas as páginas dos PDFs.</p>
+    <div class="fields">
+      <div>
+        <label for="endereco">Endereço / Identificação do imóvel</label>
+        <input type="text" id="endereco" placeholder="Ex.: Rua das Acácias, 120, Apto 302 · Cód. 1045" />
+      </div>
+      <div>
+        <label for="data">Data da avaliação</label>
+        <input type="date" id="data" />
+      </div>
+      <div>
+        <label for="avaliador">Avaliador / Responsável</label>
+        <input type="text" id="avaliador" placeholder="Nome de quem avaliou" />
+      </div>
+    </div>
+    <div class="settings">
+      <label><input type="checkbox" id="optGrid" checked /> Grade automática (2 fotos por linha)</label>
+      <label><input type="checkbox" id="optDate" checked /> Mostrar data no cabeçalho</label>
+    </div>
+  </section>
+
+  <section class="panel" style="background:transparent;border:none;box-shadow:none;padding:0">
+    <div class="deliveries" id="deliveries"></div>
+  </section>
+
+  <div class="actions">
+    <button class="btn ghost" id="btnClear">Limpar tudo</button>
+    <button class="btn primary" id="btnAll">Gerar todos os PDFs</button>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script src="vendor/jspdf.umd.min.js"></script>
+<script src="assets/logo-data.js"></script>
+<script>
+document.getElementById('logoImg').src = window.MORA_LOGO;
+
+// ---- estado ----
+const DELIVERIES = [
+  { id:'venda_com',   negocio:'VENDA',    mobilia:'COM MOBÍLIA',  nome:'Imóvel para Venda · com mobília' },
+  { id:'venda_sem',   negocio:'VENDA',    mobilia:'SEM MOBÍLIA',  nome:'Imóvel para Venda · sem mobília' },
+  { id:'locacao_com', negocio:'LOCAÇÃO',  mobilia:'COM MOBÍLIA',  nome:'Imóvel para Locação · com mobília' },
+  { id:'locacao_sem', negocio:'LOCAÇÃO',  mobilia:'SEM MOBÍLIA',  nome:'Imóvel para Locação · sem mobília' },
+];
+const store = {}; // id -> [{dataURL, name}]
+DELIVERIES.forEach(d => store[d.id] = []);
+let dragCtx = null; // reordenação de miniaturas
+
+// data default = hoje
+(function(){
+  const t = new Date(); const off = t.getTimezoneOffset()*60000;
+  document.getElementById('data').value = new Date(t-off).toISOString().slice(0,10);
+})();
+
+// ---- UI das entregas ----
+const wrap = document.getElementById('deliveries');
+DELIVERIES.forEach(d => {
+  const el = document.createElement('div');
+  el.className = 'delivery'; el.dataset.id = d.id;
+  el.innerHTML = `
+    <div class="dhead">
+      <span class="dname">${d.nome}</span>
+      <span class="badge" data-count>0</span>
+    </div>
+    <div class="drop" data-drop>Arraste fotos aqui ou <b>clique para selecionar</b><br><small>JPG / PNG · várias de uma vez · arraste as miniaturas para reordenar</small></div>
+    <input type="file" accept="image/*" multiple hidden data-input />
+    <div class="desc-wrap">
+      <label>Descrição da entrega (opcional)</label>
+      <textarea data-desc placeholder="Observações do avaliador sobre esta entrega: estado de conservação, destaques, ressalvas..."></textarea>
+    </div>
+    <div class="thumbs" data-thumbs></div>
+    <div class="dfoot">
+      <button class="btn ghost" data-gen>Gerar PDF desta entrega</button>
+    </div>`;
+  wrap.appendChild(el);
+
+  const input = el.querySelector('[data-input]');
+  const drop  = el.querySelector('[data-drop]');
+  drop.addEventListener('click', () => input.click());
+  input.addEventListener('change', e => addFiles(d.id, e.target.files));
+  ['dragover','dragenter'].forEach(ev => drop.addEventListener(ev, e => {e.preventDefault(); drop.classList.add('over');}));
+  ['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => {e.preventDefault(); drop.classList.remove('over');}));
+  drop.addEventListener('drop', e => addFiles(d.id, e.dataTransfer.files));
+  el.querySelector('[data-gen]').addEventListener('click', () => gerarPDF(d.id));
+});
+
+function addFiles(id, fileList){
+  const files = [...fileList].filter(f => f.type.startsWith('image/'));
+  if(!files.length) return;
+  // ordena por nome de arquivo (natural: foto2 antes de foto10)
+  files.sort((a,b) => a.name.localeCompare(b.name, 'pt', {numeric:true, sensitivity:'base'}));
+  const slots = new Array(files.length);   // preserva a ordem mesmo com carregamento assíncrono
+  let pend = files.length;
+  const done = () => { if(--pend===0){ slots.forEach(s => { if(s) store[id].push(s); }); render(id); } };
+  files.forEach((f, idx) => {
+    const r = new FileReader();
+    r.onload = () => { slots[idx] = {dataURL:r.result, name:f.name}; done(); };
+    r.onerror = () => { done(); };
+    r.readAsDataURL(f);
+  });
+}
+
+function render(id){
+  const el = wrap.querySelector(`[data-id="${id}"]`);
+  const box = el.querySelector('[data-thumbs]');
+  box.innerHTML = '';
+  store[id].forEach((p, i) => {
+    const t = document.createElement('div'); t.className='thumb'; t.draggable = true; t.dataset.i = i;
+    t.innerHTML = `<img src="${p.dataURL}" draggable="false"><span class="num">${i+1}</span><button class="rm" title="Remover">×</button>`;
+    t.querySelector('.rm').addEventListener('click', () => { store[id].splice(i,1); render(id); });
+    // reordenar arrastando
+    t.addEventListener('dragstart', e => { dragCtx = {id, from:i}; t.classList.add('dragging'); e.dataTransfer.effectAllowed='move'; });
+    t.addEventListener('dragend',   () => { t.classList.remove('dragging'); box.querySelectorAll('.thumb').forEach(x=>x.classList.remove('drop-target')); });
+    t.addEventListener('dragover',  e => { if(dragCtx && dragCtx.id===id){ e.preventDefault(); e.dataTransfer.dropEffect='move'; t.classList.add('drop-target'); } });
+    t.addEventListener('dragleave', () => t.classList.remove('drop-target'));
+    t.addEventListener('drop',      e => {
+      e.preventDefault(); e.stopPropagation();
+      if(!dragCtx || dragCtx.id!==id) return;
+      const from = dragCtx.from, to = i;
+      if(from !== to){ const arr = store[id]; const [m] = arr.splice(from,1); arr.splice(to,0,m); }
+      dragCtx = null; render(id);
+    });
+    box.appendChild(t);
+  });
+  el.querySelector('[data-count]').textContent = store[id].length;
+}
+
+// ---- helpers ----
+function toast(msg){
+  const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._t); t._t = setTimeout(()=>t.classList.remove('show'), 2600);
+}
+function fmtData(iso){
+  if(!iso) return '';
+  const [y,m,d] = iso.split('-'); return `${d}/${m}/${y}`;
+}
+function loadImg(src){
+  return new Promise(res => { const im = new Image(); im.onload = () => res(im); im.onerror = () => res(null); im.src = src; });
+}
+
+// ---- geração de PDF ----
+async function gerarPDF(id){
+  const d = DELIVERIES.find(x => x.id === id);
+  const fotos = store[id];
+  if(!fotos.length){ toast('Adicione ao menos uma foto nesta entrega.'); return; }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit:'mm', format:'a4' });
+  const PW = 210, PH = 297, M = 12;
+  const grid = document.getElementById('optGrid').checked;
+  const showDate = document.getElementById('optDate').checked;
+
+  const endereco  = document.getElementById('endereco').value.trim();
+  const avaliador = document.getElementById('avaliador').value.trim();
+  const dataStr   = showDate ? fmtData(document.getElementById('data').value) : '';
+  const descricao = wrap.querySelector(`[data-id="${id}"] [data-desc]`).value.trim();
+
+  // pré-carrega imagens (para proporção)
+  const imgs = [];
+  for(const f of fotos){ imgs.push({ ...f, el: await loadImg(f.dataURL) }); }
+
+  const logo = await loadImg(window.MORA_LOGO);
+
+  // --- cabeçalho por página ---
+  function header(pageNum){
+    // faixa superior olive
+    doc.setFillColor(0x2e,0x30,0x2a);
+    doc.rect(0, 0, PW, 30, 'F');
+    // linha dourada
+    doc.setFillColor(0xd8,0xcb,0x6a);
+    doc.rect(0, 30, PW, 1.4, 'F');
+    // logo
+    if(logo){
+      const lh = 20, lw = lh * (logo.width/logo.height);
+      doc.addImage(logo, 'PNG', M, (30 - lh)/2, lw, lh);
+    }
+    // título do serviço (à direita)
+    doc.setTextColor(255,255,255);
+    doc.setFont('times','bold'); doc.setFontSize(15);
+    doc.text(d.negocio + ' · ' + d.mobilia, PW - M, 15, { align:'right' });
+    doc.setFont('helvetica','normal'); doc.setFontSize(9);
+    doc.setTextColor(0xf3,0xf0,0xd0);
+    doc.text('Avaliação Fotográfica · Morabilidade', PW - M, 22, { align:'right' });
+
+    // sub-cabeçalho: endereço / data / avaliador
+    let y = 38; doc.setTextColor(0x58,0x5a,0x4f); doc.setFontSize(9);
+    const parts = [];
+    if(endereco)  parts.push(endereco);
+    if(dataStr)   parts.push('Data: ' + dataStr);
+    if(avaliador) parts.push('Avaliador: ' + avaliador);
+    if(parts.length){
+      doc.setFont('helvetica','normal');
+      const line = parts.join('   |   ');
+      doc.text(line, M, y, { maxWidth: PW - 2*M });
+      doc.setDrawColor(0xd0,0xd1,0xcb); doc.setLineWidth(0.2);
+      doc.line(M, y+3, PW - M, y+3);
+      return y + 9;
+    }
+    return 36;
+  }
+
+  function footer(pageNum, total){
+    doc.setFont('helvetica','normal'); doc.setFontSize(8);
+    doc.setTextColor(0x88,0x8b,0x7e);
+    doc.text('Morabilidade · ' + d.nome, M, PH - 7);
+    doc.text('Página ' + pageNum + ' de ' + total, PW - M, PH - 7, { align:'right' });
+  }
+
+  // layout das fotos
+  const cols = grid ? 2 : 1;
+  const gap = 6;
+  const cellW = (PW - 2*M - gap*(cols-1)) / cols;
+  const cellH = grid ? cellW * 0.72 : (PH - 2*M) * 0.42;
+  const hasSub = !!(endereco || dataStr || avaliador);
+  const baseStart = hasSub ? 47 : 40;   // abaixo do sub-cabeçalho
+  const bottomLimit = PH - 14;          // acima do rodapé
+
+  // --- bloco de descrição (só na 1ª página) ---
+  const LH = 4.6;                       // altura de linha (mm)
+  let descLines = [], descBoxH = 0;
+  if(descricao){
+    doc.setFont('helvetica','normal'); doc.setFontSize(9.5);
+    descLines = doc.splitTextToSize(descricao, PW - 2*M - 10);
+    descBoxH = 9 + descLines.length * LH + 5;   // label + texto + respiro
+  }
+  function drawDesc(yTop){
+    const h = 9 + descLines.length * LH;
+    doc.setFillColor(0xf5,0xf5,0xf3);
+    doc.roundedRect(M, yTop, PW - 2*M, h + 3, 2, 2, 'F');
+    doc.setFillColor(0xd8,0xcb,0x6a);           // barra dourada à esquerda
+    doc.rect(M, yTop, 2, h + 3, 'F');
+    doc.setFont('times','bold'); doc.setFontSize(10); doc.setTextColor(0x4a,0x4d,0x43);
+    doc.text('Descrição da avaliação', M + 6, yTop + 6);
+    doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(0x3d,0x3f,0x36);
+    doc.text(descLines, M + 6, yTop + 12);
+    return yTop + h + 3 + 5;
+  }
+
+  // capacidade de fotos por página, dado o Y inicial
+  function capacity(startY){
+    let c = 0, yy = startY;
+    while(yy + cellH <= bottomLimit){ c += cols; yy += cellH + gap; }
+    return Math.max(c, cols);
+  }
+  const page1Start = baseStart + descBoxH;
+
+  // total de páginas (1ª página tem menos espaço por causa da descrição)
+  let remaining = imgs.length, totalPages = 0, firstSim = true;
+  while(remaining > 0){ remaining -= capacity(firstSim ? page1Start : baseStart); totalPages++; firstSim = false; }
+  totalPages = Math.max(totalPages, 1);
+
+  header(1);
+  let page = 1, x = M, y = descricao ? drawDesc(baseStart) : baseStart, colIdx = 0;
+  imgs.forEach((im, i) => {
+    // célula (fundo neutro caso a imagem falhe)
+    doc.setFillColor(0xe8,0xe8,0xe4); doc.roundedRect(x, y, cellW, cellH, 2.5, 2.5, 'F');
+    if(im.el){
+      const ar = im.el.width / im.el.height, cAr = cellW / cellH;
+      let w, h;                       // "cover": preenche a célula, corta o excedente
+      if(ar > cAr){ h = cellH; w = cellH * ar; } else { w = cellW; h = cellW / ar; }
+      const ox = x + (cellW - w)/2, oy = y + (cellH - h)/2;
+      const fmt = /png/i.test(im.dataURL.slice(0,20)) ? 'PNG' : 'JPEG';
+      doc.saveGraphicsState();
+      doc.roundedRect(x, y, cellW, cellH, 2.5, 2.5, null); doc.clip(); doc.discardPath();
+      try { doc.addImage(im.el, fmt, ox, oy, w, h); } catch(e){ try{ doc.addImage(im.dataURL,'JPEG',ox,oy,w,h);}catch(_){} }
+      doc.restoreGraphicsState();
+    }
+    // moldura sutil
+    doc.setDrawColor(0xd0,0xd1,0xcb); doc.setLineWidth(0.3);
+    doc.roundedRect(x, y, cellW, cellH, 2.5, 2.5, 'S');
+    // número da foto
+    doc.setFillColor(0x2e,0x30,0x2a); doc.roundedRect(x+2.5, y+cellH-7, 9, 5, 1, 1, 'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(7.5); doc.setFont('helvetica','bold');
+    doc.text(String(i+1), x+7, y+cellH-3.6, {align:'center'});
+
+    // avança
+    colIdx++;
+    if(colIdx >= cols){ colIdx = 0; x = M; y += cellH + gap; }
+    else { x += cellW + gap; }
+
+    const last = i === imgs.length - 1;
+    if(!last && y + cellH > bottomLimit){
+      footer(page, totalPages);
+      doc.addPage(); page++; header(page); x = M; y = baseStart; colIdx = 0;
+    }
+  });
+  footer(page, totalPages);
+
+  const slug = (endereco || 'imovel').replace(/[^\w]+/g,'-').replace(/^-|-$/g,'').slice(0,40).toLowerCase();
+  doc.save(`avaliacao-${d.id}-${slug || 'morabilidade'}.pdf`);
+}
+
+// ---- ações globais ----
+document.getElementById('btnAll').addEventListener('click', async () => {
+  const comFotos = DELIVERIES.filter(d => store[d.id].length);
+  if(!comFotos.length){ toast('Nenhuma entrega tem fotos ainda.'); return; }
+  for(const d of comFotos){ await gerarPDF(d.id); await new Promise(r=>setTimeout(r,350)); }
+  toast(`${comFotos.length} PDF(s) gerado(s).`);
+});
+document.getElementById('btnClear').addEventListener('click', () => {
+  if(!confirm('Remover todas as fotos de todas as entregas?')) return;
+  DELIVERIES.forEach(d => { store[d.id] = []; render(d.id); });
+});
+</script>
+</body>
+</html>

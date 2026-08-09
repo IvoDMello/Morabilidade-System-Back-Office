@@ -168,7 +168,9 @@ export function ChatListPanel({
             type="button"
             onClick={() => setFilter(value)}
             className={cn(
-              "rounded-full border px-3 py-1 text-[13px] transition-colors",
+              // min-h de 40px no mobile garante alvo de toque confortável;
+              // no desktop (ponteiro) volta a compacto.
+              "inline-flex min-h-[40px] items-center justify-center rounded-full border px-3 py-1 text-[13px] transition-colors sm:min-h-[30px]",
               filter === value
                 ? "border-transparent bg-primary/12 font-medium text-primary"
                 : "border-border text-muted-foreground hover:bg-veil/4",
@@ -182,7 +184,7 @@ export function ChatListPanel({
             type="button"
             onClick={() => setActiveTagId(null)}
             title="Remover filtro de lista"
-            className="flex items-center gap-1 rounded-full border border-transparent bg-primary/12 px-3 py-1 text-[13px] font-medium text-primary"
+            className="inline-flex min-h-[40px] items-center gap-1 rounded-full border border-transparent bg-primary/12 px-3 py-1 text-[13px] font-medium text-primary sm:min-h-[30px]"
           >
             {activeTag.name}
             <X className="h-3.5 w-3.5" />
