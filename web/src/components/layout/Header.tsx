@@ -28,15 +28,12 @@ export function Header({ onMenuClick }: HeaderProps) {
   const title = pageTitles[pathname] ?? "Morabilidade";
 
   return (
-    <header
-      className="h-16 flex items-center justify-between px-4 md:px-6 bg-white dark:bg-slate-900 border-b"
-      style={{ borderColor: "#d8cb6a" }}
-    >
+    <header className="h-16 flex items-center justify-between px-4 md:px-6 bg-gradient-to-b from-[#fbfaf7] to-white dark:bg-[#585a4f] dark:bg-none">
       <div className="flex items-center gap-3">
         {/* Hamburger, só aparece no mobile */}
         <button
           onClick={onMenuClick}
-          className="md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition"
+          className="md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100 dark:text-white/80 dark:hover:bg-white/10 transition"
           aria-label="Abrir menu"
         >
           <Menu className="h-5 w-5" />
@@ -47,7 +44,7 @@ export function Header({ onMenuClick }: HeaderProps) {
       <div className="flex items-center gap-2 md:gap-3">
         <button
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          className="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+          className="p-2 rounded-lg text-slate-600 dark:text-white/80 hover:bg-slate-100 dark:hover:bg-white/10 transition"
           aria-label="Alternar tema"
         >
           {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
@@ -57,7 +54,7 @@ export function Header({ onMenuClick }: HeaderProps) {
           <div className="flex items-center gap-2 md:gap-3">
             <div className="text-right hidden sm:block">
               <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{user.nome_completo}</p>
-              <p className="text-xs text-slate-500 capitalize">{user.perfil}</p>
+              <p className="text-xs text-slate-500 dark:text-white/60 capitalize">{user.perfil}</p>
             </div>
             {user.foto_url ? (
               <img

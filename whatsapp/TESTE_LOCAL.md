@@ -22,7 +22,14 @@ No **SQL Editor** do Supabase, rode os arquivos de `whatsapp/supabase/migrations
 0012_rls.sql           ← RLS (rode sozinho)
 0013_contact_cliente_link.sql   ← cliente_id nos contatos
 0014_conversation_pin.sql       ← pinned_at nas conversas
+0015_message_reply.sql          ← responder/citar mensagem
+0016_message_media.sql          ← mídia recebida + bucket privado whatsapp-media
 ```
+
+> A `0016` cria o bucket `whatsapp-media` (privado) via `storage.buckets`. Se o
+> seu usuário do SQL Editor não tiver permissão de escrita em `storage`, crie o
+> bucket pela UI (Storage → New bucket, **Public: off**) e rode o resto da
+> migration.
 
 Depois, em **Settings → API → Exposed schemas**, adicione **`whatsapp`** à lista
 (deixe `public` e `captacoes` como já estão). Sem isso o CRM dá erro de schema.

@@ -327,6 +327,7 @@ function AssignTagsDialog({
         </div>
         <div className="flex items-center gap-2">
           <Input
+            aria-label="Nome da nova etiqueta"
             placeholder="Nova etiqueta..."
             value={newTagName}
             onChange={(e) => setNewTagName(e.target.value)}

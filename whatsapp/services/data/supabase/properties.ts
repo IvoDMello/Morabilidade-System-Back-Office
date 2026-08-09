@@ -2,6 +2,7 @@ import { getSupabaseServerClient } from "@/lib/supabase/server";
 import type { ID } from "@/types/common";
 import type { CreatePropertyInput } from "@/types/property";
 import type { PropertyStage } from "@/constants/property-stages";
+import type { PropertyRelation } from "@/constants/property-relations";
 import type { DataSource } from "../types";
 import { mapContactPropertyRow, mapPropertyRow } from "./mappers";
 
@@ -56,12 +57,17 @@ export const supabaseProperties: DataSource["properties"] = {
     return (data ?? []).map(mapContactPropertyRow);
   },
 
-  async addToContact(contactId: ID, propertyId: ID, stage: PropertyStage) {
+  async addToContact(
+    contactId: ID,
+    propertyId: ID,
+    relacao: PropertyRelation,
+    stage: PropertyStage,
+  ) {
     const supabase = getSupabaseServerClient();
     const { error } = await supabase
       .from("contact_properties")
       .upsert(
-        { contact_id: contactId, property_id: propertyId, stage },
+        { contact_id: contactId, property_id: propertyId, relacao, stage },
         { onConflict: "contact_id,property_id", ignoreDuplicates: true },
       );
     if (error) throw error;
@@ -72,6 +78,16 @@ export const supabaseProperties: DataSource["properties"] = {
     const { error } = await supabase
       .from("contact_properties")
       .update({ stage })
+      .eq("contact_id", contactId)
+      .eq("property_id", propertyId);
+    if (error) throw error;
+  },
+
+  async updateRelacao(contactId: ID, propertyId: ID, relacao: PropertyRelation) {
+    const supabase = getSupabaseServerClient();
+    const { error } = await supabase
+      .from("contact_properties")
+      .update({ relacao })
       .eq("contact_id", contactId)
       .eq("property_id", propertyId);
     if (error) throw error;

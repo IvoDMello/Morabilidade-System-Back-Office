@@ -1,4 +1,4 @@
-import { AlertTriangle, BellRing, Clock, Users } from "lucide-react";
+import { AlertTriangle, Clock, MessageCircle, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatCard } from "@/components/shared/stat-card";
 import { BreakdownBars } from "@/features/dashboard/components/breakdown-bars";
@@ -7,9 +7,13 @@ import { RecentContacts } from "@/features/dashboard/components/recent-contacts"
 import { CONTACT_CATEGORY_LABELS, CONTACT_CATEGORY_SOLID } from "@/constants/contact-categories";
 import { CONTACT_STATUS_LABELS, CONTACT_STATUS_SOLID_BY_VALUE } from "@/constants/contact-status";
 import { getDashboardStats } from "@/services/dashboard.service";
+import { getPendingConversationsCount } from "@/services/whatsapp.service";
 
 export default async function DashboardPage() {
-  const stats = await getDashboardStats();
+  const [stats, conversasAguardando] = await Promise.all([
+    getDashboardStats(),
+    getPendingConversationsCount(),
+  ]);
 
   const categoryItems = Object.entries(stats.contactsByCategory).map(([value, count]) => ({
     label: CONTACT_CATEGORY_LABELS[value as keyof typeof CONTACT_CATEGORY_LABELS],
@@ -38,24 +42,30 @@ export default async function DashboardPage() {
           value={stats.totalContacts}
           icon={Users}
           delta={stats.totalContactsDelta}
+          href="/contatos"
         />
+        {/* "Conversas aguardando" no lugar de "Lembretes pendentes": aquele
+            contava também o que vence daqui a três semanas, então nunca era a
+            pressão do dia — e o atendimento, que é, não aparecia aqui. */}
         <StatCard
-          label="Lembretes pendentes"
-          value={stats.pendingReminders}
-          icon={BellRing}
-          delta={stats.pendingRemindersDelta}
+          label="Conversas aguardando"
+          value={conversasAguardando}
+          icon={MessageCircle}
+          href="/pendencias?tab=aguardando"
         />
         <StatCard
           label="Lembretes vencidos"
           value={stats.overdueReminders}
           icon={AlertTriangle}
           delta={stats.overdueRemindersDelta}
+          href="/pendencias?tab=lembretes"
         />
         <StatCard
           label="Lembretes de hoje"
           value={stats.todayReminders.length}
           icon={Clock}
           delta={stats.todayRemindersDelta}
+          href="/pendencias?tab=lembretes"
         />
       </div>
 

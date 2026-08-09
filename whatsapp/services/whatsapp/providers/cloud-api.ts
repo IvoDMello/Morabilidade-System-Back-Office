@@ -1,6 +1,11 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import type { WhatsAppMessageStatus } from "@/constants/whatsapp-message-status";
-import type { NormalizedWebhookEvent, WhatsAppProvider } from "../types";
+import type { WhatsAppMessageType } from "@/types/whatsapp";
+import type {
+  NormalizedIncomingMedia,
+  NormalizedWebhookEvent,
+  WhatsAppProvider,
+} from "../types";
 
 const GRAPH_API_VERSION = "v22.0";
 
@@ -13,32 +18,107 @@ function mapMetaStatus(status: string): WhatsAppMessageStatus {
   return "sent";
 }
 
+/** Tipos de mídia da Cloud API que sabemos exibir. */
+const SUPPORTED_MEDIA_TYPES = ["image", "audio", "video", "document", "sticker"] as const;
+
+/** Traduz uma mensagem crua da Meta em (tipo, legenda, referência de mídia). */
+function parseIncomingContent(message: any): {
+  messageType: WhatsAppMessageType;
+  body: string;
+  media: NormalizedIncomingMedia | null;
+} {
+  if (message.type === "text") {
+    return { messageType: "text", body: message.text?.body ?? "", media: null };
+  }
+
+  if ((SUPPORTED_MEDIA_TYPES as readonly string[]).includes(message.type)) {
+    const payload = message[message.type] ?? {};
+    return {
+      messageType: message.type as WhatsAppMessageType,
+      body: payload.caption ?? "",
+      media: {
+        metaMediaId: payload.id ?? null,
+        mimeType: payload.mime_type ?? null,
+        filename: payload.filename ?? null,
+      },
+    };
+  }
+
+  // location, contacts, reação, etc.: registrado como não suportado (sem mídia).
+  return { messageType: "unsupported", body: "", media: null };
+}
+
+/** POST em /{phone-number-id}/messages — caminho único de envio (texto e template). */
+async function postOutboundMessage(payload: Record<string, unknown>) {
+  const response = await fetch(
+    `https://graph.facebook.com/${GRAPH_API_VERSION}/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.WHATSAPP_CLOUD_API_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ messaging_product: "whatsapp", ...payload }),
+    },
+  );
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(`Falha ao enviar mensagem pela Cloud API: ${errorBody}`);
+  }
+
+  const data = (await response.json()) as { messages?: { id: string }[] };
+  return { providerMessageId: data.messages?.[0]?.id ?? null };
+}
+
 export const cloudApiWhatsAppProvider: WhatsAppProvider = {
   async sendTextMessage({ toPhone, body }) {
-    const response = await fetch(
-      `https://graph.facebook.com/${GRAPH_API_VERSION}/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.WHATSAPP_CLOUD_API_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          messaging_product: "whatsapp",
-          to: toPhone,
-          type: "text",
-          text: { body },
+    return postOutboundMessage({ to: toPhone, type: "text", text: { body } });
+  },
+
+  async sendTemplateMessage({ toPhone, templateName, languageCode, bodyParams }) {
+    return postOutboundMessage({
+      to: toPhone,
+      type: "template",
+      template: {
+        name: templateName,
+        language: { code: languageCode },
+        ...(bodyParams.length > 0 && {
+          components: [
+            {
+              type: "body",
+              parameters: bodyParams.map((text) => ({ type: "text", text })),
+            },
+          ],
         }),
       },
+    });
+  },
+
+  async fetchMediaBytes(metaMediaId: string) {
+    const token = process.env.WHATSAPP_CLOUD_API_TOKEN;
+    const authHeaders = { Authorization: `Bearer ${token}` };
+
+    // 1ª chamada: resolve o id da mídia numa URL de download (curta duração).
+    const metaResponse = await fetch(
+      `https://graph.facebook.com/${GRAPH_API_VERSION}/${metaMediaId}`,
+      { headers: authHeaders },
     );
+    if (!metaResponse.ok) return null;
 
-    if (!response.ok) {
-      const errorBody = await response.text();
-      throw new Error(`Falha ao enviar mensagem pela Cloud API: ${errorBody}`);
-    }
+    const meta = (await metaResponse.json()) as { url?: string; mime_type?: string };
+    if (!meta.url) return null;
 
-    const data = (await response.json()) as { messages?: { id: string }[] };
-    return { providerMessageId: data.messages?.[0]?.id ?? null };
+    // 2ª chamada: baixa os bytes de fato (também exige o mesmo bearer).
+    const binaryResponse = await fetch(meta.url, { headers: authHeaders });
+    if (!binaryResponse.ok) return null;
+
+    const buffer = new Uint8Array(await binaryResponse.arrayBuffer());
+    return {
+      data: buffer,
+      mimeType:
+        binaryResponse.headers.get("content-type") ?? meta.mime_type ?? "application/octet-stream",
+    };
   },
 
   verifyWebhookHandshake({ mode, token, challenge }) {
@@ -74,18 +154,38 @@ export const cloudApiWhatsAppProvider: WhatsAppProvider = {
           const profileName =
             value.contacts?.find((c: any) => c.wa_id === message.from)?.profile?.name ?? null;
 
+          const { messageType, body, media } = parseIncomingContent(message);
+
           events.push({
             type: "message",
             data: {
               waMessageId: message.id,
               fromPhone: message.from,
               profileName,
-              body:
-                message.type === "text"
-                  ? (message.text?.body ?? "")
-                  : "[Mensagem de mídia não suportada ainda]",
-              messageType: message.type === "text" ? "text" : "unsupported",
+              body,
+              messageType,
+              media,
               timestamp: new Date(Number(message.timestamp) * 1000).toISOString(),
+            },
+          });
+        }
+
+        // Coexistência: mensagens enviadas pelo app WhatsApp Business do celular
+        // chegam ecoadas no campo smb_message_echoes (exige assinatura desse
+        // campo no webhook). `to` é o cliente; `from` é o número da empresa.
+        for (const echo of value?.message_echoes ?? []) {
+          if (!echo.to) continue;
+          const { messageType, body, media } = parseIncomingContent(echo);
+
+          events.push({
+            type: "echo",
+            data: {
+              waMessageId: echo.id ?? null,
+              toPhone: echo.to,
+              body,
+              messageType,
+              media,
+              timestamp: new Date(Number(echo.timestamp) * 1000).toISOString(),
             },
           });
         }

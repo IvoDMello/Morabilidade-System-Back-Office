@@ -34,33 +34,21 @@ from app.services.pdf_base import (
     secao,
 )
 
-CLAUSULA_VERSAO = "v1"
-
-_EXTENSO = {
-    6: "seis", 12: "doze", 18: "dezoito", 24: "vinte e quatro", 36: "trinta e seis",
-}
+CLAUSULA_VERSAO = "v2"  # v2: removido o parágrafo de comissão no prazo (arts. 725/727 CC)
 
 
-def montar_clausula(prazo_meses: int) -> str:
+def montar_clausula() -> str:
     """Texto integral da declaração do visitante (versão `CLAUSULA_VERSAO`).
 
     Gravado como snapshot na ficha no momento da geração, não deve ser alterado
     retroativamente para fichas já existentes (integridade probatória)."""
-    extenso = _EXTENSO.get(prazo_meses)
-    prazo_txt = f"{prazo_meses} ({extenso})" if extenso else str(prazo_meses)
     return (
         "Declaro, para os devidos fins, que tomei conhecimento e visitei pela "
         "primeira vez o imóvel acima identificado por intermédio da MORABILIDADE "
-        "e do corretor responsável indicado nesta ficha. Comprometo-me a conduzir "
-        "qualquer proposta, negociação, compra, locação ou intermediação relativa "
-        "a este imóvel exclusivamente por meio da Morabilidade.\n\n"
-        "Reconheço que, caso a aquisição ou locação deste imóvel venha a ocorrer, "
-        "direta ou indiretamente, com o proprietário, com terceiros por mim "
-        f"indicados, ou por outra imobiliária, no prazo de {prazo_txt} meses "
-        "contados desta visita, será devida a comissão de corretagem à "
-        "Morabilidade, por ter sido ela a causa eficiente da aproximação das "
-        "partes, nos termos dos arts. 725 e 727 do Código Civil (Lei nº "
-        "10.406/2002).\n\n"
+        "e do corretor responsável indicado nesta ficha.\n\n"
+        "Comprometo-me a conduzir qualquer proposta, negociação, compra, locação "
+        "ou intermediação relativa a este imóvel exclusivamente por meio da "
+        "Morabilidade.\n\n"
         "Declaro ainda que as informações prestadas são verdadeiras e autorizo o "
         "tratamento dos meus dados pessoais para fins de cadastro e do processo "
         "de intermediação, nos termos da Lei nº 13.709/2018 (LGPD)."
@@ -134,7 +122,7 @@ def gerar_ficha_visita_pdf(ficha: dict, assinada: bool = False) -> bytes:
     y = secao(c, largura, y, "4. Declaração do visitante")
     c.setFillColor(TEXTO_ESCURO)
     c.setFont("Helvetica", 8.5)
-    clausula = ficha.get("clausula_texto") or montar_clausula(int(ficha.get("prazo_meses") or 12))
+    clausula = ficha.get("clausula_texto") or montar_clausula()
     for paragrafo in clausula.split("\n\n"):
         for linha in quebrar_em_linhas(paragrafo, 108):
             c.drawString(MARGEM, y, linha)

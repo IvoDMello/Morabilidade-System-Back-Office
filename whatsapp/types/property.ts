@@ -1,4 +1,5 @@
 import type { PropertyStage } from "@/constants/property-stages";
+import type { PropertyRelation } from "@/constants/property-relations";
 import type { ID } from "./common";
 
 export interface Property {
@@ -13,10 +14,12 @@ export interface CreatePropertyInput {
   title?: string | null;
 }
 
-/** Vínculo contato-imóvel com a etapa atual (não é histórico — ver ContactEvent). */
+/** Vínculo contato-imóvel com o papel e a etapa atual (não é histórico — ver ContactEvent). */
 export interface ContactProperty {
   contactId: ID;
   propertyId: ID;
+  /** Papel do contato no imóvel (proprietário/interesse/visitado). */
+  relacao: PropertyRelation;
   stage: PropertyStage;
   createdAt: string;
   updatedAt: string;

@@ -1,4 +1,6 @@
-import Link from "next/link";
+"use client";
+
+import Link, { useLinkStatus } from "next/link";
 import { differenceInCalendarDays, format, isToday, isYesterday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Pin, Star } from "lucide-react";
@@ -38,15 +40,37 @@ export function ConversationRow({
   isSelected: boolean;
   query?: string;
 }) {
-  const hasUnread = conversation.unreadCount > 0;
   return (
     <Link
       href={buildHref(conversation.contactId, query)}
       scroll={false}
       draggable={false}
+      className="block select-none [-webkit-touch-callout:none]"
+    >
+      <ConversationRowBody conversation={conversation} isSelected={isSelected} />
+    </Link>
+  );
+}
+
+/** Filho do <Link> para ler o useLinkStatus: a seleção muda de linha no clique
+ * em vez de esperar o servidor devolver a conversa (a linha ativa vem do
+ * ?c= na URL, que só troca no fim da navegação). */
+function ConversationRowBody({
+  conversation,
+  isSelected,
+}: {
+  conversation: WhatsAppConversationSummary;
+  isSelected: boolean;
+}) {
+  const { pending } = useLinkStatus();
+  const hasUnread = conversation.unreadCount > 0;
+
+  return (
+    <div
       className={cn(
-        "flex select-none items-center gap-3 px-3 py-2.5 transition-colors [-webkit-touch-callout:none] hover:bg-veil/4",
-        isSelected && "bg-veil/7 hover:bg-veil/7",
+        "flex items-center gap-3 px-3 py-2.5 transition-colors duration-150 active:bg-veil/12 active:duration-0",
+        (isSelected || pending) && "bg-veil/7 hover:bg-veil/7",
+        !isSelected && !pending && "hover:bg-veil/4",
       )}
     >
       <AvatarInitials name={conversation.contactName} size="lg" className="h-12 w-12" />
@@ -99,7 +123,7 @@ export function ConversationRow({
           </span>
         </div>
       </div>
-    </Link>
+    </div>
   );
 }
 
@@ -116,7 +140,7 @@ export function MessageResultRow({
     <Link
       href={buildHref(result.contactId, query)}
       scroll={false}
-      className="flex items-center gap-3 px-3 py-2.5 transition-colors hover:bg-veil/4"
+      className="flex items-center gap-3 px-3 py-2.5 transition-colors duration-150 hover:bg-veil/4 active:bg-veil/12 active:duration-0"
     >
       <AvatarInitials name={result.contactName} size="lg" className="h-12 w-12" />
       <div className="min-w-0 flex-1">

@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import { KanbanBoard } from "@/components/kanban/KanbanBoard";
 import { BoardTopbar } from "@/components/board/BoardTopbar";
+import { NovaCaptacaoDeLink } from "@/components/captacao/NovaCaptacaoDeLink";
 import { createClient } from "@/lib/supabase/server";
 import type { Captacao, Perfil } from "@/types";
 
@@ -35,6 +37,11 @@ export default async function BoardPage() {
       <div className="min-h-0 flex-1 lg:pt-4">
         <KanbanBoard initial={cards} userEmail={userEmail} userNome={userNome} />
       </div>
+      {/* Captação chegando por link (copiloto do WhatsApp). Suspense porque lê
+          searchParams no cliente. */}
+      <Suspense fallback={null}>
+        <NovaCaptacaoDeLink />
+      </Suspense>
     </main>
   );
 }

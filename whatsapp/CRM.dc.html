@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{color:var(--accent-2)}
+  ::-webkit-scrollbar{width:9px;height:9px}
+  ::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:20px;border:2px solid transparent;background-clip:padding-box}
+  ::-webkit-scrollbar-track{background:transparent}
+  :root,[data-theme="dark"]{
+    --canvas:#0a0b0c;--bg:#0e1113;--surface:#15181b;--surface-2:#1b1f23;--surface-3:#232830;
+    --border:rgba(255,255,255,.06);--border-2:rgba(255,255,255,.11);
+    --text:#eef1f2;--text-2:#b0b6bb;--muted:#6c7379;
+    --accent:#e7dda6;--accent-2:#f0e7b8;--accent-fg:#1b1c16;--accent-soft:rgba(231,221,166,.12);
+    --good:#5ec98a;--danger:#ef7a7a;
+    --c-purple:#a58bf5;--c-blue:#5aa2f7;--c-green:#54c98a;--c-yellow:#e6c463;--c-pink:#ef82b6;--c-gray:#9aa1a8;--c-orange:#f0955a;--c-red:#ef7a7a;
+    --shadow:0 40px 80px -30px rgba(0,0,0,.7);--shadow-sm:0 2px 8px rgba(0,0,0,.25);
+  }
+  [data-theme="light"]{
+    --canvas:#e7eaee;--bg:#f4f6f8;--surface:#ffffff;--surface-2:#f4f6f9;--surface-3:#eaeef2;
+    --border:rgba(16,22,28,.09);--border-2:rgba(16,22,28,.15);
+    --text:#131a20;--text-2:#4c555d;--muted:#8b939b;
+    --accent:#ddd08a;--accent-2:#e7db9c;--accent-fg:#26271a;--accent-soft:rgba(199,183,104,.2);
+    --good:#2fa96a;--danger:#df5757;
+    --c-purple:#7c5cf0;--c-blue:#3d84e6;--c-green:#2fa96a;--c-yellow:#c39a2b;--c-pink:#df5599;--c-gray:#7c848c;--c-orange:#df7f3e;--c-red:#df5656;
+    --shadow:0 30px 60px -28px rgba(20,26,32,.32);--shadow-sm:0 2px 8px rgba(20,26,32,.08);
+  }
+  @keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+</style>
+</helmet>
+<div data-theme="{{ theme }}" style="min-height:100vh;background:var(--canvas);color:var(--text);font-family:'Onest',system-ui,-apple-system,sans-serif;display:flex;flex-direction:column;align-items:center;gap:0;transition:background .3s">
+
+  <div style="position:sticky;top:0;z-index:50;width:100%;display:flex;align-items:center;justify-content:center;gap:14px;padding:12px 20px;background:color-mix(in srgb,var(--canvas) 82%,transparent);backdrop-filter:blur(14px);border-bottom:1px solid var(--border)">
+    <div style="display:flex;align-items:center;gap:9px;margin-right:auto">
+      <div style="width:26px;height:26px;border-radius:8px;background:var(--accent);display:flex;align-items:center;justify-content:center;color:var(--accent-fg)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+      </div>
+      <span style="font-weight:700;font-size:14px;letter-spacing:-.01em">Imobi<span style="color:var(--muted);font-weight:600">CRM</span></span>
+    </div>
+
+    <div style="display:flex;background:var(--surface-2);border:1px solid var(--border);border-radius:11px;padding:3px;gap:2px">
+      <button data-plat="mobile" onClick="{{ onPlat }}" style="{{ mobBtn }}">Mobile</button>
+      <button data-plat="web" onClick="{{ onPlat }}" style="{{ webBtn }}">Web</button>
+    </div>
+
+    <button onClick="{{ onTheme }}" title="Alternar tema" style="width:38px;height:38px;border-radius:11px;background:var(--surface-2);border:1px solid var(--border);color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{ themeIcon }}"></path></svg>
+    </button>
+  </div>
+
+  <div style="flex:1;width:100%;display:flex;align-items:flex-start;justify-content:center;padding:34px 20px 44px;overflow:auto">
+
+    <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ true }}">
+    <div style="width:392px;height:844px;background:var(--bg);border-radius:46px;border:1px solid var(--border-2);box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;position:relative;flex:none;transition:background .3s">
+      <div style="height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 30px 0 34px;flex:none">
+        <span style="font-size:14px;font-weight:600">9:41</span>
+        <div style="display:flex;align-items:center;gap:6px;color:var(--text)">
+          <svg width="17" height="11" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="1"></rect><rect x="5" y="4" width="3" height="8" rx="1"></rect><rect x="10" y="1.5" width="3" height="10.5" rx="1"></rect><rect x="15" y="0" width="3" height="12" rx="1" opacity=".35"></rect></svg>
+          <svg width="16" height="11" viewBox="0 0 16 12" fill="currentColor"><path d="M8 3.5c1.9 0 3.6.7 4.9 1.9l1-1.1A9 9 0 0 0 8 1.5 9 9 0 0 0 2.1 4.3l1 1.1A7.2 7.2 0 0 1 8 3.5z"></path><path d="M8 6.5c1 0 2 .4 2.7 1.1l1-1.1A6 6 0 0 0 8 4.5a6 6 0 0 0-3.7 2l1 1.1C6 6.9 7 6.5 8 6.5z"></path><circle cx="8" cy="9.6" r="1.6"></circle></svg>
+          <div style="display:flex;align-items:center;gap:3px"><div style="width:23px;height:11px;border:1px solid var(--text);border-radius:3px;padding:1.5px;opacity:.6"><div style="width:75%;height:100%;background:var(--text);border-radius:1px"></div></div></div>
+        </div>
+      </div>
+
+      <div style="flex:none;padding:8px 22px 14px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;border-bottom:1px solid var(--border);background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(10px);position:relative;z-index:5">
+        <div>
+          <div style="font-size:23px;font-weight:800;letter-spacing:-.02em;line-height:1.1">{{ headerTitle }}</div>
+          <div style="font-size:13px;color:var(--muted);margin-top:3px">{{ headerSub }}</div>
+        </div>
+        <div style="width:38px;height:38px;border-radius:50%;background:var(--surface-3);border:1px solid var(--border-2);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:var(--text-2);flex:none">A</div>
+      </div>
+
+      <div style="flex:1;overflow-y:auto;overflow-x:hidden;padding:16px 16px 96px" key="{{ screen }}">
+
+        <sc-if value="{{ scResumo }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;gap:14px;animation:rise .4s ease">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px">
+            <sc-for list="{{ stats }}" as="s" hint-placeholder-count="4">
+              <div style="background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:16px 15px;display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;align-items:center;justify-content:space-between">
+                  <span style="font-size:12.5px;color:var(--muted);font-weight:500;line-height:1.2">{{ s.label }}</span>
+                  <div style="width:30px;height:30px;border-radius:9px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;color:{{ s.tint }};flex:none">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="{{ s.icon }}"></path></svg>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:baseline;gap:7px">
+                  <span style="font-size:30px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums">{{ s.value }}</span>
+                  <sc-if value="{{ s.trend }}" hint-placeholder-val="x"><span style="font-size:12px;color:var(--good);font-weight:600;display:inline-flex;align-items:center;gap:2px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"></path></svg>{{ s.trend }}</span></sc-if>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:18px 17px">
+            <div style="font-size:15px;font-weight:700;margin-bottom:15px">Contatos por categoria</div>
+            <div style="display:flex;flex-direction:column;gap:13px">
+              <sc-for list="{{ categories }}" as="c" hint-placeholder-count="6">
+                <div style="display:flex;align-items:center;gap:11px">
+                  <div style="width:8px;height:8px;border-radius:50%;background:{{ c.color }};flex:none"></div>
+                  <span style="font-size:13.5px;color:var(--text-2);width:82px;flex:none">{{ c.label }}</span>
+                  <div style="flex:1;height:7px;border-radius:20px;background:var(--surface-3);overflow:hidden"><div style="height:100%;border-radius:20px;background:{{ c.color }};width:{{ c.pct }}"></div></div>
+                  <span style="font-size:13.5px;font-weight:700;width:16px;text-align:right;font-variant-numeric:tabular-nums">{{ c.count }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:18px 17px">
+            <div style="font-size:15px;font-weight:700;margin-bottom:15px">Contatos por status</div>
+            <div style="display:flex;flex-direction:column;gap:13px">
+              <sc-for list="{{ statuses }}" as="c" hint-placeholder-count="7">
+                <div style="display:flex;align-items:center;gap:11px">
+                  <div style="width:8px;height:8px;border-radius:50%;background:{{ c.color }};flex:none"></div>
+                  <span style="font-size:13.5px;color:var(--text-2);width:130px;flex:none">{{ c.label }}</span>
+                  <div style="flex:1;height:7px;border-radius:20px;background:var(--surface-3);overflow:hidden"><div style="height:100%;border-radius:20px;background:{{ c.color }};width:{{ c.pct }}"></div></div>
+                  <span style="font-size:13.5px;font-weight:700;width:16px;text-align:right;font-variant-numeric:tabular-nums">{{ c.count }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ scConversas }}" hint-placeholder-val="x">
+        <div style="display:flex;flex-direction:column;gap:13px;animation:rise .4s ease">
+          <div style="border:1px dashed var(--border-2);border-radius:14px;padding:13px 15px;display:flex;align-items:center;gap:11px;color:var(--text-2)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3"></path></svg>
+            <span style="font-size:13px;font-weight:500">Simular mensagem recebida <span style="color:var(--muted)">(modo mock)</span></span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;background:var(--surface-2);border:1px solid var(--border);border-radius:13px;padding:11px 13px">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.8" stroke-linecap="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3"></path></svg>
+            <span style="flex:1;font-size:13.5px;color:var(--muted)">Pesquisar ou começar conversa</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="var(--muted)"><circle cx="12" cy="5" r="1.6"></circle><circle cx="12" cy="12" r="1.6"></circle><circle cx="12" cy="19" r="1.6"></circle></svg>
+          </div>
+          <div style="display:flex;gap:8px">
+            <sc-for list="{{ convFilters }}" as="f" hint-placeholder-count="3">
+              <button data-filter="{{ f.key }}" onClick="{{ onConvFilter }}" style="{{ f.style }}">{{ f.label }}</button>
+            </sc-for>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:18px;overflow:hidden">
+            <sc-for list="{{ conversations }}" as="c" hint-placeholder-count="6">
+              <div style="display:flex;align-items:center;gap:12px;padding:14px 15px;border-bottom:1px solid var(--border);cursor:pointer" style-hover="background:var(--surface-2)">
+                <div style="width:44px;height:44px;border-radius:50%;background:{{ c.color }};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#fff;flex:none">{{ c.initials }}</div>
+                <div style="flex:1;min-width:0">
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="font-weight:700;font-size:14.5px">{{ c.name }}</span><span style="font-size:11.5px;color:{{ c.timeColor }};flex:none">{{ c.time }}</span></div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:3px"><span style="font-size:13px;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;{{ c.previewWeight }}">{{ c.preview }}</span><span style="display:flex;align-items:center;gap:6px;flex:none">{{ c.badge }}</span></div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ scPendencias }}" hint-placeholder-val="x">
+        <div style="display:flex;flex-direction:column;gap:14px;animation:rise .4s ease">
+          <div style="background:linear-gradient(135deg,var(--accent-soft),transparent);border:1px solid var(--border-2);border-radius:16px;padding:15px">
+            <div style="display:flex;gap:11px">
+              <div style="color:var(--accent);flex:none;margin-top:1px"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9z"></path><path d="M19 3.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"></path></svg></div>
+              <div style="flex:1">
+                <div style="font-weight:700;font-size:14.5px">Assistente — pendências do dia</div>
+                <div style="font-size:12.5px;color:var(--text-2);margin-top:3px;line-height:1.45">A IA lê as conversas de hoje e aponta o que pode ter passado.</div>
+              </div>
+            </div>
+            <button style="margin-top:12px;width:100%;background:var(--accent);color:var(--accent-fg);border:none;border-radius:11px;padding:11px;font-weight:700;font-size:13.5px;cursor:pointer;font-family:inherit">Analisar com IA</button>
+          </div>
+          <div style="display:flex;gap:18px;border-bottom:1px solid var(--border);overflow-x:auto">
+            <sc-for list="{{ pendTabs }}" as="t" hint-placeholder-count="3">
+              <button data-tab="{{ t.key }}" onClick="{{ onPendTab }}" style="{{ t.style }}">{{ t.label }}</button>
+            </sc-for>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:11px 13px">
+            <span style="font-size:12px;color:var(--muted);line-height:1.4">Alguns "aguardando" podem ser só agradecimento. A IA aponta quais.</span>
+            <button style="flex:none;display:flex;align-items:center;gap:5px;background:var(--surface-3);border:1px solid var(--border-2);color:var(--text);border-radius:9px;padding:8px 10px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9z"></path></svg>Revisar</button>
+          </div>
+          <sc-for list="{{ pendencias }}" as="p" hint-placeholder-count="2">
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:15px">
+              <div style="display:flex;align-items:flex-start;gap:11px">
+                <div style="width:38px;height:38px;border-radius:50%;background:{{ p.color }};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;flex:none">{{ p.initials }}</div>
+                <div style="flex:1;min-width:0">
+                  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px"><div><div style="font-weight:700;font-size:14px">{{ p.name }}</div><div style="font-size:12px;color:var(--muted);margin-top:1px">{{ p.phone }}</div></div><span style="font-size:11.5px;color:var(--c-orange);font-weight:600;flex:none">{{ p.ago }}</span></div>
+                </div>
+              </div>
+              <div style="font-size:13.5px;color:var(--text-2);margin:12px 0;line-height:1.5">{{ p.message }}</div>
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <button style="background:var(--surface-2);border:1px solid var(--border-2);color:var(--text);border-radius:10px;padding:9px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Abrir conversa</button>
+                <button style="width:34px;height:34px;border-radius:9px;background:transparent;border:none;color:var(--muted);cursor:pointer"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"></circle><circle cx="12" cy="12" r="1.6"></circle><circle cx="19" cy="12" r="1.6"></circle></svg></button>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ scContatos }}" hint-placeholder-val="x">
+        <div style="display:flex;flex-direction:column;gap:13px;animation:rise .4s ease">
+          <div style="display:flex;align-items:center;gap:9px">
+            <div style="display:flex;background:var(--surface-2);border:1px solid var(--border);border-radius:11px;padding:3px;flex:1">
+              <sc-for list="{{ contactViews }}" as="v" hint-placeholder-count="2">
+                <button data-view="{{ v.key }}" onClick="{{ onContactView }}" style="{{ v.style }}">{{ v.label }}</button>
+              </sc-for>
+            </div>
+            <button style="display:flex;align-items:center;gap:6px;background:var(--accent);color:var(--accent-fg);border:none;border-radius:11px;padding:10px 13px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>Novo</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;background:var(--surface-2);border:1px solid var(--border);border-radius:13px;padding:11px 13px">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.8" stroke-linecap="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3"></path></svg>
+            <span style="font-size:13.5px;color:var(--muted)">Buscar por nome, telefone ou e-mail</span>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <sc-for list="{{ contactChips }}" as="c" hint-placeholder-count="5">
+              <button style="display:flex;align-items:center;gap:5px;background:var(--surface-2);border:1px solid var(--border);color:var(--text-2);border-radius:10px;padding:8px 11px;font-size:12.5px;font-weight:500;cursor:pointer;font-family:inherit">{{ c }}<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"></path></svg></button>
+            </sc-for>
+          </div>
+          <sc-for list="{{ contacts }}" as="c" hint-placeholder-count="6">
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px 15px">
+              <div style="display:flex;align-items:center;gap:11px">
+                <button style="background:none;border:none;cursor:pointer;color:{{ c.starColor }};flex:none;padding:0"><svg width="17" height="17" viewBox="0 0 24 24" fill="{{ c.starFill }}" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 3l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 18.8 6.2 21.8l1.1-6.5L2.6 9.8l6.5-.9z"></path></svg></button>
+                <div style="width:34px;height:34px;border-radius:50%;background:{{ c.color }};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#fff;flex:none">{{ c.initials }}</div>
+                <span style="font-weight:700;font-size:14.5px;flex:1">{{ c.name }}</span>
+                <button style="width:30px;height:30px;border-radius:8px;background:var(--surface-2);border:1px solid var(--border);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"></path></svg></button>
+                <button style="width:30px;height:30px;border-radius:8px;background:var(--surface-2);border:1px solid var(--border);color:var(--danger);cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"></path></svg></button>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;margin:11px 0 9px;color:var(--c-green);font-weight:600;font-size:13.5px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.6a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.5-1.1a2 2 0 0 1 2.1-.5c.8.3 1.7.5 2.6.6a2 2 0 0 1 1.7 2z"></path></svg>{{ c.phone }}</div>
+              <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap">
+                <span style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-2)"><span style="width:7px;height:7px;border-radius:50%;background:{{ c.catColor }}"></span>{{ c.category }}</span>
+                <span style="font-size:11.5px;font-weight:600;padding:4px 9px;border-radius:7px;background:{{ c.statusBg }};color:{{ c.statusColor }}">{{ c.status }}</span>
+                <span style="display:inline-flex;align-items:center;gap:5px;font-size:12.5px;color:var(--text-2)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="{{ c.actionIcon }}"></path></svg>{{ c.action }}</span>
+              </div>
+              <div style="font-size:11.5px;color:var(--muted);margin-top:10px">Atualizado em {{ c.updated }}</div>
+            </div>
+          </sc-for>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ scLembretes }}" hint-placeholder-val="x">
+        <div style="display:flex;flex-direction:column;gap:13px;animation:rise .4s ease">
+          <button style="align-self:flex-end;display:flex;align-items:center;gap:7px;background:var(--accent);color:var(--accent-fg);border:none;border-radius:11px;padding:10px 15px;font-weight:700;font-size:13.5px;cursor:pointer;font-family:inherit"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"></path></svg>Novo lembrete</button>
+          <div style="display:flex;align-items:center;gap:10px;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:11px 13px;color:var(--muted)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"></path></svg><span style="font-size:13.5px">Filtrar por data</span></div>
+          <div style="display:flex;gap:9px">
+            <div style="flex:1;display:flex;align-items:center;justify-content:space-between;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:11px 13px;font-size:12.5px;color:var(--text-2)">Todos os contatos<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"></path></svg></div>
+            <div style="flex:1;display:flex;align-items:center;justify-content:space-between;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:11px 13px;font-size:12.5px;color:var(--text-2)">Todos os status<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"></path></svg></div>
+          </div>
+          <sc-for list="{{ reminderGroups }}" as="g" hint-placeholder-count="2">
+            <div style="display:flex;align-items:center;gap:9px;margin-top:6px">
+              <span style="width:8px;height:8px;border-radius:50%;background:{{ g.color }}"></span>
+              <span style="font-weight:700;font-size:14px">{{ g.title }}</span>
+              <span style="font-size:11.5px;font-weight:700;color:var(--accent-fg);background:{{ g.color }};border-radius:20px;padding:2px 9px">{{ g.count }}</span>
+            </div>
+            <sc-for list="{{ g.items }}" as="r" hint-placeholder-count="3">
+              <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid {{ g.color }};border-radius:14px;padding:14px 15px">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+                  <span style="font-weight:700;font-size:14px;line-height:1.3">{{ r.title }}</span>
+                  <span style="flex:none;font-size:11px;font-weight:600;padding:4px 9px;border-radius:7px;background:{{ r.statusBg }};color:{{ r.statusColor }}">{{ r.status }}</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;margin-top:10px">
+                  <div style="width:26px;height:26px;border-radius:50%;background:{{ r.color }};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:10px;color:#fff">{{ r.initials }}</div>
+                  <span style="font-size:12.5px;color:var(--text-2)">{{ r.who }}</span>
+                </div>
+                <div style="font-size:12.5px;margin-top:9px;color:{{ r.whenColor }};font-weight:{{ r.whenWeight }}">{{ r.when }}</div>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-top:11px">
+                  <span>{{ r.actionBtn }}</span>
+                  <button style="width:32px;height:32px;border-radius:8px;background:transparent;border:none;color:var(--muted);cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.5"></circle><circle cx="12" cy="12" r="1.5"></circle><circle cx="19" cy="12" r="1.5"></circle></svg></button>
+                </div>
+              </div>
+            </sc-for>
+          </sc-for>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ scAssistente }}" hint-placeholder-val="x">
+        <div style="display:flex;flex-direction:column;gap:16px;animation:rise .4s ease;padding-top:6px">
+          <div style="display:flex;justify-content:center;margin-top:8px"><div style="width:64px;height:64px;border-radius:20px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;color:var(--accent-fg);box-shadow:0 10px 30px -8px var(--accent-soft)"><svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2 5.5L19.5 9.5 14 11.5 12 17l-2-5.5L4.5 9.5 10 7.5z"></path><path d="M19 3l.8 2 2 .8-2 .8L19 8.6l-.8-2-2-.8 2-.8z"></path></svg></div></div>
+          <div style="text-align:center"><div style="font-size:20px;font-weight:800;letter-spacing:-.02em">Como posso ajudar?</div><div style="font-size:13.5px;color:var(--text-2);margin-top:6px;line-height:1.5;padding:0 8px">Descreva o que precisa. O assistente propõe — nada é feito sem a sua confirmação.</div></div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:16px">
+            <div style="min-height:64px;font-size:14px;color:var(--muted);line-height:1.5">Descreva o que você quer fazer… (ex.: agendar visita, criar captação)</div>
+            <div style="display:flex;flex-direction:column;gap:8px;margin:14px 0">
+              <sc-for list="{{ assistChips }}" as="a" hint-placeholder-count="2">
+                <button style="text-align:left;background:var(--surface-2);border:1px solid var(--border);color:var(--text-2);border-radius:11px;padding:11px 13px;font-size:12.5px;cursor:pointer;font-family:inherit;line-height:1.4">{{ a }}</button>
+              </sc-for>
+            </div>
+            <button style="width:100%;display:flex;align-items:center;justify-content:center;gap:7px;background:var(--accent);color:var(--accent-fg);border:none;border-radius:12px;padding:13px;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9z"></path></svg>Analisar</button>
+          </div>
+        </div>
+        </sc-if>
+
+      </div>
+
+      <div style="flex:none;display:flex;align-items:stretch;justify-content:space-around;padding:9px 8px 26px;border-top:1px solid var(--border);background:color-mix(in srgb,var(--surface) 96%,transparent);backdrop-filter:blur(12px)">
+        <sc-for list="{{ nav }}" as="n" hint-placeholder-count="6">
+          <button data-screen="{{ n.key }}" onClick="{{ onNav }}" style="flex:1;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 2px;font-family:inherit;color:{{ n.color }}">
+            <div style="position:relative">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="{{ n.fill }}" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="{{ n.icon }}"></path></svg>
+              <span>{{ n.badge }}</span>
+            </div>
+            <span style="font-size:10px;font-weight:{{ n.weight }};letter-spacing:-.01em">{{ n.label }}</span>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ isWeb }}" hint-placeholder-val="x">
+    <div style="width:100%;max-width:1360px;height:832px;background:var(--bg);border-radius:22px;border:1px solid var(--border-2);box-shadow:var(--shadow);overflow:hidden;display:flex;flex:none;transition:background .3s">
+
+      <div style="width:70px;flex:none;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:16px 0;gap:6px">
+        <div style="width:40px;height:40px;border-radius:12px;background:var(--accent);display:flex;align-items:center;justify-content:center;color:var(--accent-fg);margin-bottom:8px"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></div>
+        <button style="width:40px;height:40px;border-radius:11px;background:transparent;border:none;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3"></path></svg></button>
+        <button style="width:40px;height:40px;border-radius:11px;background:transparent;border:none;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></button>
+        <div style="height:8px"></div>
+        <sc-for list="{{ nav }}" as="n" hint-placeholder-count="6">
+          <button data-screen="{{ n.key }}" onClick="{{ onNav }}" title="{{ n.label }}" style="width:44px;height:44px;border-radius:12px;background:{{ n.railBg }};border:none;cursor:pointer;color:{{ n.color }};display:flex;align-items:center;justify-content:center;position:relative">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="{{ n.fill }}" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="{{ n.icon }}"></path></svg>
+            <span>{{ n.badge }}</span>
+          </button>
+        </sc-for>
+        <div style="margin-top:auto;width:38px;height:38px;border-radius:50%;background:var(--surface-3);border:1px solid var(--border-2);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:var(--text-2)">A</div>
+      </div>
+
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+        <sc-if value="{{ scResumo }}" hint-placeholder-val="{{ true }}">
+        <div style="flex:1;overflow-y:auto;padding:26px 30px">
+          <div style="margin-bottom:22px"><div style="font-size:24px;font-weight:800;letter-spacing:-.02em">Visão geral</div><div style="font-size:14px;color:var(--muted);margin-top:4px">Atendimento e contatos em um relance.</div></div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px">
+            <sc-for list="{{ stats }}" as="s" hint-placeholder-count="4">
+              <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px 20px">
+                <div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:13px;color:var(--muted);font-weight:500">{{ s.label }}</span><div style="width:32px;height:32px;border-radius:9px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;color:{{ s.tint }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="{{ s.icon }}"></path></svg></div></div>
+                <div style="display:flex;align-items:baseline;gap:8px;margin-top:14px"><span style="font-size:34px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums">{{ s.value }}</span><sc-if value="{{ s.trend }}" hint-placeholder-val="x"><span style="font-size:12.5px;color:var(--good);font-weight:600;display:inline-flex;align-items:center;gap:2px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"></path></svg>{{ s.trend }}</span></sc-if></div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px 24px">
+              <div style="font-size:16px;font-weight:700;margin-bottom:18px">Contatos por categoria</div>
+              <div style="display:flex;flex-direction:column;gap:15px">
+                <sc-for list="{{ categories }}" as="c" hint-placeholder-count="6"><div style="display:flex;align-items:center;gap:12px"><div style="width:8px;height:8px;border-radius:50%;background:{{ c.color }};flex:none"></div><span style="font-size:14px;color:var(--text-2);width:96px;flex:none">{{ c.label }}</span><div style="flex:1;height:7px;border-radius:20px;background:var(--surface-3);overflow:hidden"><div style="height:100%;border-radius:20px;background:{{ c.color }};width:{{ c.pct }}"></div></div><span style="font-size:14px;font-weight:700;width:18px;text-align:right;font-variant-numeric:tabular-nums">{{ c.count }}</span></div></sc-for>
+              </div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px 24px">
+              <div style="font-size:16px;font-weight:700;margin-bottom:18px">Contatos por status</div>
+              <div style="display:flex;flex-direction:column;gap:15px">
+                <sc-for list="{{ statuses }}" as="c" hint-placeholder-count="7"><div style="display:flex;align-items:center;gap:12px"><div style="width:8px;height:8px;border-radius:50%;background:{{ c.color }};flex:none"></div><span style="font-size:14px;color:var(--text-2);width:150px;flex:none">{{ c.label }}</span><div style="flex:1;height:7px;border-radius:20px;background:var(--surface-3);overflow:hidden"><div style="height:100%;border-radius:20px;background:{{ c.color }};width:{{ c.pct }}"></div></div><span style="font-size:14px;font-weight:700;width:18px;text-align:right;font-variant-numeric:tabular-nums">{{ c.count }}</span></div></sc-for>
+              </div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px 24px">
+              <div style="font-size:16px;font-weight:700;margin-bottom:6px">Próximos lembretes de hoje</div>
+              <sc-for list="{{ todayReminders }}" as="r" hint-placeholder-count="5"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 0;border-bottom:1px solid var(--border)"><div><div style="font-size:14px;font-weight:600">{{ r.title }}</div><div style="font-size:12.5px;color:var(--muted);margin-top:2px">{{ r.who }}</div></div><span style="font-size:12.5px;color:var(--text-2);flex:none;font-variant-numeric:tabular-nums">{{ r.when }}</span></div></sc-for>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px 24px">
+              <div style="font-size:16px;font-weight:700;margin-bottom:6px">Últimos contatos atualizados</div>
+              <sc-for list="{{ recentContacts }}" as="c" hint-placeholder-count="5"><div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)"><div style="width:34px;height:34px;border-radius:50%;background:{{ c.color }};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#fff;flex:none">{{ c.initials }}</div><div style="flex:1"><div style="font-size:14px;font-weight:600">{{ c.name }}</div><div style="display:flex;align-items:center;gap:8px;margin-top:3px"><span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--text-2)"><span style="width:6px;height:6px;border-radius:50%;background:{{ c.catColor }}"></span>{{ c.category }}</span><span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:6px;background:{{ c.statusBg }};color:{{ c.statusColor }}">{{ c.status }}</span></div></div><span style="font-size:12px;color:var(--muted);flex:none">{{ c.updated }}</span></div></sc-for>
+            </div>
+          </div>
+        </div>
+        </sc-if>
+        <sc-if value="{{ scConversas }}" hint-placeholder-val="x">
+        <div style="flex:1;display:flex;min-height:0">
+          <div style="width:340px;flex:none;border-right:1px solid var(--border);display:flex;flex-direction:column">
+            <div style="padding:20px 20px 14px;display:flex;align-items:center;justify-content:space-between"><div style="font-size:20px;font-weight:800;letter-spacing:-.02em">Conversas</div><button style="width:32px;height:32px;border-radius:9px;background:transparent;border:none;color:var(--muted);cursor:pointer"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"></circle><circle cx="12" cy="12" r="1.6"></circle><circle cx="12" cy="19" r="1.6"></circle></svg></button></div>
+            <div style="padding:0 16px 12px"><div style="display:flex;align-items:center;gap:10px;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:10px 12px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.8" stroke-linecap="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3"></path></svg><span style="font-size:13px;color:var(--muted)">Pesquisar conversa</span></div></div>
+            <div style="display:flex;gap:8px;padding:0 16px 12px"><sc-for list="{{ convFilters }}" as="f" hint-placeholder-count="3"><button data-filter="{{ f.key }}" onClick="{{ onConvFilter }}" style="{{ f.style }}">{{ f.label }}</button></sc-for></div>
+            <div style="flex:1;overflow-y:auto">
+              <sc-for list="{{ conversations }}" as="c" hint-placeholder-count="6">
+                <div style="display:flex;align-items:center;gap:12px;padding:13px 16px;cursor:pointer;border-bottom:1px solid var(--border);background:{{ c.rowBg }}">
+                  <div style="width:42px;height:42px;border-radius:50%;background:{{ c.color }};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;flex:none">{{ c.initials }}</div>
+                  <div style="flex:1;min-width:0"><div style="display:flex;justify-content:space-between;gap:8px"><span style="font-weight:700;font-size:14px">{{ c.name }}</span><span style="font-size:11px;color:{{ c.timeColor }};flex:none">{{ c.time }}</span></div><div style="display:flex;justify-content:space-between;gap:8px;margin-top:3px"><span style="font-size:12.5px;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;{{ c.previewWeight }}">{{ c.preview }}</span><span style="display:flex;gap:5px;flex:none">{{ c.badge }}</span></div></div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+            <div style="padding:15px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+              <div style="display:flex;align-items:center;gap:12px"><div style="width:40px;height:40px;border-radius:50%;background:var(--c-green);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff">FL</div><div><div style="display:flex;align-items:center;gap:8px"><span style="font-weight:700;font-size:15px">Fernanda Lima</span><a href="#" style="font-size:12px;display:inline-flex;align-items:center;gap:3px">Ver ficha completa<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path></svg></a></div><div style="font-size:12.5px;color:var(--muted);margin-top:2px">(11) 99123-4567</div></div></div>
+              <div style="display:flex;align-items:center;gap:10px"><span style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-2)"><span style="width:7px;height:7px;border-radius:50%;background:var(--c-blue)"></span>Cliente</span><span style="font-size:11.5px;font-weight:600;padding:4px 9px;border-radius:7px;background:color-mix(in srgb,var(--c-blue) 15%,transparent);color:var(--c-blue)">Visita marcada</span><button style="display:flex;align-items:center;gap:6px;background:var(--surface-2);border:1px solid var(--border-2);color:var(--text);border-radius:10px;padding:8px 12px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9z"></path></svg>Copiloto</button><button style="display:flex;align-items:center;gap:6px;background:var(--c-green);color:#fff;border:none;border-radius:10px;padding:8px 13px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>Abrir WhatsApp</button></div>
+            </div>
+            <div style="flex:1;overflow-y:auto;padding:24px 28px;display:flex;flex-direction:column;gap:14px">
+              <div style="align-self:center;font-size:11px;font-weight:700;color:var(--muted);background:var(--surface-2);border-radius:20px;padding:5px 14px;letter-spacing:.03em">HOJE</div>
+              <sc-for list="{{ chat }}" as="m" hint-placeholder-count="4">
+                <div style="display:flex;justify-content:{{ m.justify }}"><div style="max-width:62%;background:{{ m.bg }};border:{{ m.border }};border-radius:16px;padding:11px 15px"><div style="font-size:13.5px;line-height:1.5;color:{{ m.textColor }}">{{ m.text }}</div><div style="font-size:10.5px;color:{{ m.metaColor }};margin-top:5px;text-align:right">{{ m.time }}</div></div></div>
+              </sc-for>
+            </div>
+            <div style="padding:16px 24px;border-top:1px solid var(--border);display:flex;align-items:center;gap:12px"><div style="flex:1;display:flex;align-items:center;gap:10px;background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:12px 16px"><span style="flex:1;font-size:13.5px;color:var(--muted)">Escreva uma mensagem… (digite / para respostas rápidas)</span></div><button style="width:44px;height:44px;border-radius:12px;background:var(--accent);color:var(--accent-fg);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"></path></svg></button></div>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ scPendencias }}" hint-placeholder-val="x">
+        <div style="flex:1;overflow-y:auto;padding:26px 30px">
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:22px"><div style="font-size:24px;font-weight:800;letter-spacing:-.02em">Pendências</div><span style="font-size:12.5px;font-weight:600;color:var(--c-orange);background:color-mix(in srgb,var(--c-orange) 14%,transparent);border:1px solid color-mix(in srgb,var(--c-orange) 28%,transparent);border-radius:20px;padding:5px 13px">2 aguardando resposta</span></div>
+          <div style="background:linear-gradient(120deg,var(--accent-soft),transparent);border:1px solid var(--border-2);border-radius:16px;padding:18px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:22px">
+            <div style="display:flex;gap:13px;align-items:center"><div style="color:var(--accent)"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9z"></path><path d="M19 3.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"></path></svg></div><div><div style="font-weight:700;font-size:15px">Assistente — pendências do dia</div><div style="font-size:13px;color:var(--text-2);margin-top:3px">A IA lê as conversas de hoje e aponta o que pode ter passado.</div></div></div>
+            <button style="flex:none;background:var(--accent);color:var(--accent-fg);border:none;border-radius:11px;padding:11px 18px;font-weight:700;font-size:13.5px;cursor:pointer;font-family:inherit">Analisar com IA</button>
+          </div>
+          <div style="display:flex;gap:26px;border-bottom:1px solid var(--border);margin-bottom:18px"><sc-for list="{{ pendTabs }}" as="t" hint-placeholder-count="3"><button data-tab="{{ t.key }}" onClick="{{ onPendTab }}" style="{{ t.style }}">{{ t.label }}</button></sc-for></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:13px 16px;margin-bottom:16px"><span style="font-size:13px;color:var(--muted)">Alguns "aguardando" podem ser só agradecimento ou "eu te retorno". A IA aponta quais.</span><button style="flex:none;display:flex;align-items:center;gap:6px;background:var(--surface-3);border:1px solid var(--border-2);color:var(--text);border-radius:10px;padding:9px 13px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9z"></path></svg>Revisar com IA</button></div>
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <sc-for list="{{ pendencias }}" as="p" hint-placeholder-count="2">
+              <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px 20px">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between">
+                  <div style="display:flex;gap:12px"><div style="width:40px;height:40px;border-radius:50%;background:{{ p.color }};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff">{{ p.initials }}</div><div><div style="font-weight:700;font-size:15px">{{ p.name }}</div><div style="font-size:12.5px;color:var(--muted);margin-top:1px">{{ p.phone }}</div></div></div>
+                  <span style="font-size:12px;color:var(--c-orange);font-weight:600">{{ p.ago }}</span>
+                </div>
+                <div style="font-size:14px;color:var(--text-2);margin:14px 0;line-height:1.5">{{ p.message }}</div>
+                <div style="display:flex;align-items:center;justify-content:space-between"><button style="background:var(--surface-2);border:1px solid var(--border-2);color:var(--text);border-radius:10px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Abrir conversa</button><button style="width:34px;height:34px;border-radius:9px;background:transparent;border:none;color:var(--muted);cursor:pointer"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"></circle><circle cx="12" cy="12" r="1.6"></circle><circle cx="19" cy="12" r="1.6"></circle></svg></button></div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ scContatos }}" hint-placeholder-val="x">
+        <div style="flex:1;overflow-y:auto;padding:26px 30px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+            <div style="display:flex;align-items:baseline;gap:12px"><span style="font-size:24px;font-weight:800;letter-spacing:-.02em">Contatos</span><span style="font-size:15px;color:var(--muted);font-weight:600">12</span></div>
+            <div style="display:flex;align-items:center;gap:10px"><div style="display:flex;background:var(--surface-2);border:1px solid var(--border);border-radius:11px;padding:3px;gap:2px"><sc-for list="{{ contactViews }}" as="v" hint-placeholder-count="2"><button data-view="{{ v.key }}" onClick="{{ onContactView }}" style="{{ v.style }};padding:8px 16px;flex:none">{{ v.label }}</button></sc-for></div><button style="display:flex;align-items:center;gap:7px;background:var(--accent);color:var(--accent-fg);border:none;border-radius:11px;padding:10px 16px;font-weight:700;font-size:13.5px;cursor:pointer;font-family:inherit"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>Novo contato</button></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px"><div style="flex:1;display:flex;align-items:center;gap:10px;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:11px 14px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.8" stroke-linecap="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3"></path></svg><span style="font-size:13.5px;color:var(--muted)">Buscar por nome, telefone ou e-mail</span></div><sc-for list="{{ contactChips }}" as="c" hint-placeholder-count="5"><button style="display:flex;align-items:center;gap:5px;background:var(--surface-2);border:1px solid var(--border);color:var(--text-2);border-radius:10px;padding:10px 12px;font-size:12.5px;font-weight:500;cursor:pointer;font-family:inherit">{{ c }}<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"></path></svg></button></sc-for></div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden">
+            <div style="display:grid;grid-template-columns:34px 2fr 1.3fr 1.1fr 1.4fr 1.2fr 70px;gap:12px;padding:14px 20px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.03em"><span></span><span>Nome</span><span>Telefone</span><span>Categoria</span><span>Status</span><span>Próxima ação</span><span style="text-align:right">Ações</span></div>
+            <sc-for list="{{ contacts }}" as="c" hint-placeholder-count="8">
+              <div style="display:grid;grid-template-columns:34px 2fr 1.3fr 1.1fr 1.4fr 1.2fr 70px;gap:12px;padding:13px 20px;border-bottom:1px solid var(--border);align-items:center" style-hover="background:var(--surface-2)">
+                <button style="background:none;border:none;cursor:pointer;color:{{ c.starColor }};padding:0"><svg width="16" height="16" viewBox="0 0 24 24" fill="{{ c.starFill }}" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 3l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 18.8 6.2 21.8l1.1-6.5L2.6 9.8l6.5-.9z"></path></svg></button>
+                <div style="display:flex;align-items:center;gap:11px;min-width:0"><div style="width:32px;height:32px;border-radius:50%;background:{{ c.color }};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;color:#fff;flex:none">{{ c.initials }}</div><span style="font-weight:600;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.name }}</span></div>
+                <span style="font-size:13px;color:var(--c-green);font-weight:600;white-space:nowrap">{{ c.phone }}</span>
+                <span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--text-2);white-space:nowrap;overflow:hidden"><span style="width:7px;height:7px;border-radius:50%;background:{{ c.catColor }};flex:none"></span>{{ c.category }}</span>
+                <span><span style="display:inline-block;font-size:11.5px;font-weight:600;padding:4px 10px;border-radius:7px;background:{{ c.statusBg }};color:{{ c.statusColor }};white-space:nowrap">{{ c.status }}</span></span>
+                <span style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-2)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="{{ c.actionIcon }}"></path></svg>{{ c.action }}</span>
+                <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end"><button style="width:28px;height:28px;border-radius:7px;background:var(--surface-2);border:1px solid var(--border);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"></path></svg></button><button style="width:28px;height:28px;border-radius:7px;background:var(--surface-2);border:1px solid var(--border);color:var(--danger);cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"></path></svg></button></div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ scLembretes }}" hint-placeholder-val="x">
+        <div style="flex:1;overflow-y:auto;padding:26px 30px">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px"><div><div style="font-size:24px;font-weight:800;letter-spacing:-.02em">Central de Lembretes</div><div style="font-size:14px;color:var(--muted);margin-top:4px">Vencidos, hoje e próximos.</div></div><button style="display:flex;align-items:center;gap:7px;background:var(--accent);color:var(--accent-fg);border:none;border-radius:11px;padding:10px 16px;font-weight:700;font-size:13.5px;cursor:pointer;font-family:inherit"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"></path></svg>Novo lembrete</button></div>
+          <div style="display:flex;gap:12px;margin-bottom:20px"><div style="display:flex;align-items:center;gap:10px;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:11px 14px;color:var(--muted);flex:1;max-width:240px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"></path></svg><span style="font-size:13px">Filtrar por data</span></div><div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:11px 14px;font-size:13px;color:var(--text-2);min-width:180px">Todos os contatos<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"></path></svg></div><div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:11px 14px;font-size:13px;color:var(--text-2);min-width:180px">Todos os status<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"></path></svg></div></div>
+          <div style="display:flex;flex-direction:column;gap:26px">
+            <sc-for list="{{ reminderGroups }}" as="g" hint-placeholder-count="2">
+              <div>
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><span style="width:8px;height:8px;border-radius:50%;background:{{ g.color }}"></span><span style="font-weight:700;font-size:16px">{{ g.title }}</span><span style="font-size:12px;font-weight:700;color:#fff;background:{{ g.color }};border-radius:20px;padding:2px 10px">{{ g.count }}</span></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+                  <sc-for list="{{ g.items }}" as="r" hint-placeholder-count="3">
+                    <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid {{ g.color }};border-radius:14px;padding:16px 18px">
+                      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px"><span style="font-weight:700;font-size:14.5px;line-height:1.3">{{ r.title }}</span><span style="flex:none;font-size:11px;font-weight:600;padding:4px 10px;border-radius:7px;background:{{ r.statusBg }};color:{{ r.statusColor }}">{{ r.status }}</span></div>
+                      <div style="display:flex;align-items:center;gap:8px;margin-top:12px"><div style="width:26px;height:26px;border-radius:50%;background:{{ r.color }};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:10px;color:#fff">{{ r.initials }}</div><span style="font-size:13px;color:var(--text-2)">{{ r.who }}</span></div>
+                      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px"><span style="font-size:13px;color:{{ r.whenColor }};font-weight:{{ r.whenWeight }}">{{ r.when }}</span><span>{{ r.actionBtn }}</span></div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ scAssistente }}" hint-placeholder-val="x">
+        <div style="flex:1;overflow-y:auto;padding:26px 30px;display:flex;flex-direction:column;align-items:center;justify-content:center">
+          <div style="width:100%;max-width:620px">
+            <div style="display:flex;flex-direction:column;align-items:center;text-align:center;margin-bottom:26px"><div style="width:72px;height:72px;border-radius:22px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;color:var(--accent-fg);margin-bottom:18px;box-shadow:0 14px 40px -10px var(--accent-soft)"><svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2 5.5L19.5 9.5 14 11.5 12 17l-2-5.5L4.5 9.5 10 7.5z"></path><path d="M19 3l.8 2 2 .8-2 .8L19 8.6l-.8-2-2-.8 2-.8z"></path></svg></div><div style="font-size:24px;font-weight:800;letter-spacing:-.02em">Como posso ajudar?</div><div style="font-size:14.5px;color:var(--text-2);margin-top:8px;line-height:1.5;max-width:460px">Descreva o que precisa e confirme as ações. O assistente propõe — nada é feito sem a sua confirmação.</div></div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px">
+              <div style="min-height:56px;font-size:14.5px;color:var(--muted);line-height:1.5">Descreva o que você quer fazer… (ex.: agendar visita, criar captação)</div>
+              <div style="display:flex;flex-direction:column;gap:9px;margin:16px 0"><sc-for list="{{ assistChips }}" as="a" hint-placeholder-count="2"><button style="text-align:left;background:var(--surface-2);border:1px solid var(--border);color:var(--text-2);border-radius:11px;padding:12px 15px;font-size:13px;cursor:pointer;font-family:inherit;line-height:1.4">{{ a }}</button></sc-for></div>
+              <button style="display:flex;align-items:center;justify-content:center;gap:8px;background:var(--accent);color:var(--accent-fg);border:none;border-radius:12px;padding:13px 22px;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit;margin-left:auto"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9z"></path></svg>Analisar</button>
+            </div>
+          </div>
+        </div>
+        </sc-if>
+      </div>
+    </div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:940}}">
+class Component extends DCLogic {
+  state = { platform:'mobile', theme:'dark', screen:'resumo', convFilter:'tudo', contactView:'lista', pendTab:'aguardando' };
+  ic = {
+    grid:'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z',
+    chat:'M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z',
+    list:'M9 6h11M9 12h11M9 18h11M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2',
+    users:'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75',
+    bell:'M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0',
+    spark:'M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9zM19 3.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z',
+    users2:'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8',
+    phone:'M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.6a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.5-1.1a2 2 0 0 1 2.1-.5c.8.3 1.7.5 2.6.6a2 2 0 0 1 1.7 2z',
+    cal:'M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z',
+    doc:'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M9 13h6M9 17h6',
+    clock:'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2',
+    dots:'M12 12h.01M19 12h.01M5 12h.01'
+  };
+  catColor(cat){return {'Proprietário':'var(--c-purple)','Cliente':'var(--c-blue)','Locatário':'var(--c-green)','Lead':'var(--c-yellow)','Parceiro':'var(--c-pink)','Outro':'var(--c-gray)'}[cat]||'var(--c-gray)';}
+  statusColor(st){return {'Novo':'var(--c-gray)','Em atendimento':'var(--c-purple)','Aguardando retorno':'var(--c-yellow)','Visita marcada':'var(--c-blue)','Documentação':'var(--c-orange)','Finalizado':'var(--c-green)','Perdido':'var(--c-red)'}[st]||'var(--c-gray)';}
+  actionIcon(a){return {'Ligar':this.ic.phone,'Agendar visita':this.ic.cal,'Enviar documentação':this.ic.doc,'Aguardar retorno':this.ic.clock,'Outro':this.ic.dots}[a]||this.ic.dots;}
+  onPlat=(e)=>this.setState({platform:e.currentTarget.dataset.plat});
+  onTheme=()=>this.setState(s=>({theme:s.theme==='dark'?'light':'dark'}));
+  onNav=(e)=>this.setState({screen:e.currentTarget.dataset.screen});
+  onConvFilter=(e)=>this.setState({convFilter:e.currentTarget.dataset.filter});
+  onContactView=(e)=>this.setState({contactView:e.currentTarget.dataset.view});
+  onPendTab=(e)=>this.setState({pendTab:e.currentTarget.dataset.tab});
+
+  seg(active){return active?'flex:1;background:var(--accent);color:var(--accent-fg);border:none;border-radius:8px;padding:8px 12px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;transition:.15s':'flex:1;background:transparent;color:var(--text-2);border:none;border-radius:8px;padding:8px 12px;font-weight:600;font-size:13px;cursor:pointer;font-family:inherit;transition:.15s';}
+  chip(active){return active?'background:var(--accent);color:var(--accent-fg);border:1px solid var(--accent);border-radius:20px;padding:7px 15px;font-weight:600;font-size:12.5px;cursor:pointer;font-family:inherit':'background:var(--surface-2);color:var(--text-2);border:1px solid var(--border);border-radius:20px;padding:7px 15px;font-weight:500;font-size:12.5px;cursor:pointer;font-family:inherit';}
+  tab(active){return active?'background:none;border:none;border-bottom:2px solid var(--accent);color:var(--text);padding:10px 2px;font-weight:700;font-size:13.5px;cursor:pointer;font-family:inherit;white-space:nowrap':'background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);padding:10px 2px;font-weight:600;font-size:13.5px;cursor:pointer;font-family:inherit;white-space:nowrap';}
+
+  renderVals(){
+    const s=this.state,ic=this.ic,R=React.createElement;
+    const soft=(c)=>`color-mix(in srgb, ${c} 15%, transparent)`;
+    const titles={resumo:['Visão geral','Atendimento e contatos em um relance.'],conversas:['Conversas','Mensagens recebidas no WhatsApp.'],pendencias:['Pendências','Conversas aguardando resposta ou follow-up.'],contatos:['Contatos','Gerencie seus contatos.'],lembretes:['Central de Lembretes','Vencidos, hoje e próximos.'],assistente:['Assistente','Proponha e confirme ações com a IA.']};
+    const badge=(txt,bg)=>txt?R('span',{style:{position:'absolute',top:'-5px',right:'-7px',minWidth:'16px',height:'16px',padding:'0 4px',borderRadius:'10px',background:bg,color:'#fff',fontSize:'9.5px',fontWeight:'700',display:'flex',alignItems:'center',justifyContent:'center',border:'2px solid var(--surface)'}},txt):null;
+
+    const navDef=[['resumo','Resumo',ic.grid,null,null],['conversas','Conversas',ic.chat,'1','var(--c-green)'],['pendencias','Pendências',ic.list,'2','var(--c-orange)'],['contatos','Contatos',ic.users,null,null],['lembretes','Lembretes',ic.bell,'11','var(--c-red)'],['assistente','Assistente',ic.spark,null,null]];
+    const nav=navDef.map(([key,label,icon,bdg,bcol])=>{const active=key===s.screen;return{key,label,icon,active,color:active?'var(--accent)':'var(--muted)',fill:active&&key==='assistente'?'currentColor':'none',weight:active?'700':'500',railBg:active?'var(--accent-soft)':'transparent',badge:badge(bdg,bcol)};});
+
+    const mk=(active,base)=>active?base+';background:var(--surface);color:var(--text);box-shadow:var(--shadow-sm)':base+';background:transparent;color:var(--text-2)';
+    const segBase='flex:1;border:none;border-radius:8px;padding:8px 12px;font-weight:600;font-size:13px;cursor:pointer;font-family:inherit;transition:.15s';
+
+    const stats=[
+      {label:'Total de contatos',value:'12',trend:null,icon:ic.users2,tint:'var(--c-blue)'},
+      {label:'Lembretes pendentes',value:'11',trend:'100%',icon:ic.bell,tint:'var(--c-yellow)'},
+      {label:'Lembretes vencidos',value:'3',trend:'100%',icon:'M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z',tint:'var(--c-red)'},
+      {label:'Lembretes de hoje',value:'6',trend:'100%',icon:ic.clock,tint:'var(--c-green)'}
+    ];
+    const categories=[['Proprietário',3],['Cliente',3],['Locatário',2],['Lead',2],['Parceiro',1],['Outro',1]].map(([label,count])=>({label,count,color:this.catColor(label),pct:Math.round(count/3*100)+'%'}));
+    const statuses=[['Novo',2],['Em atendimento',2],['Aguardando retorno',2],['Visita marcada',2],['Documentação',2],['Finalizado',1],['Perdido',1]].map(([label,count])=>({label,count,color:this.statusColor(label),pct:Math.round(count/2*100)+'%'}));
+
+    const convFilters=[['tudo','Tudo'],['nao','Não lidas'],['fav','Favoritas']].map(([key,label])=>({key,label,style:this.chip(s.convFilter===key)}));
+    const convDef=[
+      ['FL','Fernanda Lima','var(--c-green)','15:55','Você: Perfeito, te aviso assim que confirmar…',false,true,0],
+      ['CP','Carlos Eduardo Pinto','var(--c-purple)','15:30','Oi, alguma novidade sobre a proposta?',false,false,0],
+      ['MA','Marcos Andrade','var(--c-purple)','Ontem','Consegue me confirmar o valor atualiz…',true,true,1],
+      ['EM','Eduardo Martins','var(--c-blue)','sexta-feira','Você: Combinado, aguardo você por aqui.',false,false,0],
+      ['BF','Bianca Ferreira','var(--c-purple)','quarta-feira','Você: Tudo bem, vou providenciar e te avis…',false,false,0],
+      ['RA','Renata Alves','var(--c-blue)','19/07/2026','Ok, obrigada pelo atendimento!',false,false,0]
+    ];
+    const star=(fill)=>R('svg',{width:14,height:14,viewBox:'0 0 24 24',fill:fill?'var(--c-yellow)':'none',stroke:'var(--c-yellow)',strokeWidth:1.6},R('path',{d:'M12 3l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 18.8 6.2 21.8l1.1-6.5L2.6 9.8l6.5-.9z'}));
+    const conversations=convDef.map(([initials,name,color,time,preview,unread,fav,cnt],i)=>({initials,name,color,time,preview,rowBg:i===0?'var(--surface-2)':'transparent',timeColor:unread?'var(--c-green)':'var(--muted)',previewWeight:unread?'font-weight:600;color:var(--text)':'',badge:R(React.Fragment,{},fav?star(true):null,cnt?R('span',{style:{minWidth:'18px',height:'18px',padding:'0 5px',borderRadius:'10px',background:'var(--c-green)',color:'#fff',fontSize:'11px',fontWeight:'700',display:'flex',alignItems:'center',justifyContent:'center'}},String(cnt)):null)}));
+    const meBg='color-mix(in srgb, var(--c-green) 20%, var(--surface))';
+    const chat=[
+      {text:'Oi! Ainda está disponível o apartamento da Vila Mariana?',time:'15:15',me:false},
+      {text:'Oi, Fernanda! Sim, ainda está disponível. Posso agendar uma visita essa semana?',time:'15:35',me:true},
+      {text:'Perfeito! Quinta à tarde funciona pra mim.',time:'15:50',me:false},
+      {text:'Perfeito, te aviso assim que confirmar com o proprietário!',time:'15:55',me:true}
+    ].map(m=>({text:m.text,time:m.time,justify:m.me?'flex-end':'flex-start',bg:m.me?meBg:'var(--surface-2)',border:m.me?'1px solid color-mix(in srgb,var(--c-green) 30%,transparent)':'1px solid var(--border)',textColor:'var(--text)',metaColor:'var(--muted)'}));
+
+    const pendTabs=[['aguardando','Aguardando resposta (2)'],['followup','Follow-ups sugeridos (1)'],['todas','Todas as ativas (5)']].map(([key,label])=>({key,label,style:this.tab(s.pendTab===key)}));
+    const pendencias=[
+      {initials:'MA',color:'var(--c-purple)',name:'Marcos Andrade',phone:'(11) 98765-4321',ago:'há 1 dia',message:'Consegue me confirmar o valor atualizado do aluguel?'},
+      {initials:'CP',color:'var(--c-purple)',name:'Carlos Eduardo Pinto',phone:'(11) 95544-3322',ago:'há 54min',message:'Oi, alguma novidade sobre a proposta?'}
+    ];
+
+    const contactViews=[['lista','Lista'],['pipeline','Pipeline']].map(([key,label])=>({key,label,style:mk(s.contactView===key,segBase)}));
+    const contactChips=['Categoria','Status','Ações','Imóvel','Favoritos'];
+    const cDef=[
+      ['MA','Marcos Andrade','var(--c-purple)','(11) 98765-4321','Proprietário','Em atendimento','Ligar','03/08/2026, 14:15',true],
+      ['FL','Fernanda Lima','var(--c-green)','(11) 99123-4567','Cliente','Visita marcada','Agendar visita','03/08/2026, 11:15',true],
+      ['CR','Camila Rodrigues','var(--c-orange)','(11) 91122-4455','Cliente','Documentação','Enviar documentação','03/08/2026, 08:15',false],
+      ['RS','Ricardo Souza','var(--c-blue)','(21) 99887-7665','Locatário','Documentação','Enviar documentação','02/08/2026, 16:15',false],
+      ['JT','Juliana Torres','var(--c-pink)','(11) 97654-3210','Lead','Novo','Ligar','02/08/2026, 16:15',false],
+      ['SN','Sérgio Nogueira','var(--c-blue)','(21) 95566-7788','Proprietário','Visita marcada','Agendar visita','02/08/2026, 16:15',false],
+      ['CP','Carlos Eduardo Pinto','var(--c-purple)','(11) 95544-3322','Proprietário','Aguardando retorno','Ligar','01/08/2026, 16:15',false],
+      ['IV','Imobiliária Parceira Bela Vista','var(--c-green)','(51) 13222-1100','Parceiro','Em atendimento','Aguardar retorno','31/07/2026, 16:15',false],
+      ['BF','Bianca Ferreira','var(--c-purple)','(11) 94455-6677','Cliente','Aguardando retorno','Aguardar retorno','30/07/2026, 16:15',false],
+      ['EM','Eduardo Martins','var(--c-blue)','(11) 92211-3344','Outro','Novo','Ligar','28/07/2026, 16:15',false],
+      ['PC','Paulo Henrique Costa','var(--c-pink)','(21) 98765-1234','Locatário','Finalizado','Aguardar retorno','24/07/2026, 16:15',false],
+      ['RA','Renata Alves','var(--c-blue)','(11) 93322-1144','Lead','Perdido','Outro','19/07/2026, 16:15',false]
+    ];
+    const contacts=cDef.map(([initials,name,color,phone,category,status,action,updated,fav])=>({initials,name,color,phone,category,status,action,updated,catColor:this.catColor(category),statusColor:this.statusColor(status),statusBg:soft(this.statusColor(status)),actionIcon:this.actionIcon(action),starColor:fav?'var(--c-yellow)':'var(--muted)',starFill:fav?'var(--c-yellow)':'none'}));
+    const recentContacts=contacts.slice(0,5);
+
+    const statusPill=(txt,type)=>{const map={done:'var(--c-green)',cancel:'var(--c-gray)',pending:'var(--c-yellow)'};return{status:txt,statusColor:map[type],statusBg:soft(map[type])};};
+    const concluir=R('button',{style:{display:'inline-flex',alignItems:'center',gap:'6px',background:soft('var(--c-green)'),color:'var(--c-green)',border:'1px solid color-mix(in srgb,var(--c-green) 30%,transparent)',borderRadius:'9px',padding:'8px 12px',fontSize:'12.5px',fontWeight:'600',cursor:'pointer',fontFamily:'inherit'}},R('svg',{width:13,height:13,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:2.4,strokeLinecap:'round',strokeLinejoin:'round'},R('path',{d:'M20 6 9 17l-5-5'})),'Concluir');
+    const rem=(title,who,initials,color,when,overdue,st,stType,act)=>({title,who,initials,color,when,whenColor:overdue?'var(--c-red)':'var(--muted)',whenWeight:overdue?'600':'400',...statusPill(st,stType),actionBtn:act?concluir:null});
+    const reminderGroups=[
+      {title:'Vencidos',count:'4',color:'var(--c-red)',items:[
+        rem('Enviar pesquisa de satisfação','Paulo Henrique Costa','PC','var(--c-pink)','26/07/2026, 16:15',false,'Concluído','done',false),
+        rem('Follow-up mensal','Renata Alves','RA','var(--c-blue)','30/07/2026, 16:15',false,'Cancelado','cancel',false),
+        rem('Ligar sobre reajuste do aluguel','Marcos Andrade','MA','var(--c-purple)','Atrasado há 2 dias',true,'Pendente','pending',true),
+        rem('Cobrar retorno sobre proposta','Carlos Eduardo Pinto','CP','var(--c-purple)','Atrasado há 1 dia',true,'Pendente','pending',true)
+      ]},
+      {title:'Hoje',count:'6',color:'var(--c-green)',items:[
+        rem('Confirmar horário da visita','Fernanda Lima','FL','var(--c-green)','Hoje, 14:00',false,'Pendente','pending',true),
+        rem('Enviar lembrete de documentos','Camila Rodrigues','CR','var(--c-orange)','Hoje, 17:00',false,'Pendente','pending',true),
+        rem('Visita — MB-00033','Fernanda Lima','FL','var(--c-green)','Hoje, 17:15',false,'Pendente','pending',true)
+      ]}
+    ];
+
+    const todayReminders=[['Confirmar horário da visita','Fernanda Lima','14:00'],['Enviar lembrete de documentos faltantes','Camila Rodrigues','17:00'],['Visita — MB-00033','Fernanda Lima','17:15'],['Visita com o Ricardo','Ricardo Souza','17:30'],['Visita — MB-00021','Marcos Andrade','17:40'],['Visita — MB-00099','Fernanda Lima','21:15']].map(([title,who,when])=>({title,who,when:'03/08/2026, '+when}));
+
+    const assistChips=['Agendar visita com o Marcos amanhã às 15h no MB-00033','Criar captação: Rua das Acácias 120, 3 quartos, portaria 24h'];
+
+    return {
+      theme:s.theme, isMobile:s.platform==='mobile', isWeb:s.platform==='web',
+      themeIcon:s.theme==='dark'?'M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z':'M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10zM12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4',
+      mobBtn:this.seg(s.platform==='mobile'), webBtn:this.seg(s.platform==='web'),
+      headerTitle:titles[s.screen][0], headerSub:titles[s.screen][1],
+      scResumo:s.screen==='resumo',scConversas:s.screen==='conversas',scPendencias:s.screen==='pendencias',scContatos:s.screen==='contatos',scLembretes:s.screen==='lembretes',scAssistente:s.screen==='assistente',
+      screen:s.screen, nav, stats, categories, statuses,
+      convFilters, conversations, chat, pendTabs, pendencias,
+      contactViews, contactChips, contacts, recentContacts, reminderGroups, todayReminders, assistChips,
+      onPlat:this.onPlat,onTheme:this.onTheme,onNav:this.onNav,onConvFilter:this.onConvFilter,onContactView:this.onContactView,onPendTab:this.onPendTab
+    };
+  }
+}
+</script>
+</body>
+</html>

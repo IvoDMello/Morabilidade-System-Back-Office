@@ -27,9 +27,9 @@ class Settings(BaseSettings):
     site_revalidate_secret: str = ""
 
     # Dados da empresa para documentos legais (ficha de visita, intermediação).
-    # Placeholders até confirmação do CNPJ/CRECI-J jurídico, sobrescrever via env.
+    # O CNPJ segue placeholder até confirmação, sobrescrever via env.
     empresa_cnpj: str = ""
-    empresa_creci_juridico: str = ""
+    empresa_creci_juridico: str = "CRECI J 13167"
     empresa_creci_corretor: str = "CRECI-RJ nº 70411"
     empresa_telefone: str = "(21) 99772-9990"
 

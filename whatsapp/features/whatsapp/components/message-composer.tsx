@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { messageFormSchema, type MessageFormValues } from "@/lib/validations/message.schema";
 import { sendMessageAction } from "@/app/conversas/actions";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import { useReply } from "@/features/whatsapp/reply-context";
 import { MessageTemplatesPopover } from "./message-templates-popover";
 import type { ID } from "@/types/common";
@@ -36,6 +37,11 @@ export function MessageComposer({
   const [highlighted, setHighlighted] = useState(0);
   const [dismissed, setDismissed] = useState(false);
   const { replyingTo, clearReply } = useReply();
+  // No celular o Enter do teclado virtual é a tecla de quebrar linha, não de
+  // enviar. Tratá-lo como envio impedia escrever mensagem de dois parágrafos e
+  // disparava texto pela metade para o cliente. Com teclado físico o Enter
+  // continua enviando, que é o esperado de um app de chat no desktop.
+  const isTouch = useMediaQuery("(pointer: coarse)");
   const form = useForm<MessageFormValues>({
     resolver: zodResolver(messageFormSchema),
     defaultValues: { body: "" },
@@ -87,6 +93,11 @@ export function MessageComposer({
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    // Toque: Enter quebra linha e ponto final. Nem envia, nem escolhe resposta
+    // rápida — ali a escolha é tocando no item, e um atalho invisível que
+    // rouba o Enter só surpreende.
+    if (isTouch) return;
+
     if (quickOpen) {
       if (e.key === "ArrowDown") {
         e.preventDefault();
@@ -131,7 +142,7 @@ export function MessageComposer({
             type="button"
             onClick={clearReply}
             aria-label="Cancelar resposta"
-            className="shrink-0 rounded-full p-0.5 text-muted-foreground transition-colors hover:text-foreground"
+            className="-m-1.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-veil/6 hover:text-foreground"
           >
             <X className="h-4 w-4" />
           </button>
@@ -175,12 +186,28 @@ export function MessageComposer({
       />
       <Textarea
         rows={1}
-        placeholder="Escreva uma mensagem…  (digite / para respostas rápidas)"
+        // O placeholder some ao digitar; sem aria-label o campo mais usado do
+        // app ficava sem nome nenhum para o leitor de tela.
+        aria-label={`Mensagem para ${contactName}`}
+        placeholder={
+          isTouch
+            ? "Escreva uma mensagem…"
+            : "Escreva uma mensagem…  (digite / para respostas rápidas)"
+        }
+        enterKeyHint={isTouch ? "enter" : "send"}
         className="font-chat max-h-32 min-h-9 resize-none py-2"
         {...form.register("body")}
         onKeyDown={handleKeyDown}
       />
-      <Button type="submit" size="icon" disabled={isPending} aria-label="Enviar mensagem">
+      {/* Desabilitado sem texto: o schema recusa mensagem vazia, mas o erro do
+          formulário não é exibido em lugar nenhum — clicar não fazia nada e
+          não dizia por quê. */}
+      <Button
+        type="submit"
+        size="icon"
+        disabled={isPending || body.trim().length === 0}
+        aria-label="Enviar mensagem"
+      >
         {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
       </Button>
       </form>

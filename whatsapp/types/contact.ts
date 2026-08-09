@@ -24,6 +24,8 @@ export interface Contact {
   clienteId: string | null;
   /** Código do cliente (ex.: CL-00042) — snapshot para exibir sem consultar a API. */
   clienteCodigo: string | null;
+  /** Corretor responsável pelo contato/lead; null se não atribuído. */
+  corretorId: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -44,6 +46,7 @@ export interface CreateContactInput {
   aiSummaryGeneratedAt?: string | null;
   clienteId?: string | null;
   clienteCodigo?: string | null;
+  corretorId?: string | null;
 }
 
 export type UpdateContactInput = Partial<CreateContactInput>;
@@ -56,6 +59,7 @@ export interface ContactFilters {
   isFavorite?: boolean;
   hasReminders?: boolean;
   propertyId?: ID;
+  corretorId?: ID;
   sortBy?: "updatedAt" | "createdAt" | "name";
   sortDir?: "asc" | "desc";
 }

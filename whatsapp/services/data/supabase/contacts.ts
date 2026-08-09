@@ -28,6 +28,7 @@ export const supabaseContacts: DataSource["contacts"] = {
     if (filters.status) query = query.eq("status", filters.status);
     if (filters.nextAction) query = query.eq("next_action", filters.nextAction);
     if (filters.isFavorite) query = query.eq("is_favorite", true);
+    if (filters.corretorId) query = query.eq("corretor_id", filters.corretorId);
     if (filters.search) {
       const term = filters.search;
       query = query.or(`name.ilike.%${term}%,phone.ilike.%${term}%,email.ilike.%${term}%`);
@@ -91,6 +92,7 @@ export const supabaseContacts: DataSource["contacts"] = {
         loss_reason: input.lossReason ?? null,
         loss_reason_note: input.lossReasonNote ?? null,
         general_notes: input.generalNotes ?? null,
+        corretor_id: input.corretorId ?? null,
       })
       .select("*")
       .single();
@@ -118,6 +120,7 @@ export const supabaseContacts: DataSource["contacts"] = {
     }
     if (input.clienteId !== undefined) payload.cliente_id = input.clienteId;
     if (input.clienteCodigo !== undefined) payload.cliente_codigo = input.clienteCodigo;
+    if (input.corretorId !== undefined) payload.corretor_id = input.corretorId;
 
     const { data, error } = await supabase
       .from("contacts")

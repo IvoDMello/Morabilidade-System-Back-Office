@@ -21,9 +21,12 @@ import {
   completeReminder,
   createReminder,
   deleteReminder,
+  getReminderById,
   updateReminder,
 } from "@/services/reminders.service";
+import { apagarEventoDeVisita } from "@/services/google-calendar.service";
 import { addTagToContact, createTag, getTags, removeTagFromContact } from "@/services/tags.service";
+import { getCorretores } from "@/services/corretores.service";
 import { logEvent } from "@/services/events.service";
 import {
   createProperty,
@@ -31,14 +34,17 @@ import {
   linkPropertyToContact,
   unlinkPropertyFromContact,
   updateContactPropertyStage,
+  updateContactPropertyRelacao,
 } from "@/services/properties.service";
 import { fetchImovelByCodigo } from "@/lib/backoffice-api";
+import { garantirClienteDoContato } from "@/services/clientes.service";
 import { propertyLinkFormSchema, type PropertyLinkFormValues } from "@/lib/validations/property.schema";
 import { generateConversationSummary, saveConversationSummary } from "@/services/ai.service";
 import type { ID } from "@/types/common";
 import { CONTACT_STATUS_LABELS, type ContactStatus } from "@/constants/contact-status";
 import type { LossReason } from "@/constants/loss-reasons";
 import { PROPERTY_STAGE_LABELS, type PropertyStage } from "@/constants/property-stages";
+import { PROPERTY_RELATION_LABELS, type PropertyRelation } from "@/constants/property-relations";
 
 function toContactInput(values: ContactFormValues) {
   const parsed = contactFormSchema.parse(values);
@@ -90,6 +96,20 @@ export async function updateContactAction(id: ID, values: ContactFormValues) {
       summary: `Status alterado para ${CONTACT_STATUS_LABELS[input.status]}`,
     });
   }
+
+  // Um atendente que salvou a ficha com nome e categoria reais qualificou este
+  // contato — é o momento certo de ele existir no cadastro do sistema, e não
+  // só no chat. Best-effort: nunca atrapalha o salvamento.
+  if (input.category !== "lead") {
+    await garantirClienteDoContato({
+      id,
+      name: input.name,
+      phone: input.phone,
+      clienteId: before?.clienteId ?? null,
+      category: input.category,
+    });
+  }
+
   revalidatePath("/contatos");
   revalidatePath(`/contatos/${id}`);
   revalidatePath("/dashboard");
@@ -124,7 +144,7 @@ export async function createReminderAction(contactId: ID, values: ReminderFormVa
     summary: `Lembrete criado: ${reminder.title}`,
   });
   revalidatePath(`/contatos/${contactId}`);
-  revalidatePath("/lembretes");
+  revalidatePath("/pendencias");
   revalidatePath("/dashboard");
 }
 
@@ -140,7 +160,7 @@ export async function updateReminderAction(
     reminderAt: toReminderAtIso(parsed),
   });
   revalidatePath(`/contatos/${contactId}`);
-  revalidatePath("/lembretes");
+  revalidatePath("/pendencias");
   revalidatePath("/dashboard");
 }
 
@@ -152,7 +172,7 @@ export async function completeReminderAction(contactId: ID, reminderId: ID) {
     summary: `Lembrete concluído: ${reminder.title}`,
   });
   revalidatePath(`/contatos/${contactId}`);
-  revalidatePath("/lembretes");
+  revalidatePath("/pendencias");
   revalidatePath("/dashboard");
 }
 
@@ -164,14 +184,18 @@ export async function cancelReminderAction(contactId: ID, reminderId: ID) {
     summary: `Lembrete cancelado: ${reminder.title}`,
   });
   revalidatePath(`/contatos/${contactId}`);
-  revalidatePath("/lembretes");
+  revalidatePath("/pendencias");
   revalidatePath("/dashboard");
 }
 
 export async function deleteReminderAction(contactId: ID, reminderId: ID) {
+  const reminder = await getReminderById(reminderId);
   await deleteReminder(reminderId);
+  if (reminder?.googleCalendarEventId) {
+    await apagarEventoDeVisita(reminder.googleCalendarEventId);
+  }
   revalidatePath(`/contatos/${contactId}`);
-  revalidatePath("/lembretes");
+  revalidatePath("/pendencias");
   revalidatePath("/dashboard");
 }
 
@@ -267,6 +291,21 @@ export async function updateContactStatusAction(
   revalidatePath("/dashboard");
 }
 
+export async function assignCorretorAction(contactId: ID, corretorId: string | null) {
+  await updateContact(contactId, { corretorId });
+  const corretor = corretorId
+    ? (await getCorretores()).find((c) => c.id === corretorId)
+    : null;
+  await logEvent({
+    contactId,
+    type: "contact_assigned",
+    summary: corretor ? `Responsável definido: ${corretor.nome}` : "Responsável removido",
+  });
+  revalidatePath(`/contatos/${contactId}`);
+  revalidatePath("/contatos");
+  revalidatePath("/");
+}
+
 export async function linkPropertyAction(contactId: ID, values: PropertyLinkFormValues) {
   const parsed = propertyLinkFormSchema.parse(values);
   let property = await findPropertyByCode(parsed.code);
@@ -277,14 +316,29 @@ export async function linkPropertyAction(contactId: ID, values: PropertyLinkForm
     const imovel = await fetchImovelByCodigo(parsed.code);
     property = await createProperty({ code: parsed.code, title: imovel?.titulo ?? null });
   }
-  await linkPropertyToContact(contactId, property.id, parsed.stage);
+  await linkPropertyToContact(contactId, property.id, parsed.relacao, parsed.stage);
   await logEvent({
     contactId,
     type: "property_linked",
-    summary: `Imóvel "${property.code}" vinculado (${PROPERTY_STAGE_LABELS[parsed.stage]})`,
+    summary: `Imóvel "${property.code}" vinculado (${PROPERTY_RELATION_LABELS[parsed.relacao]})`,
   });
   revalidatePath(`/contatos/${contactId}`);
   revalidatePath("/contatos");
+}
+
+export async function updatePropertyRelacaoAction(
+  contactId: ID,
+  propertyId: ID,
+  propertyCode: string,
+  relacao: PropertyRelation,
+) {
+  await updateContactPropertyRelacao(contactId, propertyId, relacao);
+  await logEvent({
+    contactId,
+    type: "property_relation_changed",
+    summary: `Imóvel "${propertyCode}" — papel alterado para ${PROPERTY_RELATION_LABELS[relacao]}`,
+  });
+  revalidatePath(`/contatos/${contactId}`);
 }
 
 export async function updatePropertyStageAction(

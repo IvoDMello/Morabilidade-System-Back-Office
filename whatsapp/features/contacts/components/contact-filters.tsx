@@ -63,6 +63,7 @@ export function ContactFilters({ properties }: { properties: Property[] }) {
       <div className="relative w-full sm:w-72">
         <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
+          aria-label="Buscar contatos"
           placeholder="Buscar por nome, telefone ou e-mail"
           value={search}
           onChange={(e) => setSearch(e.target.value)}

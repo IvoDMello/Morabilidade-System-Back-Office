@@ -52,6 +52,10 @@ export const mockReminders: DataSource["reminders"] = {
     );
   },
 
+  async getById(id: ID) {
+    return mockStore.reminders.find((r) => r.id === id) ?? null;
+  },
+
   async create(input: CreateReminderInput) {
     const nowIso = new Date().toISOString();
     const newReminder: ContactReminder = {
@@ -62,6 +66,11 @@ export const mockReminders: DataSource["reminders"] = {
       reminderAt: input.reminderAt,
       status: "pendente",
       createdBy: input.createdBy,
+      corretorId: input.corretorId ?? null,
+      imovelCodigo: input.imovelCodigo ?? null,
+      fichaVisitaId: null,
+      fichaNotificadaEm: null,
+      googleCalendarEventId: input.googleCalendarEventId ?? null,
       createdAt: nowIso,
       updatedAt: nowIso,
     };
@@ -84,5 +93,32 @@ export const mockReminders: DataSource["reminders"] = {
 
   async remove(id: ID) {
     mockStore.reminders = mockStore.reminders.filter((r) => r.id !== id);
+  },
+
+  async listVisitasParaFicha(fromIso: string, toIso: string) {
+    const from = new Date(fromIso).getTime();
+    const to = new Date(toIso).getTime();
+    return mockStore.reminders
+      .filter((r) => {
+        const at = new Date(r.reminderAt).getTime();
+        return r.status === "pendente" && !r.fichaNotificadaEm && at >= from && at <= to;
+      })
+      .sort((a, b) => new Date(a.reminderAt).getTime() - new Date(b.reminderAt).getTime())
+      .map((r) => {
+        const contact = mockStore.contacts.find((c) => c.id === r.contactId);
+        const corretor = mockStore.corretores.find((c) => c.id === r.corretorId);
+        return {
+          reminderId: r.id,
+          reminderAt: r.reminderAt,
+          contactId: r.contactId,
+          contactName: contact?.name ?? "",
+          contactPhone: contact?.phone ?? "",
+          clienteId: contact?.clienteId ?? null,
+          imovelCodigo: r.imovelCodigo,
+          title: r.title,
+          fichaVisitaId: r.fichaVisitaId,
+          corretorAuthUserId: corretor?.authUserId ?? null,
+        };
+      });
   },
 };

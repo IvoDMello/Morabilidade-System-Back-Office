@@ -1,4 +1,5 @@
 import { normalizePhone } from "@/lib/phone";
+import type { WhatsAppMessageType } from "@/types/whatsapp";
 import type { NormalizedWebhookEvent, WhatsAppProvider } from "../types";
 
 /**
@@ -10,6 +11,10 @@ import type { NormalizedWebhookEvent, WhatsAppProvider } from "../types";
 export const mockWhatsAppProvider: WhatsAppProvider = {
   async sendTextMessage() {
     return { providerMessageId: `mock-${crypto.randomUUID()}` };
+  },
+
+  async sendTemplateMessage() {
+    return { providerMessageId: `mock-template-${crypto.randomUUID()}` };
   },
 
   verifyWebhookHandshake({ challenge }) {
@@ -25,7 +30,33 @@ export const mockWhatsAppProvider: WhatsAppProvider = {
       from: string;
       profileName?: string | null;
       body: string;
+      // Simulação de mídia recebida: uma URL já hospedada (acessível pelo navegador).
+      mediaUrl?: string | null;
+      mediaType?: WhatsAppMessageType | null;
+      // Simulação de echo da coexistência: mensagem enviada pelo celular pro
+      // número em `from` (que aqui vira o destinatário).
+      echo?: boolean;
     };
+
+    const mediaUrl = parsed.mediaUrl?.trim() || null;
+    const messageType: WhatsAppMessageType = mediaUrl ? (parsed.mediaType ?? "image") : "text";
+    const media = mediaUrl ? { url: mediaUrl } : null;
+
+    if (parsed.echo) {
+      return [
+        {
+          type: "echo",
+          data: {
+            waMessageId: null,
+            toPhone: normalizePhone(parsed.from),
+            body: parsed.body,
+            messageType,
+            media,
+            timestamp: new Date().toISOString(),
+          },
+        },
+      ];
+    }
 
     return [
       {
@@ -35,7 +66,8 @@ export const mockWhatsAppProvider: WhatsAppProvider = {
           fromPhone: normalizePhone(parsed.from),
           profileName: parsed.profileName?.trim() || null,
           body: parsed.body,
-          messageType: "text",
+          messageType,
+          media,
           timestamp: new Date().toISOString(),
         },
       },

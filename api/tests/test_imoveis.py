@@ -348,14 +348,15 @@ def test_destaques_publico_vazio(anon_client):
 
 
 def test_atualizar_imovel_empurra_destaque_para_direita(client):
-    """Ao definir destaque_ordem=2 no imóvel A, o B que estava em 2 vai para 3."""
+    """Ao definir destaque_ordem=2 no imóvel A (que já era destaque), o B que estava em 2 vai para 3."""
     atualizado = {**IMOVEL_DB, "destaque_ordem": 2}
+    atual_check = MagicMock(data={"destaque_ordem": 5})  # A já era destaque (posição 5): reordenar, não forçar posição 1
     ocupadas = MagicMock(data=[{"id": "i-b", "destaque_ordem": 2}])  # select do helper
     update_shift = MagicMock(data=[])  # B: 2 → 3
     update_imovel = MagicMock(data=[atualizado])
     tag_del = MagicMock(data=[])
     detail = MagicMock(data=atualizado)
-    db = make_db_mock(ocupadas, update_shift, update_imovel, tag_del, detail)
+    db = make_db_mock(atual_check, ocupadas, update_shift, update_imovel, tag_del, detail)
 
     with patch("app.routers.imoveis.supabase_admin", db):
         res = client.put(
@@ -372,12 +373,13 @@ def test_atualizar_imovel_empurra_destaque_para_direita(client):
 def test_atualizar_imovel_destaque_posicao_10_sai(client):
     """Quem ocupa a posição 10 sai do destaque quando é empurrado."""
     atualizado = {**IMOVEL_DB, "destaque_ordem": 10}
+    atual_check = MagicMock(data={"destaque_ordem": 7})  # já era destaque (posição 7): reordenar, não forçar posição 1
     ocupadas = MagicMock(data=[{"id": "i-b", "destaque_ordem": 10}])
     update_shift = MagicMock(data=[])  # B: 10 → None
     update_imovel = MagicMock(data=[atualizado])
     tag_del = MagicMock(data=[])
     detail = MagicMock(data=atualizado)
-    db = make_db_mock(ocupadas, update_shift, update_imovel, tag_del, detail)
+    db = make_db_mock(atual_check, ocupadas, update_shift, update_imovel, tag_del, detail)
 
     with patch("app.routers.imoveis.supabase_admin", db):
         res = client.put(
@@ -400,6 +402,52 @@ def test_destaque_ordem_invalido_retorna_400(client):
         )
     assert res.status_code == 400
     assert "1 e 10" in res.json()["detail"]
+
+
+def test_atualizar_imovel_destaque_novo_forca_posicao_1(client):
+    """Imóvel que ainda não era destaque sempre entra na Posição 1, mesmo
+    que o formulário tenha enviado outra posição."""
+    atualizado = {**IMOVEL_DB, "destaque_ordem": 1}
+    atual_check = MagicMock(data={"destaque_ordem": None})  # ainda não era destaque
+    ocupadas = MagicMock(data=[{"id": "i-b", "destaque_ordem": 1}])  # B: 1 → 2
+    update_shift = MagicMock(data=[])
+    update_imovel = MagicMock(data=[atualizado])
+    tag_del = MagicMock(data=[])
+    detail = MagicMock(data=atualizado)
+    db = make_db_mock(atual_check, ocupadas, update_shift, update_imovel, tag_del, detail)
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.put(
+            "/imoveis/imovel-uuid-1",
+            # Formulário pediu posição 5, mas como o imóvel ainda não era
+            # destaque, o backend deve ignorar e forçar posição 1.
+            json={**IMOVEL_PAYLOAD, "destaque_ordem": 5},
+        )
+
+    assert res.status_code == 200
+    primeiro_update = db.update.call_args_list[0].args[0]
+    assert primeiro_update == {"destaque_ordem": 2}
+    # 2ª chamada é o update principal do imóvel editado, com o resto do payload
+    segundo_update = db.update.call_args_list[1].args[0]
+    assert segundo_update["destaque_ordem"] == 1
+
+
+def test_criar_imovel_com_destaque_forca_posicao_1(client):
+    """Imóvel recém-criado já marcado como destaque sempre entra na Posição 1."""
+    codigo_mock = MagicMock(data=1)
+    ocupadas = MagicMock(data=[{"id": "i-b", "destaque_ordem": 1}])  # B: 1 → 2
+    update_shift = MagicMock(data=[])
+    insert_mock = MagicMock(data=[{**IMOVEL_DB, "destaque_ordem": 1}])
+    detail_mock = MagicMock(data={**IMOVEL_DB, "destaque_ordem": 1})
+    db = make_db_mock(codigo_mock, ocupadas, update_shift, insert_mock, detail_mock)
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.post("/imoveis/", json={**IMOVEL_PAYLOAD, "destaque_ordem": 5})
+
+    assert res.status_code == 201
+    assert res.json()["destaque_ordem"] == 1
+    primeiro_update = db.update.call_args_list[0].args[0]
+    assert primeiro_update == {"destaque_ordem": 2}
 
 
 # ── GET /imoveis/publico/bairros ──────────────────────────────────────────────
@@ -458,6 +506,97 @@ def test_bairros_publico_rota_nao_conflita_com_codigo(anon_client):
         res = anon_client.get("/imoveis/publico/bairros")
     assert res.status_code == 200
     assert isinstance(res.json(), list)
+
+
+# ── GET /imoveis/localidades ──────────────────────────────────────────────────
+
+def test_localidades_agrupa_bairros_por_cidade(client):
+    rows = [
+        {"cidade": "Rio de Janeiro", "bairro": "Botafogo"},
+        {"cidade": "Rio de Janeiro", "bairro": "Copacabana"},
+        {"cidade": "Niterói", "bairro": "Icaraí"},
+    ]
+    db = make_db_mock(MagicMock(data=rows))
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/localidades")
+    assert res.status_code == 200
+    body = res.json()
+    assert body["cidades"] == ["Niterói", "Rio de Janeiro"]
+    assert body["bairros"] == ["Botafogo", "Copacabana", "Icaraí"]
+    assert body["bairros_por_cidade"] == {
+        "Niterói": ["Icaraí"],
+        "Rio de Janeiro": ["Botafogo", "Copacabana"],
+    }
+
+
+def test_localidades_inclui_imoveis_nao_disponiveis(client):
+    """Diferente de /publico/bairros, aqui não há filtro por disponibilidade."""
+    db = make_db_mock(MagicMock(data=[{"cidade": "Rio de Janeiro", "bairro": "Urca"}]))
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/localidades")
+    assert res.status_code == 200
+    assert res.json()["bairros"] == ["Urca"]
+    # O select não deve encadear .eq("disponibilidade", ...)
+    assert db.eq.call_count == 0
+
+
+def test_localidades_deduplica_ignorando_caixa_e_acento(client):
+    rows = [
+        {"cidade": "Rio de Janeiro", "bairro": "Botafogo"},
+        {"cidade": "rio de janeiro", "bairro": "botafogo"},
+        {"cidade": "Rio de Janeiro", "bairro": "Jardim Botânico"},
+        {"cidade": "Rio de Janeiro", "bairro": "Jardim Botanico"},
+    ]
+    db = make_db_mock(MagicMock(data=rows))
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/localidades")
+    body = res.json()
+    assert body["cidades"] == ["Rio de Janeiro"]
+    assert body["bairros"] == ["Botafogo", "Jardim Botanico"]
+    # Variação de digitação da cidade não cria chave paralela.
+    assert list(body["bairros_por_cidade"]) == ["Rio de Janeiro"]
+    assert body["bairros_por_cidade"]["Rio de Janeiro"] == ["Botafogo", "Jardim Botanico"]
+
+
+def test_localidades_ignora_nulos_vazios_e_espacos(client):
+    rows = [
+        {"cidade": "  Rio de Janeiro  ", "bairro": "  Leblon  "},
+        {"cidade": None, "bairro": "Sem Cidade"},
+        {"cidade": "Rio de Janeiro", "bairro": None},
+        {"cidade": "", "bairro": ""},
+    ]
+    db = make_db_mock(MagicMock(data=rows))
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/localidades")
+    body = res.json()
+    assert body["cidades"] == ["Rio de Janeiro"]
+    assert body["bairros"] == ["Leblon", "Sem Cidade"]
+    # Bairro sem cidade fica fora do agrupamento, mas continua na lista geral.
+    assert body["bairros_por_cidade"] == {"Rio de Janeiro": ["Leblon"]}
+
+
+def test_localidades_sem_imoveis_retorna_vazio(client):
+    db = make_db_mock(MagicMock(data=[]))
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/localidades")
+    assert res.status_code == 200
+    assert res.json() == {"cidades": [], "bairros": [], "bairros_por_cidade": {}}
+
+
+def test_localidades_exige_autenticacao(anon_client):
+    db = make_db_mock(MagicMock(data=[]))
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = anon_client.get("/imoveis/localidades")
+    assert res.status_code in (401, 403)
+
+
+def test_localidades_rota_nao_conflita_com_imovel_id(client):
+    """/localidades não pode ser capturado por /{imovel_id}."""
+    db = make_db_mock(MagicMock(data=[{"cidade": "Rio de Janeiro", "bairro": "Lagoa"}]))
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/localidades")
+    assert res.status_code == 200
+    assert "cidades" in res.json()
 
 
 # ── GET /imoveis/publico/disponiveis, parâmetro ordenar ─────────────────────

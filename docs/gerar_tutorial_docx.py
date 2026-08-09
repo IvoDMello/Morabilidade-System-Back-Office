@@ -171,8 +171,8 @@ def main() -> None:
     intro.paragraph_format.space_after = Pt(4)
     _run(intro,
          "A ficha de visita é o termo digital que o visitante assina pelo celular antes de "
-         "conhecer o imóvel. Ela protege a comissão (vincula o visitante à corretagem pelo "
-         "prazo combinado, arts. 725/727 do Código Civil), cadastra o visitante "
+         "conhecer o imóvel. Ela registra o compromisso de conduzir qualquer negociação do "
+         "imóvel exclusivamente pela Morabilidade, cadastra o visitante "
          "automaticamente como cliente quando ele assina e monta o perfil de imóvel que ele busca.")
 
     # ── Antes de começar ─────────────────────────────────────────────────────

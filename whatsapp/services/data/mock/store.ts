@@ -7,6 +7,12 @@ import type { MessageTemplate } from "@/types/template";
 import type { ContactProperty, Property } from "@/types/property";
 import type { WhatsAppConversation, WhatsAppMessage } from "@/types/whatsapp";
 import type { PushSubscriptionRecord } from "@/types/push";
+import type { Corretor } from "@/types/corretor";
+import type { AgentProposal } from "@/types/agent-proposal";
+import type { AgentRun } from "@/types/agent-run";
+import type { WebhookDelivery } from "@/types/webhook-delivery";
+// Só o tipo: importar valor daqui fecharia ciclo com captacoes.service.ts.
+import type { CaptacaoResumo } from "@/services/captacoes.service";
 import {
   seedContacts,
   seedNotes,
@@ -19,6 +25,7 @@ import {
   seedTemplates,
   seedProperties,
   seedContactProperties,
+  seedCorretores,
 } from "./seed";
 
 /**
@@ -38,7 +45,13 @@ interface MockStore {
   templates: MessageTemplate[];
   properties: Property[];
   contactProperties: ContactProperty[];
+  corretores: Corretor[];
   pushSubscriptions: PushSubscriptionRecord[];
+  agentProposals: AgentProposal[];
+  agentRuns: AgentRun[];
+  webhookDeliveries: WebhookDelivery[];
+  /** Board de captações (schema `captacoes`, app irmão) — ver captacoes.service.ts. */
+  captacoes: CaptacaoResumo[];
 }
 
 const globalForMockStore = globalThis as unknown as { __mockStore?: MockStore };
@@ -57,7 +70,12 @@ export const mockStore: MockStore =
     templates: seedTemplates,
     properties: seedProperties,
     contactProperties: seedContactProperties,
+    corretores: seedCorretores,
     pushSubscriptions: [],
+    agentProposals: [],
+    agentRuns: [],
+    webhookDeliveries: [],
+    captacoes: [],
   });
 
 export function generateId(): string {

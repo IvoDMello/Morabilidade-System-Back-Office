@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/components/providers/AuthProvider";
+import { ZoomLock } from "@/components/ZoomLock";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -32,6 +33,13 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  // Zoom travado a pedido do produto, como no whatsapp/ e no captacoes/: o
+  // pinch acidental deixava a tela torta sem jeito óbvio de desfazer. Decisão
+  // consciente contra a WCAG 1.4.4 — quem precisa ampliar depende do zoom do
+  // sistema operacional. Só o meta não basta: ver `touch-action` no
+  // globals.css e o <ZoomLock /> para o Safari do iOS.
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
@@ -42,6 +50,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <body className={inter.className}>
+        <ZoomLock />
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
           <AuthProvider>
             {children}

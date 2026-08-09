@@ -23,14 +23,14 @@ export type SemanticTone =
 
 /** Classes Tailwind (véu translúcido + texto em token de tema) para badges/chips por papel. */
 export const SEMANTIC_TONES: Record<SemanticTone, string> = {
-  info: "bg-[rgba(91,155,213,0.14)] text-sky",
-  success: "bg-[rgba(126,196,145,0.14)] text-jade-soft",
-  waiting: "bg-[rgba(216,203,106,0.14)] text-gold",
-  progress: "bg-[rgba(139,127,212,0.14)] text-lilac",
-  attention: "bg-[rgba(212,127,168,0.14)] text-blush",
-  danger: "bg-[rgba(196,85,62,0.14)] text-ember",
+  info: "bg-[rgba(90,162,247,0.14)] text-sky",
+  success: "bg-[rgba(84,201,138,0.14)] text-jade-soft",
+  waiting: "bg-[rgba(231,221,166,0.14)] text-gold",
+  progress: "bg-[rgba(165,139,245,0.14)] text-lilac",
+  attention: "bg-[rgba(239,130,182,0.14)] text-blush",
+  danger: "bg-[rgba(239,122,122,0.14)] text-ember",
   neutral: "bg-veil/6 text-ink-mid",
-  faded: "bg-[rgba(153,156,140,0.12)] text-fade",
+  faded: "bg-[rgba(139,144,150,0.12)] text-fade",
 };
 
 /**
@@ -39,14 +39,14 @@ export const SEMANTIC_TONES: Record<SemanticTone, string> = {
  * sempre da mesma paleta (DB-2).
  */
 export const SEMANTIC_SOLID: Record<SemanticTone, string> = {
-  info: "#5b9bd5",
-  success: "#5fb87a",
-  waiting: "#d8cb6a",
-  progress: "#8b7fd4",
-  attention: "#d47fa8",
-  danger: "#c4553e",
-  neutral: "#83857a",
-  faded: "#999c8c",
+  info: "#5aa2f7",
+  success: "#54c98a",
+  waiting: "#e6c463",
+  progress: "#a58bf5",
+  attention: "#ef82b6",
+  danger: "#ef7a7a",
+  neutral: "#83878c",
+  faded: "#8b9096",
 };
 
 /** Fundos de avatar (texto branco) — tons médios que leem bem sobre o carvão. */

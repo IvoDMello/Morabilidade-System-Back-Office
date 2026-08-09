@@ -3,6 +3,7 @@ import type { ConversationStatus } from "@/constants/conversation-status";
 import type { ID } from "@/types/common";
 import type {
   CreateWhatsAppMessageInput,
+  FailedOutboundMessage,
   WhatsAppConversation,
   WhatsAppConversationSummary,
   WhatsAppMessage,
@@ -30,6 +31,7 @@ function withContact(conversation: WhatsAppConversation): WhatsAppConversationSu
     contactTagIds: mockStore.contactTags
       .filter((ct) => ct.contactId === conversation.contactId)
       .map((ct) => ct.tagId),
+    contactCorretorId: contact?.corretorId ?? null,
   };
 }
 
@@ -79,10 +81,50 @@ export const mockWhatsapp: DataSource["whatsapp"] = {
     return newConversation;
   },
 
+  async getConversationById(conversationId: ID) {
+    return mockStore.conversations.find((c) => c.id === conversationId) ?? null;
+  },
+
   async listMessages(conversationId: ID) {
     return mockStore.messages
       .filter((m) => m.conversationId === conversationId)
       .sort((a, b) => new Date(a.waTimestamp).getTime() - new Date(b.waTimestamp).getTime());
+  },
+
+  async reopenConversationAsAwaiting(conversationId: ID) {
+    const conversa = mockStore.conversations.find((c) => c.id === conversationId);
+    // Só a partir de `respondida` — espelha a condição do UPDATE no Supabase.
+    if (!conversa || conversa.status !== "respondida") return;
+    conversa.status = "aguardando_resposta";
+    conversa.statusChangedAt = new Date().toISOString();
+  },
+
+  async listFailedOutbound(sinceIso: string, limit = 50) {
+    const corte = new Date(sinceIso).getTime();
+    return mockStore.messages
+      .filter(
+        (m) =>
+          m.direction === "outbound" &&
+          m.status === "failed" &&
+          new Date(m.waTimestamp).getTime() >= corte,
+      )
+      .sort((a, b) => new Date(b.waTimestamp).getTime() - new Date(a.waTimestamp).getTime())
+      .slice(0, limit)
+      .map((m): FailedOutboundMessage => {
+        const conversa = mockStore.conversations.find((c) => c.id === m.conversationId);
+        const contato = mockStore.contacts.find((c) => c.id === conversa?.contactId);
+        return {
+          id: m.id,
+          conversationId: m.conversationId,
+          contactId: conversa?.contactId ?? "",
+          contactName: contato?.name ?? "Contato",
+          contactPhone: contato?.phone ?? "",
+          body: m.body,
+          errorMessage: m.errorMessage,
+          createdBy: m.createdBy,
+          waTimestamp: m.waTimestamp,
+        };
+      });
   },
 
   async searchMessages(query: string, limit = 50) {
@@ -120,6 +162,9 @@ export const mockWhatsapp: DataSource["whatsapp"] = {
       errorMessage: null,
       createdBy: input.createdBy ?? null,
       replyTo: input.replyTo ?? null,
+      mediaUrl: input.mediaUrl ?? null,
+      mediaMimeType: input.mediaMimeType ?? null,
+      mediaFilename: input.mediaFilename ?? null,
       waTimestamp: input.waTimestamp,
       createdAt: new Date().toISOString(),
     };

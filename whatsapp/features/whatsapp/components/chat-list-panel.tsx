@@ -9,6 +9,7 @@ import { ChatListMenu } from "./chat-list-menu";
 import { ConversationContextMenu } from "./conversation-context-menu";
 import { ConversationRow, MessageResultRow } from "./conversations-list";
 import type { Tag } from "@/types/tag";
+import type { Corretor } from "@/types/corretor";
 import type { WhatsAppConversationSummary, WhatsAppMessageSearchResult } from "@/types/whatsapp";
 
 const SEARCH_DEBOUNCE_MS = 300;
@@ -52,12 +53,14 @@ export function ChatListPanel({
   conversations,
   messageResults,
   tags,
+  corretores,
   query,
   selectedContactId,
 }: {
   conversations: WhatsAppConversationSummary[];
   messageResults: WhatsAppMessageSearchResult[];
   tags: Tag[];
+  corretores: Corretor[];
   query: string;
   selectedContactId?: string;
 }) {
@@ -66,6 +69,7 @@ export function ChatListPanel({
   const [input, setInput] = useState(query);
   const [filter, setFilter] = useState<ChatFilter>("all");
   const [activeTagId, setActiveTagId] = useState<string | null>(null);
+  const [activeCorretorId, setActiveCorretorId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
   // Sincroniza o texto digitado com ?q= (com debounce) — a busca nas mensagens
@@ -91,13 +95,19 @@ export function ChatListPanel({
     [tags, activeTagId],
   );
 
+  const activeCorretor = useMemo(
+    () => (activeCorretorId ? (corretores.find((c) => c.id === activeCorretorId) ?? null) : null),
+    [corretores, activeCorretorId],
+  );
+
   const filteredByChip = useMemo(() => {
     let list = conversations;
     if (filter === "unread") list = list.filter((c) => c.unreadCount > 0);
     if (filter === "favorites") list = list.filter((c) => c.contactIsFavorite);
     if (activeTagId) list = list.filter((c) => c.contactTagIds.includes(activeTagId));
+    if (activeCorretorId) list = list.filter((c) => c.contactCorretorId === activeCorretorId);
     return list;
-  }, [conversations, filter, activeTagId]);
+  }, [conversations, filter, activeTagId, activeCorretorId]);
 
   const nameMatches = useMemo(
     () => (isSearching ? filteredByChip.filter((c) => matchesQuery(c, input)) : filteredByChip),
@@ -127,7 +137,14 @@ export function ChatListPanel({
       {/* No mobile o MobileHeader do shell já traz o título da tela. */}
       <div className="hidden shrink-0 items-center justify-between px-4 pb-2 pt-3 md:flex">
         <h1 className="text-[19px] font-semibold tracking-[-0.02em]">Conversas</h1>
-        <ChatListMenu tags={tags} activeTagId={activeTagId} onSelectTag={setActiveTagId} />
+        <ChatListMenu
+          tags={tags}
+          activeTagId={activeTagId}
+          onSelectTag={setActiveTagId}
+          corretores={corretores}
+          activeCorretorId={activeCorretorId}
+          onSelectCorretor={setActiveCorretorId}
+        />
       </div>
 
       <div className="flex shrink-0 items-center gap-1 px-3 pb-2 pt-3 md:pt-0">
@@ -157,7 +174,14 @@ export function ChatListPanel({
           )}
         </div>
         <div className="md:hidden">
-          <ChatListMenu tags={tags} activeTagId={activeTagId} onSelectTag={setActiveTagId} />
+          <ChatListMenu
+            tags={tags}
+            activeTagId={activeTagId}
+            onSelectTag={setActiveTagId}
+            corretores={corretores}
+            activeCorretorId={activeCorretorId}
+            onSelectCorretor={setActiveCorretorId}
+          />
         </div>
       </div>
 
@@ -168,9 +192,9 @@ export function ChatListPanel({
             type="button"
             onClick={() => setFilter(value)}
             className={cn(
-              // min-h de 40px no mobile garante alvo de toque confortável;
-              // no desktop (ponteiro) volta a compacto.
-              "inline-flex min-h-[40px] items-center justify-center rounded-full border px-3 py-1 text-[13px] transition-colors sm:min-h-[30px]",
+              // min-h-9: os chips tinham ~30px de altura, apertado para o
+              // polegar. 36px é confortável sem engordar a barra de filtros.
+              "inline-flex min-h-9 items-center rounded-full border px-3.5 text-[13px] transition-colors",
               filter === value
                 ? "border-transparent bg-primary/12 font-medium text-primary"
                 : "border-border text-muted-foreground hover:bg-veil/4",
@@ -184,9 +208,20 @@ export function ChatListPanel({
             type="button"
             onClick={() => setActiveTagId(null)}
             title="Remover filtro de lista"
-            className="inline-flex min-h-[40px] items-center gap-1 rounded-full border border-transparent bg-primary/12 px-3 py-1 text-[13px] font-medium text-primary sm:min-h-[30px]"
+            className="inline-flex min-h-9 items-center gap-1 rounded-full border border-transparent bg-primary/12 px-3.5 text-[13px] font-medium text-primary"
           >
             {activeTag.name}
+            <X className="h-3.5 w-3.5" />
+          </button>
+        )}
+        {activeCorretor && (
+          <button
+            type="button"
+            onClick={() => setActiveCorretorId(null)}
+            title="Remover filtro de corretor"
+            className="inline-flex min-h-9 items-center gap-1 rounded-full border border-transparent bg-primary/12 px-3.5 text-[13px] font-medium text-primary"
+          >
+            {activeCorretor.nome}
             <X className="h-3.5 w-3.5" />
           </button>
         )}

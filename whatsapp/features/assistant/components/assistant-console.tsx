@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { CalendarClock, Check, Sparkles, X } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,32 +10,26 @@ import {
   executarAcaoAction,
   type ProporResultado,
 } from "@/app/assistente/actions";
+import { ProposalCard, type PropostaStatus } from "./proposal-card";
+import { linkNovaCaptacao, rascunhoDaProposta } from "@/lib/captacao-link";
 import type { AcaoProposta } from "@/services/assistant";
-import type { ToolName } from "@/services/assistant/tools";
-
-type ItemStatus =
-  | { kind: "pending" }
-  | { kind: "done"; message: string }
-  | { kind: "error"; message: string }
-  | { kind: "dismissed" };
 
 interface Item extends AcaoProposta {
-  status: ItemStatus;
+  status: PropostaStatus;
 }
-
-const TOOL_ICON: Record<ToolName, typeof CalendarClock> = {
-  agendar_visita: CalendarClock,
-  criar_captacao: Sparkles,
-};
 
 const EXEMPLOS = [
   "Agendar visita com o Marcos amanhã às 15h no MB-00033",
   "Criar captação: Rua das Acácias 120, 3 quartos, portaria 24h",
 ];
 
-export function AssistantConsole() {
+export function AssistantConsole({ captacoesUrl }: { captacoesUrl: string | null }) {
   const [instrucao, setInstrucao] = useState("");
   const [items, setItems] = useState<Item[]>([]);
+  // Muda a cada nova rodada de propostas. Entra na `key` dos cartões para que
+  // uma proposta nova não herde o texto que o operador tinha editado na
+  // anterior — o índice sozinho reaproveitaria o componente.
+  const [geracao, setGeracao] = useState(0);
   const [erro, setErro] = useState<string | null>(null);
   const [isProposing, startProposing] = useTransition();
   const [executingIdx, setExecutingIdx] = useState<number | null>(null);
@@ -49,14 +43,37 @@ export function AssistantConsole() {
         setErro(res.erro ?? "Nenhuma ação identificada.");
         return;
       }
+      setGeracao((g) => g + 1);
       setItems(res.propostas.map((p) => ({ ...p, status: { kind: "pending" } })));
     });
   }
 
-  function confirmar(idx: number) {
+  function confirmar(idx: number, textoFinal: string | null) {
     const item = items[idx];
+    const args = textoFinal === null ? item.args : { ...item.args, texto: textoFinal };
+
+    // Captação não nasce aqui: vai para o formulário completo do board, onde
+    // ganha os campos obrigatórios e passa pela checagem de duplicadas. Mesma
+    // regra do copiloto da conversa — um caminho só para criar captação.
+    if (item.tool === "criar_captacao") {
+      const href = linkNovaCaptacao(captacoesUrl, rascunhoDaProposta(args));
+      if (!href) {
+        toast.error("Board de captações não configurado (CAPTACOES_BOARD_URL).");
+        return;
+      }
+      window.open(href, "_blank", "noopener,noreferrer");
+      setItems((prev) =>
+        prev.map((it, i) =>
+          i === idx
+            ? { ...it, status: { kind: "done", message: "Aberto no board para você completar." } }
+            : it,
+        ),
+      );
+      return;
+    }
+
     setExecutingIdx(idx);
-    executarAcaoAction(item.tool, item.args).then((res) => {
+    executarAcaoAction(item.tool, args).then((res) => {
       setExecutingIdx(null);
       setItems((prev) =>
         prev.map((it, i) =>
@@ -78,6 +95,7 @@ export function AssistantConsole() {
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-2 rounded-lg border bg-card p-4">
         <Textarea
+          aria-label="O que você quer que o assistente faça"
           value={instrucao}
           onChange={(e) => setInstrucao(e.target.value)}
           placeholder="Descreva o que você quer fazer… (ex.: agendar visita, criar captação)"
@@ -115,44 +133,18 @@ export function AssistantConsole() {
           <p className="text-xs font-semibold tracking-[0.08em] text-muted-foreground uppercase">
             Ações propostas — confirme para executar
           </p>
-          {items.map((item, idx) => {
-            if (item.status.kind === "dismissed") return null;
-            const Icon = TOOL_ICON[item.tool] ?? Sparkles;
-            return (
-              <div
-                key={idx}
-                className="flex items-start gap-3 rounded-lg border bg-card p-3"
-              >
-                <Icon className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm">{item.resumo}</p>
-                  {item.status.kind === "done" && (
-                    <p className="mt-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                      ✓ {item.status.message}
-                    </p>
-                  )}
-                  {item.status.kind === "error" && (
-                    <p className="mt-1 text-xs font-medium text-destructive">{item.status.message}</p>
-                  )}
-                </div>
-                {(item.status.kind === "pending" || item.status.kind === "error") && (
-                  <div className="flex shrink-0 gap-1">
-                    <Button
-                      size="sm"
-                      onClick={() => confirmar(idx)}
-                      loading={executingIdx === idx}
-                    >
-                      <Check className="h-3.5 w-3.5" />
-                      Confirmar
-                    </Button>
-                    <Button size="icon-sm" variant="ghost" onClick={() => dispensar(idx)} aria-label="Dispensar">
-                      <X className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+          {items.map((item, idx) =>
+            item.status.kind === "dismissed" ? null : (
+              <ProposalCard
+                key={`${geracao}-${idx}`}
+                proposta={item}
+                status={item.status}
+                isExecuting={executingIdx === idx}
+                onConfirm={(textoFinal) => confirmar(idx, textoFinal)}
+                onDismiss={() => dispensar(idx)}
+              />
+            ),
+          )}
         </div>
       )}
     </div>

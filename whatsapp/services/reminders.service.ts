@@ -14,6 +14,10 @@ export function getAllReminders(filters?: ReminderFilters) {
   return dataSource.reminders.listAll(filters);
 }
 
+export function getReminderById(id: ID) {
+  return dataSource.reminders.getById(id);
+}
+
 export function createReminder(input: CreateReminderInput) {
   return dataSource.reminders.create(input);
 }

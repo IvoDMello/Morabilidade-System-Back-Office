@@ -1,0 +1,188 @@
+PENDÊNCIAS PARA LIGAR: Copiloto de captações + Ficha de visita automática
+==========================================================================
+
+Branch: feat/whatsapp-copiloto-captacoes  (commits f722ebd + 959a453)
+Status do código: pronto, testes/build verdes, NÃO mergeado, NÃO em produção.
+
+A ORDEM IMPORTA. O passo 1 tem que vir antes do passo 3 (merge/deploy): o
+código novo grava a coluna `imovel_codigo` em TODO lembrete criado. Se o
+deploy subir antes da migration, criar lembrete quebra (PostgREST 400).
+A migration é aditiva e inofensiva para o código que está no ar hoje — dá
+pra rodar agora sem pressa de mergear depois.
+
+
+[ ] 1. MIGRATION 0019 (fazer PRIMEIRO)
+    Caminho: Supabase Dashboard -> SQL Editor -> New query
+    Arquivo: whatsapp/supabase/migrations/0019_ficha_visita_lembrete.sql
+    Cole o conteúdo inteiro e rode. Adiciona 3 colunas opcionais em
+    whatsapp.contact_reminders (imovel_codigo, ficha_visita_id,
+    ficha_notificada_em) + um índice parcial.
+
+    Conferir depois:
+      select column_name from information_schema.columns
+      where table_schema = 'whatsapp' and table_name = 'contact_reminders'
+        and column_name in ('imovel_codigo','ficha_visita_id','ficha_notificada_em');
+    Esperado: 3 linhas.
+
+
+[ ] 2. VARIÁVEIS DE AMBIENTE (Vercel, projeto do app whatsapp)
+    Caminho: Vercel -> projeto morabilidade-system-back-office-lgep
+             -> Settings -> Environment Variables (escopo Production)
+
+    [ ] PENDING_PHONE_NUMBERS   1 ou 2 números que concentram as pendências,
+                                separados por vírgula. Valor para começar só com
+                                o seu número:  5521971957245
+                                (o código completa o DDI 55 sozinho se você
+                                digitar 21971957245, mas prefira o formato cheio)
+                                ATENÇÃO: se ficar vazia, cai no ALERT_PHONE_NUMBER
+                                (que já existe) — ou seja, o cron NÃO fica mudo.
+    [ ] FICHA_CORRETOR_PADRAO   Rodrigo
+                                Quem assina a ficha quando a visita não tem
+                                responsável definido. Sem isso, boa parte das
+                                visitas vira pendência em vez de ficha gerada.
+    [ ] NEXT_PUBLIC_SITE_URL    https://morabilidade.com
+                                (base do link /ficha/<token> que o cliente abre)
+    [ ] CAPTACOES_BOARD_URL     https://captacoes.morabilidade.com
+                                (opcional: só o atalho "Abrir board" no painel)
+
+    Já devem existir (CONFERIR, não recriar):
+    [ ] BACKOFFICE_API_URL        https://api.morabilidade.com
+    [ ] BACKOFFICE_INTERNAL_TOKEN mesmo valor do INTERNAL_API_TOKEN na API (Railway)
+    [ ] CRON_SECRET               mesmo valor do secret WHATSAPP_CRON_SECRET no GitHub
+    [ ] ANTHROPIC_API_KEY         sem ela, o botão "Analisar conversa" só dá erro amigável
+
+    Se BACKOFFICE_* não estiverem preenchidas, o cron não consegue gerar ficha
+    nenhuma e tudo vira pendência com esse motivo.
+
+
+[ ] 3. MERGE E DEPLOY
+    git checkout main
+    git merge feat/whatsapp-copiloto-captacoes
+    git push
+    (Production da Vercel segue a main — o deploy sai sozinho.)
+
+    ANTES de mergear, olhe o que está agendado para as próximas 2 horas:
+      select id, title, reminder_at from whatsapp.contact_reminders
+      where status = 'pendente' and reminder_at between now() and now() + interval '2 hours';
+    Cada linha dessas vira uma mensagem de verdade na primeira rodada do cron.
+    Se preferir estrear sem susto, deixe PENDING_PHONE_NUMBERS só com o SEU
+    número no primeiro dia.
+
+
+[ ] 4. LIGAR O RODRIGO AO LOGIN (auth_user_id)
+    Por ora tudo que sai do chat assina como Rodrigo (FICHA_CORRETOR_PADRAO
+    acima). Basta ligar ELE; a separação por corretor fica para depois — quando
+    cada um tiver auth_user_id, o responsável da visita passa a valer sozinho,
+    sem mexer em código.
+    SEM ISSO, TODA VISITA CAI EM PENDÊNCIA em vez de virar envio automático:
+    a ficha é documento jurídico e a API exige um corretor identificado
+    (nome + CRECI) para assinar. O CRM descobre quem é pelo auth_user_id.
+
+    O QUE É: existem duas listas de pessoas que hoje não se conhecem.
+      - whatsapp.corretores  -> "Rodrigo", "Leandro", "Ivo". São só nomes,
+                                usados para atribuir contatos e visitas no CRM.
+      - public.usuarios      -> os logins de verdade do back-office, com CRECI.
+    A coluna auth_user_id é a ponte entre as duas ("o corretor Rodrigo é o
+    usuário tal"). Ela está vazia, e é por isso que a ficha não sai.
+
+    Tudo no Supabase Dashboard -> SQL Editor.
+
+    PASSO A) Ver os dois lados e escolher o e-mail do Rodrigo:
+
+      select id, nome, auth_user_id from whatsapp.corretores order by nome;
+
+      select id, nome_completo, email, creci, ativo
+      from public.usuarios order by nome_completo;
+
+    Repare na coluna `creci` do segundo resultado: o usuário escolhido precisa
+    ter CRECI preenchido (ou ocultar_creci_ficha = true), senão a API recusa a
+    ficha e a pendência chega dizendo exatamente isso.
+
+    PASSO B) Ligar (trocar só o e-mail pelo que apareceu acima):
+
+      update whatsapp.corretores c
+      set auth_user_id = u.id
+      from public.usuarios u
+      where lower(c.nome) = 'rodrigo'
+        and lower(u.email) = lower('TROCAR_PELO_EMAIL_DO_RODRIGO');
+
+    Esperado: "UPDATE 1". Se vier "UPDATE 0", o e-mail não bateu — volte ao
+    passo A e copie exatamente como está lá.
+
+    PASSO C) Conferir que ficou de pé:
+
+      select c.nome, u.nome_completo, u.email, u.creci, u.ativo
+      from whatsapp.corretores c
+      join public.usuarios u on u.id = c.auth_user_id
+      where lower(c.nome) = 'rodrigo';
+
+    Esperado: 1 linha, com creci preenchido e ativo = true.
+
+    E SE O RODRIGO NÃO TIVER LOGIN? Não tem problema: o que importa é que
+    FICHA_CORRETOR_PADRAO aponte para um corretor ligado a um usuário COM
+    CRECI. Se o login for seu, ligue o "Ivo" (mesmo SQL, trocando o nome) e
+    mude FICHA_CORRETOR_PADRAO para Ivo na Vercel.
+
+
+[ ] 5. TEMPLATE NA META (opcional, mas é o que permite envio direto ao cliente
+       fora da janela de 24h)
+    Caminho: WhatsApp Manager -> Message Templates -> Create template
+    Categoria: Utilidade (Utility). Idioma: Português (BR).
+    Corpo com DOIS parâmetros, nesta ordem — {{1}} é a hora, {{2}} é o link:
+
+      Olá! Lembrete da sua visita hoje às {{1}}. Antes de entrarmos, precisamos
+      da sua ficha de visita assinada, leva menos de 1 minuto: {{2}}
+
+    Depois de APROVADO, preencher na Vercel:
+    [ ] WHATSAPP_FICHA_TEMPLATE       (o nome exato do template)
+    [ ] WHATSAPP_FICHA_TEMPLATE_LANG  pt_BR
+
+    Sem esse template nada quebra: quando a janela de 24h estiver fechada, o
+    link simplesmente vai pro número de plantão em vez de ir pro cliente.
+    Aprovação leva de minutos a dias — dá pra criar depois.
+
+
+[!] PARA A MENSAGEM CHEGAR DE VERDADE NO SEU CELULAR
+    O app só envia WhatsApp real com WHATSAPP_PROVIDER=cloud-api. Enquanto
+    estiver em "mock" (padrão), o envio é simulado: nada sai, nada chega — o
+    cron responde certinho mas nenhum celular toca. Conferir na Vercel:
+      Settings -> Environment Variables -> WHATSAPP_PROVIDER
+    Se não existir ou estiver "mock", o pré-requisito é o onboarding de
+    coexistência na Meta (já mapeado no README, seção "Conectando o WhatsApp").
+    Ou seja: receber a pendência no 5521971957245 depende de terminar o setup
+    da Meta primeiro — não é um passo desta entrega.
+
+
+[ ] 6. SMOKE TEST
+    [ ] Copiloto: abrir uma conversa -> botão "Copiloto" -> ver as captações,
+        criar uma captação de teste e conferir que ela apareceu no board.
+    [ ] IA: "Analisar conversa" numa conversa de proprietário -> confirmar que
+        aparecem propostas e que dá pra editar o texto antes de enviar.
+    [ ] Cron manual (não espera a hora virar):
+        curl -H "Authorization: Bearer $CRON_SECRET" \
+          https://atendimento.morabilidade.com/api/cron/visita-fichas
+        A resposta traz um `detalhes` com uma linha por visita: contato,
+        horário, para onde foi (cliente/plantao/nenhum) e o motivo quando não
+        foi pro cliente. Com total 0, não havia visita nos próximos 90 min.
+
+    [ ] Ensaio local, sem tocar em produção (opcional):
+        npm run build && npx next start -p 3111
+        curl -H "Authorization: Bearer <CRON_SECRET local>" \
+          http://localhost:3111/api/cron/visita-fichas
+        O seed do modo mock já traz 4 visitas de ensaio (rv1..rv4) cobrindo:
+        caminho feliz, visita sem imóvel, código só no título e visita fora da
+        janela. No modo mock a resposta inclui `previa` com o TEXTO exato que
+        cada número receberia — é a forma de ler as mensagens sem enviar nada.
+
+
+COMO O ENVIO DECIDE (para ler a resposta do cron)
+--------------------------------------------------
+Para cada visita que começa nos próximos 90 minutos, nesta ordem:
+  1. texto livre pro CLIENTE      -> só entrega se ele falou com a gente nas
+                                     últimas 24h (regra da Meta, não nossa)
+  2. template pro CLIENTE          -> a qualquer hora, se o passo 5 estiver feito
+  3. pendência pro PLANTÃO         -> mensagem pronta + link, para encaminhar
+Cada visita é avisada UMA vez só. Como o gatilho é horário e a janela é de 90
+minutos, o aviso sai entre ~30 e ~90 minutos antes da visita.
+Quando a ficha não pôde ser gerada, a pendência vem com o motivo exato da API
+(ex.: corretor sem CRECI) — é para a ação ser óbvia sem precisar investigar.

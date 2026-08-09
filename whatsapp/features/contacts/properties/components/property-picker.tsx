@@ -13,11 +13,18 @@ import {
   PROPERTY_STAGE_LABELS,
   type PropertyStage,
 } from "@/constants/property-stages";
+import {
+  PROPERTY_RELATIONS,
+  PROPERTY_RELATION_COLORS,
+  PROPERTY_RELATION_LABELS,
+  type PropertyRelation,
+} from "@/constants/property-relations";
 import { cn } from "@/lib/utils";
 import {
   linkPropertyAction,
   unlinkPropertyAction,
   updatePropertyStageAction,
+  updatePropertyRelacaoAction,
 } from "@/app/contatos/actions";
 import { ImovelLiveDetails } from "./imovel-live-details";
 import type { ImovelResumo } from "@/lib/backoffice-api";
@@ -40,6 +47,7 @@ export function PropertyPicker({
 }: PropertyPickerProps) {
   const [open, setOpen] = useState(false);
   const [code, setCode] = useState("");
+  const [relacao, setRelacao] = useState<PropertyRelation>("interesse");
   const [stage, setStage] = useState<PropertyStage>("interesse");
   const [isPending, startTransition] = useTransition();
 
@@ -55,8 +63,9 @@ export function PropertyPicker({
     if (!codeToLink.trim()) return;
     startTransition(async () => {
       try {
-        await linkPropertyAction(contactId, { code: codeToLink.trim(), stage });
+        await linkPropertyAction(contactId, { code: codeToLink.trim(), relacao, stage });
         setCode("");
+        setRelacao("interesse");
         setStage("interesse");
         setOpen(false);
       } catch {
@@ -72,6 +81,22 @@ export function PropertyPicker({
         await updatePropertyStageAction(contactId, cp.propertyId, cp.code, newStage as PropertyStage);
       } catch {
         toast.error("Não foi possível atualizar a etapa.");
+      }
+    });
+  }
+
+  function handleRelacaoChange(cp: ContactPropertyWithDetails, newRelacao: string | null) {
+    if (!newRelacao) return;
+    startTransition(async () => {
+      try {
+        await updatePropertyRelacaoAction(
+          contactId,
+          cp.propertyId,
+          cp.code,
+          newRelacao as PropertyRelation,
+        );
+      } catch {
+        toast.error("Não foi possível atualizar o papel.");
       }
     });
   }
@@ -102,23 +127,42 @@ export function PropertyPicker({
                   <ImovelLiveDetails imovel={liveDetails[cp.code]} className="mt-1" />
                 )}
               </div>
-              <Select value={cp.stage} onValueChange={(v) => handleStageChange(cp, v)}>
+              <Select value={cp.relacao} onValueChange={(v) => handleRelacaoChange(cp, v)}>
                 <SelectTrigger
                   size="sm"
-                  className={cn("w-auto shrink-0 border-none", PROPERTY_STAGE_COLORS[cp.stage])}
+                  className={cn("w-auto shrink-0 border-none", PROPERTY_RELATION_COLORS[cp.relacao])}
                 >
                   <SelectValue>
-                    {(value: string) => PROPERTY_STAGE_LABELS[value as PropertyStage]}
+                    {(value: string) => PROPERTY_RELATION_LABELS[value as PropertyRelation]}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  {PROPERTY_STAGES.map((s) => (
-                    <SelectItem key={s.value} value={s.value}>
-                      {s.label}
+                  {PROPERTY_RELATIONS.map((r) => (
+                    <SelectItem key={r.value} value={r.value}>
+                      {r.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {cp.relacao === "interesse" && (
+                <Select value={cp.stage} onValueChange={(v) => handleStageChange(cp, v)}>
+                  <SelectTrigger
+                    size="sm"
+                    className={cn("w-auto shrink-0 border-none", PROPERTY_STAGE_COLORS[cp.stage])}
+                  >
+                    <SelectValue>
+                      {(value: string) => PROPERTY_STAGE_LABELS[value as PropertyStage]}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PROPERTY_STAGES.map((s) => (
+                      <SelectItem key={s.value} value={s.value}>
+                        {s.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
               <Button
                 variant="ghost"
                 size="icon-sm"
@@ -141,6 +185,7 @@ export function PropertyPicker({
         <PopoverContent align="start" className="w-72">
           <div className="flex flex-col gap-2">
             <Input
+              aria-label="Código do imóvel a vincular"
               placeholder="Código do imóvel (ex.: MB-00033)"
               value={code}
               onChange={(e) => setCode(e.target.value)}
@@ -161,20 +206,36 @@ export function PropertyPicker({
                 ))}
               </div>
             )}
-            <Select value={stage} onValueChange={(v) => setStage(v as PropertyStage)}>
+            <Select value={relacao} onValueChange={(v) => setRelacao(v as PropertyRelation)}>
               <SelectTrigger className="w-full">
                 <SelectValue>
-                  {(value: string) => PROPERTY_STAGE_LABELS[value as PropertyStage]}
+                  {(value: string) => PROPERTY_RELATION_LABELS[value as PropertyRelation]}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
-                {PROPERTY_STAGES.map((s) => (
-                  <SelectItem key={s.value} value={s.value}>
-                    {s.label}
+                {PROPERTY_RELATIONS.map((r) => (
+                  <SelectItem key={r.value} value={r.value}>
+                    {r.label}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            {relacao === "interesse" && (
+              <Select value={stage} onValueChange={(v) => setStage(v as PropertyStage)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue>
+                    {(value: string) => PROPERTY_STAGE_LABELS[value as PropertyStage]}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {PROPERTY_STAGES.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>
+                      {s.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
             <Button
               type="button"
               size="sm"

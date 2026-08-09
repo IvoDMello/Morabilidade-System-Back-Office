@@ -98,6 +98,7 @@ export function TagPicker({ contactId, contactTags, allTags }: TagPickerProps) {
         </PopoverTrigger>
         <PopoverContent align="start" className="w-64">
           <Input
+            aria-label="Buscar ou criar etiqueta"
             placeholder="Buscar ou criar etiqueta..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}

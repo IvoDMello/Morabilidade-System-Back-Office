@@ -43,6 +43,27 @@
 @layer base {
   * { @apply border-border; }
   body { @apply bg-background text-foreground; }
+
+  /* Zoom desativado (ver `viewport` em app/layout.tsx): sem isto o duplo-toque
+     continua ampliando mesmo com user-scalable=no. pan-x/pan-y preserva a
+     rolagem — `none` mataria junto o scroll da página, e `pan-y` mataria a
+     rolagem lateral DE DENTRO do board (as colunas do Kanban e a fita de
+     pills do mobile precisam dela; touch-action de um ancestral limita os
+     descendentes). */
+  html {
+    touch-action: pan-x pan-y;
+  }
+
+  /* A tela em si não anda para os lados: qualquer estouro de largura é
+     cortado em vez de virar barra de rolagem horizontal, e o fim da rolagem
+     das colunas não vaza para a página nem para o gesto de "voltar" do
+     navegador. `clip` em vez de `hidden` de propósito — `hidden` faria da
+     raiz um container de rolagem e quebraria os cabeçalhos sticky. */
+  html,
+  body {
+    overflow-x: clip;
+    overscroll-behavior-x: none;
+  }
 }
 
 /* Respeita usuários que pedem menos movimento (acessibilidade). */

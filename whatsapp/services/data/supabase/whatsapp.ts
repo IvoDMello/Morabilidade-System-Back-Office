@@ -3,6 +3,7 @@ import type { WhatsAppMessageStatus } from "@/constants/whatsapp-message-status"
 import type { ID } from "@/types/common";
 import type {
   CreateWhatsAppMessageInput,
+  FailedOutboundMessage,
   WhatsAppMessageDirection,
 } from "@/types/whatsapp";
 import type { DataSource } from "../types";
@@ -15,12 +16,15 @@ import {
 
 const UNDEFINED_COLUMN = "42703";
 
+/** Bucket privado das mídias recebidas do WhatsApp (criado na migration 0016). */
+const MEDIA_BUCKET = "whatsapp-media";
+
 export const supabaseWhatsapp: DataSource["whatsapp"] = {
   async listConversations() {
     const supabase = getSupabaseServerClient();
     const { data, error } = await supabase
       .from("whatsapp_conversations")
-      .select("*, contacts(name, phone, is_favorite, is_blocked, contact_tags(tag_id))")
+      .select("*, contacts(name, phone, is_favorite, is_blocked, corretor_id, contact_tags(tag_id))")
       .order("pinned_at", { ascending: false, nullsFirst: false })
       .order("last_message_at", { ascending: false, nullsFirst: false });
     if (error) {
@@ -68,6 +72,17 @@ export const supabaseWhatsapp: DataSource["whatsapp"] = {
     return mapConversationRow(data);
   },
 
+  async getConversationById(conversationId: ID) {
+    const supabase = getSupabaseServerClient();
+    const { data, error } = await supabase
+      .from("whatsapp_conversations")
+      .select("*")
+      .eq("id", conversationId)
+      .maybeSingle();
+    if (error) throw error;
+    return data ? mapConversationRow(data) : null;
+  },
+
   async listMessages(conversationId: ID) {
     const supabase = getSupabaseServerClient();
     const { data, error } = await supabase
@@ -77,6 +92,47 @@ export const supabaseWhatsapp: DataSource["whatsapp"] = {
       .order("wa_timestamp", { ascending: true });
     if (error) throw error;
     return (data ?? []).map(mapMessageRow);
+  },
+
+  async reopenConversationAsAwaiting(conversationId: ID) {
+    const supabase = getSupabaseServerClient();
+    const { error } = await supabase
+      .from("whatsapp_conversations")
+      .update({ status: "aguardando_resposta", status_changed_at: new Date().toISOString() })
+      // Só a partir de `respondida`: é o estado que o envio falhado causou.
+      // A condição no UPDATE (e não só na leitura anterior) fecha a corrida com
+      // uma mensagem nova chegando entre a checagem e a escrita.
+      .eq("id", conversationId)
+      .eq("status", "respondida");
+    if (error) throw error;
+  },
+
+  async listFailedOutbound(sinceIso: string, limit = 50) {
+    const supabase = getSupabaseServerClient();
+    const { data, error } = await supabase
+      .from("whatsapp_messages")
+      .select("*, whatsapp_conversations(contact_id, contacts(name, phone))")
+      .eq("direction", "outbound")
+      .eq("status", "failed")
+      .gte("wa_timestamp", sinceIso)
+      .order("wa_timestamp", { ascending: false })
+      .limit(limit);
+    if (error) throw error;
+
+    return (data ?? []).map((row): FailedOutboundMessage => {
+      const conversa = (row as Record<string, any>).whatsapp_conversations;
+      return {
+        id: row.id,
+        conversationId: row.conversation_id,
+        contactId: conversa?.contact_id ?? "",
+        contactName: conversa?.contacts?.name ?? "Contato",
+        contactPhone: conversa?.contacts?.phone ?? "",
+        body: row.body ?? "",
+        errorMessage: row.error_message ?? null,
+        createdBy: row.created_by ?? null,
+        waTimestamp: row.wa_timestamp,
+      };
+    });
   },
 
   async searchMessages(query: string, limit = 50) {
@@ -108,6 +164,9 @@ export const supabaseWhatsapp: DataSource["whatsapp"] = {
         reply_to_id: input.replyTo?.id ?? null,
         reply_to_body: input.replyTo?.body ?? null,
         reply_to_direction: input.replyTo?.direction ?? null,
+        media_url: input.mediaUrl ?? null,
+        media_mime_type: input.mediaMimeType ?? null,
+        media_filename: input.mediaFilename ?? null,
         wa_timestamp: input.waTimestamp,
       })
       .select("*")
@@ -306,7 +365,7 @@ export const supabaseWhatsapp: DataSource["whatsapp"] = {
     const supabase = getSupabaseServerClient();
     const { data, error } = await supabase
       .from("whatsapp_conversations")
-      .select("*, contacts(name, phone, is_favorite, is_blocked, contact_tags(tag_id))")
+      .select("*, contacts(name, phone, is_favorite, is_blocked, corretor_id, contact_tags(tag_id))")
       .eq("status", "aguardando_resposta")
       .lte("last_inbound_at", alertCutoffIso)
       .or(`last_alert_at.is.null,last_alert_at.lt.${todayStartIso}`);
@@ -321,5 +380,21 @@ export const supabaseWhatsapp: DataSource["whatsapp"] = {
       .update({ last_alert_at: whenIso })
       .eq("id", conversationId);
     if (error) throw error;
+  },
+
+  async uploadMedia(path: string, data: Uint8Array, mimeType: string) {
+    const supabase = getSupabaseServerClient();
+    const { error } = await supabase.storage
+      .from(MEDIA_BUCKET)
+      .upload(path, data, { contentType: mimeType, upsert: true });
+    if (error) throw error;
+    return path;
+  },
+
+  async getMediaObject(path: string) {
+    const supabase = getSupabaseServerClient();
+    const { data, error } = await supabase.storage.from(MEDIA_BUCKET).download(path);
+    if (error || !data) return null;
+    return { data, mimeType: data.type || "application/octet-stream" };
   },
 };

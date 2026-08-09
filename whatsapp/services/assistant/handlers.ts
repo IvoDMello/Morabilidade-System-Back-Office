@@ -1,8 +1,9 @@
-import { getSupabaseCaptacoesClient } from "@/lib/supabase/server";
 import { getContactById } from "@/services/contacts.service";
 import { createReminder } from "@/services/reminders.service";
-import { CURRENT_USER_NAME } from "@/constants/current-user";
-import { agendarVisitaArgs, criarCaptacaoArgs, type ToolName } from "./tools";
+import { getCurrentCorretor, getCurrentUserName } from "@/services/corretores.service";
+import { criarEventoDeVisita } from "@/services/google-calendar.service";
+import { sendMessage } from "@/services/whatsapp.service";
+import { agendarVisitaArgs, sugerirRespostaArgs, type ToolName } from "./tools";
 import { AcaoInvalidaError, validarHorarioVisita } from "./visita-range";
 
 // A trava de horário da visita vive em ./visita-range (módulo puro, testável).
@@ -16,38 +17,52 @@ async function executarAgendarVisita(rawArgs: unknown): Promise<string> {
   }
   const quando = validarHorarioVisita(args.data_hora);
 
-  const tituloImovel = args.imovel_codigo ? ` — ${args.imovel_codigo}` : "";
+  // A visita fica com o responsável pelo contato; sem responsável, cai no
+  // corretor logado (se o login estiver ligado a um corretor).
+  const corretorId = contato.corretorId ?? (await getCurrentCorretor())?.id ?? null;
+
+  // O código também vai numa coluna própria: é o que o cron da ficha de visita
+  // usa para resolver o imóvel na API principal (ver ficha-visita.service.ts).
+  const codigoImovel = args.imovel_codigo?.trim().toUpperCase() || null;
+  const tituloImovel = codigoImovel ? ` — ${codigoImovel}` : "";
+
+  // Cria o evento antes do lembrete pra já guardar o ID do evento junto —
+  // é o que permite apagar o evento quando o lembrete for excluído do CRM.
+  const googleCalendarEventId = await criarEventoDeVisita({
+    contactName: contato.name,
+    contactPhone: contato.phone,
+    when: quando,
+    imovelCodigo: codigoImovel,
+    observacao: args.observacao ?? null,
+  });
+
   await createReminder({
     contactId: contato.id,
     title: `Visita${tituloImovel}`,
     description: args.observacao ?? null,
     reminderAt: quando.toISOString(),
-    createdBy: CURRENT_USER_NAME,
+    createdBy: await getCurrentUserName(),
+    corretorId,
+    imovelCodigo: codigoImovel,
+    googleCalendarEventId,
   });
 
   return `Visita agendada com ${contato.name}.`;
 }
 
-async function executarCriarCaptacao(rawArgs: unknown): Promise<string> {
-  const args = criarCaptacaoArgs.parse(rawArgs);
-  const endereco = args.endereco.trim();
-  if (!endereco) {
-    throw new AcaoInvalidaError("A captação precisa de um endereço.");
-  }
 
-  const supabase = getSupabaseCaptacoesClient();
-  const { error } = await supabase.from("captacao").insert({
-    endereco,
-    quartos: args.quartos ?? null,
-    banheiros: args.banheiros ?? null,
-    tipo_portaria: args.tipo_portaria ?? null,
-    contato_proprietario: args.contato_proprietario ?? null,
-    observacoes: args.observacoes ?? null,
-  });
-  if (error) {
-    throw new AcaoInvalidaError(`Não foi possível criar a captação: ${error.message}`);
+async function executarSugerirResposta(rawArgs: unknown): Promise<string> {
+  const args = sugerirRespostaArgs.parse(rawArgs);
+  const texto = args.texto.trim();
+  if (!texto) {
+    throw new AcaoInvalidaError("A resposta sugerida está vazia.");
   }
-  return `Captação criada para "${endereco}".`;
+  const contato = await getContactById(args.contato_id);
+  if (!contato) {
+    throw new AcaoInvalidaError("Contato não encontrado para enviar a resposta.");
+  }
+  await sendMessage(contato.id, texto);
+  return `Mensagem enviada para ${contato.name}.`;
 }
 
 /**
@@ -60,7 +75,15 @@ export async function executarAcao(tool: ToolName, rawArgs: unknown): Promise<st
     case "agendar_visita":
       return executarAgendarVisita(rawArgs);
     case "criar_captacao":
-      return executarCriarCaptacao(rawArgs);
+      // Captação não é executada no servidor: a confirmação abre o formulário
+      // completo do board, e o cartão nasce lá (ver lib/captacao-link.ts). Se
+      // esta linha for alcançada, alguém religou o caminho antigo — falhar aqui
+      // é melhor que voltar a criar cartão pela metade sem ninguém perceber.
+      throw new AcaoInvalidaError(
+        "Captação agora é criada no board: confirme a proposta para abrir o formulário completo.",
+      );
+    case "sugerir_resposta":
+      return executarSugerirResposta(rawArgs);
     default:
       throw new AcaoInvalidaError("Ação desconhecida.");
   }

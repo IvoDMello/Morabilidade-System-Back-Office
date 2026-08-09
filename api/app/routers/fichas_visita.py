@@ -17,7 +17,7 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
-from app.auth.dependencies import get_current_user, require_admin
+from app.auth.dependencies import get_current_user, require_admin, require_admin_or_internal
 from app.database import supabase_admin
 from app.limiter import limiter
 from app.schemas.ficha_visita import (
@@ -74,7 +74,10 @@ def _buscar_ficha(ficha_id: str) -> dict:
 # ── Endpoints autenticados ───────────────────────────────────────────────────
 
 @router.post("", response_model=FichaVisitaOut, status_code=status.HTTP_201_CREATED)
-def criar_ficha(body: FichaVisitaCreate, current_user: dict = Depends(require_admin)):
+def criar_ficha(body: FichaVisitaCreate, current_user: dict = Depends(require_admin_or_internal)):
+    """Além do painel, aceita integrações server-to-server (X-Internal-Token —
+    ex.: o cron do CRM que gera a ficha 1h antes da visita). A integração não
+    tem usuário próprio, então precisa mandar `corretor_id` explícito."""
     imovel = (
         supabase_admin.table("imoveis")
         .select("id, codigo, logradouro, numero, complemento, bairro, cidade, "
@@ -104,7 +107,16 @@ def criar_ficha(body: FichaVisitaCreate, current_user: dict = Depends(require_ad
     # jurídico de corretagem: o corretor precisa existir, estar ativo e ter
     # nome + CRECI, senão o PDF assinado sairia sem identificação válida.
     corretor_id = body.corretor_id or current_user["id"]
-    if corretor_id != current_user["id"] and current_user.get("perfil") != "admin":
+    if not corretor_id:
+        raise HTTPException(
+            status_code=400,
+            detail="Chamadas de integração precisam informar o corretor_id da ficha.",
+        )
+    if (
+        current_user["id"] is not None
+        and corretor_id != current_user["id"]
+        and current_user.get("perfil") != "admin"
+    ):
         raise HTTPException(
             status_code=403,
             detail="Somente administradores podem emitir ficha em nome de outro corretor.",
@@ -154,7 +166,7 @@ def criar_ficha(body: FichaVisitaCreate, current_user: dict = Depends(require_ad
         "corretor_nome": corretor_data.get("nome_completo"),
         "corretor_creci": None if ocultar_creci else corretor_data.get("creci"),
         "ocultar_creci": ocultar_creci,
-        "clausula_texto": montar_clausula(body.prazo_meses),
+        "clausula_texto": montar_clausula(),
         "prazo_meses": body.prazo_meses,
         "status": "pendente",
         "token": gerar_token(),

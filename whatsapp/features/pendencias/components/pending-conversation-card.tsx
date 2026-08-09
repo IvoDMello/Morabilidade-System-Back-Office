@@ -103,7 +103,7 @@ export function PendingConversationCard({
       <div className="flex items-start justify-between gap-2">
         <Link
           href={`/?c=${item.contactId}`}
-          className="flex min-w-0 items-start gap-2.5 hover:opacity-90"
+          className="flex min-w-0 items-start gap-2.5 rounded-lg transition-opacity duration-150 hover:opacity-90 active:opacity-60 active:duration-0"
         >
           <AvatarInitials name={item.contactName} />
           <div className="min-w-0">
@@ -134,7 +134,7 @@ export function PendingConversationCard({
           size="sm"
           nativeButton={false}
           render={<Link href={`/?c=${item.contactId}`} />}
-          className="shadow-none border border-veil/10 bg-transparent bg-none text-ink-mid hover:bg-veil/6 hover:brightness-100"
+          className="shadow-none border border-veil/10 bg-transparent bg-none text-ink-mid hover:bg-veil/6 hover:brightness-100 active:bg-veil/16"
         >
           Abrir conversa
         </Button>

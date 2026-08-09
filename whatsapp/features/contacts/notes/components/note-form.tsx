@@ -34,6 +34,7 @@ export function NoteForm({ contactId, onSuccess }: { contactId: ID; onSuccess?: 
     <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col gap-2">
       <Textarea
         rows={3}
+        aria-label="Nova anotação"
         placeholder="Escreva uma anotação sobre este contato..."
         {...form.register("note")}
       />

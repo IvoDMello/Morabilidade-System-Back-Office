@@ -445,7 +445,7 @@ export function MobileBoard({
           </div>
           <span className="text-xs text-[#9a9c90]">Toque para analisar</span>
         </div>
-        <div className="flex gap-2 overflow-x-auto px-4 pb-3">
+        <div className="flex gap-2 overflow-x-auto overscroll-x-contain px-4 pb-3">
           {PILL_ORDER.map((s) => (
             <Pill
               key={s}

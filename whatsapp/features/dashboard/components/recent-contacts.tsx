@@ -11,8 +11,14 @@ import type { Contact } from "@/types/contact";
 export function RecentContacts({ contacts }: { contacts: Contact[] }) {
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between gap-3">
         <CardTitle>Últimos contatos atualizados</CardTitle>
+        <Link
+          href="/contatos"
+          className="shrink-0 text-xs font-medium text-muted-foreground hover:text-foreground hover:underline"
+        >
+          Ver todos
+        </Link>
       </CardHeader>
       <CardContent>
         {contacts.length === 0 ? (

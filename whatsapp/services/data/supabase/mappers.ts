@@ -12,6 +12,9 @@ import type {
   WhatsAppMessageSearchResult,
 } from "@/types/whatsapp";
 import type { PushSubscriptionRecord } from "@/types/push";
+import type { Corretor } from "@/types/corretor";
+import type { AgentProposal } from "@/types/agent-proposal";
+import type { AgentRun } from "@/types/agent-run";
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- linhas cruas do Supabase (snake_case) */
 
@@ -33,6 +36,7 @@ export function mapContactRow(row: any): Contact {
     aiSummaryGeneratedAt: row.ai_summary_generated_at,
     clienteId: row.cliente_id ?? null,
     clienteCodigo: row.cliente_codigo ?? null,
+    corretorId: row.corretor_id ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -57,6 +61,11 @@ export function mapReminderRow(row: any): ContactReminder {
     reminderAt: row.reminder_at,
     status: row.status,
     createdBy: row.created_by,
+    corretorId: row.corretor_id ?? null,
+    imovelCodigo: row.imovel_codigo ?? null,
+    fichaVisitaId: row.ficha_visita_id ?? null,
+    fichaNotificadaEm: row.ficha_notificada_em ?? null,
+    googleCalendarEventId: row.google_calendar_event_id ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -110,6 +119,7 @@ export function mapConversationSummaryRow(row: any): WhatsAppConversationSummary
     contactTagIds: (row.contacts?.contact_tags ?? []).map(
       (ct: { tag_id: string }) => ct.tag_id,
     ),
+    contactCorretorId: row.contacts?.corretor_id ?? null,
   };
 }
 
@@ -145,11 +155,23 @@ export function mapContactPropertyRow(row: any): ContactPropertyWithDetails {
   return {
     contactId: row.contact_id,
     propertyId: row.property_id,
+    relacao: row.relacao ?? "interesse",
     stage: row.stage,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     code: row.properties?.code ?? "",
     title: row.properties?.title ?? null,
+  };
+}
+
+export function mapCorretorRow(row: any): Corretor {
+  return {
+    id: row.id,
+    nome: row.nome,
+    authUserId: row.auth_user_id ?? null,
+    cor: row.cor ?? "slate",
+    ativo: row.ativo ?? true,
+    createdAt: row.created_at,
   };
 }
 
@@ -175,6 +197,44 @@ export function mapMessageSearchResultRow(row: any): WhatsAppMessageSearchResult
   };
 }
 
+export function mapAgentProposalRow(row: any): AgentProposal {
+  return {
+    id: row.id,
+    conversationId: row.conversation_id,
+    contactId: row.contact_id,
+    triggerMessageId: row.trigger_message_id ?? null,
+    tool: row.tool,
+    args: (row.args ?? {}) as Record<string, unknown>,
+    resumo: row.resumo,
+    status: row.status,
+    textoSugerido: row.texto_sugerido ?? null,
+    textoFinal: row.texto_final ?? null,
+    decididoPor: row.decidido_por ?? null,
+    decididoEm: row.decidido_em ?? null,
+    modelo: row.modelo ?? null,
+    vozHash: row.voz_hash ?? null,
+    origem: row.origem,
+    createdAt: row.created_at,
+  };
+}
+
+export function mapAgentRunRow(row: any): AgentRun {
+  return {
+    id: row.id,
+    conversationId: row.conversation_id ?? null,
+    origem: row.origem,
+    recurso: row.recurso,
+    modelo: row.modelo,
+    modo: row.modo ?? "organizacional",
+    inputTokens: row.input_tokens ?? 0,
+    outputTokens: row.output_tokens ?? 0,
+    cacheCreationTokens: row.cache_creation_tokens ?? 0,
+    cacheReadTokens: row.cache_read_tokens ?? 0,
+    erro: row.erro ?? null,
+    createdAt: row.created_at,
+  };
+}
+
 export function mapMessageRow(row: any): WhatsAppMessage {
   return {
     id: row.id,
@@ -189,6 +249,9 @@ export function mapMessageRow(row: any): WhatsAppMessage {
     replyTo: row.reply_to_body
       ? { id: row.reply_to_id ?? null, body: row.reply_to_body, direction: row.reply_to_direction }
       : null,
+    mediaUrl: row.media_url ?? null,
+    mediaMimeType: row.media_mime_type ?? null,
+    mediaFilename: row.media_filename ?? null,
     waTimestamp: row.wa_timestamp,
     createdAt: row.created_at,
   };

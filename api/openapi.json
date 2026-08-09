@@ -1830,6 +1830,124 @@
         "title": "ClienteUpdate",
         "type": "object"
       },
+      "ClienteUpsertInterno": {
+        "description": "Entrada do upsert server-to-server por telefone (CRM do WhatsApp).\n\nDeliberadamente menor que ClienteCreate: uma integração só deve mandar o que\nela realmente sabe. Tudo que um atendente preencheria à mão (CPF, endereço,\nrenda) fica de fora — não é papel do chat inventar esses campos.",
+        "properties": {
+          "imovel_codigo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imovel Codigo"
+          },
+          "nome_completo": {
+            "title": "Nome Completo",
+            "type": "string"
+          },
+          "observacoes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observacoes"
+          },
+          "origem_lead": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OrigemLead"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "whatsapp"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StatusCliente"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "telefone": {
+            "title": "Telefone",
+            "type": "string"
+          },
+          "tipo_cliente": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TipoCliente"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "telefone",
+          "nome_completo"
+        ],
+        "title": "ClienteUpsertInterno",
+        "type": "object"
+      },
+      "ClienteUpsertOut": {
+        "description": "Resultado do upsert. `criado` diz ao CRM se ele acabou de trazer alguém\nnovo para a base ou se apenas reencontrou quem já existia — os dois casos\nsão normais, mas só o primeiro é notícia.",
+        "properties": {
+          "codigo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codigo"
+          },
+          "criado": {
+            "title": "Criado",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "nome_completo": {
+            "title": "Nome Completo",
+            "type": "string"
+          },
+          "telefone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telefone"
+          }
+        },
+        "required": [
+          "id",
+          "nome_completo",
+          "criado"
+        ],
+        "title": "ClienteUpsertOut",
+        "type": "object"
+      },
       "CondicaoImovel": {
         "enum": [
           "em_construcao",
@@ -5043,6 +5161,41 @@
         "title": "ImovelUpdate",
         "type": "object"
       },
+      "LocalidadesOut": {
+        "properties": {
+          "bairros": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Bairros",
+            "type": "array"
+          },
+          "bairros_por_cidade": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "title": "Bairros Por Cidade",
+            "type": "object"
+          },
+          "cidades": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Cidades",
+            "type": "array"
+          }
+        },
+        "required": [
+          "cidades",
+          "bairros",
+          "bairros_por_cidade"
+        ],
+        "title": "LocalidadesOut",
+        "type": "object"
+      },
       "LoginRequest": {
         "properties": {
           "email": {
@@ -8159,6 +8312,54 @@
         ]
       }
     },
+    "/clientes/interno/upsert-por-telefone": {
+      "post": {
+        "description": "Encontra um cliente pelo telefone ou cria um novo — o caminho pelo qual um\nlead do WhatsApp entra de verdade na base do sistema.\n\nExiste porque o CRM de chat só sabia CONSULTAR clientes. Quem chegava pelo\nWhatsApp — que é como quase todo lead chega — ficava preso no schema do chat:\ninvisível para /clientes, para os relatórios, para o matching e até para a\nprópria ficha de visita, que ia com `cliente_id` nulo.\n\n**Nunca sobrescreve dado existente.** Num cliente que já existe, o upsert só\npreenche campo VAZIO. Um atendente que corrigiu o nome, classificou o tipo ou\nescreveu uma observação sabe mais do que a integração: perder isso para uma\ninferência automática seria pior do que não ter integração nenhuma. Por isso\no nome, em particular, jamais é tocado — só serve na criação.",
+        "operationId": "upsert_cliente_por_telefone_interno_clientes_interno_upsert_por_telefone_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClienteUpsertInterno"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClienteUpsertOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Upsert Cliente Por Telefone Interno",
+        "tags": [
+          "Clientes",
+          "Integração"
+        ]
+      }
+    },
     "/clientes/{cliente_id}": {
       "delete": {
         "description": "Remove um cliente (idempotente: retorna 204 mesmo se já não existir).",
@@ -8910,6 +9111,7 @@
         ]
       },
       "post": {
+        "description": "Além do painel, aceita integrações server-to-server (X-Internal-Token —\nex.: o cron do CRM que gera a ficha 1h antes da visita). A integração não\ntem usuário próprio, então precisa mandar `corretor_id` explícito.",
         "operationId": "criar_ficha_fichas_visita_post",
         "requestBody": {
           "content": {
@@ -9990,6 +10192,33 @@
         "tags": [
           "Imóveis",
           "Integração"
+        ]
+      }
+    },
+    "/imoveis/localidades": {
+      "get": {
+        "description": "Cidades e bairros já cadastrados, alimenta os selects do filtro do painel.\n\nDiferente de /publico/bairros (que só enxerga imóveis disponíveis), aqui\nentram todas as disponibilidades: o painel precisa filtrar também os\nreservados e vendidos/locados.",
+        "operationId": "listar_localidades_imoveis_localidades_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocalidadesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Listar Localidades",
+        "tags": [
+          "Imóveis"
         ]
       }
     },

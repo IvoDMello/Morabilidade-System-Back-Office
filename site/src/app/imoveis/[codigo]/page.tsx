@@ -15,6 +15,7 @@ import { VideoInstagramButton } from "@/components/imoveis/VideoInstagramButton"
 import MapaRegiaoClient from "@/components/imoveis/MapaRegiaoClient";
 import { getImovel } from "@/lib/api";
 import { geocodificarEndereco } from "@/lib/geocoding";
+import { SITE_URL } from "@/lib/site-url";
 import {
   formatarMoeda, labelTipoImovel, labelTipoNegocio,
   labelCondicao, labelMobiliado,
@@ -23,8 +24,6 @@ import {
 interface Props {
   params: Promise<{ codigo: string }>;
 }
-
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://morabilidade.com";
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { codigo } = await params;

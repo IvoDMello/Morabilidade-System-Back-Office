@@ -10,56 +10,65 @@ import {
 import { startOfDaySaoPaulo } from "@/lib/timezone";
 import type { ID } from "@/types/common";
 
-export interface AnalisePendenciasResult {
+export interface AnaliseIaResult {
   ok: boolean;
+  /** O que pode ter passado hoje — promessas, perguntas sem resposta, leads. */
   pendencias: PendenciaDoDia[];
-  erro?: string;
-}
-
-/** Roda a análise de IA das conversas de hoje sob demanda (botão na aba Pendências). */
-export async function analisarPendenciasAction(): Promise<AnalisePendenciasResult> {
-  try {
-    const pendencias = await gerarAnalisePendenciasDoDia(startOfDaySaoPaulo().toISOString());
-    return { ok: true, pendencias };
-  } catch (e) {
-    const erro =
-      e instanceof Error && e.message.includes("ANTHROPIC_API_KEY")
-        ? "A IA não está configurada (falta ANTHROPIC_API_KEY)."
-        : "Não foi possível analisar agora. Tente novamente.";
-    return { ok: false, pendencias: [], erro };
-  }
-}
-
-export interface RevisarEncerramentosResult {
-  ok: boolean;
   /** conversationId -> motivo (por que provavelmente não precisa de resposta) */
   encerramentos: Record<string, string>;
   erro?: string;
 }
 
-/** IA aponta quais "aguardando resposta" são só encerramento (não pedem resposta). */
-export async function revisarEncerramentosAction(): Promise<RevisarEncerramentosResult> {
-  try {
-    const lista = await classificarEncerramentos();
-    const encerramentos: Record<string, string> = {};
-    for (const e of lista) encerramentos[e.conversationId] = e.motivo;
-    return { ok: true, encerramentos };
-  } catch (e) {
-    const erro =
-      e instanceof Error && e.message.includes("ANTHROPIC_API_KEY")
-        ? "A IA não está configurada (falta ANTHROPIC_API_KEY)."
-        : "Não foi possível revisar agora. Tente novamente.";
-    return { ok: false, encerramentos: {}, erro };
+function mensagemDeErro(e: unknown, verbo: string): string {
+  return e instanceof Error && e.message.includes("ANTHROPIC_API_KEY")
+    ? "A IA não está configurada (falta ANTHROPIC_API_KEY)."
+    : `Não foi possível ${verbo} agora. Tente novamente.`;
+}
+
+/**
+ * Passada única da IA sobre a fila. Antes eram dois botões ("Analisar" e
+ * "Revisar") que liam as mesmas conversas e respondiam à mesma pergunta —
+ * agora um clique traz as duas leituras: o que faltou fazer hoje e quais
+ * "aguardando resposta" são só encerramento.
+ *
+ * As duas rodam em paralelo e falham de forma independente: se uma cair, a
+ * outra ainda aparece, com o aviso do que não veio.
+ */
+export async function analisarComIaAction(): Promise<AnaliseIaResult> {
+  const [analise, revisao] = await Promise.allSettled([
+    gerarAnalisePendenciasDoDia(startOfDaySaoPaulo().toISOString()),
+    classificarEncerramentos(),
+  ]);
+
+  const encerramentos: Record<string, string> = {};
+  if (revisao.status === "fulfilled") {
+    for (const e of revisao.value) encerramentos[e.conversationId] = e.motivo;
   }
+
+  const erros: string[] = [];
+  if (analise.status === "rejected") erros.push(mensagemDeErro(analise.reason, "analisar"));
+  if (revisao.status === "rejected") erros.push(mensagemDeErro(revisao.reason, "revisar"));
+
+  return {
+    ok: analise.status === "fulfilled" || revisao.status === "fulfilled",
+    pendencias: analise.status === "fulfilled" ? analise.value : [],
+    encerramentos,
+    // Se as duas falharam pelo mesmo motivo (API key), não repete a frase.
+    erro: erros.length > 0 ? [...new Set(erros)].join(" ") : undefined,
+  };
 }
 
 export async function closeConversationAction(conversationId: ID) {
   await closeConversation(conversationId);
   revalidatePath("/pendencias");
   revalidatePath("/");
+  // "Conversas aguardando" da visão geral sai daqui; a página é
+  // pré-renderizada, então precisa ser avisada.
+  revalidatePath("/dashboard");
 }
 
 export async function snoozeFollowUpAction(conversationId: ID) {
   await snoozeFollowUp(conversationId, 1);
   revalidatePath("/pendencias");
+  revalidatePath("/dashboard");
 }

@@ -31,8 +31,23 @@ interface Duplicada {
   excluido_em: string | null;
 }
 
-export function NovaCaptacaoButton({ trigger }: { trigger?: ReactNode } = {}) {
-  const [open, setOpen] = useState(false);
+interface NovaCaptacaoButtonProps {
+  trigger?: ReactNode;
+  /** Valores iniciais do formulário (ex.: captação vinda do WhatsApp por link). */
+  defaults?: Partial<CaptacaoInput>;
+  /** Abre o diálogo já montado, sem clique — usado pelo link externo. */
+  defaultOpen?: boolean;
+  /** Avisa quem abriu por link que o diálogo fechou (para limpar a URL). */
+  onClose?: () => void;
+}
+
+export function NovaCaptacaoButton({
+  trigger,
+  defaults,
+  defaultOpen = false,
+  onClose,
+}: NovaCaptacaoButtonProps = {}) {
+  const [open, setOpen] = useState(defaultOpen);
   const [fotos, setFotos] = useState<File[]>([]);
   const [docs, setDocs] = useState<File[]>([]);
   // Duplicadas encontradas + dados aguardando confirmação do usuário.
@@ -124,9 +139,14 @@ export function NovaCaptacaoButton({ trigger }: { trigger?: ReactNode } = {}) {
       open={open}
       onOpenChange={(o) => {
         setOpen(o);
-        if (!o) reset();
+        if (!o) {
+          reset();
+          onClose?.();
+        }
       }}
     >
+      {/* Aberto por link não tem botão: o gatilho vira um alvo invisível só
+          para o Dialog ter onde ancorar o foco ao fechar. */}
       <DialogTrigger asChild>
         {trigger ?? (
           <Button>
@@ -189,7 +209,11 @@ export function NovaCaptacaoButton({ trigger }: { trigger?: ReactNode } = {}) {
             <AnexosPicker fotos={fotos} setFotos={setFotos} docs={docs} setDocs={setDocs} />
           </div>
 
-          <CaptacaoForm onSubmit={handleSubmit} submitLabel="Criar captação" />
+          <CaptacaoForm
+            defaultValues={defaults}
+            onSubmit={handleSubmit}
+            submitLabel="Criar captação"
+          />
         </div>
       </DialogContent>
     </Dialog>

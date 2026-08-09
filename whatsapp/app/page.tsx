@@ -16,7 +16,16 @@ import {
 } from "@/services/whatsapp.service";
 import { getContactById } from "@/services/contacts.service";
 import { getTags } from "@/services/tags.service";
+import { getCorretores } from "@/services/corretores.service";
 import { getTemplates } from "@/services/templates.service";
+import {
+  listCaptacoesDoTelefone,
+  listCaptacoesRecentes,
+  type CaptacaoResumo,
+} from "@/services/captacoes.service";
+import { ConversationCopilot } from "@/features/assistant/components/conversation-copilot";
+import { listPropostasPendentes } from "@/services/agent-proposals.service";
+import type { AgentProposal } from "@/types/agent-proposal";
 
 interface HomePageProps {
   searchParams: Promise<{ c?: string; q?: string }>;
@@ -29,10 +38,11 @@ interface HomePageProps {
 export default async function HomePage({ searchParams }: HomePageProps) {
   const { c: selectedContactId, q: query } = await searchParams;
 
-  const [conversations, messageResults, tags] = await Promise.all([
+  const [conversations, messageResults, tags, corretores] = await Promise.all([
     getConversations(),
     query?.trim() ? searchMessages(query) : Promise.resolve([]),
     getTags(),
+    getCorretores(),
   ]);
 
   const selected = selectedContactId
@@ -43,6 +53,21 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       ])
     : null;
   const [selectedContact, selectedMessages, templates] = selected ?? [null, [], []];
+
+  // Captações do painel do copiloto — best-effort: uma indisponibilidade do
+  // board não pode derrubar o inbox inteiro.
+  let captacoesContato: CaptacaoResumo[] = [];
+  let captacoesRecentes: CaptacaoResumo[] = [];
+  // Propostas que o agente já preparou quando a mensagem chegou — chegam
+  // prontas com a página, sem clique. Também best-effort.
+  let propostasPendentes: AgentProposal[] = [];
+  if (selectedContact) {
+    [captacoesContato, captacoesRecentes, propostasPendentes] = await Promise.all([
+      listCaptacoesDoTelefone(selectedContact.phone).catch(() => []),
+      listCaptacoesRecentes().catch(() => []),
+      listPropostasPendentes(selectedContact.id).catch(() => []),
+    ]);
+  }
 
   return (
     <div className="flex flex-col gap-4 md:h-[calc(100vh-3rem)]">
@@ -71,6 +96,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             conversations={conversations}
             messageResults={messageResults}
             tags={tags}
+            corretores={corretores}
             query={query?.trim() ?? ""}
             selectedContactId={selectedContactId}
           />
@@ -93,7 +119,20 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           {selectedContact ? (
             <ReplyProvider key={selectedContact.id}>
               <div className="flex h-full min-h-0 flex-col animate-in fade-in duration-200">
-                <ConversationThreadHeader contact={selectedContact} />
+                <ConversationThreadHeader
+                  contact={selectedContact}
+                  actions={
+                    <ConversationCopilot
+                      contactId={selectedContact.id}
+                      contactName={selectedContact.name}
+                      contactPhone={selectedContact.phone}
+                      captacoesContato={captacoesContato}
+                      captacoesRecentes={captacoesRecentes}
+                      captacoesUrl={process.env.CAPTACOES_BOARD_URL ?? null}
+                      propostasPendentes={propostasPendentes}
+                    />
+                  }
+                />
                 <ConversationThread
                   contactId={selectedContact.id}
                   contactName={selectedContact.name}

@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { AppShell } from "./app-shell";
-import type { ReminderCounts } from "@/types/dashboard";
+import type { NavCounts } from "@/constants/nav";
 
 /**
  * Rotas full-bleed que NÃO usam o chrome do app (sidebar, header e nav mobile).
@@ -18,14 +18,10 @@ function isFullBleed(pathname: string): boolean {
 }
 
 export function ConditionalShell({
-  reminderCounts,
-  unreadConversations,
-  pendingConversations,
+  countsPromise,
   children,
 }: {
-  reminderCounts: ReminderCounts;
-  unreadConversations: number;
-  pendingConversations: number;
+  countsPromise: Promise<NavCounts>;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -34,13 +30,5 @@ export function ConditionalShell({
     return <>{children}</>;
   }
 
-  return (
-    <AppShell
-      reminderCounts={reminderCounts}
-      unreadConversations={unreadConversations}
-      pendingConversations={pendingConversations}
-    >
-      {children}
-    </AppShell>
-  );
+  return <AppShell countsPromise={countsPromise}>{children}</AppShell>;
 }

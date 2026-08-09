@@ -3,7 +3,14 @@ import type { ConversationStatus } from "@/constants/conversation-status";
 import type { ID } from "./common";
 
 export type WhatsAppMessageDirection = "inbound" | "outbound";
-export type WhatsAppMessageType = "text" | "unsupported";
+export type WhatsAppMessageType =
+  | "text"
+  | "image"
+  | "audio"
+  | "video"
+  | "document"
+  | "sticker"
+  | "unsupported";
 
 export interface WhatsAppConversation {
   id: ID;
@@ -32,6 +39,29 @@ export interface WhatsAppConversationSummary extends WhatsAppConversation {
   contactIsBlocked: boolean;
   /** Etiquetas do contato — alimentam o filtro de listas do inbox. */
   contactTagIds: ID[];
+  /** Corretor responsável pelo contato — alimenta o filtro por corretor do inbox. */
+  contactCorretorId: ID | null;
+}
+
+/**
+ * Um envio que a Meta recusou, com o contato junto — o que a fila de falhas
+ * precisa mostrar sem uma segunda consulta.
+ *
+ * `errorMessage` é o motivo que a Meta devolveu (janela de 24h fechada, número
+ * inválido, template recusado). Ele já era gravado no banco e não aparecia em
+ * lugar nenhum da interface: quem via o triângulo vermelho na thread não tinha
+ * como saber por quê, nem o que fazer a respeito.
+ */
+export interface FailedOutboundMessage {
+  id: ID;
+  conversationId: ID;
+  contactId: ID;
+  contactName: string;
+  contactPhone: string;
+  body: string;
+  errorMessage: string | null;
+  createdBy: string | null;
+  waTimestamp: string;
 }
 
 /** Trecho citado numa resposta (snapshot da mensagem original). */
@@ -47,12 +77,17 @@ export interface WhatsAppMessage {
   waMessageId: string | null;
   direction: WhatsAppMessageDirection;
   messageType: WhatsAppMessageType;
+  /** Legenda da mídia ou texto da mensagem. Vazio quando a mídia não tem legenda. */
   body: string;
   status: WhatsAppMessageStatus;
   errorMessage: string | null;
   createdBy: string | null;
   /** Mensagem citada, se esta for uma resposta; null caso contrário. */
   replyTo: MessageReply | null;
+  /** Mídia recebida: URL absoluta (mock/hospedada) ou caminho no bucket (cloud-api). null em mensagens de texto. */
+  mediaUrl: string | null;
+  mediaMimeType: string | null;
+  mediaFilename: string | null;
   waTimestamp: string;
   createdAt: string;
 }
@@ -78,5 +113,8 @@ export interface CreateWhatsAppMessageInput {
   status: WhatsAppMessageStatus;
   createdBy?: string | null;
   replyTo?: MessageReply | null;
+  mediaUrl?: string | null;
+  mediaMimeType?: string | null;
+  mediaFilename?: string | null;
   waTimestamp: string;
 }

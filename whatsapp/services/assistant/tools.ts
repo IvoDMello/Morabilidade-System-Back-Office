@@ -40,19 +40,37 @@ export const criarCaptacaoArgs = z.object({
   quartos: z.number().int().optional().describe("número de quartos, se mencionado"),
   banheiros: z.number().int().optional().describe("número de banheiros, se mencionado"),
   tipo_portaria: z.string().optional().describe("tipo de portaria (ex.: 24h, eletrônica), se mencionado"),
-  contato_proprietario: z
-    .string()
-    .optional()
-    .describe("telefone ou nome de contato do proprietário, se mencionado"),
+  proprietario_nome: z.string().optional().describe("nome do proprietário"),
+  proprietario_whatsapp: z.string().optional().describe("WhatsApp do proprietário"),
+  /** Legado: propostas gravadas antes da separação nome/WhatsApp guardaram os
+   * dois num campo livre só. Continua aceito para que uma proposta pendente
+   * antiga ainda possa ser confirmada (ver handlers.ts). */
+  contato_proprietario: z.string().optional(),
   observacoes: z.string().optional().describe("observações livres relevantes para a captação"),
 });
 export type CriarCaptacaoArgs = z.infer<typeof criarCaptacaoArgs>;
 
+// ── sugerir_resposta ─────────────────────────────────────────────────────────
+
+export const sugerirRespostaArgs = z.object({
+  contato_id: z.string().describe("id do contato que receberá a resposta"),
+  texto: z.string().min(1).describe("texto da mensagem sugerida, pronto para enviar via WhatsApp"),
+});
+export type SugerirRespostaArgs = z.infer<typeof sugerirRespostaArgs>;
+
 // ── Registro ─────────────────────────────────────────────────────────────────
 
-export type ToolName = "agendar_visita" | "criar_captacao";
+export type ToolName = "agendar_visita" | "criar_captacao" | "sugerir_resposta";
 
-/** Schemas de input passados ao modelo (JSON Schema, espelham os zod acima). */
+/**
+ * Ferramentas ORGANIZACIONAIS: as que arrumam a casa sem falar com o cliente.
+ *
+ * A separação existe porque o papel do agente hoje é organizacional. Ele não
+ * redige resposta a cliente no caminho automático — nem como rascunho. Isso é
+ * decisão de produto (o time quer o WhatsApp na mão de gente por enquanto) e
+ * corta custo de tabela: sem `sugerir_resposta` o manual de voz não precisa
+ * entrar no prompt, e a saída deixa de carregar um texto inteiro.
+ */
 export const ASSISTANT_TOOLS: Anthropic.Tool[] = [
   {
     name: "agendar_visita",
@@ -84,10 +102,32 @@ export const ASSISTANT_TOOLS: Anthropic.Tool[] = [
         quartos: { type: "integer", description: "número de quartos, se mencionado" },
         banheiros: { type: "integer", description: "número de banheiros, se mencionado" },
         tipo_portaria: { type: "string", description: "tipo de portaria, se mencionado" },
-        contato_proprietario: { type: "string", description: "contato do proprietário, se mencionado" },
+        proprietario_nome: { type: "string", description: "nome do proprietário, se souber" },
+        proprietario_whatsapp: {
+          type: "string",
+          description: "WhatsApp do proprietário — normalmente o telefone do próprio contato da conversa",
+        },
         observacoes: { type: "string", description: "observações livres" },
       },
       required: ["endereco"],
     },
   },
 ];
+
+/** Ferramenta extra do copiloto de conversa: propor uma resposta ao cliente.
+ * Só entra no fluxo da conversa (nunca no /assistente solto) porque a resposta
+ * precisa de um destinatário concreto — e o envio só acontece após confirmação
+ * (e possível edição) do operador. */
+export const SUGERIR_RESPOSTA_TOOL: Anthropic.Tool = {
+  name: "sugerir_resposta",
+  description:
+    "Sugere o texto da próxima mensagem a enviar ao cliente nesta conversa de WhatsApp. Use sempre que houver algo útil a responder — especialmente para conduzir o processo de captação com um proprietário (pedir endereço, quartos, banheiros, portaria, fotos, documentação). O texto será revisado por um humano antes do envio.",
+  input_schema: {
+    type: "object",
+    properties: {
+      contato_id: { type: "string", description: "id do contato desta conversa" },
+      texto: { type: "string", description: "mensagem pronta para enviar, em português, tom cordial e direto" },
+    },
+    required: ["contato_id", "texto"],
+  },
+};

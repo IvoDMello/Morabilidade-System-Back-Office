@@ -192,7 +192,10 @@ export function ContactTable({ contacts }: { contacts: Contact[] }) {
                 <TableCell>
                   <div className="flex items-center gap-2.5">
                     <AvatarInitials name={contact.name} size="sm" />
-                    <Link href={`/contatos/${contact.id}`} className="font-medium hover:underline">
+                    <Link
+                      href={`/contatos/${contact.id}`}
+                      className="font-medium hover:underline active:text-gold"
+                    >
                       {contact.name}
                     </Link>
                   </div>
@@ -227,7 +230,10 @@ export function ContactTable({ contacts }: { contacts: Contact[] }) {
               <div className="flex min-w-0 items-center gap-2">
                 <FavoriteToggle contactId={contact.id} isFavorite={contact.isFavorite} />
                 <AvatarInitials name={contact.name} size="sm" />
-                <Link href={`/contatos/${contact.id}`} className="truncate font-medium hover:underline">
+                <Link
+                  href={`/contatos/${contact.id}`}
+                  className="truncate font-medium hover:underline active:text-gold"
+                >
                   {contact.name}
                 </Link>
               </div>

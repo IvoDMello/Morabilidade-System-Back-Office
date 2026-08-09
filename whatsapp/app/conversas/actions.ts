@@ -16,6 +16,7 @@ import {
   setConversationPinned,
 } from "@/services/whatsapp.service";
 import { setContactBlocked } from "@/services/contacts.service";
+import { analisarConversaDoTelefone } from "@/services/agent-proposals.service";
 import { createTag } from "@/services/tags.service";
 import { logEvent } from "@/services/events.service";
 import { createTemplate, deleteTemplate } from "@/services/templates.service";
@@ -88,12 +89,22 @@ export async function simulateIncomingMessageAction(values: SimulateMessageFormV
     JSON.stringify({
       from: parsed.phone,
       profileName: parsed.profileName || null,
-      body: parsed.body,
+      body: parsed.body ?? "",
+      mediaUrl: parsed.mediaUrl || null,
+      mediaType: parsed.mediaUrl ? (parsed.mediaType ?? "image") : null,
     }),
   );
 
   for (const event of events) {
-    if (event.type === "message") await processIncomingMessage(event.data);
+    if (event.type === "message") {
+      const gravada = await processIncomingMessage(event.data);
+      // Mesma pré-computação do webhook real (ver app/api/whatsapp/webhook/route.ts):
+      // sem isto, o modo mock exercitaria tudo MENOS o copiloto automático — e o
+      // ponto da simulação é justamente testar o fluxo inteiro sem a Meta.
+      // Aqui esperamos de propósito: não há timeout de webhook a respeitar, e o
+      // teste local só é útil se as propostas já estiverem prontas na tela.
+      await analisarConversaDoTelefone(event.data.fromPhone, gravada.id);
+    }
   }
 
   revalidatePath("/");
