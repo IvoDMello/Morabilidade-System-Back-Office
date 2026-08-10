@@ -1,7 +1,14 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { DndContext, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
+import {
+  DndContext,
+  MouseSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
 import { toast } from "sonner";
 import { CONTACT_STATUSES, type ContactStatus } from "@/constants/contact-status";
 import type { LossReason } from "@/constants/loss-reasons";
@@ -25,8 +32,15 @@ export function ContactPipelineBoard({ contacts }: { contacts: Contact[] }) {
     setItems(contacts);
   }
 
+  // Mouse e dedo pedem gestos diferentes. Com um PointerSensor só, qualquer
+  // deslize de 8px sobre um cartão virava arrasto — e como o board rola na
+  // horizontal, sobrava rolar pelo vão entre as colunas: errar o alvo por um
+  // centímetro movia o contato de etapa. No toque o arrasto agora começa
+  // depois de segurar; deslizar antes disso (tolerance) cancela e a rolagem
+  // segue normal.
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 220, tolerance: 8 } }),
   );
 
   const byStatus = useMemo(() => {
@@ -91,7 +105,12 @@ export function ContactPipelineBoard({ contacts }: { contacts: Contact[] }) {
   return (
     <>
       <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-        <div className="flex gap-3 overflow-x-auto pb-2">
+        {/* O gesto de mover ficou invisível no celular — sem uma linha de
+            ajuda, "segurar" é uma regra que só se descobre por acidente. */}
+        <p className="px-0.5 pb-2 text-xs text-muted-foreground md:hidden">
+          Deslize para ver as etapas. Segure um cartão para mover de etapa.
+        </p>
+        <div className="flex gap-3 overflow-x-auto overscroll-x-contain pb-2">
           {CONTACT_STATUSES.map((s) => (
             <PipelineColumn
               key={s.value}
