@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import {
   ArrowRightLeft,
@@ -11,23 +12,18 @@ import {
   Building2,
   History,
   MessageCircle,
-  NotebookText,
   Send,
   Tag,
   UserPlus,
 } from "lucide-react";
 import { isToday, isYesterday } from "date-fns";
 import { EmptyState } from "@/components/shared/empty-state";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
 import { cn, formatDate, formatDateTime } from "@/lib/utils";
 import { NoteForm } from "@/features/contacts/notes/components/note-form";
-import { MessageComposer } from "@/features/whatsapp/components/message-composer";
 import type { ContactNote } from "@/types/note";
 import type { ContactEvent, ContactEventType } from "@/types/event";
 import type { WhatsAppMessage } from "@/types/whatsapp";
 import type { ID } from "@/types/common";
-import type { MessageTemplate } from "@/types/template";
 
 const EVENT_ICONS: Record<ContactEventType, LucideIcon> = {
   contact_created: UserPlus,
@@ -71,18 +67,26 @@ interface ActivityFeedProps {
   notes: ContactNote[];
   events: ContactEvent[];
   messages: WhatsAppMessage[];
-  templates: MessageTemplate[];
 }
 
 /**
  * Atividade unificada da ficha (FC-1/FC-2): substitui as abas "Visão geral" /
  * "Conversa" — que duplicavam Lembretes/Anotações inteiros — por um único feed
- * filtrável, com divisores de data e composer ancorado embaixo (mensagem ou
- * anotação, sem trocar de tela).
+ * filtrável, com divisores de data.
+ *
+ * Aqui não se envia mensagem. Antes havia o composer do WhatsApp no rodapé e a
+ * anotação escondida atrás de um botão só de ícone: quem escrevia no campo
+ * grande mandava mensagem para o cliente achando que estava registrando uma
+ * observação interna. Mensagem se manda com a conversa aberta, onde se lê o
+ * histórico antes de falar — daí o link para o inbox.
+ *
+ * O campo de anotação só existe sob o filtro "Anotações"; em "Tudo" e
+ * "Mensagens" o rodapé é só o link. É a mesma regra de novo: campo de texto
+ * embaixo de uma lista de mensagens é lido como resposta ao cliente, dê o
+ * rótulo que der.
  */
-export function ActivityFeed({ contactId, notes, events, messages, templates }: ActivityFeedProps) {
+export function ActivityFeed({ contactId, notes, events, messages }: ActivityFeedProps) {
   const [filter, setFilter] = useState<FeedFilter>("all");
-  const [noteOpen, setNoteOpen] = useState(false);
 
   const items = useMemo(() => {
     const all: TimelineItem[] = [
@@ -193,23 +197,25 @@ export function ActivityFeed({ contactId, notes, events, messages, templates }: 
         )}
       </div>
 
-      <div className="flex items-end gap-2 border-t pt-3">
-        <Popover open={noteOpen} onOpenChange={setNoteOpen}>
-          <PopoverTrigger
-            render={
-              <Button type="button" variant="outline" size="icon" aria-label="Adicionar anotação" />
-            }
+      <div className="flex flex-col gap-2 border-t pt-3">
+        <div className="flex items-center justify-between gap-2">
+          {filter === "notes" ? (
+            <p className="text-xs font-medium text-muted-foreground">
+              Nova anotação{" "}
+              <span className="font-normal">— só a equipe vê, o contato não recebe nada</span>
+            </p>
+          ) : (
+            <span />
+          )}
+          <Link
+            href={`/?c=${contactId}`}
+            className="flex shrink-0 items-center gap-1.5 text-xs font-medium text-primary hover:underline"
           >
-            <NotebookText className="h-4 w-4" />
-          </PopoverTrigger>
-          <PopoverContent align="start" className="w-80">
-            <p className="px-1 text-xs font-medium text-muted-foreground">Nova anotação</p>
-            <NoteForm contactId={contactId} onSuccess={() => setNoteOpen(false)} />
-          </PopoverContent>
-        </Popover>
-        <div className="flex-1">
-          <MessageComposer contactId={contactId} templates={templates} />
+            <MessageCircle className="h-3.5 w-3.5" />
+            Abrir conversa
+          </Link>
         </div>
+        {filter === "notes" && <NoteForm contactId={contactId} />}
       </div>
     </div>
   );

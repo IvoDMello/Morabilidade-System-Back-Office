@@ -1,7 +1,11 @@
 import { dataSource } from "./data";
 import { whatsappProvider } from "./whatsapp";
 import { getPendingQueue } from "./whatsapp.service";
-import { gerarAnalisePendenciasDoDia, type PendenciaDoDia } from "./ai.service";
+import {
+  gerarAnalisePendenciasDoDia,
+  triarConversasSemResposta,
+  type PendenciaDoDia,
+} from "./ai.service";
 import { startOfDaySaoPaulo } from "@/lib/timezone";
 import { formatPhone } from "@/lib/utils";
 import { formatWaitTime } from "@/lib/wait-time";
@@ -122,6 +126,42 @@ export async function runAwaitingAlertJob() {
   }
 
   return { sent, failed, total: overdue.length };
+}
+
+/**
+ * Triagem horária da fila de "aguardando resposta": a IA lê as conversas novas
+ * (ou que andaram desde a última leitura) e grava, em cada uma, se ela pede
+ * resposta de verdade. É o que sustenta a aba "Precisa responder".
+ *
+ * Best-effort como os outros jobs de IA: sem ANTHROPIC_API_KEY, ou com a API
+ * fora, devolve `skippedReason` e o alerta horário segue normalmente. Uma
+ * triagem que não rodou deixa as conversas sem triagem — que é diferente de
+ * dizer que elas não precisam de resposta, e é por isso que o campo é
+ * tri-estado.
+ */
+export async function runTriagemJob() {
+  let triagens;
+  try {
+    triagens = await triarConversasSemResposta();
+  } catch (erro) {
+    const motivo =
+      erro instanceof Error && erro.message.includes("ANTHROPIC_API_KEY")
+        ? ("ANTHROPIC_API_KEY não configurada" as const)
+        : ("a IA não respondeu" as const);
+    return { triadas: 0, precisamResposta: 0, skippedReason: motivo };
+  }
+
+  let precisamResposta = 0;
+  for (const triagem of triagens) {
+    await dataSource.whatsapp.salvarTriagem(triagem.conversationId, {
+      precisaResposta: triagem.precisaResposta,
+      motivo: triagem.motivo,
+      mensagemEm: triagem.mensagemEm,
+    });
+    if (triagem.precisaResposta) precisamResposta++;
+  }
+
+  return { triadas: triagens.length, precisamResposta };
 }
 
 function pluralize(count: number, singular: string, plural: string): string {

@@ -74,6 +74,9 @@ export const mockWhatsapp: DataSource["whatsapp"] = {
       followUpSnoozedUntil: null,
       lastAlertAt: null,
       pinnedAt: null,
+      triagemPrecisaResposta: null,
+      triagemMotivo: null,
+      triagemMensagemEm: null,
       createdAt: nowIso,
       updatedAt: nowIso,
     };
@@ -321,6 +324,20 @@ export const mockWhatsapp: DataSource["whatsapp"] = {
     mockStore.conversations[index] = {
       ...mockStore.conversations[index],
       lastAlertAt: whenIso,
+    };
+  },
+
+  async salvarTriagem(
+    conversationId: ID,
+    triagem: { precisaResposta: boolean; motivo: string; mensagemEm: string | null },
+  ) {
+    const index = mockStore.conversations.findIndex((c) => c.id === conversationId);
+    if (index === -1) return;
+    mockStore.conversations[index] = {
+      ...mockStore.conversations[index],
+      triagemPrecisaResposta: triagem.precisaResposta,
+      triagemMotivo: triagem.motivo,
+      triagemMensagemEm: triagem.mensagemEm,
     };
   },
 };

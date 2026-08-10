@@ -20,7 +20,7 @@ describe("atribuição de responsável", () => {
     const contact = await dataSource.contacts.create({
       name: "Teste Atribuição",
       phone: "5511977770001",
-      category: "lead",
+      category: "comprador",
       status: "novo",
       nextAction: "ligar",
     });
@@ -35,7 +35,7 @@ describe("atribuição de responsável", () => {
     const contact = await dataSource.contacts.create({
       name: "Teste Visita",
       phone: "5511977770003",
-      category: "lead",
+      category: "comprador",
       status: "novo",
       nextAction: "ligar",
     });

@@ -8,6 +8,7 @@ import type {
   NormalizedIncomingMessage,
   NormalizedStatusUpdate,
 } from "./whatsapp";
+import { CONTACT_CATEGORY_PADRAO } from "@/constants/contact-categories";
 import { CURRENT_USER_NAME } from "@/constants/current-user";
 import { formatPhone } from "@/lib/utils";
 import { extFromMime, messagePreview } from "@/lib/whatsapp-media";
@@ -73,7 +74,7 @@ async function getOrCreateContactForIncomingMessage(message: NormalizedIncomingM
   return createContact({
     name: message.profileName || formatPhone(message.fromPhone),
     phone: message.fromPhone,
-    category: "lead",
+    category: CONTACT_CATEGORY_PADRAO,
     status: "novo",
     nextAction: "ligar",
   });
@@ -144,7 +145,7 @@ export async function processEchoMessage(message: NormalizedEchoMessage) {
     (await createContact({
       name: formatPhone(message.toPhone),
       phone: message.toPhone,
-      category: "lead",
+      category: CONTACT_CATEGORY_PADRAO,
       status: "novo",
       nextAction: "ligar",
     }));
@@ -376,6 +377,13 @@ export interface PendingConversationItem extends WhatsAppConversationSummary {
 }
 
 export interface PendingQueue {
+  /**
+   * O recorte da IA sobre `aguardandoResposta`: só as conversas em que o
+   * cliente realmente espera algo (migration 0026). Conversa ainda não triada
+   * NÃO entra aqui — a fila promete "isto foi lido e pede resposta", e uma
+   * promessa dessas não se cumpre por omissão.
+   */
+  precisaResposta: PendingConversationItem[];
   aguardandoResposta: PendingConversationItem[];
   followUpSugerido: PendingConversationItem[];
   todasAtivas: PendingConversationItem[];
@@ -437,6 +445,12 @@ export async function getPendingQueue(): Promise<PendingQueue> {
     .filter((c) => c.status === "aguardando_resposta")
     .sort(sortByOldestInbound);
 
+  // Quem espera há mais tempo primeiro — a fila existe para achar quem está no
+  // vácuo, e quem está no vácuo há mais tempo é o caso mais grave.
+  const precisaResposta = aguardandoResposta.filter(
+    (c) => c.triagemPrecisaResposta === true,
+  );
+
   const followUpSugerido = withProperty
     .filter(
       (c) =>
@@ -451,7 +465,7 @@ export async function getPendingQueue(): Promise<PendingQueue> {
     return bTime - aTime;
   });
 
-  return { aguardandoResposta, followUpSugerido, todasAtivas };
+  return { precisaResposta, aguardandoResposta, followUpSugerido, todasAtivas };
 }
 
 /** Encerra a conversa manualmente (ação da fila de pendências). */

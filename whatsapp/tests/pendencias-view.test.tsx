@@ -48,6 +48,9 @@ function conversa(over: Partial<PendingConversationItem> = {}): PendingConversat
     followUpSnoozedUntil: null,
     lastAlertAt: null,
     pinnedAt: null,
+    triagemPrecisaResposta: null,
+    triagemMotivo: null,
+    triagemMensagemEm: null,
     createdAt: "2026-08-01T12:00:00Z",
     updatedAt: "2026-08-02T12:00:00Z",
     contactName: "Ana Prado",
@@ -86,6 +89,7 @@ function lembrete(over: Partial<ReminderWithContact> = {}): ReminderWithContact 
 const CONTATOS: Contact[] = [];
 
 const QUEUE: PendingQueue = {
+  precisaResposta: [],
   aguardandoResposta: [conversa()],
   followUpSugerido: [conversa({ id: "conv-2", contactId: "c2", contactName: "Carla Dias" })],
   todasAtivas: [conversa()],
@@ -242,5 +246,57 @@ describe("aba de envios não entregues", () => {
     );
     // Cairia numa tela vazia sem nenhuma aba marcada.
     expect(await screen.findByText("Ana Prado")).toBeInTheDocument();
+  });
+});
+
+/**
+ * "Aguardando resposta" é regra mecânica e mistura pergunta com agradecimento.
+ * A aba "Precisa responder" é o recorte que a IA já leu — e o motivo da leitura
+ * fica no cartão, senão a aba seria só mais uma lista para conferir na mão.
+ */
+describe("aba Precisa responder", () => {
+  afterEach(cleanup);
+
+  const PRECISA = conversa({
+    id: "conv-3",
+    contactId: "c3",
+    contactName: "Juliana Torres",
+    triagemPrecisaResposta: true,
+    triagemMotivo: "perguntou se consegue visitar sábado",
+  });
+
+  function montarComTriagem(precisaResposta: PendingConversationItem[]) {
+    return render(
+      <PendenciasView
+        queue={{ ...QUEUE, precisaResposta }}
+        reminders={GRUPOS}
+        contacts={CONTATOS}
+        falhas={[]}
+        defaultTab="responder"
+      />,
+    );
+  }
+
+  it("abre nela por padrão e conta as conversas triadas", () => {
+    montarComTriagem([PRECISA]);
+    expect(screen.getByRole("tab", { name: /Precisa responder \(1\)/ })).toBeInTheDocument();
+    expect(screen.getByText("Juliana Torres")).toBeInTheDocument();
+  });
+
+  it("mostra por que a IA acha que esta conversa pede resposta", () => {
+    montarComTriagem([PRECISA]);
+    expect(screen.getByText("perguntou se consegue visitar sábado")).toBeInTheDocument();
+  });
+
+  it("com a fila limpa, explica de onde viria o conteúdo", () => {
+    montarComTriagem([]);
+    expect(screen.getByText("Ninguém esperando resposta")).toBeInTheDocument();
+    expect(screen.getByText(/revisa a fila de hora em hora/)).toBeInTheDocument();
+  });
+
+  it("não substitui a fila crua — Aguardando continua ao lado", () => {
+    montarComTriagem([PRECISA]);
+    fireEvent.click(screen.getByRole("tab", { name: /Aguardando \(1\)/ }));
+    expect(screen.getByText("Ana Prado")).toBeInTheDocument();
   });
 });

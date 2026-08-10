@@ -10,14 +10,12 @@ import { DeleteContactButton } from "@/features/contacts/components/delete-conta
 import { CategoryBadge } from "@/features/contacts/components/category-badge";
 import { StatusBadge } from "@/features/contacts/components/status-badge";
 import { FavoriteToggle } from "@/features/contacts/components/favorite-toggle";
-import { ContactStageStepper } from "@/features/contacts/components/contact-stage-stepper";
 import { TagPicker } from "@/features/contacts/tags/components/tag-picker";
 import { CorretorPicker } from "@/features/contacts/components/corretor-picker";
 import { PropertyPicker } from "@/features/contacts/properties/components/property-picker";
 import { AiSummaryCard } from "@/features/contacts/ai/components/ai-summary-card";
 import { FollowUpSuggestion } from "@/features/contacts/ai/components/follow-up-suggestion";
 import { LOSS_REASON_LABELS } from "@/constants/loss-reasons";
-import { NEXT_ACTION_LABELS } from "@/constants/next-actions";
 import { ReminderList } from "@/features/contacts/reminders/components/reminder-list";
 import { ReminderFormDialog } from "@/features/contacts/reminders/components/reminder-form-dialog";
 import { ActivityFeed } from "@/features/contacts/timeline/components/activity-feed";
@@ -28,10 +26,10 @@ import { getNotesByContact } from "@/services/notes.service";
 import { getRemindersByContact } from "@/services/reminders.service";
 import { getTags, getTagsByContact } from "@/services/tags.service";
 import { getEventsByContact } from "@/services/events.service";
-import { getTemplates } from "@/services/templates.service";
 import { getProperties, getPropertiesByContact } from "@/services/properties.service";
 import { getCorretores } from "@/services/corretores.service";
-import { fetchImoveisByCodigos } from "@/lib/backoffice-api";
+import { fetchDossieCliente, fetchImoveisByCodigos } from "@/lib/backoffice-api";
+import { DossieCard, temConteudo } from "@/features/contacts/dossie/components/dossie-card";
 import { getConversationMessages } from "@/services/whatsapp.service";
 import { createReminderAction } from "@/app/contatos/actions";
 
@@ -60,7 +58,6 @@ export default async function ContatoDetalhePage({
     allTags,
     messages,
     events,
-    templates,
     contactProperties,
     allProperties,
     corretores,
@@ -71,15 +68,19 @@ export default async function ContatoDetalhePage({
     getTags(),
     getConversationMessages(id),
     getEventsByContact(id),
-    getTemplates(),
     getPropertiesByContact(id),
     getProperties(),
     getCorretores(),
   ]);
 
   // Detalhes ao vivo dos imóveis vinculados (status/bairro/preço do catálogo
-  // real). Best-effort: mapa vazio se a API não estiver configurada ou fora.
-  const liveDetails = await fetchImoveisByCodigos(contactProperties.map((cp) => cp.code));
+  // real) e o dossiê do cliente no sistema principal (visitas, imóveis
+  // próprios, documentos). Ambos best-effort: sem a API configurada, um vira
+  // mapa vazio e o outro null, e a ficha continua inteira.
+  const [liveDetails, dossie] = await Promise.all([
+    fetchImoveisByCodigos(contactProperties.map((cp) => cp.code)),
+    contact.clienteId ? fetchDossieCliente(contact.clienteId) : Promise.resolve(null),
+  ]);
 
   const lastMessageAt = messages.length > 0 ? messages[messages.length - 1].waTimestamp : null;
   const lastNoteAt = notes.length > 0 ? notes[0].createdAt : null;
@@ -92,10 +93,6 @@ export default async function ContatoDetalhePage({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="rounded-lg border bg-card px-4 py-3">
-        <ContactStageStepper status={contact.status} />
-      </div>
-
       {/* Painel (FC-2) e atividade (FC-1): lado a lado no desktop, duas abas no
           celular — ver ContactPanels. */}
       <ContactPanels
@@ -136,10 +133,6 @@ export default async function ContatoDetalhePage({
                 <CategoryBadge category={contact.category} />
                 <StatusBadge status={contact.status} />
               </div>
-
-              <p className="text-sm text-muted-foreground">
-                Próxima ação: <span className="font-medium text-foreground">{NEXT_ACTION_LABELS[contact.nextAction]}</span>
-              </p>
 
               <CorretorPicker
                 contactId={contact.id}
@@ -229,6 +222,11 @@ export default async function ContatoDetalhePage({
               </CardContent>
             </Card>
 
+            {/* O que o sistema principal sabe. Vem antes dos imóveis do CRM
+                porque é fato consumado (visita assinada, imóvel no nome dele),
+                enquanto o cartão abaixo é o interesse que a equipe anotou. */}
+            {temConteudo(dossie) && <DossieCard dossie={dossie} />}
+
             <Card>
               <CardHeader>
                 <CardTitle>Imóveis</CardTitle>
@@ -252,7 +250,6 @@ export default async function ContatoDetalhePage({
             notes={notes}
             events={events}
             messages={messages}
-            templates={templates}
           />
         }
       />

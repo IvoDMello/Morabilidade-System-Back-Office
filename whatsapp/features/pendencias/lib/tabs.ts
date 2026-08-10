@@ -2,6 +2,7 @@
  * (Server Component) precisa validar o `?tab=` da URL — exports de um módulo
  * "use client" viram referências de cliente e não podem ser chamados no servidor. */
 export const PENDENCIAS_TABS = [
+  "responder",
   "aguardando",
   "falhas",
   "lembretes",
@@ -11,7 +12,9 @@ export const PENDENCIAS_TABS = [
 
 export type PendenciasTab = (typeof PENDENCIAS_TABS)[number];
 
-export const PENDENCIAS_TAB_PADRAO: PendenciasTab = "aguardando";
+/** "Precisa responder" é a primeira pergunta do dia — quem está esperando por
+ * nós agora. "Aguardando" continua ao lado, com a fila crua. */
+export const PENDENCIAS_TAB_PADRAO: PendenciasTab = "responder";
 
 export function isPendenciasTab(value: string | undefined): value is PendenciasTab {
   return PENDENCIAS_TABS.includes(value as PendenciasTab);

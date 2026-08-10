@@ -155,6 +155,13 @@ export interface DataSource {
       todayStartIso: string,
     ): Promise<WhatsAppConversationSummary[]>;
     markAlerted(conversationId: ID, whenIso: string): Promise<void>;
+    /** Grava a leitura da IA sobre uma conversa aguardando resposta (migration
+     * 0026). `mensagemEm` é o `lastMessageAt` lido — o que permite saber depois
+     * que a triagem envelheceu. */
+    salvarTriagem(
+      conversationId: ID,
+      triagem: { precisaResposta: boolean; motivo: string; mensagemEm: string | null },
+    ): Promise<void>;
     /** Guarda os bytes de uma mídia recebida no storage e devolve o caminho salvo.
      * Só existe na fonte Supabase — o mock recebe mídia como URL já hospedada. */
     uploadMedia?(path: string, data: Uint8Array, mimeType: string): Promise<string>;

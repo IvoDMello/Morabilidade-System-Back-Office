@@ -63,7 +63,7 @@ async function criarContato(nome = "Ana Souza") {
   return dataSource.contacts.create({
     name: nome,
     phone: "5521970001111",
-    category: "lead",
+    category: "comprador",
     status: "novo",
     nextAction: "ligar",
   });

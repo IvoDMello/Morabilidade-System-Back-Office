@@ -382,6 +382,23 @@ export const supabaseWhatsapp: DataSource["whatsapp"] = {
     if (error) throw error;
   },
 
+  async salvarTriagem(
+    conversationId: ID,
+    triagem: { precisaResposta: boolean; motivo: string; mensagemEm: string | null },
+  ) {
+    const supabase = getSupabaseServerClient();
+    const { error } = await supabase
+      .from("whatsapp_conversations")
+      .update({
+        triagem_precisa_resposta: triagem.precisaResposta,
+        triagem_motivo: triagem.motivo,
+        triagem_mensagem_em: triagem.mensagemEm,
+        triagem_em: new Date().toISOString(),
+      })
+      .eq("id", conversationId);
+    if (error) throw error;
+  },
+
   async uploadMedia(path: string, data: Uint8Array, mimeType: string) {
     const supabase = getSupabaseServerClient();
     const { error } = await supabase.storage

@@ -220,6 +220,116 @@ ${blocos.join("\n\n")}`,
     .map((e) => ({ conversationId: e.conversa, motivo: e.motivo }));
 }
 
+// ── Triagem "precisa responder" (fila persistida, migration 0026) ───────────
+//
+// A `classificarEncerramentos` acima é a mesma leitura sob demanda, e some
+// quando a tela recarrega. Esta versão grava o resultado na conversa, para que
+// a aba "Precisa responder" exista sem custo de IA a cada abertura — e para
+// que a fila continue certa para quem abrir o painel amanhã.
+
+const triagemSchema = z.object({
+  conversas: z
+    .array(
+      z.object({
+        conversa: z.string().describe("id EXATO da conversa (o valor após 'id:' no cabeçalho)"),
+        precisa_resposta: z
+          .boolean()
+          .describe("true se o cliente espera uma resposta ou ação; false se a última mensagem só encerra o assunto"),
+        motivo: z
+          .string()
+          .describe("em poucas palavras, o que sustenta a decisão (ex.: perguntou o valor; agradeceu e encerrou)"),
+      }),
+    )
+    .describe("uma entrada por conversa recebida, na mesma ordem"),
+});
+
+export interface TriagemDeConversa {
+  conversationId: ID;
+  precisaResposta: boolean;
+  motivo: string;
+  /** lastMessageAt lido — grava junto para saber quando a triagem envelhecer. */
+  mensagemEm: string | null;
+}
+
+/** Quantas conversas uma rodada de triagem lê. O job roda de hora em hora; um
+ * teto evita que um dia atípico vire uma chamada gigante. */
+const MAX_CONVERSAS_TRIAGEM = 30;
+
+/** True se a conversa nunca foi triada ou se andou depois da última triagem. */
+export function triagemVencida(conversa: {
+  lastMessageAt: string | null;
+  triagemPrecisaResposta: boolean | null;
+  triagemMensagemEm: string | null;
+}): boolean {
+  if (conversa.triagemPrecisaResposta === null) return true;
+  if (!conversa.lastMessageAt) return false;
+  return conversa.lastMessageAt !== conversa.triagemMensagemEm;
+}
+
+/**
+ * Lê as conversas aguardando resposta e decide, uma a uma, se pedem resposta de
+ * verdade. Só analisa as que nunca foram triadas ou que andaram desde a última
+ * triagem — o resto já tem resposta guardada.
+ *
+ * Devolve o que foi decidido; quem grava é o job (ver `runTriagemJob`).
+ */
+export async function triarConversasSemResposta(): Promise<TriagemDeConversa[]> {
+  const conversations = await dataSource.whatsapp.listConversations();
+  const alvo = conversations
+    .filter((c) => c.status === "aguardando_resposta" && triagemVencida(c))
+    .slice(0, MAX_CONVERSAS_TRIAGEM);
+  if (alvo.length === 0) return [];
+
+  const porId = new Map(alvo.map((c) => [c.id, c]));
+  const blocos: string[] = [];
+  for (const conv of alvo) {
+    const messages = await dataSource.whatsapp.listMessages(conv.id);
+    const transcript = buildTranscript(messages, 8);
+    if (!transcript) continue;
+    blocos.push(`### id:${conv.id} — ${conv.contactName}\n${transcript}`);
+  }
+  if (blocos.length === 0) return [];
+
+  const client = getAnthropicClient();
+  const response = await client.messages.parse({
+    model: AI_MODEL,
+    max_tokens: 2048,
+    output_config: { effort: "low", format: zodOutputFormat(triagemSchema) },
+    messages: [
+      {
+        role: "user",
+        content: `Você é o assistente de uma imobiliária. Abaixo estão conversas de WhatsApp em que a ÚLTIMA mensagem foi do cliente. Para CADA uma, decida se ela pede uma resposta nossa.
+
+PRECISA de resposta (precisa_resposta = true):
+- o cliente fez uma pergunta (valor, disponibilidade, documentação, condições);
+- pediu algo (fotos, visita, contato do corretor, envio de contrato);
+- está negociando, ou respondeu a uma proposta;
+- é um primeiro contato que ainda não foi atendido de verdade;
+- disse que aguarda algo que nós prometemos.
+
+NÃO precisa (precisa_resposta = false):
+- agradecimento que fecha o assunto ("obrigada!", "valeu");
+- o cliente avisa que ELE retorna ("depois te falo", "qualquer coisa te chamo");
+- "ok"/"entendi"/"perfeito" que só confirmam o que já foi dito;
+- despedida, figurinha ou reação sem conteúdo.
+
+Na dúvida, marque como precisa de resposta: deixar o cliente no vácuo custa mais caro do que uma conferida a mais. Devolva uma entrada para CADA conversa, com o id EXATO.
+
+${blocos.join("\n\n")}`,
+      },
+    ],
+  });
+
+  return (response.parsed_output?.conversas ?? [])
+    .filter((c) => porId.has(c.conversa))
+    .map((c) => ({
+      conversationId: c.conversa,
+      precisaResposta: c.precisa_resposta,
+      motivo: c.motivo,
+      mensagemEm: porId.get(c.conversa)?.lastMessageAt ?? null,
+    }));
+}
+
 export async function generateFollowUpSuggestion(contactId: ID): Promise<string> {
   const { contact, messages, notes } = await getContactContext(contactId);
   const client = getAnthropicClient();

@@ -62,6 +62,20 @@ function isExcluded(path: string): boolean {
 }
 
 /**
+ * Apaga o texto dos comentários mantendo as quebras de linha — as posições (e
+ * portanto os números de linha) seguem valendo. Regras que procuram por um
+ * anti-padrão literal precisam disto: o comentário que explica por que o
+ * anti-padrão foi evitado costuma citá-lo pelo nome.
+ */
+function stripComments(text: string): string {
+  const blank = (s: string) => s.replace(/[^\n]/g, " ");
+  return text
+    .replace(/\/\*[\s\S]*?\*\//g, blank)
+    // O `[^:]` poupa o "//" de uma URL (https://…).
+    .replace(/(^|[^:])(\/\/[^\n]*)/g, (_m, before: string, comment: string) => before + blank(comment));
+}
+
+/**
  * Extrai as tags de abertura de um elemento HTML nativo (nome minúsculo),
  * varrendo caractere a caractere para respeitar `{...}` (JSX) e strings — assim
  * um handler com arrow function (`onChange={(e) => …}`) não corta a tag no `>`
@@ -277,6 +291,47 @@ describe("mobile: links só de ícone têm área de toque", () => {
   });
 });
 
+/**
+ * Arrastar com o dedo disputa a rolagem com o dedo. No Pipeline o board rola na
+ * horizontal e os cartões são arrastáveis: com `touch-none` no cartão e arrasto
+ * por distância, deslizar em cima de um cartão movia o contato de etapa em vez
+ * de rolar — só dava para rolar acertando o vão entre as colunas. A saída é
+ * arrasto por tempo (segurar) no toque, e deixar o toque rolar por cima do
+ * cartão até lá.
+ */
+describe("mobile: arrastar não sequestra a rolagem", () => {
+  const DRAG_HOOKS = /use(Draggable|Sortable)\s*\(/;
+
+  it("nenhum item arrastável trava o toque com touch-none", () => {
+    const offenders: string[] = [];
+    for (const file of FILES) {
+      if (!DRAG_HOOKS.test(file.text)) continue;
+      const code = stripComments(file.text);
+      const index = code.indexOf("touch-none");
+      if (index !== -1) {
+        offenders.push(`${file.path}:${lineOf(code, index)}`);
+      }
+    }
+    expect(
+      offenders,
+      `touch-none num item arrastável mata a rolagem do dedo sobre ele — use touch-manipulation e um sensor por tempo:\n${offenders.join("\n")}`,
+    ).toEqual([]);
+  });
+
+  it("o toque no Pipeline só arrasta depois de segurar", () => {
+    const board = FILES.find(
+      (f) => f.path === join("features", "contacts", "pipeline", "components", "contact-pipeline-board.tsx"),
+    );
+    expect(board).toBeDefined();
+    const code = stripComments(board!.text);
+    expect(code).toMatch(/TouchSensor/);
+    expect(code).toMatch(/delay:\s*\d+/);
+    // O PointerSensor cobre mouse e dedo com a mesma regra — é justamente o que
+    // não pode: no dedo, distância curta = arrasto acidental.
+    expect(code).not.toMatch(/PointerSensor/);
+  });
+});
+
 describe("mobile: a tela de login não força rolagem vertical", () => {
   const login = FILES.find((f) => f.path === join("app", "login", "page.tsx"));
 
@@ -291,5 +346,49 @@ describe("mobile: a tela de login não força rolagem vertical", () => {
 
   it("não recria o overlay fixed que gerava barra fantasma", () => {
     expect(login!.text).not.toMatch(/fixed inset-0/);
+  });
+});
+
+/**
+ * "Próxima ação" saiu da interface (ficha, cartões do Pipeline, lista e filtro).
+ * Ela era um campo paralelo ao status: arrastar um contato para "Documentação"
+ * mudava a coluna e deixava o badge dizendo "Agendar visita" ao lado — dois
+ * campos independentes se contradizendo no mesmo cartão, sem que nada
+ * explicasse a diferença.
+ *
+ * O campo continua no banco e no formulário de edição, então isto NÃO é uma
+ * regra contra a palavra: é contra voltar a exibi-la em lista, cartão ou
+ * filtro, que é onde ela confundia.
+ */
+describe("a próxima ação não volta para a interface de listagem", () => {
+  const TELAS = [
+    join("features", "contacts", "components", "contact-table.tsx"),
+    join("features", "contacts", "components", "contact-filters.tsx"),
+    join("features", "contacts", "pipeline", "components", "pipeline-card.tsx"),
+    join("app", "contatos", "[id]", "page.tsx"),
+  ];
+
+  it("nenhuma lista, cartão ou filtro exibe nextAction", () => {
+    const offenders: string[] = [];
+    for (const tela of TELAS) {
+      const file = FILES.find((f) => f.path === tela);
+      expect(file, `arquivo não encontrado: ${tela}`).toBeDefined();
+      const code = stripComments(file!.text);
+      for (const padrao of [/NextActionBadge/, /NextActionInline/, /NEXT_ACTION_LABELS/]) {
+        const m = padrao.exec(code);
+        if (m) offenders.push(`${tela}:${lineOf(code, m.index)} — ${m[0]}`);
+      }
+    }
+    expect(
+      offenders,
+      `A próxima ação voltou a ser exibida — ela contradiz o status ao lado:\n${offenders.join("\n")}`,
+    ).toEqual([]);
+  });
+
+  it("o formulário de edição continua com o campo — o dado não foi apagado", () => {
+    const form = FILES.find(
+      (f) => f.path === join("features", "contacts", "components", "contact-form.tsx"),
+    );
+    expect(form?.text).toMatch(/NEXT_ACTIONS/);
   });
 });

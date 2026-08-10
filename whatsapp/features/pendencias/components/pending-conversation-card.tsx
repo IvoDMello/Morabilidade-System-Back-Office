@@ -32,12 +32,17 @@ interface PendingConversationCardProps {
   showSnooze?: boolean;
   /** Sugestão da IA de que esta conversa é só encerramento e não precisa de resposta. */
   suggestion?: string;
+  /** O contrário: a leitura da IA de por que esta conversa PEDE resposta.
+   * Sem o porquê, a aba "Precisa responder" seria só uma lista a mais para
+   * conferir na mão — o motivo é o que faz dela uma triagem. */
+  motivoResposta?: string | null;
 }
 
 export function PendingConversationCard({
   item,
   showSnooze = false,
   suggestion,
+  motivoResposta,
 }: PendingConversationCardProps) {
   const [isPending, startTransition] = useTransition();
   const [confirmClose, setConfirmClose] = useState(false);
@@ -98,6 +103,13 @@ export function PendingConversationCard({
           <p className="text-jade">
             Provavelmente não precisa de resposta — <span className="text-ink-mid">{suggestion}</span>
           </p>
+        </div>
+      )}
+
+      {!suggestion && motivoResposta && (
+        <div className="mb-2 flex items-start gap-1.5 rounded-lg bg-gold/8 px-2 py-1.5 text-xs">
+          <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gold" />
+          <p className="text-ink-mid">{motivoResposta}</p>
         </div>
       )}
       <div className="flex items-start justify-between gap-2">

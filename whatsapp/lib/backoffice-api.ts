@@ -292,3 +292,130 @@ export async function fetchImoveisByCodigos(
   });
   return mapa;
 }
+
+/** Uma ficha de visita do cliente. `assinadaEm` nulo = emitida e pendente. */
+export interface VisitaDoCliente {
+  fichaId: string;
+  imovelCodigo: string | null;
+  imovelEndereco: string | null;
+  imovelBairro: string | null;
+  status: string;
+  assinadaEm: string | null;
+  createdAt: string | null;
+}
+
+export interface DocumentoDoImovel {
+  tipo: string;
+  nomeArquivo: string;
+  createdAt: string | null;
+}
+
+export interface AutorizacaoDoImovel {
+  autorizacaoId: string;
+  tipoNegocio: string;
+  status: string;
+  assinadaEm: string | null;
+}
+
+export interface ImovelDoProprietario {
+  imovelId: string;
+  codigo: string | null;
+  titulo: string | null;
+  bairro: string | null;
+  disponibilidade: string | null;
+  documentos: DocumentoDoImovel[];
+  autorizacao: AutorizacaoDoImovel | null;
+}
+
+/** Retrato do cliente no sistema principal: por onde passou e o que falta fechar. */
+export interface DossieCliente {
+  clienteId: string;
+  codigo: string | null;
+  nome: string | null;
+  visitas: VisitaDoCliente[];
+  imoveisProprietario: ImovelDoProprietario[];
+}
+
+/**
+ * Dossiê do cliente na API principal: fichas de visita, imóveis de que é dono,
+ * documentos anexados e autorização vigente.
+ *
+ * Best-effort como o resto do módulo — sem integração configurada, com a API
+ * fora ou com um cliente que não existe mais, devolve null e a ficha do contato
+ * simplesmente não mostra a seção. Um retrato incompleto do cliente nunca pode
+ * derrubar a tela em que se está conversando com ele.
+ */
+export async function fetchDossieCliente(clienteId: string): Promise<DossieCliente | null> {
+  const config = getConfig();
+  const id = clienteId.trim();
+  if (!config || !id) return null;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    const res = await fetch(
+      `${config.apiUrl}/clientes/interno/${encodeURIComponent(id)}/dossie`,
+      {
+        headers: { "X-Internal-Token": config.token },
+        signal: controller.signal,
+        cache: "no-store",
+      },
+    );
+    if (!res.ok) return null;
+    const data = (await res.json()) as Record<string, unknown> | null;
+    if (!data || !data.cliente_id) return null;
+
+    const visitas = Array.isArray(data.visitas) ? data.visitas : [];
+    const imoveis = Array.isArray(data.imoveis_proprietario) ? data.imoveis_proprietario : [];
+
+    return {
+      clienteId: String(data.cliente_id),
+      codigo: (data.codigo as string) ?? null,
+      nome: (data.nome_completo as string) ?? null,
+      visitas: visitas.map((v) => {
+        const visita = v as Record<string, unknown>;
+        return {
+          fichaId: String(visita.ficha_id),
+          imovelCodigo: (visita.imovel_codigo as string) ?? null,
+          imovelEndereco: (visita.imovel_endereco as string) ?? null,
+          imovelBairro: (visita.imovel_bairro as string) ?? null,
+          status: String(visita.status ?? "emitida"),
+          assinadaEm: (visita.assinada_em as string) ?? null,
+          createdAt: (visita.created_at as string) ?? null,
+        };
+      }),
+      imoveisProprietario: imoveis.map((i) => {
+        const imovel = i as Record<string, unknown>;
+        const documentos = Array.isArray(imovel.documentos) ? imovel.documentos : [];
+        const auth = imovel.autorizacao as Record<string, unknown> | null;
+        return {
+          imovelId: String(imovel.imovel_id),
+          codigo: (imovel.codigo as string) ?? null,
+          titulo: (imovel.titulo as string) ?? null,
+          bairro: (imovel.bairro as string) ?? null,
+          disponibilidade: (imovel.disponibilidade as string) ?? null,
+          documentos: documentos.map((d) => {
+            const doc = d as Record<string, unknown>;
+            return {
+              tipo: String(doc.tipo ?? "outro"),
+              nomeArquivo: String(doc.nome_arquivo ?? ""),
+              createdAt: (doc.created_at as string) ?? null,
+            };
+          }),
+          autorizacao: !auth
+            ? null
+            : {
+                autorizacaoId: String(auth.autorizacao_id),
+                tipoNegocio: String(auth.tipo_negocio ?? "venda"),
+                status: String(auth.status ?? "emitida"),
+                assinadaEm: (auth.assinada_em as string) ?? null,
+              },
+        };
+      }),
+    };
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}

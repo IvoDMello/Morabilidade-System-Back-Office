@@ -28,6 +28,20 @@ export interface WhatsAppConversation {
   lastAlertAt: string | null;
   /** Fixada no topo da lista (padrão WhatsApp); null = não fixada. Ordena pelas mais recém-fixadas primeiro. */
   pinnedAt: string | null;
+  /**
+   * Triagem da IA sobre a fila de "aguardando resposta" (migration 0026).
+   *
+   * `aguardando_resposta` é uma regra mecânica: a última mensagem foi do
+   * cliente. Isso mistura "consegue visitar sábado?" com "obrigada!" — e uma
+   * fila que mistura os dois deixa de ser lida. A triagem separa: `true` = pede
+   * resposta de verdade, `false` = é encerramento, `null` = ainda não triada
+   * (nunca supõe que precisa nem que não precisa).
+   */
+  triagemPrecisaResposta: boolean | null;
+  /** Por que, em poucas palavras — o que a IA leu na conversa. */
+  triagemMotivo: string | null;
+  /** `lastMessageAt` no momento da triagem: se a conversa andou, a triagem envelheceu. */
+  triagemMensagemEm: string | null;
   createdAt: string;
   updatedAt: string;
 }

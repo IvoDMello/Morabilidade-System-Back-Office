@@ -100,15 +100,18 @@ export async function updateContactAction(id: ID, values: ContactFormValues) {
   // Um atendente que salvou a ficha com nome e categoria reais qualificou este
   // contato — é o momento certo de ele existir no cadastro do sistema, e não
   // só no chat. Best-effort: nunca atrapalha o salvamento.
-  if (input.category !== "lead") {
-    await garantirClienteDoContato({
-      id,
-      name: input.name,
-      phone: input.phone,
-      clienteId: before?.clienteId ?? null,
-      category: input.category,
-    });
-  }
+  //
+  // A porta era `category !== "lead"`, e "lead" deixou de existir: hoje as
+  // quatro categorias são papéis reais, todas dignas de cadastro. O que ainda
+  // segura contato sem identidade é `garantirClienteDoContato`, que recusa
+  // quem só tem o telefone no lugar do nome.
+  await garantirClienteDoContato({
+    id,
+    name: input.name,
+    phone: input.phone,
+    clienteId: before?.clienteId ?? null,
+    category: input.category,
+  });
 
   revalidatePath("/contatos");
   revalidatePath(`/contatos/${id}`);

@@ -47,7 +47,7 @@ async function montarConversaRespondida() {
     name: "Marina Alves",
     phone: "5521970005555",
     email: null,
-    category: "lead",
+    category: "comprador",
     status: "novo",
     nextAction: "ligar",
     isFavorite: false,
@@ -79,6 +79,9 @@ async function montarConversaRespondida() {
     followUpSnoozedUntil: null,
     lastAlertAt: null,
     pinnedAt: null,
+    triagemPrecisaResposta: null,
+    triagemMotivo: null,
+    triagemMensagemEm: null,
     createdAt: agoraMenos(120),
     updatedAt: agoraMenos(10),
   });

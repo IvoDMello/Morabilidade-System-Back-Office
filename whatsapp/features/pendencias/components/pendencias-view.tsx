@@ -22,17 +22,22 @@ function PendingList({
   items,
   emptyIcon: EmptyIcon,
   emptyTitle,
+  emptyDescription,
   showSnooze,
   suggestions,
+  mostrarMotivo,
 }: {
   items: PendingConversationItem[];
   emptyIcon: typeof CheckCircle2;
   emptyTitle: string;
+  emptyDescription?: string;
   showSnooze?: boolean;
   suggestions?: Record<string, string>;
+  /** Exibe o porquê da triagem da IA em cada cartão (aba "Precisa responder"). */
+  mostrarMotivo?: boolean;
 }) {
   if (items.length === 0) {
-    return <EmptyState icon={EmptyIcon} title={emptyTitle} />;
+    return <EmptyState icon={EmptyIcon} title={emptyTitle} description={emptyDescription} />;
   }
 
   return (
@@ -43,6 +48,7 @@ function PendingList({
           item={item}
           showSnooze={showSnooze}
           suggestion={suggestions?.[item.id]}
+          motivoResposta={mostrarMotivo ? item.triagemMotivo : null}
         />
       ))}
     </ul>
@@ -107,6 +113,9 @@ export function PendenciasView({
       <Tabs value={tab} onValueChange={(value) => setTab(value as PendenciasTab)}>
         <div className="-mx-4 overflow-x-auto px-4 md:mx-0 md:overflow-visible md:px-0">
           <TabsList variant="line" className="w-max">
+            <TabsTrigger value="responder" className="shrink-0">
+              Precisa responder ({queue.precisaResposta.length})
+            </TabsTrigger>
             <TabsTrigger value="aguardando" className="shrink-0">
               Aguardando ({queue.aguardandoResposta.length})
             </TabsTrigger>
@@ -129,6 +138,20 @@ export function PendenciasView({
             </TabsTrigger>
           </TabsList>
         </div>
+
+        {/* A fila triada: a IA leu as conversas em que o cliente falou por
+            último e separou as que pedem resposta de verdade das que só
+            encerram o assunto. Conversa ainda não triada fica de fora — e
+            continua visível na aba ao lado, que é a fila crua. */}
+        <TabsContent value="responder" className="mt-3">
+          <PendingList
+            items={queue.precisaResposta}
+            emptyIcon={CheckCircle2}
+            emptyTitle="Ninguém esperando resposta"
+            emptyDescription="A IA revisa a fila de hora em hora e traz para cá as conversas em que o cliente perguntou ou pediu algo."
+            mostrarMotivo
+          />
+        </TabsContent>
 
         <TabsContent value="aguardando" className="mt-3">
           <PendingList

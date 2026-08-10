@@ -19,7 +19,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { FormSectionLabel } from "@/components/shared/form-section-label";
-import { CONTACT_CATEGORIES, CONTACT_CATEGORY_LABELS } from "@/constants/contact-categories";
+import {
+  CONTACT_CATEGORIES,
+  CONTACT_CATEGORY_LABELS,
+  CONTACT_CATEGORY_PADRAO,
+} from "@/constants/contact-categories";
 import { CONTACT_STATUSES, CONTACT_STATUS_LABELS, type ContactStatus } from "@/constants/contact-status";
 import { NEXT_ACTIONS, NEXT_ACTION_LABELS } from "@/constants/next-actions";
 import type { LossReason } from "@/constants/loss-reasons";
@@ -43,7 +47,7 @@ export function ContactForm({ contact, onSubmit }: ContactFormProps) {
       name: contact?.name ?? "",
       phone: contact ? formatPhone(contact.phone) : "",
       email: contact?.email ?? "",
-      category: contact?.category ?? "lead",
+      category: contact?.category ?? CONTACT_CATEGORY_PADRAO,
       status: contact?.status ?? "novo",
       nextAction: contact?.nextAction ?? "aguardar_retorno",
       lossReason: contact?.lossReason ?? null,

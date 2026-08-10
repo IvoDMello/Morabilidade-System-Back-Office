@@ -1,14 +1,28 @@
 # Painel CRM (WhatsApp)
 
-CRM de atendimento via WhatsApp para operação imobiliária: contatos (proprietários,
-clientes, locatários, leads, parceiros), anotações permanentes, lembretes,
-etiquetas e conversas de WhatsApp.
+CRM de atendimento via WhatsApp para operação imobiliária: contatos, anotações
+permanentes, lembretes, etiquetas e conversas de WhatsApp.
+
+A **categoria** do contato é o papel dele no negócio, e são quatro: comprador,
+locatário, proprietário, investidor (`constants/contact-categories.ts`). Eram
+seis e misturavam papel com temperatura de funil — "Lead" e "Cliente" são a
+mesma pessoa em momentos diferentes, e o momento já é o `status`. A migration
+`0025` converte a base e preserva quem era "parceiro"/"outro" numa etiqueta.
 
 A tela de entrada é **Conversas** (`/`). O que falta fazer vive todo em
-**Pendências** (`/pendencias`): conversas aguardando resposta, lembretes
-(vencidos/hoje/próximos) e follow-ups sugeridos, na mesma barra de abas — antes
-eram duas seções separadas no menu que respondiam à mesma pergunta. A rota
-antiga `/lembretes` continua de pé como redirect para a aba de lembretes.
+**Pendências** (`/pendencias`): **precisa responder** (triagem da IA), conversas
+aguardando resposta, lembretes (vencidos/hoje/próximos) e follow-ups sugeridos,
+na mesma barra de abas — antes eram duas seções separadas no menu que
+respondiam à mesma pergunta. A rota antiga `/lembretes` continua de pé como
+redirect para a aba de lembretes.
+
+**Precisa responder** é o recorte útil de "aguardando": a fila crua só sabe que
+a última mensagem foi do cliente, então mistura "consegue visitar sábado?" com
+"obrigada!". De hora em hora a IA lê as conversas novas (ou que andaram desde a
+última leitura) e grava na conversa se ela pede resposta e por quê — migration
+`0026`, job em `runTriagemJob`. Conversa **não triada não entra na aba**: a fila
+promete "isto foi lido e pede resposta", e sem a leitura a promessa não se
+cumpre por omissão.
 
 A **Visão geral** (`/dashboard`) é leitura, não trabalho: cada indicador é um
 link para a tela que resolve aquilo. Ela é pré-renderizada, então quem muda a
@@ -18,8 +32,10 @@ chamam `revalidatePath("/dashboard")`. Esquecer isso congela os números.
 Na **ficha do contato** (`/contatos/[id]`), dados e atividade convivem lado a
 lado no desktop — é o ponto forte da tela. No celular não cabem, e empilhar
 punia quem só queria a conversa: viram duas abas
-(`features/contacts/components/contact-panels.tsx`), com Atividade na frente.
-O alternador só existe abaixo de `lg`; no desktop não há decisão a tomar.
+(`features/contacts/components/contact-panels.tsx`), com **Dados do contato**
+na frente — quem abre uma ficha veio ver quem é a pessoa; quem quer a conversa
+vai para o inbox. O alternador só existe abaixo de `lg`; no desktop não há
+decisão a tomar.
 
 No **composer da conversa**, o Enter envia com teclado físico e quebra linha no
 celular (`useMediaQuery("(pointer: coarse)")`). O teclado virtual usa essa tecla
@@ -238,7 +254,10 @@ Três rotas de job, mas só uma está de fato agendada em `vercel.json` hoje:
   `follow_up_sugerido` (aparecem na aba de mesmo nome em `/pendencias`).
 - `/api/cron/awaiting-alerts` (pensado para hora em hora): conversas
   `aguardando_resposta` há mais de 2h disparam um alerta via WhatsApp para
-  `ALERT_PHONE_NUMBER`, no máximo uma vez por dia por conversa.
+  `ALERT_PHONE_NUMBER`, no máximo uma vez por dia por conversa. Na mesma
+  passada roda a **triagem da IA** que alimenta a aba "Precisa responder" — as
+  duas leem a mesma fila. A triagem é best-effort: sem `ANTHROPIC_API_KEY` ela
+  devolve `skippedReason` e o alerta sai igual.
 - `/api/cron/visita-fichas` (hora em hora): ficha de visita automática das
   visitas que começam nos próximos 90 minutos — ver a seção dedicada acima.
 - `/api/cron/daily-summary` (18h America/Sao_Paulo = 21h UTC no
@@ -428,6 +447,22 @@ Requer a migration `0019_ficha_visita_lembrete.sql`.
 > O código do imóvel vem da coluna `imovel_codigo` do lembrete (preenchida
 > quando a visita é agendada pelo assistente). Para visitas antigas, o cron
 > ainda tenta extrair o código do título (`Visita — MB-00033`).
+
+## Dossiê do cliente na ficha
+
+O cartão **No sistema** (`features/contacts/dossie/`) mostra, dentro da ficha do
+contato, o que só existia no sistema principal: por quais imóveis ele já passou
+(fichas de visita, com assinada ou pendente), de qual imóvel é proprietário, a
+autorização de intermediação vigente e quais documentos já estão anexados
+(matrícula, IPTU, contrato…).
+
+Vem de uma chamada só — `GET /clientes/interno/{cliente_id}/dossie` na API
+principal (`api/app/routers/clientes.py`, com a montagem em `montar_dossie`).
+Depende do contato estar vinculado a um cliente do sistema (o que
+`ensureClienteVinculo` faz sozinho pelo telefone) e das variáveis
+`BACKOFFICE_API_URL`/`BACKOFFICE_INTERNAL_TOKEN`. Sem isso, ou com a API fora,
+o cartão simplesmente não aparece — como todo o resto da integração, é
+best-effort e nunca derruba a ficha.
 
 ## Recursos de IA (resumo e sugestão de follow-up)
 

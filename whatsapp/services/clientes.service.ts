@@ -28,14 +28,17 @@ export interface ContatoPromovivel {
   category?: ContactCategory;
 }
 
-/** Categoria do chat → tipo de cliente do sistema. `lead`, `parceiro` e `outro`
- * não têm equivalente: viram null e o campo fica para um humano classificar. */
-const TIPO_POR_CATEGORIA: Partial<
-  Record<ContactCategory, "comprador" | "locatario" | "proprietario">
+/** Categoria do chat → tipo de cliente do sistema. O sistema principal não tem
+ * "investidor": quem investe compra, então entra como comprador — e o painel
+ * guarda a distinção. */
+const TIPO_POR_CATEGORIA: Record<
+  ContactCategory,
+  "comprador" | "locatario" | "proprietario"
 > = {
-  proprietario: "proprietario",
+  comprador: "comprador",
   locatario: "locatario",
-  cliente: "comprador",
+  proprietario: "proprietario",
+  investidor: "comprador",
 };
 
 /**
