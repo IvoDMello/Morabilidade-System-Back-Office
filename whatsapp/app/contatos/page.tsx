@@ -6,7 +6,6 @@ import { ContactTable } from "@/features/contacts/components/contact-table";
 import { ContactViewToggle } from "@/features/contacts/components/contact-view-toggle";
 import { ContactPipelineBoard } from "@/features/contacts/pipeline/components/contact-pipeline-board";
 import { getContacts } from "@/services/contacts.service";
-import { getProperties } from "@/services/properties.service";
 import type { ContactCategory } from "@/constants/contact-categories";
 import type { ContactStatus } from "@/constants/contact-status";
 import type { NextAction } from "@/constants/next-actions";
@@ -30,21 +29,22 @@ export default async function ContatosPage({ searchParams }: ContatosPageProps) 
   const params = await searchParams;
   const isPipeline = params.view === "pipeline";
 
-  const [contacts, properties] = await Promise.all([
-    getContacts({
-      search: params.search,
-      category: params.category as ContactCategory | undefined,
-      // No Pipeline, o status é representado pelas colunas do board, não por filtro.
-      status: isPipeline ? undefined : (params.status as ContactStatus | undefined),
-      nextAction: params.nextAction as NextAction | undefined,
-      hasReminders: params.hasReminders === "1",
-      isFavorite: params.isFavorite === "1",
-      propertyId: params.propertyId,
-      sortBy: params.sortBy as "name" | "updatedAt" | "createdAt" | undefined,
-      sortDir: params.sortDir as "asc" | "desc" | undefined,
-    }),
-    getProperties(),
-  ]);
+  // Os mesmos filtros valem nas duas visões. O status era ignorado no Pipeline
+  // ("a coluna já diz o status"), mas com o chip visível em ambas isso viraria
+  // um controle que não faz nada: escolher "Documentação" e o board não mudar.
+  // Filtrado, o board mostra só a coluna escolhida com cartões — que é
+  // exatamente o que "filtrar por status" quer dizer.
+  const contacts = await getContacts({
+    search: params.search,
+    category: params.category as ContactCategory | undefined,
+    status: params.status as ContactStatus | undefined,
+    nextAction: params.nextAction as NextAction | undefined,
+    hasReminders: params.hasReminders === "1",
+    isFavorite: params.isFavorite === "1",
+    propertyId: params.propertyId,
+    sortBy: params.sortBy as "name" | "updatedAt" | "createdAt" | undefined,
+    sortDir: params.sortDir as "asc" | "desc" | undefined,
+  });
 
   return (
     <div className="flex flex-col gap-6">
@@ -64,7 +64,7 @@ export default async function ContatosPage({ searchParams }: ContatosPageProps) 
         </div>
       </div>
 
-      <ContactFilters properties={properties} />
+      <ContactFilters />
 
       {isPipeline ? <ContactPipelineBoard contacts={contacts} /> : <ContactTable contacts={contacts} />}
     </div>

@@ -9,11 +9,10 @@ import { cn } from "@/lib/utils";
 import { CONTACT_CATEGORIES, CONTACT_CATEGORY_LABELS } from "@/constants/contact-categories";
 import { CONTACT_STATUSES, CONTACT_STATUS_LABELS } from "@/constants/contact-status";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import type { Property } from "@/types/property";
 
 const ALL = "all";
 
-export function ContactFilters({ properties }: { properties: Property[] }) {
+export function ContactFilters() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -42,7 +41,6 @@ export function ContactFilters({ properties }: { properties: Property[] }) {
 
   const category = searchParams.get("category");
   const status = searchParams.get("status");
-  const propertyId = searchParams.get("propertyId");
   const hasReminders = searchParams.get("hasReminders") === "1";
 
   // Chip compacto: mostra o rótulo curto quando nada está selecionado e o
@@ -92,55 +90,25 @@ export function ContactFilters({ properties }: { properties: Property[] }) {
           </SelectContent>
         </Select>
 
-        {searchParams.get("view") !== "pipeline" && (
-          <Select
-            value={status ?? ALL}
-            onValueChange={(value) => updateParam("status", value)}
-          >
-            <SelectTrigger className={chipClass(Boolean(status))}>
-              <SelectValue placeholder="Status">
-                {(value: string) =>
-                  value === ALL
-                    ? "Status"
-                    : CONTACT_STATUS_LABELS[value as keyof typeof CONTACT_STATUS_LABELS]
-                }
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>Todos os status</SelectItem>
-              {CONTACT_STATUSES.map((s) => (
-                <SelectItem key={s.value} value={s.value}>
-                  {s.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-
-        {properties.length > 0 && (
-          <Select
-            value={propertyId ?? ALL}
-            onValueChange={(value) => updateParam("propertyId", value)}
-          >
-            <SelectTrigger className={chipClass(Boolean(propertyId))}>
-              <SelectValue placeholder="Imóvel">
-                {(value: string) =>
-                  value === ALL
-                    ? "Imóvel"
-                    : (properties.find((p) => p.id === value)?.code ?? "")
-                }
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>Todos os imóveis</SelectItem>
-              {properties.map((p) => (
-                <SelectItem key={p.id} value={p.id}>
-                  {p.code}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
+        <Select value={status ?? ALL} onValueChange={(value) => updateParam("status", value)}>
+          <SelectTrigger className={chipClass(Boolean(status))}>
+            <SelectValue placeholder="Status">
+              {(value: string) =>
+                value === ALL
+                  ? "Status"
+                  : CONTACT_STATUS_LABELS[value as keyof typeof CONTACT_STATUS_LABELS]
+              }
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL}>Todos os status</SelectItem>
+            {CONTACT_STATUSES.map((s) => (
+              <SelectItem key={s.value} value={s.value}>
+                {s.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         <button
           type="button"
