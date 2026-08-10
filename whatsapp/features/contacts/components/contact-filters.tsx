@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { BellRing, Search, Star } from "lucide-react";
+import { BellRing, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
@@ -44,7 +44,6 @@ export function ContactFilters({ properties }: { properties: Property[] }) {
   const status = searchParams.get("status");
   const propertyId = searchParams.get("propertyId");
   const hasReminders = searchParams.get("hasReminders") === "1";
-  const isFavorite = searchParams.get("isFavorite") === "1";
 
   // Chip compacto: mostra o rótulo curto quando nada está selecionado e o
   // valor escolhido (com destaque dourado) quando o filtro está ativo.
@@ -151,16 +150,6 @@ export function ContactFilters({ properties }: { properties: Property[] }) {
         >
           <BellRing className="h-3.5 w-3.5" />
           Lembretes
-        </button>
-
-        <button
-          type="button"
-          aria-pressed={isFavorite}
-          onClick={() => updateParam("isFavorite", isFavorite ? null : "1")}
-          className={cn(chipClass(isFavorite), "inline-flex items-center transition-colors")}
-        >
-          <Star className={cn("h-3.5 w-3.5", isFavorite && "fill-gold")} />
-          Favoritos
         </button>
       </div>
     </div>
