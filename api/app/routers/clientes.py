@@ -13,7 +13,7 @@ from app.auth.dependencies import get_current_user, require_admin, require_admin
 from app.database import supabase_admin
 from app.schemas.cliente import (
     ClienteCreate, ClienteListOut, ClienteOut, ClienteUpdate, ClienteUpsertInterno,
-    ClienteUpsertOut, StatusCliente,
+    ClienteUpsertOut, DossieCliente, StatusCliente,
 )
 
 router = APIRouter()
@@ -600,6 +600,148 @@ def buscar_cliente_por_telefone_interno(
         "id, codigo, nome_completo, email, telefone, telefone_secundario, "
         "status, tipo_cliente",
     )
+
+
+def montar_dossie(
+    cliente: dict,
+    fichas: List[dict],
+    imoveis: List[dict],
+    documentos: List[dict],
+    autorizacoes: List[dict],
+) -> dict:
+    """Junta as peças do dossiê num retrato só.
+
+    Função pura de propósito: a montagem é onde mora a regra (qual autorização
+    vale por imóvel, o que conta como documento anexado), e regra escondida
+    atrás de uma chamada de banco não se testa. O router faz as consultas e
+    entrega as linhas cruas aqui.
+
+    Quando um imóvel tem mais de uma autorização (renovação, aditivo), vale a
+    ASSINADA mais recente; sem nenhuma assinada, a última emitida — é a que
+    responde "falta assinar?".
+    """
+    def _chave_autorizacao(auth: dict) -> tuple:
+        return (
+            1 if auth.get("assinada_em") else 0,
+            auth.get("assinada_em") or auth.get("created_at") or "",
+        )
+
+    autorizacao_por_imovel: dict = {}
+    for auth in autorizacoes:
+        imovel_id = auth.get("imovel_id")
+        atual = autorizacao_por_imovel.get(imovel_id)
+        if atual is None or _chave_autorizacao(auth) > _chave_autorizacao(atual):
+            autorizacao_por_imovel[imovel_id] = auth
+
+    documentos_por_imovel: dict = {}
+    for doc in documentos:
+        documentos_por_imovel.setdefault(doc.get("imovel_id"), []).append({
+            "tipo": doc.get("tipo") or "outro",
+            "nome_arquivo": doc.get("nome_arquivo") or "",
+            "created_at": doc.get("created_at"),
+        })
+
+    imoveis_out = []
+    for imovel in imoveis:
+        auth = autorizacao_por_imovel.get(imovel["id"])
+        imoveis_out.append({
+            "imovel_id": imovel["id"],
+            "codigo": imovel.get("codigo"),
+            "titulo": imovel.get("titulo"),
+            "bairro": imovel.get("bairro"),
+            "disponibilidade": imovel.get("disponibilidade"),
+            "documentos": documentos_por_imovel.get(imovel["id"], []),
+            "autorizacao": None if auth is None else {
+                "autorizacao_id": auth["id"],
+                "tipo_negocio": auth.get("tipo_negocio") or "venda",
+                "status": auth.get("status") or "emitida",
+                "assinada_em": auth.get("assinada_em"),
+            },
+        })
+
+    return {
+        "cliente_id": cliente["id"],
+        "codigo": cliente.get("codigo"),
+        "nome_completo": cliente.get("nome_completo"),
+        "visitas": [
+            {
+                "ficha_id": f["id"],
+                "imovel_codigo": f.get("imovel_codigo"),
+                "imovel_endereco": f.get("imovel_endereco"),
+                "imovel_bairro": f.get("imovel_bairro"),
+                "status": f.get("status") or "emitida",
+                "assinada_em": f.get("assinada_em"),
+                "created_at": f.get("created_at"),
+            }
+            for f in fichas
+        ],
+        "imoveis_proprietario": imoveis_out,
+    }
+
+
+@router.get("/interno/{cliente_id}/dossie", response_model=DossieCliente,
+            tags=["Integração"])
+def dossie_cliente_interno(
+    cliente_id: str,
+    current_user: dict = Depends(require_admin_or_internal),
+):
+    """Dossiê do cliente para o CRM do WhatsApp: por onde ele já passou e o que
+    falta fechar.
+
+    Existe porque quem atende no chat só enxergava o que foi digitado no próprio
+    chat. Saber que o cliente já visitou dois imóveis, que a ficha de um deles
+    nunca foi assinada, ou que ele é dono do MB-00042 e a matrícula ainda não
+    foi anexada, é o tipo de coisa que muda a próxima frase da conversa — e
+    estava a três telas de distância, em outro sistema.
+
+    Uma chamada devolve: fichas de visita (com assinada/pendente), imóveis de
+    que é proprietário, documentos já anexados a cada um e a autorização de
+    intermediação vigente.
+    """
+    cliente = (
+        supabase_admin.table("clientes")
+        .select("id, codigo, nome_completo")
+        .eq("id", cliente_id)
+        .maybe_single()
+        .execute()
+    )
+    if not cliente.data:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado.")
+
+    fichas = (
+        supabase_admin.table("fichas_visita")
+        .select("id, imovel_codigo, imovel_endereco, imovel_bairro, status, "
+                "assinada_em, created_at")
+        .eq("cliente_id", cliente_id)
+        .order("created_at", desc=True)
+        .execute()
+    ).data or []
+
+    imoveis = (
+        supabase_admin.table("imoveis")
+        .select("id, codigo, titulo, bairro, disponibilidade")
+        .eq("proprietario_id", cliente_id)
+        .execute()
+    ).data or []
+
+    imovel_ids = [i["id"] for i in imoveis]
+    documentos: List[dict] = []
+    autorizacoes: List[dict] = []
+    if imovel_ids:
+        documentos = (
+            supabase_admin.table("imovel_documentos")
+            .select("imovel_id, tipo, nome_arquivo, created_at")
+            .in_("imovel_id", imovel_ids)
+            .execute()
+        ).data or []
+        autorizacoes = (
+            supabase_admin.table("autorizacoes_intermediacao")
+            .select("id, imovel_id, tipo_negocio, status, assinada_em, created_at")
+            .in_("imovel_id", imovel_ids)
+            .execute()
+        ).data or []
+
+    return montar_dossie(cliente.data, fichas, imoveis, documentos, autorizacoes)
 
 
 # Campos que o upsert PODE preencher num cliente que já existe. A regra é a

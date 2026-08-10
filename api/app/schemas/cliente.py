@@ -146,3 +146,51 @@ class ClienteListOut(BaseModel):
     observacoes: Optional[str] = None
     tags: List[TagSimples] = []
     created_at: str
+
+
+# ── Dossiê do cliente (consumido pelo CRM do WhatsApp) ───────────────────────
+
+class VisitaDoCliente(BaseModel):
+    """Uma ficha de visita emitida para este cliente. `assinada_em` preenchido =
+    documento fechado; vazio = ficha emitida e ainda pendente de assinatura."""
+    ficha_id: str
+    imovel_codigo: Optional[str] = None
+    imovel_endereco: Optional[str] = None
+    imovel_bairro: Optional[str] = None
+    status: str
+    assinada_em: Optional[str] = None
+    created_at: Optional[str] = None
+
+
+class DocumentoDoImovel(BaseModel):
+    tipo: str
+    nome_arquivo: str
+    created_at: Optional[str] = None
+
+
+class AutorizacaoDoImovel(BaseModel):
+    autorizacao_id: str
+    tipo_negocio: str
+    status: str
+    assinada_em: Optional[str] = None
+
+
+class ImovelDoProprietario(BaseModel):
+    """Imóvel de que este cliente é proprietário, com o que já está anexado."""
+    imovel_id: str
+    codigo: Optional[str] = None
+    titulo: Optional[str] = None
+    bairro: Optional[str] = None
+    disponibilidade: Optional[str] = None
+    documentos: List[DocumentoDoImovel] = []
+    autorizacao: Optional[AutorizacaoDoImovel] = None
+
+
+class DossieCliente(BaseModel):
+    """Retrato do cliente para quem está no meio de uma conversa: por onde ele
+    já passou (visitas), o que é dele (imóveis) e o que falta assinar/anexar."""
+    cliente_id: str
+    codigo: Optional[str] = None
+    nome_completo: Optional[str] = None
+    visitas: List[VisitaDoCliente] = []
+    imoveis_proprietario: List[ImovelDoProprietario] = []
