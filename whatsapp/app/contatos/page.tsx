@@ -66,7 +66,14 @@ export default async function ContatosPage({ searchParams }: ContatosPageProps) 
 
       <ContactFilters />
 
-      {isPipeline ? <ContactPipelineBoard contacts={contacts} /> : <ContactTable contacts={contacts} />}
+      {isPipeline ? (
+        <ContactPipelineBoard
+          contacts={contacts}
+          statusFiltro={params.status as ContactStatus | undefined}
+        />
+      ) : (
+        <ContactTable contacts={contacts} />
+      )}
     </div>
   );
 }
