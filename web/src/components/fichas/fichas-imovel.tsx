@@ -33,6 +33,10 @@ interface Props {
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://morabilidade.com";
 
+// A aba do imóvel mostra a lista inteira (sem paginação na tela), então
+// buscamos página a página no maior lote que a API aceita até acabar.
+const LOTE = 100;
+
 export function linkAssinatura(token: string) {
   return `${SITE_URL.replace(/\/$/, "")}/ficha/${token}`;
 }
@@ -57,8 +61,15 @@ export function FichasImovel({ imovelId }: Props) {
   const carregar = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get<Ficha[]>(`/fichas-visita?imovel_id=${imovelId}`);
-      setFichas(res.data);
+      const todas: Ficha[] = [];
+      for (let page = 1; ; page++) {
+        const res = await api.get<Ficha[]>(
+          `/fichas-visita?imovel_id=${imovelId}&page=${page}&page_size=${LOTE}`,
+        );
+        todas.push(...res.data);
+        if (res.data.length < LOTE) break;
+      }
+      setFichas(todas);
     } catch {
       toast.error("Erro ao carregar fichas de visita.");
     } finally {
