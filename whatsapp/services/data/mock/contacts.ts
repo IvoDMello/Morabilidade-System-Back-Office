@@ -101,10 +101,19 @@ export const mockContacts: DataSource["contacts"] = {
 
     if (input.phone !== undefined) assertPhoneAvailable(input.phone, id);
 
+    // Patch parcial: chave ausente e chave com `undefined` significam a mesma
+    // coisa — "não mexe neste campo". Sem a limpeza, um `{ status }` montado
+    // com as demais chaves em `undefined` zerava telefone/categoria no spread
+    // abaixo. Limpar aqui vale para todo campo; antes só o e-mail era
+    // defendido, um por um. (Apagar de verdade se faz com `null`, como o
+    // motivo da perda.)
+    const patch = Object.fromEntries(
+      Object.entries(input).filter(([, value]) => value !== undefined),
+    ) as UpdateContactInput;
+
     const updated: Contact = {
       ...mockStore.contacts[index],
-      ...input,
-      email: input.email !== undefined ? input.email : mockStore.contacts[index].email,
+      ...patch,
       updatedAt: new Date().toISOString(),
     };
     mockStore.contacts[index] = updated;

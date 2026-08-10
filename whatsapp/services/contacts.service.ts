@@ -32,9 +32,14 @@ export function createContact(input: CreateContactInput) {
 }
 
 export function updateContact(id: ID, input: UpdateContactInput) {
+  // A chave `phone` só entra quando há telefone novo. Escrever
+  // `phone: undefined` cria a chave mesmo assim, e um patch com chave presente
+  // e valor indefinido apaga o campo em qualquer repositório que faça
+  // `{...atual, ...patch}` — foi assim que mover um cartão no Pipeline (que só
+  // manda `status`) deixava o contato sem telefone.
   return dataSource.contacts.update(id, {
     ...input,
-    phone: input.phone !== undefined ? normalizePhone(input.phone) : undefined,
+    ...(input.phone !== undefined ? { phone: normalizePhone(input.phone) } : {}),
   });
 }
 
