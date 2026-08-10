@@ -26,7 +26,6 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { AvatarInitials } from "@/components/shared/avatar-initials";
 import { CategoryBadge } from "./category-badge";
 import { StatusBadge } from "./status-badge";
-import { NextActionInline } from "./next-action-inline";
 import { FavoriteToggle } from "./favorite-toggle";
 import { ContactRowActions } from "./contact-row-actions";
 import { formatDateTime, formatPhone, cn } from "@/lib/utils";
@@ -169,7 +168,6 @@ export function ContactTable({ contacts }: { contacts: Contact[] }) {
               <TableHead>Telefone</TableHead>
               <TableHead>Categoria</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Próxima ação</TableHead>
               <TableHead>
                 <SortableHeader column="updatedAt">Atualizado em</SortableHeader>
               </TableHead>
@@ -207,9 +205,6 @@ export function ContactTable({ contacts }: { contacts: Contact[] }) {
                 <TableCell>
                   <StatusBadge status={contact.status} />
                 </TableCell>
-                <TableCell>
-                  <NextActionInline nextAction={contact.nextAction} />
-                </TableCell>
                 <TableCell className="text-muted-foreground tabular-nums">
                   {formatDateTime(contact.updatedAt)}
                 </TableCell>
@@ -243,7 +238,6 @@ export function ContactTable({ contacts }: { contacts: Contact[] }) {
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
               <CategoryBadge category={contact.category} />
               <StatusBadge status={contact.status} />
-              <NextActionInline nextAction={contact.nextAction} />
             </div>
             <p className="mt-2 text-xs tabular-nums text-muted-foreground">
               Atualizado em {formatDateTime(contact.updatedAt)}

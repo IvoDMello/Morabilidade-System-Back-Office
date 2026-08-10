@@ -8,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { cn } from "@/lib/utils";
 import { CONTACT_CATEGORIES, CONTACT_CATEGORY_LABELS } from "@/constants/contact-categories";
 import { CONTACT_STATUSES, CONTACT_STATUS_LABELS } from "@/constants/contact-status";
-import { NEXT_ACTIONS, NEXT_ACTION_LABELS } from "@/constants/next-actions";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import type { Property } from "@/types/property";
 
@@ -43,7 +42,6 @@ export function ContactFilters({ properties }: { properties: Property[] }) {
 
   const category = searchParams.get("category");
   const status = searchParams.get("status");
-  const nextAction = searchParams.get("nextAction");
   const propertyId = searchParams.get("propertyId");
   const hasReminders = searchParams.get("hasReminders") === "1";
   const isFavorite = searchParams.get("isFavorite") === "1";
@@ -119,29 +117,6 @@ export function ContactFilters({ properties }: { properties: Property[] }) {
             </SelectContent>
           </Select>
         )}
-
-        <Select
-          value={nextAction ?? ALL}
-          onValueChange={(value) => updateParam("nextAction", value)}
-        >
-          <SelectTrigger className={chipClass(Boolean(nextAction))}>
-            <SelectValue placeholder="Ações">
-              {(value: string) =>
-                value === ALL
-                  ? "Ações"
-                  : NEXT_ACTION_LABELS[value as keyof typeof NEXT_ACTION_LABELS]
-              }
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL}>Todas as próximas ações</SelectItem>
-            {NEXT_ACTIONS.map((a) => (
-              <SelectItem key={a.value} value={a.value}>
-                {a.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
 
         {properties.length > 0 && (
           <Select

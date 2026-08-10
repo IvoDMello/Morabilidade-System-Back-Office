@@ -7,8 +7,8 @@ import { cn } from "@/lib/utils";
 type Aba = "atividade" | "dados";
 
 const ABAS: { value: Aba; label: string; icon: typeof IdCard }[] = [
-  { value: "atividade", label: "Atividade", icon: MessagesSquare },
   { value: "dados", label: "Dados do contato", icon: IdCard },
+  { value: "atividade", label: "Atividade", icon: MessagesSquare },
 ];
 
 interface ContactPanelsProps {
@@ -24,14 +24,18 @@ interface ContactPanelsProps {
  * No desktop elas convivem lado a lado — é o ponto forte da tela: dá para ler
  * a conversa sem perder de vista lembretes e imóveis. No celular não cabem, e
  * empilhar punia quem só queria a conversa: eram cinco cartões de rolagem
- * antes da primeira mensagem. Aqui viram duas abas, com Atividade na frente,
- * porque é o que se abre uma ficha para ver.
+ * antes da primeira mensagem. Aqui viram duas abas.
+ *
+ * A ficha abre nos **dados**: quem entra em /contatos/[id] veio ver quem é a
+ * pessoa — telefone, responsável, lembretes, imóveis, o que o sistema já sabe
+ * dela. Quem quer a conversa vai para o inbox, que é onde se conversa; a
+ * ficha abrir no histórico duplicava o inbox e escondia o resto.
  *
  * O switch só existe abaixo de `lg` — no desktop não há decisão a tomar, e um
  * controle que não decide nada é ruído.
  */
 export function ContactPanels({ dados, atividade }: ContactPanelsProps) {
-  const [aba, setAba] = useState<Aba>("atividade");
+  const [aba, setAba] = useState<Aba>("dados");
 
   return (
     <>

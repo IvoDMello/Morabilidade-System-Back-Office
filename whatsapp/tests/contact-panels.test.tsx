@@ -43,23 +43,31 @@ describe("Ficha do contato — dados e atividade", () => {
     expect(await axe(container)).toHaveNoViolations();
   });
 
-  it("abre na atividade — é o que se abre uma ficha para ver", () => {
+  it("abre nos dados — quem abre uma ficha veio ver quem é a pessoa", () => {
     montar();
-    expect(escondidoNoCelular("Histórico da conversa")).toBe(false);
-    expect(escondidoNoCelular("Corretor responsável")).toBe(true);
-    expect(screen.getByRole("tab", { name: /Atividade/ })).toHaveAttribute(
+    expect(escondidoNoCelular("Corretor responsável")).toBe(false);
+    expect(escondidoNoCelular("Histórico da conversa")).toBe(true);
+    expect(screen.getByRole("tab", { name: /Dados do contato/ })).toHaveAttribute(
       "aria-selected",
       "true",
     );
   });
 
-  it("troca para os dados sem perder a atividade do DOM", () => {
+  it("a primeira aba é a dos dados — a ordem acompanha a que abre", () => {
     montar();
-    fireEvent.click(screen.getByRole("tab", { name: /Dados do contato/ }));
+    expect(screen.getAllByRole("tab").map((t) => t.textContent)).toEqual([
+      "Dados do contato",
+      "Atividade",
+    ]);
+  });
 
-    expect(escondidoNoCelular("Corretor responsável")).toBe(false);
-    expect(escondidoNoCelular("Histórico da conversa")).toBe(true);
-    expect(screen.getByRole("tab", { name: /Dados do contato/ })).toHaveAttribute(
+  it("troca para a atividade sem perder os dados do DOM", () => {
+    montar();
+    fireEvent.click(screen.getByRole("tab", { name: /Atividade/ }));
+
+    expect(escondidoNoCelular("Histórico da conversa")).toBe(false);
+    expect(escondidoNoCelular("Corretor responsável")).toBe(true);
+    expect(screen.getByRole("tab", { name: /Atividade/ })).toHaveAttribute(
       "aria-selected",
       "true",
     );
