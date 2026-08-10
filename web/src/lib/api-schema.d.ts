@@ -372,6 +372,37 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/clientes/interno/{cliente_id}/dossie": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Dossie Cliente Interno
+         * @description Dossiê do cliente para o CRM do WhatsApp: por onde ele já passou e o que
+         *     falta fechar.
+         *
+         *     Existe porque quem atende no chat só enxergava o que foi digitado no próprio
+         *     chat. Saber que o cliente já visitou dois imóveis, que a ficha de um deles
+         *     nunca foi assinada, ou que ele é dono do MB-00042 e a matrícula ainda não
+         *     foi anexada, é o tipo de coisa que muda a próxima frase da conversa — e
+         *     estava a três telas de distância, em outro sistema.
+         *
+         *     Uma chamada devolve: fichas de visita (com assinada/pendente), imóveis de
+         *     que é proprietário, documentos já anexados a cada um e a autorização de
+         *     intermediação vigente.
+         */
+        get: operations["dossie_cliente_interno_clientes_interno__cliente_id__dossie_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/clientes/{cliente_id}": {
         parameters: {
             query?: never;
@@ -1968,6 +1999,17 @@ export interface components {
             /** Valor Autorizado */
             valor_autorizado?: number | string | null;
         };
+        /** AutorizacaoDoImovel */
+        AutorizacaoDoImovel: {
+            /** Assinada Em */
+            assinada_em?: string | null;
+            /** Autorizacao Id */
+            autorizacao_id: string;
+            /** Status */
+            status: string;
+            /** Tipo Negocio */
+            tipo_negocio: string;
+        };
         /** AutorizacaoOut */
         AutorizacaoOut: {
             /** Assinada Em */
@@ -2706,6 +2748,15 @@ export interface components {
          * @enum {string}
          */
         Disponibilidade: "disponivel" | "reservado" | "vendido_locado";
+        /** DocumentoDoImovel */
+        DocumentoDoImovel: {
+            /** Created At */
+            created_at?: string | null;
+            /** Nome Arquivo */
+            nome_arquivo: string;
+            /** Tipo */
+            tipo: string;
+        };
         /** DocumentoImovelOut */
         DocumentoImovelOut: {
             /** Created At */
@@ -2727,6 +2778,29 @@ export interface components {
             uploaded_by?: string | null;
             /** Url */
             url?: string | null;
+        };
+        /**
+         * DossieCliente
+         * @description Retrato do cliente para quem está no meio de uma conversa: por onde ele
+         *     já passou (visitas), o que é dele (imóveis) e o que falta assinar/anexar.
+         */
+        DossieCliente: {
+            /** Cliente Id */
+            cliente_id: string;
+            /** Codigo */
+            codigo?: string | null;
+            /**
+             * Imoveis Proprietario
+             * @default []
+             */
+            imoveis_proprietario: components["schemas"]["ImovelDoProprietario"][];
+            /** Nome Completo */
+            nome_completo?: string | null;
+            /**
+             * Visitas
+             * @default []
+             */
+            visitas: components["schemas"]["VisitaDoCliente"][];
         };
         /** FavoritoPayload */
         FavoritoPayload: {
@@ -2967,6 +3041,28 @@ export interface components {
             valor_sob_consulta: boolean;
             /** Valor Venda */
             valor_venda?: number | string | null;
+        };
+        /**
+         * ImovelDoProprietario
+         * @description Imóvel de que este cliente é proprietário, com o que já está anexado.
+         */
+        ImovelDoProprietario: {
+            autorizacao?: components["schemas"]["AutorizacaoDoImovel"] | null;
+            /** Bairro */
+            bairro?: string | null;
+            /** Codigo */
+            codigo?: string | null;
+            /** Disponibilidade */
+            disponibilidade?: string | null;
+            /**
+             * Documentos
+             * @default []
+             */
+            documentos: components["schemas"]["DocumentoDoImovel"][];
+            /** Imovel Id */
+            imovel_id: string;
+            /** Titulo */
+            titulo?: string | null;
         };
         /** ImovelListOut */
         ImovelListOut: {
@@ -3879,6 +3975,27 @@ export interface components {
             /** Visitante Telefone */
             visitante_telefone?: string | null;
         };
+        /**
+         * VisitaDoCliente
+         * @description Uma ficha de visita emitida para este cliente. `assinada_em` preenchido =
+         *     documento fechado; vazio = ficha emitida e ainda pendente de assinatura.
+         */
+        VisitaDoCliente: {
+            /** Assinada Em */
+            assinada_em?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Ficha Id */
+            ficha_id: string;
+            /** Imovel Bairro */
+            imovel_bairro?: string | null;
+            /** Imovel Codigo */
+            imovel_codigo?: string | null;
+            /** Imovel Endereco */
+            imovel_endereco?: string | null;
+            /** Status */
+            status: string;
+        };
         /** VisitaOut */
         VisitaOut: {
             /** Comentario */
@@ -4557,6 +4674,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ClienteUpsertOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dossie_cliente_interno_clientes_interno__cliente_id__dossie_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cliente_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DossieCliente"];
                 };
             };
             /** @description Validation Error */
