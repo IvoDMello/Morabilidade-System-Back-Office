@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { MessagesSquare, IdCard } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, SUPERFICIE } from "@/lib/utils";
 
 type Aba = "atividade" | "dados";
 
@@ -76,7 +76,8 @@ export function ContactPanels({ dados, atividade }: ContactPanelsProps) {
 
         <div
           className={cn(
-            "flex min-w-0 flex-1 flex-col rounded-lg border bg-card p-4 lg:h-[calc(100vh-11rem)]",
+            SUPERFICIE,
+            "flex min-w-0 flex-1 flex-col p-4 lg:h-[calc(100vh-11rem)]",
             aba !== "atividade" && "max-lg:hidden",
           )}
         >

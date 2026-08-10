@@ -5,6 +5,20 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+/**
+ * A superfície "cartão" do painel: raio, fundo, contorno e elevação.
+ *
+ * O mesmo objeto aparecia com quatro desenhos diferentes — `rounded-lg border`
+ * na lista de contatos e na ficha, `rounded-[11px]` no cartão do Pipeline,
+ * `rounded-[14px]` na coluna, `rounded-xl` no primitivo `<Card>`. De perto
+ * cada um se defende; juntos, as telas parecem de produtos diferentes.
+ *
+ * Quem tem cabeçalho e corpo usa `<Card>` (que aplica isto por dentro); quem é
+ * um bloco solto — item de lista, painel — usa esta constante. Duas formas de
+ * escrever, um valor só para mudar.
+ */
+export const SUPERFICIE = "rounded-2xl bg-card shadow-sm ring-1 ring-foreground/8"
+
 /** Formata um telefone brasileiro (10 ou 11 dígitos) como (DD) 9XXXX-XXXX. */
 export function formatPhone(phone: string): string {
   const digits = phone.replace(/\D/g, "").slice(-11)

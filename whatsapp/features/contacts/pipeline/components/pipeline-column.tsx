@@ -20,7 +20,7 @@ export function PipelineColumn({ status, label, contacts }: PipelineColumnProps)
     <div
       ref={setNodeRef}
       className={cn(
-        "flex w-[270px] shrink-0 flex-col overflow-hidden rounded-[14px] border border-veil/6 bg-well transition-colors",
+        "flex w-[270px] shrink-0 flex-col overflow-hidden rounded-2xl border border-veil/6 bg-well transition-colors",
         isOver && "border-primary/60 bg-primary/5",
       )}
     >

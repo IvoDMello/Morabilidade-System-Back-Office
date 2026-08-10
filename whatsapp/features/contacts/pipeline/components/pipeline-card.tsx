@@ -33,7 +33,7 @@ export function PipelineCard({ contact }: { contact: Contact }) {
         // `touch-manipulation` (não `touch-none`) deixa o dedo rolar o board
         // por cima dos cartões; quem segura o dedo cai no TouchSensor, que a
         // partir dali bloqueia a rolagem sozinho.
-        "flex touch-manipulation cursor-grab flex-col gap-1.5 rounded-[11px] border border-veil/7 bg-card p-2.5 transition-colors select-none hover:border-veil/16 active:cursor-grabbing max-md:[-webkit-touch-callout:none]",
+        "flex touch-manipulation cursor-grab flex-col gap-1.5 rounded-xl border border-veil/7 bg-card p-2.5 transition-colors select-none hover:border-veil/16 active:cursor-grabbing max-md:[-webkit-touch-callout:none]",
         isDragging && "z-10 border-primary/60 opacity-60 shadow-lg",
       )}
     >

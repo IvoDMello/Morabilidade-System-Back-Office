@@ -33,28 +33,28 @@ export function CorretorPicker({
     });
   }
 
+  // Sem rótulo próprio: quem rotula é a <FieldRow> de quem usa, para que este
+  // campo alinhe com os outros da ficha em vez de trazer o "Responsável:"
+  // colado no select.
   return (
-    <div className="flex items-center gap-2">
-      <span className="shrink-0 text-sm text-muted-foreground">Responsável:</span>
-      <Select value={corretorId ?? UNASSIGNED} onValueChange={handleChange} disabled={isPending}>
-        <SelectTrigger size="sm" className="w-auto">
-          <SelectValue>
-            {(value: string) =>
-              value === UNASSIGNED
-                ? "Ninguém"
-                : (corretores.find((c) => c.id === value)?.nome ?? "—")
-            }
-          </SelectValue>
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value={UNASSIGNED}>Ninguém</SelectItem>
-          {corretores.map((c) => (
-            <SelectItem key={c.id} value={c.id}>
-              {c.nome}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
+    <Select value={corretorId ?? UNASSIGNED} onValueChange={handleChange} disabled={isPending}>
+      <SelectTrigger size="sm" className="w-auto">
+        <SelectValue>
+          {(value: string) =>
+            value === UNASSIGNED
+              ? "Ninguém"
+              : (corretores.find((c) => c.id === value)?.nome ?? "—")
+          }
+        </SelectValue>
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value={UNASSIGNED}>Ninguém</SelectItem>
+        {corretores.map((c) => (
+          <SelectItem key={c.id} value={c.id}>
+            {c.nome}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }

@@ -28,7 +28,7 @@ import { CategoryBadge } from "./category-badge";
 import { StatusBadge } from "./status-badge";
 import { FavoriteToggle } from "./favorite-toggle";
 import { ContactRowActions } from "./contact-row-actions";
-import { formatDateTime, formatPhone, cn } from "@/lib/utils";
+import { formatDateTime, formatPhone, cn, SUPERFICIE } from "@/lib/utils";
 import { CONTACT_STATUSES, CONTACT_STATUS_LABELS } from "@/constants/contact-status";
 import type { ContactStatus } from "@/constants/contact-status";
 import {
@@ -149,7 +149,7 @@ export function ContactTable({ contacts }: { contacts: Contact[] }) {
   return (
     <>
       {/* Desktop/tablet: tabela */}
-      <div className="hidden overflow-x-auto rounded-lg border md:block">
+      <div className="hidden overflow-x-auto rounded-2xl border md:block">
         <Table>
           <TableHeader>
             <TableRow>
@@ -220,26 +220,39 @@ export function ContactTable({ contacts }: { contacts: Contact[] }) {
       {/* Mobile: cards */}
       <div className="flex flex-col gap-3 md:hidden">
         {contacts.map((contact) => (
-          <div key={contact.id} className="rounded-lg border bg-card p-4">
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex min-w-0 items-center gap-2">
-                <FavoriteToggle contactId={contact.id} isFavorite={contact.isFavorite} />
-                <AvatarInitials name={contact.name} size="sm" />
-                <Link
-                  href={`/contatos/${contact.id}`}
-                  className="truncate font-medium hover:underline active:text-gold"
-                >
-                  {contact.name}
-                </Link>
+          <div key={contact.id} className={cn(SUPERFICIE, "p-4")}>
+            <div className="flex items-start gap-2.5">
+              <AvatarInitials name={contact.name} size="sm" />
+              {/* Nome e telefone num bloco só, alinhados à direita do avatar —
+                  soltos, o telefone voltava para a margem do cartão e a dupla
+                  deixava de ser lida como uma coisa só. */}
+              <div className="min-w-0 flex-1">
+                <div className="flex min-w-0 items-center gap-1">
+                  <Link
+                    href={`/contatos/${contact.id}`}
+                    className="truncate font-medium hover:underline active:text-gold"
+                  >
+                    {contact.name}
+                  </Link>
+                  <FavoriteToggle
+                    contactId={contact.id}
+                    isFavorite={contact.isFavorite}
+                    size="icon-sm"
+                  />
+                </div>
+                <p className="text-sm font-medium tabular-nums text-jade">
+                  {formatPhone(contact.phone)}
+                </p>
               </div>
               <ContactRowActions contactId={contact.id} contactName={contact.name} />
             </div>
-            <p className="mt-1 text-sm font-medium tabular-nums text-jade">{formatPhone(contact.phone)}</p>
-            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
               <CategoryBadge category={contact.category} />
               <StatusBadge status={contact.status} />
             </div>
-            <p className="mt-2 text-xs tabular-nums text-muted-foreground">
+            {/* Divisor antes do carimbo de tempo: ele é metadado do cartão, não
+                mais um dado do contato na mesma pilha. */}
+            <p className="mt-3 border-t pt-2.5 text-xs tabular-nums text-muted-foreground">
               Atualizado em {formatDateTime(contact.updatedAt)}
             </p>
           </div>

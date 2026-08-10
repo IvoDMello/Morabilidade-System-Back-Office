@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { WhatsAppButton } from "@/components/shared/whatsapp-button";
 import { AvatarInitials } from "@/components/shared/avatar-initials";
+import { FieldRow } from "@/components/shared/field-row";
 import { DeleteContactButton } from "@/features/contacts/components/delete-contact-button";
 import { CategoryBadge } from "@/features/contacts/components/category-badge";
 import { StatusBadge } from "@/features/contacts/components/status-badge";
@@ -98,8 +99,8 @@ export default async function ContatoDetalhePage({
       <ContactPanels
         dados={
           <>
-            <div className="flex flex-col gap-3 rounded-lg border bg-card p-4">
-              <div className="flex items-start justify-between gap-2">
+            <Card>
+              <CardContent className="flex flex-col gap-3">
                 <div className="flex min-w-0 gap-3">
                   <AvatarInitials name={contact.name} size="lg" />
                   <div className="min-w-0">
@@ -118,7 +119,11 @@ export default async function ContatoDetalhePage({
                       </Tooltip>
                       <FavoriteToggle contactId={contact.id} isFavorite={contact.isFavorite} size="icon-sm" />
                     </div>
-                    <p className="truncate text-sm text-muted-foreground">{formatPhone(contact.phone)}</p>
+                    {/* Telefone em jade, como na lista: é o dado que se procura
+                        com o olho na ficha inteira, e em cinza ele desaparecia. */}
+                    <p className="truncate text-sm font-medium tabular-nums text-jade">
+                      {formatPhone(contact.phone)}
+                    </p>
                     {contact.clienteCodigo && (
                       <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                         <BadgeCheck className="h-3 w-3" />
@@ -127,49 +132,57 @@ export default async function ContatoDetalhePage({
                     )}
                   </div>
                 </div>
-              </div>
 
-              <div className="flex flex-wrap items-center gap-1.5">
-                <CategoryBadge category={contact.category} />
-                <StatusBadge status={contact.status} />
-              </div>
-
-              <CorretorPicker
-                contactId={contact.id}
-                corretorId={contact.corretorId}
-                corretores={corretores}
-              />
-
-              <TagPicker contactId={contact.id} contactTags={contactTags} allTags={allTags} />
-
-              {contact.status === "perdido" && contact.lossReason && (
-                <div className="rounded-lg bg-destructive/5 p-3 text-sm text-destructive">
-                  <p className="font-medium">Motivo da perda: {LOSS_REASON_LABELS[contact.lossReason]}</p>
-                  {contact.lossReasonNote && (
-                    <p className="mt-0.5 text-destructive/80">{contact.lossReasonNote}</p>
-                  )}
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <CategoryBadge category={contact.category} />
+                  <StatusBadge status={contact.status} />
                 </div>
-              )}
 
-              {contact.generalNotes && (
-                <p className="whitespace-pre-wrap text-sm text-muted-foreground">
-                  {contact.generalNotes}
-                </p>
-              )}
+                <FieldRow label="Responsável">
+                  <CorretorPicker
+                    contactId={contact.id}
+                    corretorId={contact.corretorId}
+                    corretores={corretores}
+                  />
+                </FieldRow>
 
-              <div className="flex gap-2">
-                <WhatsAppButton phone={contact.phone} className="flex-1" />
-                <Button
-                  variant="outline"
-                  size="icon"
-                  nativeButton={false}
-                  render={<Link href={`/contatos/${contact.id}/editar`} aria-label="Editar contato" />}
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-                <DeleteContactButton contactId={contact.id} contactName={contact.name} />
-              </div>
-            </div>
+                <FieldRow label="Etiquetas">
+                  <TagPicker contactId={contact.id} contactTags={contactTags} allTags={allTags} />
+                </FieldRow>
+
+                {contact.status === "perdido" && contact.lossReason && (
+                  <div className="rounded-xl bg-destructive/5 p-3 text-sm text-destructive">
+                    <p className="font-medium">Motivo da perda: {LOSS_REASON_LABELS[contact.lossReason]}</p>
+                    {contact.lossReasonNote && (
+                      <p className="mt-0.5 text-destructive/80">{contact.lossReasonNote}</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Observação em caixa, não em texto solto: sem moldura ela
+                    passava por legenda do que estava acima. */}
+                {contact.generalNotes && (
+                  <p className="rounded-xl bg-well px-3 py-2.5 text-sm whitespace-pre-wrap text-ink-mid">
+                    {contact.generalNotes}
+                  </p>
+                )}
+
+                <div className="flex gap-2">
+                  <WhatsAppButton phone={contact.phone} className="flex-1" />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    nativeButton={false}
+                    render={
+                      <Link href={`/contatos/${contact.id}/editar`} aria-label="Editar contato" />
+                    }
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <DeleteContactButton contactId={contact.id} contactName={contact.name} />
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Um cartão de IA, não dois. Resumo e follow-up são perguntas
                 diferentes ("quem é este contato" e "o que dizer agora"), então
