@@ -460,6 +460,40 @@
         "title": "AutorizacaoCreate",
         "type": "object"
       },
+      "AutorizacaoDoImovel": {
+        "properties": {
+          "assinada_em": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assinada Em"
+          },
+          "autorizacao_id": {
+            "title": "Autorizacao Id",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "tipo_negocio": {
+            "title": "Tipo Negocio",
+            "type": "string"
+          }
+        },
+        "required": [
+          "autorizacao_id",
+          "tipo_negocio",
+          "status"
+        ],
+        "title": "AutorizacaoDoImovel",
+        "type": "object"
+      },
       "AutorizacaoOut": {
         "properties": {
           "assinada_em": {
@@ -3003,6 +3037,35 @@
         "title": "Disponibilidade",
         "type": "string"
       },
+      "DocumentoDoImovel": {
+        "properties": {
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "nome_arquivo": {
+            "title": "Nome Arquivo",
+            "type": "string"
+          },
+          "tipo": {
+            "title": "Tipo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tipo",
+          "nome_arquivo"
+        ],
+        "title": "DocumentoDoImovel",
+        "type": "object"
+      },
       "DocumentoImovelOut": {
         "properties": {
           "created_at": {
@@ -3088,6 +3151,58 @@
           "firebase_path"
         ],
         "title": "DocumentoImovelOut",
+        "type": "object"
+      },
+      "DossieCliente": {
+        "description": "Retrato do cliente para quem está no meio de uma conversa: por onde ele\njá passou (visitas), o que é dele (imóveis) e o que falta assinar/anexar.",
+        "properties": {
+          "cliente_id": {
+            "title": "Cliente Id",
+            "type": "string"
+          },
+          "codigo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codigo"
+          },
+          "imoveis_proprietario": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ImovelDoProprietario"
+            },
+            "title": "Imoveis Proprietario",
+            "type": "array"
+          },
+          "nome_completo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nome Completo"
+          },
+          "visitas": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/VisitaDoCliente"
+            },
+            "title": "Visitas",
+            "type": "array"
+          }
+        },
+        "required": [
+          "cliente_id"
+        ],
+        "title": "DossieCliente",
         "type": "object"
       },
       "FavoritoPayload": {
@@ -4060,6 +4175,82 @@
           "condicao"
         ],
         "title": "ImovelCreate",
+        "type": "object"
+      },
+      "ImovelDoProprietario": {
+        "description": "Imóvel de que este cliente é proprietário, com o que já está anexado.",
+        "properties": {
+          "autorizacao": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AutorizacaoDoImovel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "bairro": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bairro"
+          },
+          "codigo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codigo"
+          },
+          "disponibilidade": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Disponibilidade"
+          },
+          "documentos": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/DocumentoDoImovel"
+            },
+            "title": "Documentos",
+            "type": "array"
+          },
+          "imovel_id": {
+            "title": "Imovel Id",
+            "type": "string"
+          },
+          "titulo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Titulo"
+          }
+        },
+        "required": [
+          "imovel_id"
+        ],
+        "title": "ImovelDoProprietario",
         "type": "object"
       },
       "ImovelListOut": {
@@ -7168,6 +7359,80 @@
         "title": "VisitaCreate",
         "type": "object"
       },
+      "VisitaDoCliente": {
+        "description": "Uma ficha de visita emitida para este cliente. `assinada_em` preenchido =\ndocumento fechado; vazio = ficha emitida e ainda pendente de assinatura.",
+        "properties": {
+          "assinada_em": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assinada Em"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "ficha_id": {
+            "title": "Ficha Id",
+            "type": "string"
+          },
+          "imovel_bairro": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imovel Bairro"
+          },
+          "imovel_codigo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imovel Codigo"
+          },
+          "imovel_endereco": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imovel Endereco"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ficha_id",
+          "status"
+        ],
+        "title": "VisitaDoCliente",
+        "type": "object"
+      },
       "VisitaOut": {
         "properties": {
           "comentario": {
@@ -8354,6 +8619,55 @@
           }
         ],
         "summary": "Upsert Cliente Por Telefone Interno",
+        "tags": [
+          "Clientes",
+          "Integração"
+        ]
+      }
+    },
+    "/clientes/interno/{cliente_id}/dossie": {
+      "get": {
+        "description": "Dossiê do cliente para o CRM do WhatsApp: por onde ele já passou e o que\nfalta fechar.\n\nExiste porque quem atende no chat só enxergava o que foi digitado no próprio\nchat. Saber que o cliente já visitou dois imóveis, que a ficha de um deles\nnunca foi assinada, ou que ele é dono do MB-00042 e a matrícula ainda não\nfoi anexada, é o tipo de coisa que muda a próxima frase da conversa — e\nestava a três telas de distância, em outro sistema.\n\nUma chamada devolve: fichas de visita (com assinada/pendente), imóveis de\nque é proprietário, documentos já anexados a cada um e a autorização de\nintermediação vigente.",
+        "operationId": "dossie_cliente_interno_clientes_interno__cliente_id__dossie_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cliente_id",
+            "required": true,
+            "schema": {
+              "title": "Cliente Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DossieCliente"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Dossie Cliente Interno",
         "tags": [
           "Clientes",
           "Integração"
