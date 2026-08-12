@@ -297,8 +297,14 @@ setLoading(true);
 
   return (
     <div
-      className="flex overflow-hidden -m-4 md:-m-6"
-      style={{ height: "calc(100vh - 64px)" }}
+      className={[
+        "flex overflow-hidden -m-4 md:-m-6 md:-mb-10",
+        // Mobile: altura da viewport menos o header.
+        // Desktop: o <main> já tem altura definida; ocupamos a área de conteúdo
+        // dele mais o padding que cancelamos com as margens negativas
+        // (24px em cima + 40px embaixo), para não gerar scroll extra na página.
+        "h-[calc(100vh-64px)] md:h-[calc(100%+4rem)]",
+      ].join(" ")}
     >
       {/* Backdrop mobile, começa abaixo do header (top-16 = 64px) */}
       {filtrosOpen && (

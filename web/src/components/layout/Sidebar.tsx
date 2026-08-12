@@ -91,7 +91,12 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         </div>
 
         {/* Nav */}
-        <nav aria-label="Navegação principal" className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+        {/* Em notebooks (tela baixa) o menu ficava com scroll próprio; compactamos
+            os espaçamentos a partir de 768px de largura + altura curta. */}
+        <nav
+          aria-label="Navegação principal"
+          className="flex-1 overflow-y-auto py-4 px-3 space-y-1 [@media(min-width:768px)_and_(max-height:820px)]:py-2"
+        >
           {navItems.map((item) => {
             if (item.adminOnly && user?.perfil !== "admin") return null;
 
@@ -109,6 +114,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                  "[@media(min-width:768px)_and_(max-height:820px)]:py-1.5",
                   active
                     ? "font-semibold"
                     : "text-white/75 hover:text-white hover:bg-white/10"
@@ -123,7 +129,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         </nav>
 
         {/* Usuário + logout */}
-        <div className="p-3 border-t border-white/10 space-y-1">
+        <div className="p-3 border-t border-white/10 space-y-1 [@media(min-width:768px)_and_(max-height:820px)]:p-2">
           {user && (
             <Link
               href="/perfil"
@@ -136,7 +142,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           )}
           <button
             onClick={handleLogout}
-            className="flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white/75 hover:bg-white/10 hover:text-white transition-colors"
+            className="flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white/75 hover:bg-white/10 hover:text-white transition-colors [@media(min-width:768px)_and_(max-height:820px)]:py-1.5"
           >
             <LogOut className="h-4 w-4" />
             Sair
