@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import {
   DndContext,
   MouseSensor,
@@ -17,6 +17,7 @@ import { LossReasonDialog } from "@/features/contacts/components/loss-reason-dia
 import type { Contact } from "@/types/contact";
 import type { ID } from "@/types/common";
 import { PipelineColumn } from "./pipeline-column";
+import { TopScrollbar } from "./top-scrollbar";
 
 export function ContactPipelineBoard({
   contacts,
@@ -33,6 +34,7 @@ export function ContactPipelineBoard({
   const [, startTransition] = useTransition();
   const [pendingContactId, setPendingContactId] = useState<ID | null>(null);
   const [lossDialogOpen, setLossDialogOpen] = useState(false);
+  const boardRef = useRef<HTMLDivElement>(null);
 
   // Ressincroniza com os dados do servidor quando `contacts` muda (nova busca/filtro
   // ou revalidação após mutação), sem perder o padrão "estado derivado durante o render".
@@ -133,7 +135,11 @@ export function ContactPipelineBoard({
             filtro de status.
           </p>
         )}
-        <div className="flex gap-3 overflow-x-auto overscroll-x-contain pb-2">
+        <TopScrollbar targetRef={boardRef} />
+        <div
+          ref={boardRef}
+          className="flex gap-3 overflow-x-auto overscroll-x-contain pb-2 md:pb-0 md:[&::-webkit-scrollbar]:hidden md:[scrollbar-width:none]"
+        >
           {colunas.map((s) => (
             <PipelineColumn
               key={s.value}
