@@ -41,6 +41,7 @@ export interface Tag {
 export interface Imovel {
   id: string;
   codigo: string;
+  titulo?: string | null;
   tipo_negocio: TipoNegocio;
   disponibilidade: Disponibilidade;
   cidade: string;

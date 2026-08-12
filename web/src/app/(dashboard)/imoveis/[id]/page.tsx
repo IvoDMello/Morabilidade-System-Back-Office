@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { api, getErrorMessage } from "@/lib/api";
 import { Sparkles } from "lucide-react";
 import { ImovelForm, type ImovelFormData } from "@/components/imoveis/imovel-form";
+import { CompartilharImovelButton } from "@/components/imoveis/compartilhar-imovel-button";
 import { InteressadosImovel } from "@/components/imoveis/interessados-imovel";
 import { AcompanhamentoImovel } from "@/components/imoveis/acompanhamento-imovel";
 import { FichasImovel } from "@/components/fichas/fichas-imovel";
@@ -17,6 +18,15 @@ import { AudienciaImovel } from "@/components/imoveis/audiencia-imovel";
 import { DocumentosImovel } from "@/components/imoveis/documentos-imovel";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import type { Imovel, Foto } from "@/types";
+
+// Mesmos rótulos do site, usados no título público de fallback.
+const TIPO_IMOVEL_LABEL: Record<string, string> = {
+  casa: "Casa",
+  casa_vila: "Casa de vila",
+  casa_condominio: "Casa de condomínio",
+  apartamento: "Apartamento",
+  cobertura: "Cobertura",
+};
 
 const MAX_FOTOS = 30;
 
@@ -369,9 +379,16 @@ export default function EditarImovelPage({
 
   if (!imovel) return null;
 
+  // Mesmo título que a página pública do imóvel usa (e que vai na mensagem
+  // de compartilhamento): título cadastrado ou fallback tipo + bairro/cidade.
+  const tituloPublico =
+    imovel.titulo?.trim() ||
+    `${TIPO_IMOVEL_LABEL[imovel.tipo_imovel] ?? imovel.tipo_imovel} em ${imovel.bairro}, ${imovel.cidade}`;
+
   // Monta defaultValues a partir do imóvel carregado
   const defaultValues: Partial<ImovelFormData> = {
     codigo: imovel.codigo,
+    titulo: imovel.titulo ?? "",
     tipo_negocio: imovel.tipo_negocio,
     disponibilidade: imovel.disponibilidade,
     condicao: imovel.condicao,
@@ -471,6 +488,12 @@ export default function EditarImovelPage({
             onSubmit={handleSubmit}
             isLoading={salvando}
             submitLabel="Salvar alterações"
+            acoesSecundarias={
+              <CompartilharImovelButton
+                codigo={imovel.codigo}
+                titulo={tituloPublico}
+              />
+            }
           />
 
           {/* Galeria de fotos */}

@@ -83,6 +83,8 @@ interface ImovelFormProps {
   onSubmit: (data: ImovelFormData) => Promise<void>;
   isLoading?: boolean;
   submitLabel?: string;
+  /** Ações extras exibidas à esquerda do botão de salvar (ex.: compartilhar). */
+  acoesSecundarias?: React.ReactNode;
 }
 
 // ── Sub-componentes de UI ─────────────────────────────────────────────────────
@@ -202,6 +204,7 @@ export function ImovelForm({
   onSubmit,
   isLoading = false,
   submitLabel = "Salvar imóvel",
+  acoesSecundarias,
 }: ImovelFormProps) {
   const [tags, setTags] = useState<Tag[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -437,7 +440,10 @@ export function ImovelForm({
       )}
 
       {/* Botão de salvar no topo (atalho, evita rolar até o final) */}
-      <div className="flex justify-end">{submitButton}</div>
+      <div className="flex justify-end items-center gap-2">
+        {acoesSecundarias}
+        {submitButton}
+      </div>
 
       {/* ── 1. Identificação ── */}
       <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
@@ -1038,7 +1044,10 @@ export function ImovelForm({
       </div>
 
       {/* ── Botão de submit (final) ── */}
-      <div className="flex justify-end">{submitButton}</div>
+      <div className="flex justify-end items-center gap-2">
+        {acoesSecundarias}
+        {submitButton}
+      </div>
     </form>
   );
 }
