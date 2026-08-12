@@ -2,7 +2,7 @@
 from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, patch
 
-from tests.conftest import make_db_mock
+from tests.conftest import ADMIN_USER, REGULAR_USER, make_db_mock
 
 ROUTER = "app.routers.fichas_visita.supabase_admin"
 CRM = "app.services.cliente_da_ficha.supabase_admin"
@@ -227,6 +227,56 @@ def test_resumo_por_imovel_agrega_e_ordena(client):
     assert corpo[0]["ultima_em"] == "2026-06-08T10:00:00+00:00"
     assert corpo[1]["total"] == 1
     db.neq.assert_called_with("status", "cancelada")
+
+
+def test_listar_fichas_corretor_ve_so_as_proprias(corretor_client):
+    """Perfil corretor enxerga apenas as fichas em que ele é o responsável."""
+    db = make_db_mock(MagicMock(data=[FICHA_ROW]))
+    with patch(ROUTER, db):
+        res = corretor_client.get("/fichas-visita")
+    assert res.status_code == 200
+    db.eq.assert_any_call("corretor_id", REGULAR_USER["id"])
+
+
+def test_listar_fichas_admin_ve_todas(client):
+    db = make_db_mock(MagicMock(data=[FICHA_ROW]))
+    with patch(ROUTER, db):
+        res = client.get("/fichas-visita")
+    assert res.status_code == 200
+    assert all(c[0][0] != "corretor_id" for c in db.eq.call_args_list)
+
+
+def test_resumo_por_imovel_corretor_so_as_proprias(corretor_client):
+    db = make_db_mock(MagicMock(data=[]))
+    with patch(ROUTER, db):
+        res = corretor_client.get("/fichas-visita/resumo/por-imovel")
+    assert res.status_code == 200
+    db.eq.assert_any_call("corretor_id", REGULAR_USER["id"])
+
+
+def test_detalhe_de_ficha_de_outro_corretor_404(corretor_client):
+    """404 (e não 403) para não revelar a existência da ficha alheia."""
+    alheia = dict(FICHA_ROW, corretor_id=ADMIN_USER["id"])
+    db = make_db_mock(MagicMock(data=alheia))
+    with patch(ROUTER, db):
+        res = corretor_client.get(f"/fichas-visita/{FICHA_ROW['id']}")
+    assert res.status_code == 404
+
+
+def test_pdf_de_ficha_de_outro_corretor_404(corretor_client):
+    alheia = dict(FICHA_ROW, corretor_id=ADMIN_USER["id"])
+    db = make_db_mock(MagicMock(data=alheia))
+    with patch(ROUTER, db):
+        res = corretor_client.get(f"/fichas-visita/{FICHA_ROW['id']}/pdf")
+    assert res.status_code == 404
+
+
+def test_detalhe_da_propria_ficha_ok(corretor_client):
+    minha = dict(FICHA_ROW, corretor_id=REGULAR_USER["id"])
+    db = make_db_mock(MagicMock(data=minha))
+    with patch(ROUTER, db):
+        res = corretor_client.get(f"/fichas-visita/{FICHA_ROW['id']}")
+    assert res.status_code == 200
 
 
 def test_pdf_pendente_retorna_pdf(client):

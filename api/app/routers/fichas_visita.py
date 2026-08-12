@@ -71,6 +71,26 @@ def _buscar_ficha(ficha_id: str) -> dict:
     return res.data
 
 
+def _escopo_proprio(current_user: dict) -> Optional[str]:
+    """id do corretor quando o usuário só pode ver as fichas dele, senão None.
+
+    Admin (e a integração server-to-server) enxergam tudo; o perfil corretor
+    fica restrito às fichas em que ele é o responsável."""
+    if current_user.get("perfil") == "admin":
+        return None
+    return current_user.get("id")
+
+
+def _buscar_ficha_visivel(ficha_id: str, current_user: dict) -> dict:
+    """Como _buscar_ficha, mas 404 quando a ficha é de outro corretor — 404 e
+    não 403 para não revelar a existência da ficha alheia."""
+    ficha = _buscar_ficha(ficha_id)
+    escopo = _escopo_proprio(current_user)
+    if escopo and ficha.get("corretor_id") != escopo:
+        raise HTTPException(status_code=404, detail="Ficha de visita não encontrada.")
+    return ficha
+
+
 # ── Endpoints autenticados ───────────────────────────────────────────────────
 
 @router.post("", response_model=FichaVisitaOut, status_code=status.HTTP_201_CREATED)
@@ -206,6 +226,9 @@ def listar_fichas(
     # não o snapshot da ficha.
     colunas = "*, imoveis!inner(disponibilidade)" if apenas_disponiveis else "*"
     q = supabase_admin.table("fichas_visita").select(colunas)
+    escopo = _escopo_proprio(current_user)
+    if escopo:
+        q = q.eq("corretor_id", escopo)
     if apenas_disponiveis:
         q = q.eq("imoveis.disponibilidade", "disponivel")
     if imovel_id:
@@ -238,6 +261,9 @@ def resumo_por_imovel(
         .select(colunas)
         .neq("status", "cancelada")
     )
+    escopo = _escopo_proprio(current_user)
+    if escopo:
+        q = q.eq("corretor_id", escopo)
     if apenas_disponiveis:
         q = q.eq("imoveis.disponibilidade", "disponivel")
     q = _filtro_periodo(q, de, ate)
@@ -274,12 +300,12 @@ def resumo_por_imovel(
 
 @router.get("/{ficha_id}", response_model=FichaVisitaOut)
 def obter_ficha(ficha_id: str, current_user: dict = Depends(get_current_user)):
-    return _buscar_ficha(ficha_id)
+    return _buscar_ficha_visivel(ficha_id, current_user)
 
 
 @router.get("/{ficha_id}/pdf")
 def baixar_pdf(ficha_id: str, current_user: dict = Depends(get_current_user)):
-    ficha = _buscar_ficha(ficha_id)
+    ficha = _buscar_ficha_visivel(ficha_id, current_user)
     if ficha.get("status") == "assinada" and ficha.get("pdf_path"):
         # Serve o PDF guardado, é dele que o hash foi calculado.
         pdf_bytes = baixar_documento(ficha["pdf_path"])
@@ -292,7 +318,7 @@ def baixar_pdf(ficha_id: str, current_user: dict = Depends(get_current_user)):
 
 @router.post("/{ficha_id}/cancelar", response_model=FichaVisitaOut)
 def cancelar_ficha(ficha_id: str, current_user: dict = Depends(require_admin)):
-    ficha = _buscar_ficha(ficha_id)
+    ficha = _buscar_ficha_visivel(ficha_id, current_user)
     if ficha.get("status") == "assinada":
         raise HTTPException(status_code=409, detail="Ficha já assinada não pode ser cancelada.")
     res = (

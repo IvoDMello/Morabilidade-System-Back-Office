@@ -55,6 +55,9 @@ export const STATUS_STYLE: Record<Ficha["status"], { label: string; cls: string 
 };
 
 export function FichasImovel({ imovelId }: Props) {
+  // A API já devolve só as fichas do próprio corretor quando o perfil não é
+  // admin; aqui a flag serve apenas para o rótulo da lista.
+  const isAdmin = useAuthStore((s) => s.user?.perfil) === "admin";
   const [fichas, setFichas] = useState<Ficha[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -82,7 +85,7 @@ export function FichasImovel({ imovelId }: Props) {
   return (
     <div className="space-y-4">
       <NovaFicha imovelId={imovelId} onCriada={carregar} />
-      <ListaFichas fichas={fichas} loading={loading} onAtualizar={carregar} />
+      <ListaFichas fichas={fichas} loading={loading} onAtualizar={carregar} soMinhas={!isAdmin} />
     </div>
   );
 }
@@ -147,6 +150,7 @@ function NovaFicha({ imovelId, onCriada }: { imovelId: string; onCriada: () => v
         <h2 className="text-sm font-semibold text-slate-700">Gerar ficha de visita</h2>
         <span className="text-xs text-slate-400">
           · o visitante assina pelo celular e, ao assinar, entra no cadastro de clientes
+          {!isAdmin && ` · responsável: ${user?.nome_completo ?? "você"}`}
         </span>
       </div>
 
@@ -201,8 +205,8 @@ function NovaFicha({ imovelId, onCriada }: { imovelId: string; onCriada: () => v
 // ── Lista ─────────────────────────────────────────────────────────────────────
 
 function ListaFichas({
-  fichas, loading, onAtualizar,
-}: { fichas: Ficha[]; loading: boolean; onAtualizar: () => void }) {
+  fichas, loading, onAtualizar, soMinhas,
+}: { fichas: Ficha[]; loading: boolean; onAtualizar: () => void; soMinhas?: boolean }) {
   const [copiado, setCopiado] = useState<string | null>(null);
   const [confirmCancelar, setConfirmCancelar] = useState<Ficha | null>(null);
   const [cancelando, setCancelando] = useState(false);
@@ -265,7 +269,9 @@ function ListaFichas({
     <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6">
       <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100">
         <FileSignature className="w-4 h-4 text-[#585a4f]" />
-        <h2 className="text-sm font-semibold text-slate-700">Fichas emitidas</h2>
+        <h2 className="text-sm font-semibold text-slate-700">
+          {soMinhas ? "Minhas fichas emitidas" : "Fichas emitidas"}
+        </h2>
         <span className="text-xs text-slate-400">· {fichas.length}</span>
       </div>
 
