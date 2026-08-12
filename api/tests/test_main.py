@@ -122,6 +122,20 @@ def test_relatorios_devolve_payload_da_rpc(client):
     assert body["preco_medio_por_tipo"]["apartamento"] == 1_500_000
 
 
+def test_relatorios_inclui_engajamento_do_site(client):
+    """video_clicks_total e share_clicks_total vêm de counts fora da RPC."""
+    db = make_db_mock(
+        MagicMock(data=_RELATORIOS_PAYLOAD),
+        MagicMock(count=42, data=[]),   # imovel_video_clicks
+        MagicMock(count=17, data=[]),   # imovel_shares
+    )
+    with patch("app.main.supabase_admin", db):
+        res = client.get("/relatorios")
+    body = res.json()
+    assert body["video_clicks_total"] == 42
+    assert body["share_clicks_total"] == 17
+
+
 def test_relatorios_rpc_vazia_vira_objeto_vazio(client):
     db = make_db_mock(MagicMock(data=None))
     with patch("app.main.supabase_admin", db):

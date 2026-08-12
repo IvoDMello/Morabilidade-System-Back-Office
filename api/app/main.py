@@ -134,9 +134,10 @@ def get_relatorios(current_user: dict = Depends(get_current_user)):
     vez de SELECT * + Python."""
     res = supabase_admin.rpc("relatorios_dashboard").execute()
     dados = res.data or {}
-    # Cliques no botão "Ver vídeo no Instagram" (total, excluindo bots). Query
-    # barata fora da RPC pra não exigir nova migration do dashboard. Como os
-    # logs são purgados aos 90 dias (migration 036), o total reflete ~90 dias.
+    # Cliques nos CTAs de engajamento ("Ver vídeo no Instagram" e "Compartilhar"),
+    # total excluindo bots. Queries baratas fora da RPC pra não exigir nova
+    # migration do dashboard. Como os logs são purgados aos 90 dias (migrations
+    # 032/036), os totais refletem ~90 dias.
     # Só enriquece quando a RPC trouxe dados (mantém o {} de erro/sem-dados).
     if dados:
         video = (
@@ -146,4 +147,11 @@ def get_relatorios(current_user: dict = Depends(get_current_user)):
             .execute()
         )
         dados["video_clicks_total"] = video.count or 0
+        shares = (
+            supabase_admin.table("imovel_shares")
+            .select("id", count="exact")
+            .eq("is_bot", False)
+            .execute()
+        )
+        dados["share_clicks_total"] = shares.count or 0
     return dados
