@@ -5435,6 +5435,8 @@ export interface operations {
                 codigo?: string | null;
                 /** @description Busca livre por código, logradouro ou bairro */
                 q?: string | null;
+                /** @description Palavras que devem aparecer na descrição do imóvel */
+                descricao?: string | null;
                 sem_foto?: boolean | null;
                 page?: number;
                 page_size?: number;
@@ -5534,6 +5536,8 @@ export interface operations {
                 codigo?: string | null;
                 /** @description Busca livre por código, logradouro ou bairro */
                 q?: string | null;
+                /** @description Palavras que devem aparecer na descrição do imóvel */
+                descricao?: string | null;
                 sem_foto?: boolean | null;
             };
             header?: never;

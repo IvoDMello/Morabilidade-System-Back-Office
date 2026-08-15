@@ -10026,6 +10026,24 @@
             }
           },
           {
+            "description": "Palavras que devem aparecer na descrição do imóvel",
+            "in": "query",
+            "name": "descricao",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Palavras que devem aparecer na descrição do imóvel",
+              "title": "Descricao"
+            }
+          },
+          {
             "in": "query",
             "name": "sem_foto",
             "required": false,
@@ -10368,6 +10386,24 @@
               ],
               "description": "Busca livre por código, logradouro ou bairro",
               "title": "Q"
+            }
+          },
+          {
+            "description": "Palavras que devem aparecer na descrição do imóvel",
+            "in": "query",
+            "name": "descricao",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Palavras que devem aparecer na descrição do imóvel",
+              "title": "Descricao"
             }
           },
           {

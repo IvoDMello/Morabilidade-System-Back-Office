@@ -21,6 +21,7 @@ import type { ImovelListOut } from "@/types";
 interface Filtros {
   busca: string;
   codigo: string;
+  descricao: string;
   tipo_negocio: string;
   disponibilidade: string;
   cidade: string;
@@ -41,6 +42,7 @@ interface Localidades {
 const FILTROS_VAZIOS: Filtros = {
   busca: "",
   codigo: "",
+  descricao: "",
   tipo_negocio: "",
   disponibilidade: "",
   cidade: "",
@@ -154,6 +156,7 @@ function ImoveisPageInner() {
       const params: Record<string, string> = {};
       if (filtros.busca) params.q = filtros.busca;
       if (filtros.codigo) params.codigo = filtros.codigo;
+      if (filtros.descricao) params.descricao = filtros.descricao;
       if (filtros.tipo_negocio) params.tipo_negocio = filtros.tipo_negocio;
       if (filtros.disponibilidade) params.disponibilidade = filtros.disponibilidade;
       if (filtros.cidade) params.cidade = filtros.cidade;
@@ -189,6 +192,7 @@ setLoading(true);
       const params: Record<string, string> = { page: String(pg), page_size: String(PAGE_SIZE) };
       if (f.busca) params.q = f.busca;
       if (f.codigo) params.codigo = f.codigo;
+      if (f.descricao) params.descricao = f.descricao;
       if (f.tipo_negocio) params.tipo_negocio = f.tipo_negocio;
       if (f.disponibilidade) params.disponibilidade = f.disponibilidade;
       if (f.cidade) params.cidade = f.cidade;
@@ -356,6 +360,19 @@ setLoading(true);
               className={inputCls}
               placeholder="Código do imóvel"
             />
+
+            {/* Descrição: procura palavras no texto descritivo do imóvel */}
+            <div>
+              <input
+                value={filtros.descricao}
+                onChange={(e) => setFiltros((f) => ({ ...f, descricao: e.target.value }))}
+                className={inputCls}
+                placeholder="Palavra na descrição"
+              />
+              <p className="mt-1.5 text-[11px] text-[#a49d8b]">
+                Várias palavras: traz só quem tem todas (ex.: piscina churrasqueira).
+              </p>
+            </div>
 
             {/* Contrato */}
             <div>

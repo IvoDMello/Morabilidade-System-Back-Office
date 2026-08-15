@@ -61,6 +61,9 @@ def _safe_for_or(s: str) -> str:
     """Remove vírgulas/parênteses que quebrariam a sintaxe do PostgREST .or_()."""
     return s.replace(",", " ").replace("(", " ").replace(")", " ").strip()
 
+# Teto de palavras no filtro de descrição: cada uma vira um ILIKE na query.
+_MAX_PALAVRAS_DESCRICAO = 6
+
 router = APIRouter()
 
 _LIST_FIELDS = (
@@ -85,7 +88,8 @@ def _gerar_codigo() -> str:
 
 def _aplicar_filtros(query, *, tipo_negocio, disponibilidade, cidade, bairro,
                      tipo_imovel, dormitorios_min, preco_min, preco_max,
-                     condicao, mobiliado, codigo, andar_max=None, q=None):
+                     condicao, mobiliado, codigo, andar_max=None, q=None,
+                     descricao=None):
     if q:
         termo = _safe_for_or(q)
         if termo:
@@ -97,6 +101,12 @@ def _aplicar_filtros(query, *, tipo_negocio, disponibilidade, cidade, bairro,
             )
     if codigo:
         query = query.ilike("codigo", f"%{codigo}%")
+    if descricao:
+        # Cada palavra vira um ILIKE próprio (AND entre elas), então
+        # "piscina churrasqueira" acha quem tem as duas, em qualquer ordem.
+        # descricao_norm é a coluna gerada da migration 052 (sem acentos).
+        for palavra in descricao.split()[:_MAX_PALAVRAS_DESCRICAO]:
+            query = query.ilike("descricao_norm", f"%{_norm(palavra)}%")
     if tipo_negocio:
         query = query.eq("tipo_negocio", _ev(tipo_negocio))
     if disponibilidade:
@@ -481,6 +491,7 @@ def exportar_imoveis_csv(
     mobiliado: Optional[Mobiliado] = None,
     codigo: Optional[str] = None,
     q: Optional[str] = Query(default=None, description="Busca livre por código, logradouro ou bairro"),
+    descricao: Optional[str] = Query(default=None, description="Palavras que devem aparecer na descrição do imóvel"),
     sem_foto: Optional[bool] = None,
     current_user: dict = Depends(get_current_user),
 ):
@@ -490,6 +501,7 @@ def exportar_imoveis_csv(
         cidade=cidade, bairro=bairro, tipo_imovel=tipo_imovel,
         dormitorios_min=dormitorios_min, preco_min=preco_min, preco_max=preco_max,
         condicao=condicao, mobiliado=mobiliado, codigo=codigo, q=q,
+        descricao=descricao,
     )
 
     ids_sem_foto: Optional[List[str]] = None
@@ -572,6 +584,7 @@ def listar_imoveis(
     mobiliado: Optional[Mobiliado] = None,
     codigo: Optional[str] = None,
     q: Optional[str] = Query(default=None, description="Busca livre por código, logradouro ou bairro"),
+    descricao: Optional[str] = Query(default=None, description="Palavras que devem aparecer na descrição do imóvel"),
     sem_foto: Optional[bool] = None,
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
@@ -582,6 +595,7 @@ def listar_imoveis(
         cidade=cidade, bairro=bairro, tipo_imovel=tipo_imovel,
         dormitorios_min=dormitorios_min, preco_min=preco_min, preco_max=preco_max,
         condicao=condicao, mobiliado=mobiliado, codigo=codigo, q=q,
+        descricao=descricao,
     )
 
     ids_sem_foto: Optional[List[str]] = None

@@ -175,6 +175,53 @@ def test_listar_imoveis_q_sanitiza_caracteres_especiais(client):
                 continue
 
 
+# ── Filtro por descrição ──────────────────────────────────────────────────────
+
+def test_listar_imoveis_descricao_usa_coluna_normalizada(client):
+    """`descricao` vira ILIKE em descricao_norm, com o termo sem acento."""
+    count_res = MagicMock(count=1, data=[])
+    data_res = MagicMock(count=1, data=[IMOVEL_DB])
+    db = make_db_mock(count_res, data_res)
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/", params={"descricao": "Área gourmet"})
+
+    assert res.status_code == 200
+    ilike_calls = [(c.args[0], c.args[1]) for c in db.ilike.call_args_list if len(c.args) >= 2]
+    # Uma cláusula por palavra (AND entre elas), tudo sem acento e minúsculo.
+    assert ("descricao_norm", "%area%") in ilike_calls
+    assert ("descricao_norm", "%gourmet%") in ilike_calls
+    # Busca em descrição não é busca livre: não deve virar OR com bairro/código.
+    assert db.or_.call_count == 0
+
+
+def test_listar_imoveis_descricao_vazia_nao_filtra(client):
+    """`descricao` só com espaços não deve gerar filtro nenhum."""
+    count_res = MagicMock(count=0, data=[])
+    data_res = MagicMock(count=0, data=[])
+    db = make_db_mock(count_res, data_res)
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/", params={"descricao": "   "})
+
+    assert res.status_code == 200
+    ilike_cols = [c.args[0] for c in db.ilike.call_args_list if c.args]
+    assert "descricao_norm" not in ilike_cols
+
+
+def test_exportar_imoveis_aceita_descricao(client):
+    """O CSV respeita o filtro de descrição igual à listagem."""
+    data_res = MagicMock(data=[IMOVEL_DB])
+    db = make_db_mock(data_res, MagicMock(data=[]))
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/exportar", params={"descricao": "piscina"})
+
+    assert res.status_code == 200
+    ilike_calls = [(c.args[0], c.args[1]) for c in db.ilike.call_args_list if len(c.args) >= 2]
+    assert ("descricao_norm", "%piscina%") in ilike_calls
+
+
 def test_exportar_imoveis_aceita_q(client):
     """Endpoint /exportar agora aceita `q` (busca livre)."""
     data_res = MagicMock(data=[IMOVEL_DB])
