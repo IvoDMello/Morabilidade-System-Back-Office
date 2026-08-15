@@ -46,7 +46,7 @@ export default async function ImoveisPage({ searchParams }: Props) {
       <div
         style={{
           backgroundColor: "#585a4f",
-          padding: "clamp(42px,6vw,88px) clamp(24px,5vw,64px) clamp(40px,5vw,72px)",
+          padding: "clamp(24px,4vw,60px) clamp(24px,5vw,64px) clamp(28px,4vw,56px)",
           textAlign: "center",
         }}
       >
@@ -81,7 +81,7 @@ export default async function ImoveisPage({ searchParams }: Props) {
               fontWeight: 500,
               lineHeight: 1.12,
               color: "#fcfcfc",
-              margin: "clamp(18px,2vw,26px) 0 clamp(14px,1.6vw,20px)",
+              margin: "clamp(12px,1.6vw,20px) 0 clamp(10px,1.2vw,16px)",
             }}
           >
             Cada imóvel tem <em style={{ fontWeight: 400 }}>uma história</em>

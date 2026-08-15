@@ -14,15 +14,20 @@ const links = [
 ];
 
 /** Altura da navbar, para alinhar os elementos sticky da página. */
-export const NAVBAR_ALTURA = "clamp(96px, 12vw, 104px)";
+export const NAVBAR_ALTURA = "clamp(82px, 10vw, 90px)";
 
 // Faixa mobile com a marca (só a listagem usa). O hambúrguer é fixed pra seguir
 // alcançável depois do scroll, então o `top` dele sai da altura da faixa — é
 // isso que mantém marca e botão no mesmo eixo vertical.
-const FAIXA_MOBILE_ALTURA = 78;
+const FAIXA_MOBILE_ALTURA = 68;
 const FAIXA_MOBILE_PADDING = 20;
 const BURGER = 48;
 const BURGER_TOP_NA_FAIXA = (FAIXA_MOBILE_ALTURA - BURGER) / 2;
+// O botão não tem mais fundo, só as 3 linhas (22px, ver .nav-burger no
+// globals.css). O alvo de toque continua 48px, então descontamos a folga do
+// `right` pra alinhar as linhas com a margem da página, e não a caixa invisível.
+const BURGER_GLIFO = 22;
+const BURGER_FOLGA = (BURGER - BURGER_GLIFO) / 2;
 
 interface NavbarProps {
   /** Mostra a faixa com a marca no mobile, alinhada com o hambúrguer. */
@@ -69,7 +74,7 @@ export function Navbar({ marcaMobile = false }: NavbarProps) {
               alt="Morabilidade"
               width={220}
               height={64}
-              style={{ height: "clamp(68px, 10vw, 76px)", width: "auto", objectFit: "contain" }}
+              style={{ height: "clamp(56px, 8vw, 64px)", width: "auto", objectFit: "contain" }}
               priority
             />
           </Link>
@@ -162,7 +167,7 @@ export function Navbar({ marcaMobile = false }: NavbarProps) {
               alt="Morabilidade"
               width={1855}
               height={890}
-              style={{ width: 104, height: "auto", objectFit: "contain" }}
+              style={{ width: 88, height: "auto", objectFit: "contain" }}
               priority
             />
           </Link>
@@ -176,16 +181,14 @@ export function Navbar({ marcaMobile = false }: NavbarProps) {
         className="md:hidden fixed flex items-center justify-center active:scale-90"
         style={{
           top: marcaMobile ? BURGER_TOP_NA_FAIXA : 16,
-          right: marcaMobile ? FAIXA_MOBILE_PADDING : 16,
+          right: (marcaMobile ? FAIXA_MOBILE_PADDING : 16) - BURGER_FOLGA,
           zIndex: 60,
           width: BURGER,
           height: BURGER,
-          backgroundColor: "#d8cb6a",
-          border: "2px solid rgba(252,252,252,0.85)",
-          borderRadius: 12,
+          backgroundColor: "transparent",
+          border: "none",
           cursor: "pointer",
           padding: 0,
-          boxShadow: "0 4px 16px rgba(0,0,0,0.35), 0 0 0 4px rgba(216,203,106,0.18)",
           transition: "transform 0.2s ease",
         }}
         onClick={() => setOpen((v) => !v)}
