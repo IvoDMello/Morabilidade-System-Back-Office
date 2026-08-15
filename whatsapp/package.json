@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "token:google": "node scripts/gerar-token-google.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.110.0",
