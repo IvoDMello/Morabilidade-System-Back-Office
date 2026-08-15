@@ -153,9 +153,9 @@ def _normalizar_proprietario(raw: dict) -> Optional[dict]:
 def _transformar_lista(raw: dict) -> dict:
     fotos = sorted(raw.pop("imovel_fotos", None) or [], key=lambda f: f.get("ordem", 0))
     foto_capa = fotos[0]["url"] if fotos else None
-    # Primeiras fotos (limite curto pra não inflar o payload da listagem):
-    # permitem o mini-carrossel no card do site sem abrir a página do imóvel.
-    fotos_card = [f["url"] for f in fotos[:6]]
+    # Todas as fotos, o mini-carrossel do card no site percorre o imóvel inteiro
+    # sem precisar abrir a página. São no máximo 30 por imóvel (ver upload_fotos).
+    fotos_card = [f["url"] for f in fotos]
     tags_raw = raw.pop("imovel_tags", None) or []
     tags = [t["tags"] for t in tags_raw if t.get("tags")]
     proprietario = _normalizar_proprietario(raw)

@@ -28,6 +28,14 @@ export function CardFotoCarousel({
   const varias = fotos.length > 1;
   const temMaisFotos = (totalFotos ?? fotos.length) > fotos.length;
 
+  // Janela de indicadores: no máximo MAX_PONTOS bolinhas, com a ativa centralizada.
+  const MAX_PONTOS = 5;
+  const inicio = Math.max(
+    0,
+    Math.min(idx - Math.floor(MAX_PONTOS / 2), fotos.length - MAX_PONTOS),
+  );
+  const fim = Math.min(fotos.length, inicio + MAX_PONTOS);
+
   function irPara(e: React.MouseEvent, dir: -1 | 1) {
     e.preventDefault();
     e.stopPropagation();
@@ -96,16 +104,24 @@ export function CardFotoCarousel({
             </div>
           )}
 
-          {/* Indicadores */}
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex gap-1.5 pointer-events-none">
-            {fotos.map((_, i) => (
-              <span
-                key={i}
-                className={`rounded-full transition-all duration-200 ${
-                  i === idx ? "w-2 h-2 bg-white" : "w-1.5 h-1.5 bg-white/60"
-                }`}
-              />
-            ))}
+          {/* Indicadores, janela deslizante pra não lotar o card em imóveis com muitas fotos */}
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 pointer-events-none">
+            {Array.from({ length: fim - inicio }, (_, n) => inicio + n).map((i) => {
+              const naBorda =
+                (i === inicio && inicio > 0) || (i === fim - 1 && fim < fotos.length);
+              return (
+                <span
+                  key={i}
+                  className={`rounded-full transition-all duration-200 ${
+                    i === idx
+                      ? "w-2 h-2 bg-white"
+                      : naBorda
+                        ? "w-1 h-1 bg-white/60"
+                        : "w-1.5 h-1.5 bg-white/60"
+                  }`}
+                />
+              );
+            })}
           </div>
         </>
       )}
