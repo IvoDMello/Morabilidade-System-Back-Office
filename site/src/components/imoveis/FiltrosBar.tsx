@@ -361,7 +361,7 @@ export function FiltrosBar({ total, bairros = [] }: Props) {
         ref={trilhoRef}
         className="hide-scrollbar flex items-stretch overflow-x-auto"
         style={{
-          height: 56,
+          height: 46,
           maxWidth: 1176,
           margin: "0 auto",
           padding: "0 clamp(20px,4vw,64px)",

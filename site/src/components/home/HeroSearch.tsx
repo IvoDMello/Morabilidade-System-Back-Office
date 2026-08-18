@@ -5,8 +5,6 @@ import { useRouter } from "next/navigation";
 import * as Select from "@radix-ui/react-select";
 import { Search, MapPin, Check, ChevronDown, ChevronUp } from "lucide-react";
 
-type TipoNegocio = "venda" | "locacao" | "";
-
 // Mesma ordem da FiltrosBar, pra quem vem do hero reencontrar a lista igual.
 const TIPOS_IMOVEL = [
   { value: "apartamento", label: "Apartamento" },
@@ -25,13 +23,11 @@ const VALOR_TODOS = "__todos__";
 
 export function HeroSearch() {
   const router = useRouter();
-  const [tipoNegocio, setTipoNegocio] = useState<TipoNegocio>("");
   const [tipoImovel, setTipoImovel] = useState("");
   const [bairro, setBairro] = useState("");
 
-  function montarUrl(negocio: TipoNegocio): string {
+  function montarUrl(): string {
     const params = new URLSearchParams();
-    if (negocio) params.set("tipo_negocio", negocio);
     if (tipoImovel === "apartamento_terreo") {
       params.set("tipo_imovel", "apartamento");
       params.set("andar_max", "1");
@@ -45,49 +41,11 @@ export function HeroSearch() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    router.push(montarUrl(tipoNegocio));
-  }
-
-  function selecionarNegocio(v: TipoNegocio) {
-    setTipoNegocio(v);
-    if (v) router.push(montarUrl(v));
+    router.push(montarUrl());
   }
 
   return (
     <form onSubmit={handleSubmit} className="max-w-2xl mx-auto">
-      {/* Toggle Comprar / Alugar */}
-      <div className="flex items-center justify-center mb-3">
-        <div
-          className="inline-flex items-center rounded-full p-1"
-          role="tablist"
-          style={{
-            background: "rgba(20,22,18,0.34)",
-            backdropFilter: "blur(10px)",
-            WebkitBackdropFilter: "blur(10px)",
-            border: "1px solid rgba(252,252,252,0.14)",
-          }}
-        >
-          <SegmentButton
-            active={tipoNegocio === ""}
-            onClick={() => selecionarNegocio("")}
-          >
-            Tudo
-          </SegmentButton>
-          <SegmentButton
-            active={tipoNegocio === "venda"}
-            onClick={() => selecionarNegocio("venda")}
-          >
-            Comprar
-          </SegmentButton>
-          <SegmentButton
-            active={tipoNegocio === "locacao"}
-            onClick={() => selecionarNegocio("locacao")}
-          >
-            Alugar
-          </SegmentButton>
-        </div>
-      </div>
-
       {/* Card de busca */}
       <div className="bg-white rounded-2xl shadow-xl shadow-black/30 p-1.5 sm:p-2.5 flex flex-col sm:flex-row gap-1.5 sm:gap-2 items-stretch">
         {/* Tipo de imóvel — dropdown Radix, no mesmo padrão da barra de filtros
@@ -107,8 +65,11 @@ export function HeroSearch() {
                 "focus:outline-none focus-visible:ring-2 focus-visible:ring-[#585a4f]/30"
               }
             >
+              {/* Label do próprio estado em vez de <Select.Value />: o Radix porta o
+                  texto do item selecionado pro trigger só depois de hidratar, e
+                  no primeiro paint o campo aparecia vazio. */}
               <span className="truncate">
-                <Select.Value />
+                {TIPOS_IMOVEL.find((t) => t.value === tipoImovel)?.label ?? TODOS_LABEL}
               </span>
               <ChevronDown
                 className={
@@ -200,28 +161,5 @@ function ItemTipo({
         <Check className="w-4 h-4 text-[#585a4f]" />
       </Select.ItemIndicator>
     </Select.Item>
-  );
-}
-
-function SegmentButton({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-semibold transition-all ${
-        active ? "shadow-md" : "text-white/70 hover:text-white"
-      }`}
-      style={active ? { backgroundColor: "#d8cb6a", color: "#3e4037" } : undefined}
-    >
-      {children}
-    </button>
   );
 }

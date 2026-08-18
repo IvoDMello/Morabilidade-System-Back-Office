@@ -14,7 +14,7 @@ const links = [
 ];
 
 /** Altura da navbar, para alinhar os elementos sticky da página. */
-export const NAVBAR_ALTURA = "clamp(82px, 10vw, 90px)";
+export const NAVBAR_ALTURA = "clamp(64px, 7vw, 72px)";
 
 // Modo transparente: a navbar troca pra sólida quando a base dela está a
 // FOLGA_TEXTO px de encostar no texto do hero. O elemento de referência é o que
@@ -39,8 +39,8 @@ interface NavbarProps {
   /** Mostra a faixa com a marca no mobile, alinhada com o hambúrguer. */
   marcaMobile?: boolean;
   /**
-   * Navbar transparente sobre o hero (home): começa sem fundo, com um leve
-   * scrim pra legibilidade, e vira sólida (#585a4f) só quando a barra chega
+   * Navbar transparente sobre o hero (home): começa sem fundo nenhum (a marca e
+   * os links se sustentam no text-shadow), e vira sólida (#585a4f) só quando chega
    * perto do texto do hero (o elemento marcado com `data-nav-limite`).
    * Nas outras páginas fica o comportamento antigo (sticky sólida).
    */
@@ -118,12 +118,21 @@ export function Navbar({ marcaMobile = false, transparente = false }: NavbarProp
         }`}
         style={{
           backgroundColor: solida ? "#585a4f" : "transparent",
-          backgroundImage: solida
-            ? "none"
-            : "linear-gradient(180deg, rgba(20,22,18,0.45) 0%, rgba(20,22,18,0) 100%)",
+          // Transparente é transparente mesmo: o scrim antigo (0.45 -> 0 em 72px)
+          // era uma rampa curta demais e o olho lia a base da navbar como uma
+          // linha. A legibilidade fica por conta do text-shadow dos links e do
+          // drop-shadow da marca, mais o vignette do próprio hero.
+          backgroundImage: "none",
           boxShadow: solida && transparente ? "0 8px 24px rgba(20,22,18,0.18)" : "none",
           transition: "background-color 0.3s ease, box-shadow 0.3s ease",
           height: NAVBAR_ALTURA,
+          // Radix trava o scroll ao abrir um dropdown: a barra de rolagem some
+          // e o body ganha padding-right do mesmo tamanho pra não deslocar o
+          // conteúdo. Header `fixed` fica fora do fluxo do body e não recebe
+          // esse padding — sem isto o viewport alarga e o menu da direita pula.
+          paddingRight: transparente
+            ? "var(--removed-body-scroll-bar-size, 0px)"
+            : undefined,
         }}
       >
         <div
@@ -140,7 +149,7 @@ export function Navbar({ marcaMobile = false, transparente = false }: NavbarProp
               width={1855}
               height={890}
               style={{
-                height: "clamp(40px, 5vw, 52px)",
+                height: "clamp(34px, 4vw, 42px)",
                 width: "auto",
                 objectFit: "contain",
                 filter: solida

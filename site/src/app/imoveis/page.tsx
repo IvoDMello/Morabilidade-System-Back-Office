@@ -111,7 +111,7 @@ export default async function ImoveisPage({ searchParams }: Props) {
         style={{
           maxWidth: 1176,
           margin: "0 auto",
-          padding: "clamp(28px,4vw,44px) clamp(20px,5vw,48px) 100px",
+          padding: "clamp(16px,2.2vw,24px) clamp(20px,5vw,48px) 100px",
         }}
       >
         <Suspense
