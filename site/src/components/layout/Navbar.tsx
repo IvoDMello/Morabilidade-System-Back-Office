@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -15,6 +15,12 @@ const links = [
 
 /** Altura da navbar, para alinhar os elementos sticky da página. */
 export const NAVBAR_ALTURA = "clamp(82px, 10vw, 90px)";
+
+// Modo transparente: a navbar troca pra sólida quando a base dela está a
+// FOLGA_TEXTO px de encostar no texto do hero. O elemento de referência é o que
+// tiver `data-nav-limite`; sem ele, cai no limite fixo.
+const FOLGA_TEXTO = 24;
+const LIMITE_PADRAO = 120;
 
 // Faixa mobile com a marca (só a listagem usa). O hambúrguer é fixed pra seguir
 // alcançável depois do scroll, então o `top` dele sai da altura da faixa — é
@@ -32,15 +38,61 @@ const BURGER_FOLGA = (BURGER - BURGER_GLIFO) / 2;
 interface NavbarProps {
   /** Mostra a faixa com a marca no mobile, alinhada com o hambúrguer. */
   marcaMobile?: boolean;
+  /**
+   * Navbar transparente sobre o hero (home): começa sem fundo, com um leve
+   * scrim pra legibilidade, e vira sólida (#585a4f) só quando a barra chega
+   * perto do texto do hero (o elemento marcado com `data-nav-limite`).
+   * Nas outras páginas fica o comportamento antigo (sticky sólida).
+   */
+  transparente?: boolean;
 }
 
-export function Navbar({ marcaMobile = false }: NavbarProps) {
+export function Navbar({ marcaMobile = false, transparente = false }: NavbarProps) {
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const headerRef = useRef<HTMLElement>(null);
   const pathname = usePathname();
 
   function isActive(href: string) {
     return href === "/" ? pathname === "/" : pathname.startsWith(href);
   }
+
+  // Modo transparente: o ponto de virada é onde a base da navbar quase encosta
+  // no texto do hero. O hero é elástico (88vh), então esse ponto muda com a
+  // altura da janela — por isso medimos em vez de cravar um número.
+  useEffect(() => {
+    if (!transparente) return;
+    let vivo = true;
+    let limite = LIMITE_PADRAO;
+
+    const medir = () => {
+      const alvo = document.querySelector<HTMLElement>("[data-nav-limite]");
+      if (!alvo) return;
+      const topoDoTexto = alvo.getBoundingClientRect().top + window.scrollY;
+      const alturaNav = headerRef.current?.offsetHeight ?? 0;
+      limite = Math.max(0, topoDoTexto - alturaNav - FOLGA_TEXTO);
+    };
+
+    const avaliar = () => setScrolled(window.scrollY > limite);
+    const remedir = () => {
+      if (!vivo) return;
+      medir();
+      avaliar();
+    };
+
+    remedir();
+    // O hero é em serifada: quando a fonte carrega, o texto muda de lugar.
+    document.fonts?.ready?.then(remedir);
+    window.addEventListener("scroll", avaliar, { passive: true });
+    window.addEventListener("resize", remedir);
+    return () => {
+      vivo = false;
+      window.removeEventListener("scroll", avaliar);
+      window.removeEventListener("resize", remedir);
+    };
+  }, [transparente]);
+
+  const solida = !transparente || scrolled;
 
   // Trava o scroll da página e fecha o menu com Escape enquanto aberto
   useEffect(() => {
@@ -60,21 +112,41 @@ export function Navbar({ marcaMobile = false }: NavbarProps) {
   return (
     <>
       <header
-        className="hidden md:block sticky top-0 z-50"
-        style={{ backgroundColor: "#585a4f", height: NAVBAR_ALTURA }}
+        ref={headerRef}
+        className={`hidden md:block z-50 ${
+          transparente ? "fixed top-0 left-0 right-0" : "sticky top-0"
+        }`}
+        style={{
+          backgroundColor: solida ? "#585a4f" : "transparent",
+          backgroundImage: solida
+            ? "none"
+            : "linear-gradient(180deg, rgba(20,22,18,0.45) 0%, rgba(20,22,18,0) 100%)",
+          boxShadow: solida && transparente ? "0 8px 24px rgba(20,22,18,0.18)" : "none",
+          transition: "background-color 0.3s ease, box-shadow 0.3s ease",
+          height: NAVBAR_ALTURA,
+        }}
       >
         <div
           className="flex items-center justify-between h-full"
           style={{ padding: "0 clamp(20px, 5vw, 48px)" }}
         >
-          {/* Logo */}
+          {/* Logo — usa o PNG recortado justo (`logo-marca`), e não o
+              `Logo_fundoTransparente`: aquele tem ~59% de margem transparente
+              na altura, o que encolhia a marca pra 41% do tamanho pedido. */}
           <Link href="/" className="flex-shrink-0 flex items-center">
             <Image
-              src="/Logo_fundoTransparente.png"
+              src="/logo-marca.png"
               alt="Morabilidade"
-              width={220}
-              height={64}
-              style={{ height: "clamp(56px, 8vw, 64px)", width: "auto", objectFit: "contain" }}
+              width={1855}
+              height={890}
+              style={{
+                height: "clamp(40px, 5vw, 52px)",
+                width: "auto",
+                objectFit: "contain",
+                filter: solida
+                  ? "none"
+                  : "drop-shadow(0 2px 8px rgba(0,0,0,0.45))",
+              }}
               priority
             />
           </Link>
@@ -96,6 +168,7 @@ export function Navbar({ marcaMobile = false }: NavbarProps) {
                     transition: "color 0.15s",
                     fontWeight: active ? 600 : 400,
                     letterSpacing: active ? "0.02em" : "0",
+                    textShadow: solida ? "none" : "0 1px 6px rgba(20,22,18,0.5)",
                   }}
                   className="hover:!text-[#fcfcfc]"
                 >

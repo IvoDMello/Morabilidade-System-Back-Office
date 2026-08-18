@@ -124,15 +124,17 @@ function DestaquesScrollInner({ imoveis }: { imoveis: ImovelCard[] }) {
     const active = nearestIndexFor(el);
     Array.from(el.children).forEach((child, i) => {
       const node = child as HTMLElement;
-      node.style.transition = animate
-        ? "transform 500ms ease-out, opacity 500ms ease-out"
-        : "none";
       if (!isMobile) {
-        // No desktop o card fica neutro (sem transform inline), pra não
-        // atropelar o "levantar" do hover, que também usa transform.
+        // No desktop o card fica neutro: sem transform, opacity NEM transition
+        // inline. Qualquer um dos três venceria as classes do card e mataria o
+        // hover, que anima transform e box-shadow.
+        node.style.transition = "";
         node.style.transform = "";
         node.style.opacity = "";
       } else {
+        node.style.transition = animate
+          ? "transform 500ms ease-out, opacity 500ms ease-out"
+          : "none";
         node.style.transform = i === active ? "scale(1)" : "scale(0.92)";
         node.style.opacity = i === active ? "1" : "0.55";
       }
@@ -364,7 +366,10 @@ function DestaquesScrollInner({ imoveis }: { imoveis: ImovelCard[] }) {
         className="flex gap-4 md:gap-5 hide-scrollbar [scroll-snap-type:none] md:[scroll-snap-type:x_mandatory] md:[scroll-snap-stop:always]"
         style={{
           overflowX: "auto",
-          paddingBottom: 4,
+          // overflow-x:auto obriga o eixo Y a virar auto também, então sem
+          // folga vertical o trilho recorta o "levantar" e a sombra do hover.
+          paddingTop: 16,
+          paddingBottom: 34,
         }}
       >
         {items.map((im, i) => {

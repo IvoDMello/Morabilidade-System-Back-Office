@@ -55,12 +55,12 @@ export default async function HomePage() {
 
   return (
     <>
-      <Navbar />
+      <Navbar transparente />
 
       {/* ── Hero ── */}
       <section
         className="relative overflow-hidden flex items-center justify-center"
-        style={{ minHeight: "clamp(480px, 70vh, 700px)" }}
+        style={{ minHeight: "clamp(520px, 88vh, 920px)" }}
       >
         <Image
           src="/nova_foto_hero.jpeg"
@@ -126,10 +126,13 @@ export default async function HomePage() {
             />
           </div>
 
+          {/* data-nav-limite: referência que a Navbar usa pra decidir quando
+              sair do transparente (ver FOLGA_TEXTO em Navbar.tsx). */}
           <h1
+            data-nav-limite
             className="font-serif text-white mb-5"
             style={{
-              fontSize: "clamp(32px,5.5vw,62px)",
+              fontSize: "clamp(32px,5.5vw,72px)",
               fontWeight: 500,
               lineHeight: 1.1,
               textShadow: "0 2px 28px rgba(20,22,18,0.55)",
