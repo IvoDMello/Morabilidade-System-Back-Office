@@ -8,6 +8,27 @@ import type { MessageTemplate } from "@/types/template";
 import type { ContactProperty, Property } from "@/types/property";
 import type { WhatsAppConversation, WhatsAppMessage } from "@/types/whatsapp";
 import type { Corretor } from "@/types/corretor";
+import type { ImovelDisponivel, PreferenciaBusca } from "@/types/oportunidade";
+
+/**
+ * Dados do modo mock (`NEXT_PUBLIC_DATA_SOURCE=mock`) — o painel roda inteiro
+ * sem Supabase nenhum.
+ *
+ * ── Por que são só quatro contatos ────────────────────────────────────────
+ * Eram doze, com nomes e telefones de gente plausível ("Marcos Andrade",
+ * "(11) 98765-4321"). Um seed assim é uma armadilha: numa tela cheia ninguém
+ * distingue o exemplo do cliente de verdade, e a dúvida "esse aqui é real?"
+ * aparece justamente na hora de mandar mensagem. Os quatro que sobraram dizem no
+ * nome que são exemplo e usam números impossíveis (55 11 9000-000X), então a
+ * confusão não tem como acontecer.
+ *
+ * O que cada um cobre está no comentário do próprio contato — juntos, mantêm
+ * de pé as filas que o painel precisa exercitar em desenvolvimento
+ * (aguardando resposta, follow-up, visita com ficha automática).
+ *
+ * Para limpar os doze antigos do banco real, ver
+ * supabase/migrations/0027_limpeza_contatos_demo.sql.
+ */
 
 function at(daysOffset: number, hours: number, minutes = 0): string {
   return setMinutes(setHours(addDays(new Date(), daysOffset), hours), minutes).toISOString();
@@ -47,127 +68,59 @@ export const seedCorretores: Corretor[] = [
 
 export const seedContacts: Contact[] = [
   contact({
+    // Comprador com perfil de busca preenchido: é o contato que faz a aba de
+    // Oportunidades ter o que mostrar, e o que tem visita com ficha automática.
     id: "c1",
-    name: "Marcos Andrade",
-    phone: "5511987654321",
-    email: "marcos.andrade@example.com",
-    category: "proprietario",
-    status: "em_atendimento",
-    nextAction: "ligar",
-    isFavorite: true,
-    generalNotes: "Possui 3 imóveis na Zona Sul, prefere contato à tarde.",
-    updatedAt: subHours(now, 2).toISOString(),
-  }),
-  contact({
-    id: "c2",
-    name: "Fernanda Lima",
-    phone: "5511991234567",
-    email: "fernanda.lima@example.com",
+    name: "Exemplo — Comprador",
+    phone: "5511900000001",
+    email: "exemplo.comprador@morabilidade.test",
     category: "comprador",
     status: "visita_marcada",
     nextAction: "agendar_visita",
     isFavorite: true,
-    generalNotes: "Procura apartamento de 2 quartos até R$ 450 mil.",
-    updatedAt: subHours(now, 5).toISOString(),
+    generalNotes: "Contato de exemplo do modo mock — não é cliente real.",
+    clienteId: "cli-exemplo-1",
+    clienteCodigo: "CL-90001",
+    updatedAt: subMinutes(now, 20).toISOString(),
   }),
   contact({
+    // Proprietário: cobre a fila "aguardando resposta" e a categoria que não
+    // procura imóvel (a aba de Oportunidades precisa lidar com esse caso).
+    id: "c2",
+    name: "Exemplo — Proprietário",
+    phone: "5511900000002",
+    category: "proprietario",
+    status: "em_atendimento",
+    nextAction: "ligar",
+    generalNotes: "Contato de exemplo do modo mock — não é cliente real.",
+    updatedAt: subHours(now, 26).toISOString(),
+  }),
+  contact({
+    // Locatário: cobre follow-up esfriando e visita sem imóvel vinculado.
     id: "c3",
-    name: "Ricardo Souza",
-    phone: "5521998877665",
+    name: "Exemplo — Locatário",
+    phone: "5511900000003",
     category: "locatario",
     status: "documentacao",
     nextAction: "enviar_documentacao",
-    generalNotes: "Aguardando envio de comprovante de renda.",
-    updatedAt: subDays(now, 1).toISOString(),
-  }),
-  contact({
-    id: "c4",
-    name: "Juliana Torres",
-    phone: "5511976543210",
-    email: "juliana.torres@example.com",
-    category: "comprador",
-    status: "novo",
-    nextAction: "ligar",
-    updatedAt: subDays(now, 1).toISOString(),
-  }),
-  contact({
-    id: "c5",
-    name: "Imobiliária Parceira Bela Vista",
-    phone: "551132221100",
-    category: "investidor",
-    status: "em_atendimento",
-    nextAction: "aguardar_retorno",
-    generalNotes: "Parceria para indicação de imóveis comerciais.",
-    updatedAt: subDays(now, 3).toISOString(),
-  }),
-  contact({
-    id: "c6",
-    name: "Carlos Eduardo Pinto",
-    phone: "5511955443322",
-    category: "proprietario",
-    status: "aguardando_retorno",
-    nextAction: "ligar",
-    updatedAt: subDays(now, 2).toISOString(),
-  }),
-  contact({
-    id: "c7",
-    name: "Bianca Ferreira",
-    phone: "5511944556677",
-    email: "bianca.ferreira@example.com",
-    category: "comprador",
-    status: "aguardando_retorno",
-    nextAction: "aguardar_retorno",
-    generalNotes: "Interessada em financiamento, aguardando aprovação do banco.",
+    generalNotes: "Contato de exemplo do modo mock — não é cliente real.",
+    clienteId: "cli-exemplo-3",
+    clienteCodigo: "CL-90003",
     updatedAt: subDays(now, 4).toISOString(),
   }),
   contact({
-    id: "c8",
-    name: "Paulo Henrique Costa",
-    phone: "5521987651234",
-    category: "locatario",
-    status: "finalizado",
-    nextAction: "aguardar_retorno",
-    updatedAt: subDays(now, 10).toISOString(),
-  }),
-  contact({
-    id: "c9",
-    name: "Renata Alves",
-    phone: "5511933221144",
-    category: "comprador",
-    status: "perdido",
-    nextAction: "outro",
-    lossReason: "comprou_concorrente",
-    generalNotes: "Optou por comprar com outra imobiliária.",
-    updatedAt: subDays(now, 15).toISOString(),
-  }),
-  contact({
-    id: "c10",
-    name: "Eduardo Martins",
-    phone: "5511922113344",
-    email: "eduardo.martins@example.com",
-    category: "comprador",
+    // Investidor: a SEGUNDA conversa aguardando resposta, e recente.
+    // Duas são necessárias, não decoração: o alerta horário separa quem espera
+    // há mais de 2h de quem acabou de escrever, e a triagem da IA precisa
+    // sempre de uma conversa ainda não triada para ter o que ler.
+    id: "c4",
+    name: "Exemplo — Investidor",
+    phone: "5511900000004",
+    category: "investidor",
     status: "novo",
     nextAction: "ligar",
-    updatedAt: subDays(now, 6).toISOString(),
-  }),
-  contact({
-    id: "c11",
-    name: "Camila Rodrigues",
-    phone: "5511911224455",
-    category: "comprador",
-    status: "documentacao",
-    nextAction: "enviar_documentacao",
-    generalNotes: "Assinatura de contrato agendada, falta certidão negativa.",
-    updatedAt: subHours(now, 8).toISOString(),
-  }),
-  contact({
-    id: "c12",
-    name: "Sérgio Nogueira",
-    phone: "5521955667788",
-    category: "proprietario",
-    status: "visita_marcada",
-    nextAction: "agendar_visita",
-    updatedAt: subDays(now, 1).toISOString(),
+    generalNotes: "Contato de exemplo do modo mock — não é cliente real.",
+    updatedAt: subMinutes(now, 45).toISOString(),
   }),
 ];
 
@@ -175,37 +128,23 @@ export const seedNotes: ContactNote[] = [
   {
     id: "n1",
     contactId: "c1",
-    note: "Cliente ligou perguntando sobre reajuste do aluguel do imóvel da Rua das Flores.",
+    note: "Visita ao MB-00033 marcada; cliente pediu para ver mais opções no mesmo bairro.",
     createdBy: "Ana Valadares",
-    createdAt: subDays(now, 5).toISOString(),
-  },
-  {
-    id: "n2",
-    contactId: "c1",
-    note: "Enviado boleto atualizado por e-mail.",
-    createdBy: "Ana Valadares",
-    createdAt: subHours(now, 2).toISOString(),
-  },
-  {
-    id: "n3",
-    contactId: "c2",
-    note: "Visita realizada no apartamento da Vila Mariana, cliente gostou bastante.",
-    createdBy: "Bruno Castro",
     createdAt: subDays(now, 1).toISOString(),
   },
   {
-    id: "n4",
-    contactId: "c3",
-    note: "Solicitado holerite dos últimos 3 meses.",
+    id: "n2",
+    contactId: "c2",
+    note: "Perguntou sobre reajuste do aluguel — aguardando retorno do proprietário.",
     createdBy: "Ana Valadares",
-    createdAt: subDays(now, 2).toISOString(),
+    createdAt: subHours(now, 26).toISOString(),
   },
   {
-    id: "n5",
-    contactId: "c7",
-    note: "Banco solicitou documentação complementar, cliente vai providenciar.",
+    id: "n3",
+    contactId: "c3",
+    note: "Solicitado comprovante de renda dos últimos 3 meses.",
     createdBy: "Bruno Castro",
-    createdAt: subDays(now, 4).toISOString(),
+    createdAt: subDays(now, 2).toISOString(),
   },
 ];
 
@@ -216,32 +155,23 @@ const seedRemindersData: Omit<
   "corretorId" | "imovelCodigo" | "fichaVisitaId" | "fichaNotificadaEm" | "googleCalendarEventId"
 >[] = [
   {
+    // Vencido: alimenta o selo vermelho de Pendências.
     id: "r1",
-    contactId: "c1",
-    title: "Ligar sobre reajuste do aluguel",
+    contactId: "c2",
+    title: "Cobrar retorno sobre o reajuste",
     description: "Confirmar se o proprietário aceita o novo valor proposto.",
-    reminderAt: at(-2, 10),
-    status: "pendente",
-    createdBy: "Ana Valadares",
-    createdAt: subDays(now, 6).toISOString(),
-    updatedAt: subDays(now, 6).toISOString(),
-  },
-  {
-    id: "r2",
-    contactId: "c6",
-    title: "Cobrar retorno sobre proposta",
-    description: null,
     reminderAt: at(-1, 15, 30),
     status: "pendente",
-    createdBy: "Bruno Castro",
+    createdBy: "Ana Valadares",
     createdAt: subDays(now, 3).toISOString(),
     updatedAt: subDays(now, 3).toISOString(),
   },
   {
-    id: "r3",
-    contactId: "c2",
+    // Para hoje.
+    id: "r2",
+    contactId: "c1",
     title: "Confirmar horário da visita",
-    description: "Visita ao apartamento da Vila Mariana.",
+    description: null,
     reminderAt: at(0, 14),
     status: "pendente",
     createdBy: "Bruno Castro",
@@ -249,40 +179,8 @@ const seedRemindersData: Omit<
     updatedAt: subDays(now, 1).toISOString(),
   },
   {
-    id: "r4",
-    contactId: "c11",
-    title: "Enviar lembrete de documentos faltantes",
-    description: null,
-    reminderAt: at(0, 17),
-    status: "pendente",
-    createdBy: "Ana Valadares",
-    createdAt: subHours(now, 8).toISOString(),
-    updatedAt: subHours(now, 8).toISOString(),
-  },
-  {
-    id: "r5",
-    contactId: "c12",
-    title: "Confirmar presença na visita",
-    description: null,
-    reminderAt: at(2, 9, 30),
-    status: "pendente",
-    createdBy: "Ana Valadares",
-    createdAt: subDays(now, 1).toISOString(),
-    updatedAt: subDays(now, 1).toISOString(),
-  },
-  {
-    id: "r6",
-    contactId: "c4",
-    title: "Primeiro contato com o lead",
-    description: null,
-    reminderAt: at(3, 11),
-    status: "pendente",
-    createdBy: "Bruno Castro",
-    createdAt: subDays(now, 1).toISOString(),
-    updatedAt: subDays(now, 1).toISOString(),
-  },
-  {
-    id: "r7",
+    // Futuro.
+    id: "r3",
     contactId: "c3",
     title: "Prazo final para envio da documentação",
     description: null,
@@ -293,26 +191,16 @@ const seedRemindersData: Omit<
     updatedAt: subDays(now, 2).toISOString(),
   },
   {
-    id: "r8",
-    contactId: "c8",
-    title: "Enviar pesquisa de satisfação",
+    // Concluído — o agrupamento da tela de lembretes precisa de um.
+    id: "r4",
+    contactId: "c3",
+    title: "Enviar contrato para leitura",
     description: null,
     reminderAt: subDays(now, 8).toISOString(),
     status: "concluido",
     createdBy: "Bruno Castro",
     createdAt: subDays(now, 10).toISOString(),
     updatedAt: subDays(now, 8).toISOString(),
-  },
-  {
-    id: "r9",
-    contactId: "c9",
-    title: "Follow-up mensal",
-    description: null,
-    reminderAt: subDays(now, 4).toISOString(),
-    status: "cancelado",
-    createdBy: "Ana Valadares",
-    createdAt: subDays(now, 12).toISOString(),
-    updatedAt: subDays(now, 4).toISOString(),
   },
 ];
 
@@ -330,7 +218,7 @@ const seedVisitasFicha: ContactReminder[] = [
   {
     // Caminho feliz: imóvel vinculado + corretor responsável.
     id: "rv1",
-    contactId: "c2", // Fernanda Lima, cliente com visita marcada
+    contactId: "c1",
     title: "Visita — MB-00033",
     description: "Primeira visita ao apartamento.",
     reminderAt: minutosAdiante(60),
@@ -347,8 +235,8 @@ const seedVisitasFicha: ContactReminder[] = [
   {
     // Sem imóvel vinculado: o cron não tem como gerar a ficha → pendência.
     id: "rv2",
-    contactId: "c3", // Ricardo Souza
-    title: "Visita com o Ricardo",
+    contactId: "c3",
+    title: "Visita com o locatário",
     description: null,
     reminderAt: minutosAdiante(75),
     status: "pendente",
@@ -365,7 +253,7 @@ const seedVisitasFicha: ContactReminder[] = [
     // Código só no título (visita criada antes da migration 0019): o cron
     // extrai "MB-00021" do texto — é o fallback de compatibilidade.
     id: "rv3",
-    contactId: "c1", // Marcos Andrade
+    contactId: "c2",
     title: "Visita — MB-00021",
     description: null,
     reminderAt: minutosAdiante(85),
@@ -382,7 +270,7 @@ const seedVisitasFicha: ContactReminder[] = [
   {
     // Fora da janela de 90 min: NÃO deve ser tocada nesta rodada.
     id: "rv4",
-    contactId: "c2",
+    contactId: "c1",
     title: "Visita — MB-00099",
     description: "Só amanhã de manhã.",
     reminderAt: minutosAdiante(300),
@@ -427,14 +315,16 @@ export const seedTags: Tag[] = [
 
 export const seedContactTags: { contactId: string; tagId: string }[] = [
   { contactId: "c1", tagId: "t2" },
-  { contactId: "c7", tagId: "t3" },
+  { contactId: "c3", tagId: "t3" },
 ];
 
 export const seedConversations: WhatsAppConversation[] = [
   {
+    // Respondida e recente: a janela de 24h está aberta, então a aba de
+    // Oportunidades pode enviar sem aviso de bloqueio.
     id: "wc1",
-    contactId: "c2",
-    waPhoneNumber: "5511991234567",
+    contactId: "c1",
+    waPhoneNumber: "5511900000001",
     lastMessageAt: subMinutes(now, 20).toISOString(),
     lastMessagePreview: "Perfeito, te aviso assim que confirmar com o proprietário!",
     lastMessageDirection: "outbound",
@@ -452,11 +342,12 @@ export const seedConversations: WhatsAppConversation[] = [
     createdAt: subDays(now, 2).toISOString(),
     updatedAt: subMinutes(now, 20).toISOString(),
   },
-  // Fila de pendências (Fase 2): cobrem os três estados que a tela precisa exibir.
   {
+    // Aguardando resposta há mais de 24h: alimenta a fila de Pendências e o
+    // aviso de janela fechada na aba de Oportunidades.
     id: "wc2",
-    contactId: "c1",
-    waPhoneNumber: "5511987654321",
+    contactId: "c2",
+    waPhoneNumber: "5511900000002",
     lastMessageAt: subHours(now, 26).toISOString(),
     lastMessagePreview: "Consegue me confirmar o valor atualizado do aluguel?",
     lastMessageDirection: "inbound",
@@ -475,9 +366,34 @@ export const seedConversations: WhatsAppConversation[] = [
     updatedAt: subHours(now, 26).toISOString(),
   },
   {
+    // Esfriando: `respondida` com último inbound há 4 dias — o job da Fase 3
+    // deve promovê-la a follow_up_sugerido quando rodar.
     id: "wc3",
-    contactId: "c6",
-    waPhoneNumber: "5511955443322",
+    contactId: "c3",
+    waPhoneNumber: "5511900000003",
+    lastMessageAt: subDays(now, 3).toISOString(),
+    lastMessagePreview: "Tudo bem, vou providenciar e te aviso!",
+    lastMessageDirection: "outbound",
+    unreadCount: 0,
+    status: "respondida",
+    lastInboundAt: subDays(now, 4).toISOString(),
+    lastOutboundAt: subDays(now, 3).toISOString(),
+    statusChangedAt: subDays(now, 3).toISOString(),
+    followUpSnoozedUntil: null,
+    lastAlertAt: null,
+    pinnedAt: null,
+    triagemPrecisaResposta: null,
+    triagemMotivo: null,
+    triagemMensagemEm: null,
+    createdAt: subDays(now, 12).toISOString(),
+    updatedAt: subDays(now, 3).toISOString(),
+  },
+  {
+    // Aguardando resposta há 45 min: abaixo do corte de 2h do alerta horário,
+    // então esta NÃO deve gerar alerta enquanto a wc2 (26h) deve.
+    id: "wc4",
+    contactId: "c4",
+    waPhoneNumber: "5511900000004",
     lastMessageAt: subMinutes(now, 45).toISOString(),
     lastMessagePreview: "Oi, alguma novidade sobre a proposta?",
     lastMessageDirection: "inbound",
@@ -495,71 +411,6 @@ export const seedConversations: WhatsAppConversation[] = [
     createdAt: subDays(now, 8).toISOString(),
     updatedAt: subMinutes(now, 45).toISOString(),
   },
-  {
-    id: "wc4",
-    contactId: "c7",
-    waPhoneNumber: "5511944556677",
-    lastMessageAt: subDays(now, 5).toISOString(),
-    lastMessagePreview: "Tudo bem, vou providenciar e te aviso!",
-    lastMessageDirection: "outbound",
-    unreadCount: 0,
-    status: "follow_up_sugerido",
-    lastInboundAt: subDays(now, 5).toISOString(),
-    lastOutboundAt: subDays(now, 5).toISOString(),
-    statusChangedAt: subDays(now, 2).toISOString(),
-    followUpSnoozedUntil: null,
-    lastAlertAt: null,
-    pinnedAt: null,
-    triagemPrecisaResposta: null,
-    triagemMotivo: null,
-    triagemMensagemEm: null,
-    createdAt: subDays(now, 12).toISOString(),
-    updatedAt: subDays(now, 2).toISOString(),
-  },
-  {
-    id: "wc5",
-    contactId: "c9",
-    waPhoneNumber: "5511933221144",
-    lastMessageAt: subDays(now, 15).toISOString(),
-    lastMessagePreview: "Ok, obrigada pelo atendimento!",
-    lastMessageDirection: "inbound",
-    unreadCount: 0,
-    status: "encerrada",
-    lastInboundAt: subDays(now, 15).toISOString(),
-    lastOutboundAt: subDays(now, 15).toISOString(),
-    statusChangedAt: subDays(now, 15).toISOString(),
-    followUpSnoozedUntil: null,
-    lastAlertAt: null,
-    pinnedAt: null,
-    triagemPrecisaResposta: null,
-    triagemMotivo: null,
-    triagemMensagemEm: null,
-    createdAt: subDays(now, 20).toISOString(),
-    updatedAt: subDays(now, 15).toISOString(),
-  },
-  // Job de esfriamento (Fase 3): respondida com last_inbound_at há 4 dias,
-  // deve virar follow_up_sugerido quando o job rodar.
-  {
-    id: "wc6",
-    contactId: "c10",
-    waPhoneNumber: "5511922113344",
-    lastMessageAt: subDays(now, 3).toISOString(),
-    lastMessagePreview: "Combinado, aguardo você por aqui.",
-    lastMessageDirection: "outbound",
-    unreadCount: 0,
-    status: "respondida",
-    lastInboundAt: subDays(now, 4).toISOString(),
-    lastOutboundAt: subDays(now, 3).toISOString(),
-    statusChangedAt: subDays(now, 3).toISOString(),
-    followUpSnoozedUntil: null,
-    lastAlertAt: null,
-    pinnedAt: null,
-    triagemPrecisaResposta: null,
-    triagemMotivo: null,
-    triagemMensagemEm: null,
-    createdAt: subDays(now, 6).toISOString(),
-    updatedAt: subDays(now, 3).toISOString(),
-  },
 ];
 
 export const seedEvents: ContactEvent[] = [
@@ -573,58 +424,44 @@ export const seedEvents: ContactEvent[] = [
   {
     id: "ev2",
     contactId: "c1",
-    type: "status_changed",
-    summary: "Status alterado para Em atendimento",
-    createdAt: subDays(now, 25).toISOString(),
+    type: "property_linked",
+    summary: "Imóvel MB-00033 vinculado pela mensagem do cliente",
+    createdAt: subDays(now, 2).toISOString(),
   },
   {
     id: "ev3",
     contactId: "c1",
-    type: "tag_added",
-    summary: "Etiqueta \"VIP\" adicionada",
-    createdAt: subDays(now, 20).toISOString(),
-  },
-  {
-    id: "ev4",
-    contactId: "c1",
-    type: "reminder_created",
-    summary: "Lembrete criado: Ligar sobre reajuste do aluguel",
-    createdAt: subDays(now, 6).toISOString(),
-  },
-  {
-    id: "ev5",
-    contactId: "c2",
-    type: "contact_created",
-    summary: "Contato criado",
-    createdAt: subDays(now, 30).toISOString(),
-  },
-  {
-    id: "ev6",
-    contactId: "c2",
     type: "status_changed",
     summary: "Status alterado para Visita marcada",
     createdAt: subDays(now, 2).toISOString(),
   },
   {
-    id: "ev7",
+    id: "ev4",
     contactId: "c2",
-    type: "reminder_created",
-    summary: "Lembrete criado: Confirmar horário da visita",
-    createdAt: subDays(now, 1).toISOString(),
-  },
-  {
-    id: "ev8",
-    contactId: "c9",
     type: "contact_created",
     summary: "Contato criado",
     createdAt: subDays(now, 30).toISOString(),
   },
   {
-    id: "ev9",
-    contactId: "c9",
+    id: "ev5",
+    contactId: "c2",
     type: "status_changed",
-    summary: "Status alterado para Perdido",
-    createdAt: subDays(now, 15).toISOString(),
+    summary: "Status alterado para Em atendimento",
+    createdAt: subDays(now, 25).toISOString(),
+  },
+  {
+    id: "ev6",
+    contactId: "c3",
+    type: "contact_created",
+    summary: "Contato criado",
+    createdAt: subDays(now, 30).toISOString(),
+  },
+  {
+    id: "ev7",
+    contactId: "c3",
+    type: "tag_added",
+    summary: "Etiqueta \"Financiamento\" adicionada",
+    createdAt: subDays(now, 20).toISOString(),
   },
 ];
 
@@ -659,19 +496,13 @@ export const seedProperties: Property[] = [
   {
     id: "p1",
     code: "MB-00033",
-    title: "Apartamento 2 quartos - Vila Mariana",
+    title: "Cobertura em Ipanema",
     createdAt: subDays(now, 25).toISOString(),
   },
   {
     id: "p2",
     code: "MB-00020",
-    title: "Casa 3 quartos - Zona Sul",
-    createdAt: subDays(now, 25).toISOString(),
-  },
-  {
-    id: "p3",
-    code: "MB-00011",
-    title: "Apartamento 1 quarto - Centro",
+    title: "Casa de vila no Jardim Botânico",
     createdAt: subDays(now, 25).toISOString(),
   },
 ];
@@ -679,25 +510,11 @@ export const seedProperties: Property[] = [
 // relacao preenchido no export abaixo (todos os vínculos seed são de interesse).
 const seedContactPropertiesData: Omit<ContactProperty, "relacao">[] = [
   {
-    contactId: "c2",
+    contactId: "c1",
     propertyId: "p1",
     stage: "visita",
     createdAt: subDays(now, 2).toISOString(),
     updatedAt: subDays(now, 1).toISOString(),
-  },
-  {
-    contactId: "c12",
-    propertyId: "p2",
-    stage: "visita",
-    createdAt: subDays(now, 1).toISOString(),
-    updatedAt: subDays(now, 1).toISOString(),
-  },
-  {
-    contactId: "c7",
-    propertyId: "p3",
-    stage: "proposta",
-    createdAt: subDays(now, 4).toISOString(),
-    updatedAt: subDays(now, 3).toISOString(),
   },
 ];
 
@@ -713,7 +530,7 @@ export const seedMessages: WhatsAppMessage[] = [
     waMessageId: "mock-seed-1",
     direction: "inbound",
     messageType: "text",
-    body: "Oi! Ainda está disponível o apartamento da Vila Mariana?",
+    body: "Olá! Tenho interesse no imóvel *Cobertura em Ipanema* (código *MB-00033*).",
     status: "received",
     errorMessage: null,
     replyTo: null,
@@ -730,7 +547,7 @@ export const seedMessages: WhatsAppMessage[] = [
     waMessageId: "mock-seed-2",
     direction: "outbound",
     messageType: "text",
-    body: "Oi, Fernanda! Sim, ainda está disponível. Posso agendar uma visita essa semana?",
+    body: "Olá! Sim, ainda está disponível. Posso agendar uma visita essa semana?",
     status: "read",
     errorMessage: null,
     replyTo: null,
@@ -796,6 +613,23 @@ export const seedMessages: WhatsAppMessage[] = [
     id: "wm6",
     conversationId: "wc3",
     waMessageId: "mock-seed-6",
+    direction: "outbound",
+    messageType: "text",
+    body: "Tudo bem, vou providenciar e te aviso!",
+    status: "read",
+    errorMessage: null,
+    replyTo: null,
+    mediaUrl: null,
+    mediaMimeType: null,
+    mediaFilename: null,
+    createdBy: "Ana Valadares",
+    waTimestamp: subDays(now, 3).toISOString(),
+    createdAt: subDays(now, 3).toISOString(),
+  },
+  {
+    id: "wm7",
+    conversationId: "wc4",
+    waMessageId: "mock-seed-7",
     direction: "inbound",
     messageType: "text",
     body: "Oi, alguma novidade sobre a proposta?",
@@ -809,55 +643,122 @@ export const seedMessages: WhatsAppMessage[] = [
     waTimestamp: subMinutes(now, 45).toISOString(),
     createdAt: subMinutes(now, 45).toISOString(),
   },
+];
+
+/**
+ * Catálogo de imóveis de mentira para a aba de Oportunidades rodar sem o
+ * Supabase do sistema (`public.imoveis`). Os valores respeitam o piso de
+ * R$ 2M das oportunidades — abaixo dele o imóvel nem entraria na lista, e um
+ * catálogo mock que some inteiro não ensina nada sobre a tela.
+ */
+export const seedImoveisSistema: ImovelDisponivel[] = [
   {
-    id: "wm7",
-    conversationId: "wc4",
-    waMessageId: "mock-seed-7",
-    direction: "outbound",
-    messageType: "text",
-    body: "Tudo bem, vou providenciar e te aviso!",
-    status: "read",
-    errorMessage: null,
-    replyTo: null,
-    mediaUrl: null,
-    mediaMimeType: null,
-    mediaFilename: null,
-    createdBy: "Ana Valadares",
-    waTimestamp: subDays(now, 5).toISOString(),
-    createdAt: subDays(now, 5).toISOString(),
+    id: "im1",
+    codigo: "MB-00033",
+    titulo: "Cobertura em Ipanema",
+    cidade: "Rio de Janeiro",
+    bairro: "Ipanema",
+    tipoImovel: "cobertura",
+    tipoNegocio: "venda",
+    andar: 8,
+    valorVenda: 4_200_000,
+    valorLocacao: null,
+    dormitorios: 3,
+    vagasGaragem: 2,
+    fotoCapa: null,
   },
   {
-    id: "wm8",
-    conversationId: "wc5",
-    waMessageId: "mock-seed-8",
-    direction: "inbound",
-    messageType: "text",
-    body: "Ok, obrigada pelo atendimento!",
-    status: "received",
-    errorMessage: null,
-    replyTo: null,
-    mediaUrl: null,
-    mediaMimeType: null,
-    mediaFilename: null,
-    createdBy: null,
-    waTimestamp: subDays(now, 15).toISOString(),
-    createdAt: subDays(now, 15).toISOString(),
+    id: "im2",
+    codigo: "MB-00041",
+    titulo: "Apartamento reformado no Leblon",
+    cidade: "Rio de Janeiro",
+    bairro: "Leblon",
+    tipoImovel: "apartamento",
+    tipoNegocio: "venda",
+    andar: 4,
+    valorVenda: 2_950_000,
+    valorLocacao: null,
+    dormitorios: 3,
+    vagasGaragem: 1,
+    fotoCapa: null,
   },
   {
-    id: "wm9",
-    conversationId: "wc6",
-    waMessageId: "mock-seed-9",
-    direction: "outbound",
-    messageType: "text",
-    body: "Combinado, aguardo você por aqui.",
-    status: "read",
-    errorMessage: null,
-    replyTo: null,
-    mediaUrl: null,
-    mediaMimeType: null,
-    mediaFilename: null,
-    createdBy: "Ana Valadares",
-    waTimestamp: subDays(now, 3).toISOString(),
-    createdAt: subDays(now, 3).toISOString(),
+    // "Quase": bate tudo menos as vagas — é o caso que a aba usa para mostrar
+    // o que falta em vez de simplesmente esconder o imóvel.
+    id: "im3",
+    codigo: "MB-00052",
+    titulo: "Apartamento térreo com jardim em Ipanema",
+    cidade: "Rio de Janeiro",
+    bairro: "Ipanema",
+    tipoImovel: "apartamento",
+    tipoNegocio: "venda",
+    andar: 1,
+    valorVenda: 2_400_000,
+    valorLocacao: null,
+    dormitorios: 3,
+    vagasGaragem: 0,
+    fotoCapa: null,
+  },
+  {
+    id: "im4",
+    codigo: "MB-00060",
+    titulo: "Casa de vila no Jardim Botânico",
+    cidade: "Rio de Janeiro",
+    bairro: "Jardim Botânico",
+    tipoImovel: "casa_vila",
+    tipoNegocio: "ambos",
+    andar: null,
+    valorVenda: 3_100_000,
+    valorLocacao: 12_000,
+    dormitorios: 4,
+    vagasGaragem: 2,
+    fotoCapa: null,
+  },
+  {
+    id: "im5",
+    codigo: "MB-00071",
+    titulo: "Apartamento para locação em Botafogo",
+    cidade: "Rio de Janeiro",
+    bairro: "Botafogo",
+    tipoImovel: "apartamento",
+    tipoNegocio: "locacao",
+    andar: 6,
+    valorVenda: null,
+    valorLocacao: 6_500,
+    dormitorios: 2,
+    vagasGaragem: 1,
+    fotoCapa: null,
+  },
+];
+
+/** Perfis de busca de mentira, chaveados pelos `clienteId` dos contatos acima. */
+export const seedPreferencias: PreferenciaBusca[] = [
+  {
+    clienteId: "cli-exemplo-1",
+    tipoNegocio: "venda",
+    tipoImovel: "apartamento",
+    cidade: "Rio de Janeiro",
+    bairros: ["Ipanema", "Leblon"],
+    valorMin: null,
+    valorMax: 3_000_000,
+    dormitoriosMin: 3,
+    vagasGaragemMin: 1,
+    observacoes: "Prefere andar alto; aceita térreo se tiver jardim.",
+    origem: "manual",
+    atualizadaEm: subDays(now, 2).toISOString(),
+  },
+  {
+    clienteId: "cli-exemplo-3",
+    tipoNegocio: "locacao",
+    tipoImovel: null,
+    cidade: "Rio de Janeiro",
+    bairros: [],
+    valorMin: null,
+    valorMax: 8_000,
+    dormitoriosMin: 2,
+    vagasGaragemMin: null,
+    observacoes: null,
+    origem: "manual",
+    atualizadaEm: subDays(now, 4).toISOString(),
   },
 ];

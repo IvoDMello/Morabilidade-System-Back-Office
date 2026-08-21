@@ -32,7 +32,25 @@ describe("Navegação principal", () => {
 
   it("não tem mais um destino separado para lembretes", () => {
     expect(NAV_ITEMS.map((i) => i.href)).not.toContain("/lembretes");
-    expect(NAV_ITEMS).toHaveLength(5);
+    expect(NAV_ITEMS).toHaveLength(6);
+  });
+
+  it("Oportunidades vem depois das filas reativas e antes do cadastro", () => {
+    const hrefs = NAV_ITEMS.map((i) => i.href);
+    expect(hrefs.indexOf("/oportunidades")).toBeGreaterThan(hrefs.indexOf("/pendencias"));
+    expect(hrefs.indexOf("/oportunidades")).toBeLessThan(hrefs.indexOf("/contatos"));
+  });
+
+  it("todo item que não cabe na barra mobile tem rótulo curto", () => {
+    // A barra inferior divide a largura igualmente entre os itens: com seis,
+    // sobra pouco mais de 60px por coluna. "Pendências" (10) é o mais longo
+    // que já cabe numa linha nesse espaço — daí o teto. "Oportunidades" só
+    // entrou porque tem shortLabel; sem ele, quebraria em duas linhas e
+    // desalinharia a fileira inteira.
+    for (const item of NAV_ITEMS) {
+      const rotulo = item.shortLabel ?? item.label;
+      expect(rotulo.length, `rótulo mobile longo demais em ${item.href}`).toBeLessThanOrEqual(10);
+    }
   });
 
   it("o selo de Pendências soma as duas filas que o item agora representa", () => {
@@ -54,6 +72,9 @@ describe("Navegação principal", () => {
   it("itens sem fila não ganham selo", () => {
     expect(getNavBadge(item("/contatos"), CONTAGENS)).toBeNull();
     expect(getNavBadge(item("/dashboard"), CONTAGENS)).toBeNull();
+    // Oportunidades também não: sempre há algum match, então um selo ali
+    // nunca zeraria — e selo que nunca zera deixa de ser lido.
+    expect(getNavBadge(item("/oportunidades"), CONTAGENS)).toBeNull();
   });
 
   it("o header mobile descreve Pendências como as duas coisas que ela reúne", () => {

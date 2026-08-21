@@ -24,6 +24,10 @@ a última mensagem foi do cliente, então mistura "consegue visitar sábado?" co
 promete "isto foi lido e pede resposta", e sem a leitura a promessa não se
 cumpre por omissão.
 
+**Oportunidades** (`/oportunidades`) é a única tela que gera conversa em vez de
+responder a uma: cruza cada contato com o catálogo de imóveis do sistema e
+entrega a mensagem pronta para enviar. Detalhes mais abaixo.
+
 A **Visão geral** (`/dashboard`) é leitura, não trabalho: cada indicador é um
 link para a tela que resolve aquilo. Ela é pré-renderizada, então quem muda a
 fila precisa avisá-la — o webhook, o cron de follow-up e as ações de conversa
@@ -484,16 +488,67 @@ e reinicie `npm run dev`. Sem essa variável, os botões de IA mostram um erro
 amigável pedindo para configurá-la — o resto do painel continua funcionando
 normalmente.
 
+## Oportunidades (`/oportunidades`)
+
+Cruza cada contato com o catálogo de imóveis e entrega **a mensagem pronta**.
+
+O painel web (`/oportunidades` do back-office) já sabia dizer quais imóveis
+combinam com cada cliente, mas respondia longe de onde se fala com o cliente:
+entre saber e mandar mensagem havia abrir o WhatsApp, achar a pessoa, copiar
+código, procurar preço e escrever tudo à mão, para cada um. O resultado é que
+ninguém entrava em contato — a lista virava relatório. Aqui as duas pontas
+ficam na mesma tela: escolher imóveis por checkbox monta o texto (código,
+cômodos, bairro, valor, link do site), que é editável antes de sair pelo mesmo
+`sendMessage` das conversas e cai na thread normalmente.
+
+**De onde vêm os dados.** `imoveis` e `cliente_preferencias` vivem no schema
+`public` do **mesmo** Supabase (é o banco da API principal) — daí o
+`getSupabaseSistemaClient()` em `lib/supabase/server.ts`, terceiro cliente pelo
+mesmo motivo do de captações. Não passa pela API porque os endpoints de
+oportunidade exigem JWT de usuário e o CRM fala por token de serviço. São duas
+consultas no total (imóveis + preferências), independente de quantos contatos
+existam; o cruzamento acontece em memória.
+
+**A regra de compatibilidade é uma cópia** da que roda na API principal
+(`_imovel_casa_preferencia`), portada em `lib/match-imovel.ts`. Duplicação
+consciente, com o porquê escrito no cabeçalho do módulo e cada ramo travado em
+`tests/match-imovel.test.ts` — é lá que uma divergência com a API deve
+aparecer, e não numa mensagem enviada ao cliente errado. O piso de R$ 2M das
+oportunidades também é respeitado, para as duas telas nunca discordarem sobre o
+que é oportunidade.
+
+**O que a aba acrescenta sobre o painel web:**
+
+- **Perfil de busca editável ali mesmo.** É o que decide se a tela tem
+  conteúdo: a preferência só existia no formulário do back-office, e quem
+  descobre o que a pessoa quer é quem está conversando com ela. Salvar promove
+  o contato a cliente do sistema quando ele ainda não é (mesmas regras de
+  `clientes.service.ts`, que impedem virar cadastro um contato chamado
+  "(21) 97195-7245").
+- **"Quase lá".** O painel web só sabe dizer sim ou não. Aqui o imóvel que bate
+  em tudo menos um critério aparece com o que falta ("falta Vagas 2+") — é
+  sobre isso que se abre uma conversa.
+- **Aviso da janela de 24h.** Fora dela a Meta recusa texto livre; melhor dizer
+  antes do clique do que depois da falha.
+- **"Já enviado".** O que foi oferecido vira vínculo de imóvel no contato
+  (`relacao: interesse`, o mesmo registro que o rastro do link do site cria), e
+  a aba passa a marcar aquele imóvel — que é o que impede mandar a mesma
+  cobertura três vezes para a mesma pessoa.
+
+Contatos `finalizado`, `perdido` e bloqueados ficam de fora: a aba é fila de
+trabalho, e mandar imóvel para quem já comprou ou já disse não é o tipo de
+mensagem que faz um número ser marcado como spam.
+
 ## Estrutura do projeto
 
 ```
-app/            rotas (App Router): conversas (/), pendencias, contatos,
-                assistente, dashboard, webhook do WhatsApp
+app/            rotas (App Router): conversas (/), pendencias, oportunidades,
+                contatos, assistente, dashboard, webhook do WhatsApp
                 (app/api/whatsapp/webhook), server actions
                 /lembretes é redirect para /pendencias?tab=lembretes
 components/     ui/ (shadcn), layout/ (sidebar, topbar), shared/ (genéricos)
 features/       componentes específicos de cada domínio (dashboard, contacts,
-                reminders-hub, whatsapp)
+                oportunidades, reminders-hub, whatsapp)
 services/       regras de negócio (contacts/notes/reminders/tags/whatsapp/dashboard)
 services/data/  contrato DataSource + implementações mock/ e supabase/
 services/whatsapp/  contrato WhatsAppProvider + implementações mock/ e cloud-api/
@@ -522,8 +577,26 @@ consumidor, sem reescrever a UI.
 
 ## Dados de teste (mock)
 
-Seed em `services/data/mock/seed.ts`: 12 contatos cobrindo todas as categorias
-e status, anotações de exemplo, lembretes distribuídos entre vencidos/hoje/
-próximos, algumas etiquetas de exemplo e uma conversa de WhatsApp com histórico
-de mensagens — o suficiente para exercitar o Dashboard, a busca/filtros de
-Contatos, a Central de Lembretes e a tela de Conversas sem cadastrar nada.
+Seed em `services/data/mock/seed.ts`: **quatro** contatos, cada um com um nome
+que se anuncia como exemplo ("Exemplo — Comprador") e um telefone impossível
+(`55 11 9000-000X`). Eram doze, com nomes e números de gente plausível — e um
+seed assim é uma armadilha: na lista de atendimento ninguém distingue o exemplo
+do cliente de verdade, e a dúvida "esse aqui é real?" aparece exatamente na
+hora de apertar enviar.
+
+Os quatro cobrem, juntos, as filas que o painel precisa exercitar em
+desenvolvimento: conversa respondida com janela de 24h aberta, duas aguardando
+resposta (uma acima e outra abaixo do corte de 2h do alerta horário), uma
+esfriando para follow-up, os quatro ramos do cron da ficha de visita, e um
+perfil de busca preenchido para a aba de Oportunidades ter o que mostrar. O
+seed traz também um catálogo de imóveis e preferências de mentira
+(`seedImoveisSistema`, `seedPreferencias`), que fazem as vezes de
+`public.imoveis` e `public.cliente_preferencias` no modo mock.
+
+O banco real recebeu um lote **diferente** de doze fictícios (telefones
+`5527999900001..012`, todos criados no mesmo instante). Para limpá-los, rode
+`supabase/migrations/0027_limpeza_contatos_demo.sql`: ele casa por telefone
+**e** nome — nunca só por nome, porque dois nomes se repetem entre os dois
+conjuntos com telefones diferentes — devolve as linhas apagadas via `returning`
+e é seguro rodar mais de uma vez. O arquivo também documenta os dois cadastros
+que vazaram para `public.clientes` e que não são apagados por ele (outro app).

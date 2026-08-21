@@ -46,6 +46,15 @@ export const mockProperties: DataSource["properties"] = {
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   },
 
+  async listByContacts(contactIds: ID[]) {
+    const agrupado = new Map<ID, ContactPropertyWithDetails[]>();
+    for (const contactId of contactIds) {
+      const lista = await this.listByContact(contactId);
+      if (lista.length > 0) agrupado.set(contactId, lista);
+    }
+    return agrupado;
+  },
+
   async addToContact(
     contactId: ID,
     propertyId: ID,

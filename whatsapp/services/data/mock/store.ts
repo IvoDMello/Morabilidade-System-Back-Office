@@ -11,6 +11,7 @@ import type { Corretor } from "@/types/corretor";
 import type { AgentProposal } from "@/types/agent-proposal";
 import type { AgentRun } from "@/types/agent-run";
 import type { WebhookDelivery } from "@/types/webhook-delivery";
+import type { ImovelDisponivel, PreferenciaBusca } from "@/types/oportunidade";
 // Só o tipo: importar valor daqui fecharia ciclo com captacoes.service.ts.
 import type { CaptacaoResumo } from "@/services/captacoes.service";
 import {
@@ -26,6 +27,8 @@ import {
   seedProperties,
   seedContactProperties,
   seedCorretores,
+  seedImoveisSistema,
+  seedPreferencias,
 } from "./seed";
 
 /**
@@ -50,6 +53,12 @@ interface MockStore {
   agentProposals: AgentProposal[];
   agentRuns: AgentRun[];
   webhookDeliveries: WebhookDelivery[];
+  /** Catálogo do sistema principal (schema `public`), espelhado em memória —
+   * ver services/oportunidades.service.ts. */
+  imoveisSistema: ImovelDisponivel[];
+  /** Perfis de busca por `clienteId`, o equivalente mock de
+   * `public.cliente_preferencias`. */
+  preferencias: PreferenciaBusca[];
   /** Board de captações (schema `captacoes`, app irmão) — ver captacoes.service.ts. */
   captacoes: CaptacaoResumo[];
 }
@@ -75,6 +84,8 @@ export const mockStore: MockStore =
     agentProposals: [],
     agentRuns: [],
     webhookDeliveries: [],
+    imoveisSistema: seedImoveisSistema,
+    preferencias: seedPreferencias,
     captacoes: [],
   });
 

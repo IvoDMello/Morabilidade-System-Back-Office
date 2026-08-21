@@ -1,6 +1,6 @@
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import type { ID } from "@/types/common";
-import type { CreatePropertyInput } from "@/types/property";
+import type { ContactPropertyWithDetails, CreatePropertyInput } from "@/types/property";
 import type { PropertyStage } from "@/constants/property-stages";
 import type { PropertyRelation } from "@/constants/property-relations";
 import type { DataSource } from "../types";
@@ -55,6 +55,27 @@ export const supabaseProperties: DataSource["properties"] = {
       .order("created_at", { ascending: false });
     if (error) throw error;
     return (data ?? []).map(mapContactPropertyRow);
+  },
+
+  async listByContacts(contactIds: ID[]) {
+    const agrupado = new Map<ID, ContactPropertyWithDetails[]>();
+    if (contactIds.length === 0) return agrupado;
+
+    const supabase = getSupabaseServerClient();
+    const { data, error } = await supabase
+      .from("contact_properties")
+      .select("*, properties(code, title)")
+      .in("contact_id", contactIds)
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+
+    for (const row of data ?? []) {
+      const vinculo = mapContactPropertyRow(row);
+      const lista = agrupado.get(vinculo.contactId);
+      if (lista) lista.push(vinculo);
+      else agrupado.set(vinculo.contactId, [vinculo]);
+    }
+    return agrupado;
   },
 
   async addToContact(

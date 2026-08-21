@@ -80,3 +80,41 @@ export function getSupabaseCaptacoesClient(): CaptacoesClient {
   }
   return captacoesClient;
 }
+
+// A aba de Oportunidades cruza contato × catálogo, e o catálogo (`imoveis`,
+// `cliente_preferencias`) mora no schema `public` do MESMO Supabase — é o
+// banco da API principal. Terceiro cliente pelo mesmo motivo do de captações:
+// o schema é fixado na criação do client. Aqui, diferente dos dois de cima,
+// não precisa do genérico explícito — `public` já é o schema padrão do tipo.
+type SistemaClient = SupabaseClient;
+
+let sistemaClient: SistemaClient | null = null;
+
+/**
+ * Cliente Supabase no schema `public` — o banco do sistema principal
+ * (server-only). Leitura do catálogo de imóveis e leitura/escrita das
+ * preferências de busca do cliente.
+ *
+ * Por que direto no banco e não pela API: os endpoints de oportunidade
+ * (`/clientes/{id}/matches`, `/clientes/{id}/preferencia`) exigem JWT de
+ * usuário, e o CRM fala com a API por token de serviço. Não havendo endpoint
+ * interno equivalente, o caminho é o mesmo que o CRM já usa para o schema
+ * `captacoes`: service_role no Supabase compartilhado.
+ *
+ * Escrever em tabela de outro app pede disciplina — por isso a escrita fica
+ * restrita a `cliente_preferencias` (ver services/oportunidades.service.ts),
+ * que é exatamente a tabela que o back-office também trata como editável.
+ */
+export function getSupabaseSistemaClient(): SistemaClient {
+  if (typeof window !== "undefined") {
+    throw new Error("getSupabaseSistemaClient() não pode ser usado no navegador.");
+  }
+  if (!sistemaClient) {
+    const { url, serviceRoleKey } = credenciaisDoServidor();
+    sistemaClient = createClient(url, serviceRoleKey, {
+      db: { schema: "public" },
+      auth: { persistSession: false },
+    });
+  }
+  return sistemaClient;
+}

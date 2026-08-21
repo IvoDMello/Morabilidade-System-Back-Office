@@ -95,6 +95,10 @@ export interface DataSource {
     findByCode(code: string): Promise<Property | null>;
     create(input: CreatePropertyInput): Promise<Property>;
     listByContact(contactId: ID): Promise<ContactPropertyWithDetails[]>;
+    /** Vínculos de vários contatos de uma vez, agrupados por contato. A aba de
+     * Oportunidades precisa dos códigos de interesse de TODO mundo na tela;
+     * um `listByContact` por linha seria uma consulta por contato. */
+    listByContacts(contactIds: ID[]): Promise<Map<ID, ContactPropertyWithDetails[]>>;
     addToContact(
       contactId: ID,
       propertyId: ID,

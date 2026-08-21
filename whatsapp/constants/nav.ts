@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Users, MessageCircle, LayoutDashboard, ListTodo, Sparkles } from "lucide-react";
+import { Users, MessageCircle, LayoutDashboard, ListTodo, Sparkles, Handshake } from "lucide-react";
 import type { ReminderCounts } from "@/types/dashboard";
 
 export type NavBadgeKind = "unreadConversations" | "aFazer";
@@ -15,10 +15,17 @@ export interface NavItem {
 
 /** Conversas em primeiro: é a tela de trabalho e a porta de entrada do app.
  * "Pendências" reúne conversas aguardando e lembretes — antes eram dois itens
- * que respondiam à mesma pergunta ("o que falta fazer?"). */
+ * que respondiam à mesma pergunta ("o que falta fazer?").
+ *
+ * "Oportunidades" vem logo depois das duas filas reativas porque é a única que
+ * gera conversa em vez de responder a uma: responder o que chegou é o trabalho
+ * do dia, procurar quem tem imóvel esperando é o que enche o dia seguinte.
+ * Sem selo de propósito — um contador que nunca zera (sempre há algum match)
+ * vira ruído permanente e ensina a ignorar os selos que importam. */
 export const NAV_ITEMS: NavItem[] = [
   { href: "/", label: "Conversas", icon: MessageCircle, badgeKind: "unreadConversations" },
   { href: "/pendencias", label: "Pendências", icon: ListTodo, badgeKind: "aFazer" },
+  { href: "/oportunidades", label: "Oportunidades", shortLabel: "Matches", icon: Handshake },
   { href: "/contatos", label: "Contatos", icon: Users },
   { href: "/assistente", label: "Assistente", icon: Sparkles },
   { href: "/dashboard", label: "Visão geral", shortLabel: "Resumo", icon: LayoutDashboard },
@@ -83,6 +90,10 @@ const MOBILE_SECTION_INFO: Record<string, { title: string; subtitle: string }> =
   "/dashboard": { title: "Visão geral", subtitle: "Atendimento e contatos em um relance." },
   "/": { title: "Conversas", subtitle: "Mensagens recebidas no WhatsApp." },
   "/pendencias": { title: "Pendências", subtitle: "Conversas aguardando e lembretes." },
+  "/oportunidades": {
+    title: "Oportunidades",
+    subtitle: "Imóveis que combinam com cada contato.",
+  },
   "/contatos": { title: "Contatos", subtitle: "Gerencie seus contatos." },
   "/assistente": { title: "Assistente", subtitle: "Proponha e confirme ações com a IA." },
 };
