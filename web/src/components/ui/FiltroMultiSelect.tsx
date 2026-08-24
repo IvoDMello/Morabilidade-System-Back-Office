@@ -6,6 +6,7 @@
 // filtro de bairro por ele que fez o painel perder o multi-bairro que a API
 // sempre soube responder.
 
+import { useRef, useState } from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { Check, ChevronDown } from "lucide-react";
 
@@ -46,11 +47,39 @@ export function FiltroMultiSelect({
 
   const vazio = value.length === 0;
 
+  /**
+   * Abrir no toque só no `click`, nunca no `pointerdown`.
+   *
+   * O DropdownMenu do Radix chama `onOpenToggle()` já no pointerdown, sem
+   * olhar o tipo de ponteiro — então, no celular, encostar o dedo no gatilho
+   * para ROLAR a gaveta abria o menu, e a rolagem morria ali. Os outros filtros
+   * não têm isso porque o Select do Radix guarda o `pointerType` e só abre no
+   * pointerdown quando é mouse; no toque, quem abre é o clique. Aqui o mesmo
+   * padrão é reproduzido à mão.
+   *
+   * `preventDefault` no pointerdown é o que impede o handler interno do Radix
+   * de rodar (o composeEventHandlers dele pula o próprio handler quando o
+   * default já foi prevenido) — e por isso o estado de aberto precisa ser
+   * controlado: sem isso não haveria como abrir no clique depois.
+   */
+  const [aberto, setAberto] = useState(false);
+  const tipoDePonteiro = useRef<string>("mouse");
+
   return (
-    <DropdownMenu.Root>
+    <DropdownMenu.Root open={aberto} onOpenChange={setAberto}>
       <DropdownMenu.Trigger
         disabled={disabled}
         aria-label={vazioLabel}
+        onPointerDown={(event) => {
+          tipoDePonteiro.current = event.pointerType;
+          if (event.pointerType !== "mouse") event.preventDefault();
+        }}
+        onClick={(event) => {
+          if (tipoDePonteiro.current !== "mouse") {
+            event.currentTarget.focus();
+            setAberto((v) => !v);
+          }
+        }}
         className={
           "group flex w-full items-center justify-between gap-2 px-3.5 py-2.5 text-sm border border-[#e8e5da] " +
           "rounded-xl bg-[#ffffff] transition-colors hover:border-[#d5d0c0] " +

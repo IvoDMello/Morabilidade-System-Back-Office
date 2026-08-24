@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import axios from "axios";
 import ImoveisPage from "@/app/(dashboard)/imoveis/page";
@@ -147,5 +147,54 @@ describe("serialização dos parâmetros", () => {
     expect(capturada).toContain("bairro=Leblon");
     expect(capturada).not.toContain("bairro%5B%5D");
     expect(capturada).not.toContain("bairro[]");
+  });
+});
+
+describe("gesto de toque no gatilho", () => {
+  /**
+   * O bug: no celular, encostar o dedo no seletor de bairros para ROLAR a
+   * gaveta abria o menu, e a rolagem morria. Só nele — porque o DropdownMenu do
+   * Radix abre já no `pointerdown`, sem olhar o tipo de ponteiro, enquanto o
+   * Select (usado nos outros filtros) espera o `click` quando é toque.
+   *
+   * O dispatch vai dentro de `act` porque a abertura é mudança de estado do
+   * React: sem isso a asserção roda antes do render e passa mesmo com o bug —
+   * foi o que aconteceu na primeira versão deste teste.
+   */
+  async function gatilhoDeBairros() {
+    render(<ImoveisPage />);
+    await waitFor(() => expect(apiGetMock).toHaveBeenCalledWith("/imoveis/localidades"));
+    const gatilho = await screen.findByRole("button", { name: "Todos os bairros" });
+    await waitFor(() => expect(gatilho).not.toBeDisabled());
+    return gatilho;
+  }
+
+  /** Dispara um evento de ponteiro de TOQUE (o jsdom não tem PointerEvent). */
+  async function tocar(el: Element, tipo: "pointerdown" | "click") {
+    await act(async () => {
+      const ev = new MouseEvent(tipo, { bubbles: true, cancelable: true, button: 0 });
+      Object.defineProperty(ev, "pointerType", { get: () => "touch" });
+      Object.defineProperty(ev, "pointerId", { get: () => 1 });
+      el.dispatchEvent(ev);
+    });
+  }
+
+  it("encostar o dedo (pointerdown) não abre o menu", async () => {
+    const gatilho = await gatilhoDeBairros();
+
+    await tocar(gatilho, "pointerdown");
+
+    // Nada de menu: o dedo ainda pode estar começando uma rolagem.
+    expect(screen.queryByRole("menuitemcheckbox")).not.toBeInTheDocument();
+    expect(gatilho).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("o toque que vira clique de verdade abre", async () => {
+    const gatilho = await gatilhoDeBairros();
+
+    await tocar(gatilho, "pointerdown");
+    await tocar(gatilho, "click");
+
+    expect(await screen.findByRole("menuitemcheckbox", { name: "Ipanema" })).toBeInTheDocument();
   });
 });
