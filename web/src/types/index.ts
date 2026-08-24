@@ -105,6 +105,7 @@ export interface ImovelListOut {
   banheiros?: number;
   lavabos?: number;
   vagas_garagem?: number;
+  area_total?: number;
   area_util?: number;
   valor_venda?: number;
   valor_locacao?: number;

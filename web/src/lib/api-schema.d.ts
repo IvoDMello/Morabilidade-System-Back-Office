@@ -3066,6 +3066,8 @@ export interface components {
         };
         /** ImovelListOut */
         ImovelListOut: {
+            /** Area Total */
+            area_total?: number | null;
             /** Area Util */
             area_util?: number | null;
             /** Bairro */

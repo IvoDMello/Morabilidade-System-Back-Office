@@ -944,10 +944,15 @@ setLoading(true);
                             {imovel.vagas_garagem}
                           </span>
                         )}
-                        {imovel.area_util != null && (
+                        {/* Área útil quando existe; sem ela, a total, marcada como
+                            tal para ninguém ler um número pelo outro. */}
+                        {(imovel.area_util ?? imovel.area_total) != null && (
                           <span className="flex items-center gap-1 text-xs">
                             <Maximize2 className="w-3.5 h-3.5" />
-                            {imovel.area_util} m²
+                            {imovel.area_util ?? imovel.area_total} m²
+                            {imovel.area_util == null && (
+                              <span className="text-slate-400">(total)</span>
+                            )}
                           </span>
                         )}
                       </div>

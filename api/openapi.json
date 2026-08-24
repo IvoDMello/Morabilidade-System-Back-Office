@@ -4255,6 +4255,17 @@
       },
       "ImovelListOut": {
         "properties": {
+          "area_total": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Area Total"
+          },
           "area_util": {
             "anyOf": [
               {

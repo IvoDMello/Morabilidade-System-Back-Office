@@ -128,6 +128,7 @@ class ImovelListOut(BaseModel):
     banheiros: Optional[int] = None
     lavabos: Optional[int] = None
     vagas_garagem: Optional[int] = None
+    area_total: Optional[Decimal] = None
     area_util: Optional[Decimal] = None
     valor_venda: Optional[Decimal] = None
     valor_locacao: Optional[Decimal] = None
@@ -144,7 +145,7 @@ class ImovelListOut(BaseModel):
     created_at: str
 
     @field_serializer(
-        "area_util", "valor_venda", "valor_locacao",
+        "area_total", "area_util", "valor_venda", "valor_locacao",
         "condominio_mensal", "iptu_mensal"
     )
     def serializar_decimal(self, v: Optional[Decimal]) -> Optional[float]:
