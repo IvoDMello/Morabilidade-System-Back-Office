@@ -7,6 +7,7 @@ import {
   Search, ChevronLeft, ChevronRight, BedDouble, Bath,
   Car, Maximize2, Pencil, Info as InfoIcon,
   LayoutList, Map, Building2, Trash2, Download, Filter, X, Instagram,
+  ArrowUpNarrowWide, ArrowDownWideNarrow,
 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
@@ -14,6 +15,13 @@ import { useAuthStore } from "@/lib/auth-store";
 import { formatarMoeda } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { FiltroSelect } from "@/components/ui/FiltroSelect";
+import { FiltroMultiSelect } from "@/components/ui/FiltroMultiSelect";
+import { OPCOES_QUARTOS, QUARTOS_ABERTO, paramsDeQuartos } from "@/lib/filtro-quartos";
+import {
+  ajudaDaOrdem,
+  paramsDeOrdenacao,
+  type DirecaoValor,
+} from "@/lib/ordenacao-imoveis";
 import type { ImovelListOut } from "@/types";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
@@ -25,10 +33,15 @@ interface Filtros {
   tipo_negocio: string;
   disponibilidade: string;
   cidade: string;
-  bairro: string;
+  /** Vários bairros: OR entre eles. Vazio = sem filtro. */
+  bairros: string[];
   tipo_imovel: string;
+  /** Chip de quartos escolhido: "1" | "2" | "3" | "4" ("4" = 4 ou mais). Vazio = sem filtro. */
+  quartos: string;
   preco_min: string;
   preco_max: string;
+  /** Ordenação por valor: "" = sem ordenação. Ver lib/ordenacao-imoveis.ts. */
+  ordenar_valor: DirecaoValor;
   sem_foto: boolean;
 }
 
@@ -46,10 +59,12 @@ const FILTROS_VAZIOS: Filtros = {
   tipo_negocio: "",
   disponibilidade: "",
   cidade: "",
-  bairro: "",
+  bairros: [],
   tipo_imovel: "",
+  quartos: "",
   preco_min: "",
   preco_max: "",
+  ordenar_valor: "",
   sem_foto: false,
 };
 
@@ -139,6 +154,7 @@ function ImoveisPageInner() {
     codigo: searchParams.get("codigo") ?? "",
     disponibilidade: searchParams.get("disponibilidade") ?? "",
     tipo_imovel: searchParams.get("tipo_imovel") ?? "",
+    quartos: searchParams.get("quartos") ?? "",
     sem_foto: searchParams.get("sem_foto") === "1",
   }));
   const [filtrosOpen, setFiltrosOpen] = useState(false);
@@ -153,15 +169,23 @@ function ImoveisPageInner() {
   async function handleExportar() {
     setExportando(true);
     try {
-      const params: Record<string, string> = {};
+      const params: Record<string, string | string[]> = {};
       if (filtros.busca) params.q = filtros.busca;
       if (filtros.codigo) params.codigo = filtros.codigo;
       if (filtros.descricao) params.descricao = filtros.descricao;
       if (filtros.tipo_negocio) params.tipo_negocio = filtros.tipo_negocio;
       if (filtros.disponibilidade) params.disponibilidade = filtros.disponibilidade;
       if (filtros.cidade) params.cidade = filtros.cidade;
-      if (filtros.bairro) params.bairro = filtros.bairro;
+      if (filtros.bairros.length) params.bairro = filtros.bairros;
       if (filtros.tipo_imovel) params.tipo_imovel = filtros.tipo_imovel;
+      Object.assign(params, paramsDeQuartos(filtros.quartos));
+      Object.assign(
+        params,
+        paramsDeOrdenacao({
+          direcaoValor: filtros.ordenar_valor,
+          quartosAberto: filtros.quartos === QUARTOS_ABERTO,
+        }),
+      );
       if (filtros.preco_min) params.preco_min = filtros.preco_min;
       if (filtros.preco_max) params.preco_max = filtros.preco_max;
       if (filtros.sem_foto) params.sem_foto = "true";
@@ -189,15 +213,26 @@ function ImoveisPageInner() {
   const buscar = useCallback(async (pg: number, f: Filtros) => {
 setLoading(true);
     try {
-      const params: Record<string, string> = { page: String(pg), page_size: String(PAGE_SIZE) };
+      const params: Record<string, string | string[]> = {
+        page: String(pg),
+        page_size: String(PAGE_SIZE),
+      };
       if (f.busca) params.q = f.busca;
       if (f.codigo) params.codigo = f.codigo;
       if (f.descricao) params.descricao = f.descricao;
       if (f.tipo_negocio) params.tipo_negocio = f.tipo_negocio;
       if (f.disponibilidade) params.disponibilidade = f.disponibilidade;
       if (f.cidade) params.cidade = f.cidade;
-      if (f.bairro) params.bairro = f.bairro;
+      if (f.bairros.length) params.bairro = f.bairros;
       if (f.tipo_imovel) params.tipo_imovel = f.tipo_imovel;
+      Object.assign(params, paramsDeQuartos(f.quartos));
+      Object.assign(
+        params,
+        paramsDeOrdenacao({
+          direcaoValor: f.ordenar_valor,
+          quartosAberto: f.quartos === QUARTOS_ABERTO,
+        }),
+      );
       if (f.preco_min) params.preco_min = f.preco_min;
       if (f.preco_max) params.preco_max = f.preco_max;
       if (f.sem_foto) params.sem_foto = "true";
@@ -248,7 +283,7 @@ setLoading(true);
       ...f,
       cidade,
       // Bairro que não existe na cidade nova zeraria a busca sem o usuário ver.
-      bairro: permitidos.includes(f.bairro) ? f.bairro : "",
+      bairros: f.bairros.filter((b) => permitidos.includes(b)),
     }));
   }
 
@@ -408,6 +443,7 @@ setLoading(true);
               <FiltroSelect
                 value={filtros.disponibilidade}
                 onChange={(disponibilidade) => setFiltros((f) => ({ ...f, disponibilidade }))}
+                ariaLabel="Disponibilidade"
                 todosLabel="Todos"
                 options={[
                   { value: "disponivel", label: "Disponível" },
@@ -423,9 +459,42 @@ setLoading(true);
               <FiltroSelect
                 value={filtros.tipo_imovel}
                 onChange={(tipo_imovel) => setFiltros((f) => ({ ...f, tipo_imovel }))}
+                ariaLabel="Tipo de imóvel"
                 todosLabel="Todos os tipos"
                 options={Object.entries(TIPO_IMOVEL_LABEL).map(([value, label]) => ({ value, label }))}
               />
+            </div>
+
+            {/* Quartos — chips em vez de select porque são quatro opções curtas:
+                um dropdown custaria dois cliques para o mesmo resultado. Mesmo
+                gesto do Contrato: clicar no que já está ativo limpa o filtro. */}
+            <div>
+              <label className={labelCls}>Quartos</label>
+              <div className="grid grid-cols-4 gap-2">
+                {OPCOES_QUARTOS.map((n) => {
+                  const ativo = filtros.quartos === n;
+                  const aberto = n === QUARTOS_ABERTO;
+                  return (
+                    <button
+                      key={n}
+                      type="button"
+                      aria-pressed={ativo}
+                      aria-label={
+                        aberto ? `${n} quartos ou mais` : `${n} quarto${n === "1" ? "" : "s"}`
+                      }
+                      onClick={() => setFiltros((f) => ({ ...f, quartos: ativo ? "" : n }))}
+                      className={
+                        "py-2.5 text-sm font-medium rounded-xl border transition " +
+                        (ativo
+                          ? "bg-[#26241c] text-white border-[#26241c]"
+                          : "bg-white text-[#4a473d] border-[#e8e5da] hover:border-[#d5d0c0]")
+                      }
+                    >
+                      {aberto ? `${n}+` : n}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Localização: cidade + bairro */}
@@ -440,11 +509,22 @@ setLoading(true);
                       className={inputCls}
                       placeholder="Digite a cidade"
                     />
+                    {/* Sem a lista de localidades não há o que marcar, então
+                        aqui o multi vira texto separado por vírgula — o mesmo
+                        OR chega na API. */}
                     <input
-                      value={filtros.bairro}
-                      onChange={(e) => setFiltros((f) => ({ ...f, bairro: e.target.value }))}
+                      value={filtros.bairros.join(", ")}
+                      onChange={(e) =>
+                        setFiltros((f) => ({
+                          ...f,
+                          bairros: e.target.value
+                            .split(",")
+                            .map((b) => b.trim())
+                            .filter(Boolean),
+                        }))
+                      }
                       className={inputCls}
-                      placeholder="Digite o bairro"
+                      placeholder="Digite os bairros, separados por vírgula"
                     />
                   </>
                 ) : (
@@ -452,25 +532,27 @@ setLoading(true);
                     <FiltroSelect
                       value={filtros.cidade}
                       onChange={selecionarCidade}
+                ariaLabel="Cidade"
                       disabled={!localidades}
                       todosLabel={localidades ? "Todas as cidades" : "Carregando..."}
                       options={(localidades?.cidades ?? []).map((c) => ({ value: c, label: c }))}
                     />
-                    <FiltroSelect
-                      value={filtros.bairro}
-                      onChange={(bairro) => {
+                    <FiltroMultiSelect
+                      value={filtros.bairros}
+                      onChange={(bairros) => {
                         setPage(1);
-                        setFiltros((f) => ({ ...f, bairro }));
+                        setFiltros((f) => ({ ...f, bairros }));
                       }}
                       disabled={bairrosDisponiveis.length === 0}
-                      todosLabel={
+                      vazioLabel={
                         !localidades
                           ? "Carregando..."
                           : bairrosDisponiveis.length === 0
                             ? "Nenhum bairro cadastrado"
                             : "Todos os bairros"
                       }
-                      options={bairrosDisponiveis.map((b) => ({ value: b, label: b }))}
+                      substantivoPlural="bairros"
+                      options={bairrosDisponiveis}
                     />
                   </>
                 )}
@@ -512,6 +594,51 @@ setLoading(true);
                   O valor mínimo está maior que o máximo — confira os zeros.
                 </p>
               )}
+            </div>
+
+            {/* Ordenar por valor. Alternável como os chips de Contrato e
+                Quartos: clicar no que está ativo volta a lista para a ordem
+                normal — sem isso, uma vez ordenado por valor não haveria como
+                desfazer sem limpar a gaveta inteira. */}
+            <div>
+              <label className={labelCls}>Ordenar por valor</label>
+              <div className="grid grid-cols-2 gap-2">
+                {(["asc", "desc"] as const).map((dir) => {
+                  const ativo = filtros.ordenar_valor === dir;
+                  return (
+                    <button
+                      key={dir}
+                      type="button"
+                      aria-pressed={ativo}
+                      onClick={() =>
+                        setFiltros((f) => ({ ...f, ordenar_valor: ativo ? "" : dir }))
+                      }
+                      className={
+                        "flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium rounded-xl border transition " +
+                        (ativo
+                          ? "bg-[#26241c] text-white border-[#26241c]"
+                          : "bg-white text-[#4a473d] border-[#e8e5da] hover:border-[#d5d0c0]")
+                      }
+                    >
+                      {dir === "asc" ? (
+                        <ArrowUpNarrowWide className="w-3.5 h-3.5" />
+                      ) : (
+                        <ArrowDownWideNarrow className="w-3.5 h-3.5" />
+                      )}
+                      {dir === "asc" ? "Crescente" : "Decrescente"}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* "Crescente" sozinho não diz se o caro vem antes ou depois, e
+                  descobrir isso exigiria rodar a busca e olhar o resultado. */}
+              <p className="mt-2 text-[11px] text-[#a49d8b]">
+                {ajudaDaOrdem({
+                  direcaoValor: filtros.ordenar_valor,
+                  quartosAberto: filtros.quartos === QUARTOS_ABERTO,
+                })}
+              </p>
             </div>
 
             {/* Sem foto */}

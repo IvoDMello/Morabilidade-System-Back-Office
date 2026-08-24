@@ -5425,9 +5425,11 @@ export interface operations {
                 tipo_negocio?: components["schemas"]["TipoNegocio"] | null;
                 disponibilidade?: components["schemas"]["Disponibilidade"] | null;
                 cidade?: string | null;
-                bairro?: string | null;
+                /** @description Aceita múltiplos: ?bairro=Ipanema&bairro=Leblon (OR entre eles) */
+                bairro?: string[] | null;
                 tipo_imovel?: components["schemas"]["TipoImovel"] | null;
                 dormitorios_min?: number | null;
+                dormitorios_max?: number | null;
                 preco_min?: number | null;
                 preco_max?: number | null;
                 condicao?: components["schemas"]["CondicaoImovel"] | null;
@@ -5438,6 +5440,8 @@ export interface operations {
                 /** @description Palavras que devem aparecer na descrição do imóvel */
                 descricao?: string | null;
                 sem_foto?: boolean | null;
+                /** @description preco_asc | preco_desc | area_asc | area_desc | dormitorios_asc | dormitorios_desc | mais_antigo | mais_novo */
+                ordenar?: string | null;
                 page?: number;
                 page_size?: number;
             };
@@ -5526,9 +5530,11 @@ export interface operations {
                 tipo_negocio?: components["schemas"]["TipoNegocio"] | null;
                 disponibilidade?: components["schemas"]["Disponibilidade"] | null;
                 cidade?: string | null;
-                bairro?: string | null;
+                /** @description Aceita múltiplos: ?bairro=Ipanema&bairro=Leblon (OR entre eles) */
+                bairro?: string[] | null;
                 tipo_imovel?: components["schemas"]["TipoImovel"] | null;
                 dormitorios_min?: number | null;
+                dormitorios_max?: number | null;
                 preco_min?: number | null;
                 preco_max?: number | null;
                 condicao?: components["schemas"]["CondicaoImovel"] | null;
@@ -5539,6 +5545,8 @@ export interface operations {
                 /** @description Palavras que devem aparecer na descrição do imóvel */
                 descricao?: string | null;
                 sem_foto?: boolean | null;
+                /** @description preco_asc | preco_desc | area_asc | area_desc | dormitorios_asc | dormitorios_desc | mais_antigo | mais_novo */
+                ordenar?: string | null;
             };
             header?: never;
             path?: never;
@@ -5707,7 +5715,7 @@ export interface operations {
                 preco_max?: number | null;
                 condicao?: components["schemas"]["CondicaoImovel"] | null;
                 mobiliado?: components["schemas"]["Mobiliado"] | null;
-                /** @description preco_asc | preco_desc | area_asc | area_desc | mais_antigo | mais_novo */
+                /** @description preco_asc | preco_desc | area_asc | area_desc | dormitorios_asc | dormitorios_desc | mais_antigo | mais_novo */
                 ordenar?: string | null;
                 page?: number;
                 page_size?: number;

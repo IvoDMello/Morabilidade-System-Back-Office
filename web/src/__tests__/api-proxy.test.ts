@@ -328,3 +328,36 @@ describe("proxy, headers hop-by-hop", () => {
     expect(res._headers.get("transfer-encoding")).toBeNull();
   });
 });
+
+// ── Query string ──────────────────────────────────────────────────────────────
+
+describe("proxy, parâmetros repetidos", () => {
+  it("preserva o mesmo parâmetro repetido (filtro multi-bairro)", async () => {
+    mockFetch.mockResolvedValue(makeUpstreamRes(200, []));
+
+    await GET(
+      makeProxyReq("GET", "/api/proxy/imoveis/?bairro=Ipanema&bairro=Leblon", {
+        auth: TOKEN,
+      }),
+      { params: Promise.resolve({ path: ["imoveis"] }) }
+    );
+
+    // O proxy usava `set`, que sobrescreve: só "Leblon" chegava à API e o
+    // filtro parecia limitado a um bairro, sem erro nenhum para denunciar.
+    const url = new URL(mockFetch.mock.calls[0][0]);
+    expect(url.searchParams.getAll("bairro")).toEqual(["Ipanema", "Leblon"]);
+  });
+
+  it("parâmetro único continua chegando uma vez só", async () => {
+    mockFetch.mockResolvedValue(makeUpstreamRes(200, []));
+
+    await GET(
+      makeProxyReq("GET", "/api/proxy/imoveis/?cidade=Rio&page=2", { auth: TOKEN }),
+      { params: Promise.resolve({ path: ["imoveis"] }) }
+    );
+
+    const url = new URL(mockFetch.mock.calls[0][0]);
+    expect(url.searchParams.getAll("cidade")).toEqual(["Rio"]);
+    expect(url.searchParams.get("page")).toBe("2");
+  });
+});

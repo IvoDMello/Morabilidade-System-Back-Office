@@ -89,7 +89,7 @@ def _gerar_codigo() -> str:
 def _aplicar_filtros(query, *, tipo_negocio, disponibilidade, cidade, bairro,
                      tipo_imovel, dormitorios_min, preco_min, preco_max,
                      condicao, mobiliado, codigo, andar_max=None, q=None,
-                     descricao=None):
+                     descricao=None, dormitorios_max=None):
     if q:
         termo = _safe_for_or(q)
         if termo:
@@ -127,6 +127,13 @@ def _aplicar_filtros(query, *, tipo_negocio, disponibilidade, cidade, bairro,
         query = query.eq("tipo_imovel", _ev(tipo_imovel))
     if dormitorios_min is not None:
         query = query.gte("dormitorios", dormitorios_min)
+    # Teto de dormitórios. Existe para o filtro do back-office poder oferecer
+    # "1, 2, 3, 4+": os três primeiros são contagem exata (min == max) e só o
+    # último é aberto. Com `dormitorios_min` sozinho, pedir "2 quartos" trazia
+    # também as coberturas de cinco — que é o oposto do que quem escolhe "2"
+    # está procurando.
+    if dormitorios_max is not None:
+        query = query.lte("dormitorios", dormitorios_max)
     if andar_max is not None:
         query = query.lte("andar", andar_max)
     if condicao:
@@ -144,6 +151,42 @@ def _aplicar_filtros(query, *, tipo_negocio, disponibilidade, cidade, bairro,
         else:
             query = query.lte("valor_venda", preco_max)
     return query
+
+
+def _aplicar_ordenacao(query, ordenar, tipo_negocio):
+    """Ordem da listagem, compartilhada pelo site público e pelo back-office.
+
+    Estava escrita só dentro do endpoint público; virou função quando o
+    back-office precisou da mesma coisa, para não nascer uma segunda tabela de
+    `ordenar` capaz de divergir da primeira.
+
+    Valor desconhecido cai no padrão (mais novo primeiro) em vez de dar erro:
+    ordenação é preferência de exibição, e derrubar a listagem inteira por causa
+    de um parâmetro escrito errado seria uma troca ruim.
+    """
+    campo_preco = "valor_locacao" if _ev(tipo_negocio) == TipoNegocio.locacao.value else "valor_venda"
+    if ordenar == "preco_asc":
+        return query.order(campo_preco, desc=False, nullsfirst=False)
+    if ordenar == "preco_desc":
+        return query.order(campo_preco, desc=True, nullsfirst=False)
+    if ordenar == "area_desc":
+        return query.order("area_util", desc=True, nullsfirst=False)
+    if ordenar == "area_asc":
+        return query.order("area_util", desc=False, nullsfirst=False)
+    if ordenar == "dormitorios_asc":
+        # Serve o filtro "4+" do back-office: quem pede quatro ou mais quer ver
+        # os de quatro antes dos de seis, e não a data de cadastro mandando na
+        # ordem. Desempate por mais novo, o mesmo critério do padrão.
+        return query.order("dormitorios", desc=False, nullsfirst=False).order(
+            "created_at", desc=True
+        )
+    if ordenar == "dormitorios_desc":
+        return query.order("dormitorios", desc=True, nullsfirst=False).order(
+            "created_at", desc=True
+        )
+    if ordenar == "mais_antigo":
+        return query.order("created_at", desc=False)
+    return query.order("created_at", desc=True)
 
 
 def _normalizar_proprietario(raw: dict) -> Optional[dict]:
@@ -301,7 +344,7 @@ def imoveis_disponiveis_publico(
     preco_max: Optional[float] = None,
     condicao: Optional[CondicaoImovel] = None,
     mobiliado: Optional[Mobiliado] = None,
-    ordenar: Optional[str] = Query(default=None, description="preco_asc | preco_desc | area_asc | area_desc | mais_antigo | mais_novo"),
+    ordenar: Optional[str] = Query(default=None, description="preco_asc | preco_desc | area_asc | area_desc | dormitorios_asc | dormitorios_desc | mais_antigo | mais_novo"),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
 ):
@@ -324,19 +367,7 @@ def imoveis_disponiveis_publico(
         supabase_admin.table("imoveis").select(_LIST_FIELDS), **filtros
     )
 
-    campo_preco = "valor_locacao" if _ev(tipo_negocio) == TipoNegocio.locacao.value else "valor_venda"
-    if ordenar == "preco_asc":
-        query = query.order(campo_preco, desc=False, nullsfirst=False)
-    elif ordenar == "preco_desc":
-        query = query.order(campo_preco, desc=True, nullsfirst=False)
-    elif ordenar == "area_desc":
-        query = query.order("area_util", desc=True, nullsfirst=False)
-    elif ordenar == "area_asc":
-        query = query.order("area_util", desc=False, nullsfirst=False)
-    elif ordenar == "mais_antigo":
-        query = query.order("created_at", desc=False)
-    else:
-        query = query.order("created_at", desc=True)
+    query = _aplicar_ordenacao(query, ordenar, tipo_negocio)
 
     result = query.range(offset, offset + page_size - 1).execute()
     return [_ocultar_internas(_transformar_lista(item), None) for item in result.data]
@@ -482,9 +513,13 @@ def exportar_imoveis_csv(
     tipo_negocio: Optional[TipoNegocio] = None,
     disponibilidade: Optional[Disponibilidade] = None,
     cidade: Optional[str] = None,
-    bairro: Optional[str] = None,
+    bairro: Optional[List[str]] = Query(
+        default=None,
+        description="Aceita múltiplos: ?bairro=Ipanema&bairro=Leblon (OR entre eles)",
+    ),
     tipo_imovel: Optional[TipoImovel] = None,
     dormitorios_min: Optional[int] = None,
+    dormitorios_max: Optional[int] = None,
     preco_min: Optional[float] = None,
     preco_max: Optional[float] = None,
     condicao: Optional[CondicaoImovel] = None,
@@ -493,13 +528,15 @@ def exportar_imoveis_csv(
     q: Optional[str] = Query(default=None, description="Busca livre por código, logradouro ou bairro"),
     descricao: Optional[str] = Query(default=None, description="Palavras que devem aparecer na descrição do imóvel"),
     sem_foto: Optional[bool] = None,
+    ordenar: Optional[str] = Query(default=None, description="preco_asc | preco_desc | area_asc | area_desc | dormitorios_asc | dormitorios_desc | mais_antigo | mais_novo"),
     current_user: dict = Depends(get_current_user),
 ):
     """Baixa imóveis como CSV respeitando os filtros ativos (UTF-8 com BOM, delimitador ';' para Excel PT-BR)."""
     filtros = dict(
         tipo_negocio=tipo_negocio, disponibilidade=disponibilidade,
         cidade=cidade, bairro=bairro, tipo_imovel=tipo_imovel,
-        dormitorios_min=dormitorios_min, preco_min=preco_min, preco_max=preco_max,
+        dormitorios_min=dormitorios_min, dormitorios_max=dormitorios_max,
+        preco_min=preco_min, preco_max=preco_max,
         condicao=condicao, mobiliado=mobiliado, codigo=codigo, q=q,
         descricao=descricao,
     )
@@ -539,7 +576,7 @@ def exportar_imoveis_csv(
         if ids_sem_foto is not None:
             q = q.in_("id", ids_sem_foto)
         result = (
-            q.order("created_at", desc=True)
+            _aplicar_ordenacao(q, ordenar, tipo_negocio)
             .range(offset, offset + page_size - 1)
             .execute()
         )
@@ -575,9 +612,13 @@ def listar_imoveis(
     tipo_negocio: Optional[TipoNegocio] = None,
     disponibilidade: Optional[Disponibilidade] = None,
     cidade: Optional[str] = None,
-    bairro: Optional[str] = None,
+    bairro: Optional[List[str]] = Query(
+        default=None,
+        description="Aceita múltiplos: ?bairro=Ipanema&bairro=Leblon (OR entre eles)",
+    ),
     tipo_imovel: Optional[TipoImovel] = None,
     dormitorios_min: Optional[int] = None,
+    dormitorios_max: Optional[int] = None,
     preco_min: Optional[float] = None,
     preco_max: Optional[float] = None,
     condicao: Optional[CondicaoImovel] = None,
@@ -586,6 +627,7 @@ def listar_imoveis(
     q: Optional[str] = Query(default=None, description="Busca livre por código, logradouro ou bairro"),
     descricao: Optional[str] = Query(default=None, description="Palavras que devem aparecer na descrição do imóvel"),
     sem_foto: Optional[bool] = None,
+    ordenar: Optional[str] = Query(default=None, description="preco_asc | preco_desc | area_asc | area_desc | dormitorios_asc | dormitorios_desc | mais_antigo | mais_novo"),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
     current_user: dict = Depends(get_current_user),
@@ -593,7 +635,8 @@ def listar_imoveis(
     filtros = dict(
         tipo_negocio=tipo_negocio, disponibilidade=disponibilidade,
         cidade=cidade, bairro=bairro, tipo_imovel=tipo_imovel,
-        dormitorios_min=dormitorios_min, preco_min=preco_min, preco_max=preco_max,
+        dormitorios_min=dormitorios_min, dormitorios_max=dormitorios_max,
+        preco_min=preco_min, preco_max=preco_max,
         condicao=condicao, mobiliado=mobiliado, codigo=codigo, q=q,
         descricao=descricao,
     )
@@ -631,7 +674,11 @@ def listar_imoveis(
     )
     if ids_sem_foto is not None:
         data_q = data_q.in_("id", ids_sem_foto)
-    result = data_q.order("created_at", desc=True).range(offset, offset + page_size - 1).execute()
+    result = (
+        _aplicar_ordenacao(data_q, ordenar, tipo_negocio)
+        .range(offset, offset + page_size - 1)
+        .execute()
+    )
     return [_transformar_lista(item) for item in result.data]
 
 

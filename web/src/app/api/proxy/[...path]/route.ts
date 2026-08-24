@@ -50,7 +50,12 @@ async function handler(
   // A API tem redirect_slashes=False, então a barra final precisa ser preservada
   const trailingSlash = request.nextUrl.pathname.endsWith("/") ? "/" : "";
   const targetUrl = new URL(`${API_URL}/${path.join("/")}${trailingSlash}`);
-  request.nextUrl.searchParams.forEach((v, k) => targetUrl.searchParams.set(k, v));
+  // `append`, não `set`: a API tem filtros que aceitam o mesmo parâmetro várias
+  // vezes (`?bairro=Ipanema&bairro=Leblon`), e `set` sobrescreve — só o último
+  // chegaria, sem erro nenhum. O filtro de bairro do painel ficou preso em um
+  // valor por causa disso. `targetUrl` nasce sem query, então não há o que
+  // duplicar por engano.
+  request.nextUrl.searchParams.forEach((v, k) => targetUrl.searchParams.append(k, v));
 
   const headers: Record<string, string> = {};
   if (authHeader) headers["Authorization"] = authHeader;

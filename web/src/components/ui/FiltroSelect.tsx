@@ -24,9 +24,20 @@ interface FiltroSelectProps {
   /** Rótulo da opção que limpa o filtro, ex.: "Todos os tipos". */
   todosLabel: string;
   disabled?: boolean;
+  /** Nome acessível do campo. Os <label> da gaveta são só visuais (não têm
+   * htmlFor, porque o gatilho do Radix não é um <input> com id), então sem isto
+   * o leitor de tela anuncia só o valor escolhido, sem dizer de que campo é. */
+  ariaLabel?: string;
 }
 
-export function FiltroSelect({ value, onChange, options, todosLabel, disabled }: FiltroSelectProps) {
+export function FiltroSelect({
+  value,
+  onChange,
+  options,
+  todosLabel,
+  disabled,
+  ariaLabel,
+}: FiltroSelectProps) {
   return (
     <Select.Root
       value={value || VALOR_TODOS}
@@ -34,6 +45,7 @@ export function FiltroSelect({ value, onChange, options, todosLabel, disabled }:
       disabled={disabled}
     >
       <Select.Trigger
+        aria-label={ariaLabel}
         className={
           "group flex w-full items-center justify-between gap-2 px-3.5 py-2.5 text-sm border border-[#e8e5da] " +
           "rounded-xl bg-[#ffffff] text-[#26241c] transition-colors hover:border-[#d5d0c0] " +

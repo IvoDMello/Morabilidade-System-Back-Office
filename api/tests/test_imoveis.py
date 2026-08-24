@@ -903,3 +903,182 @@ def test_rotacionar_foto_nao_encontrada(client):
             "/imoveis/imovel-uuid-1/fotos/inexistente/rotacionar", json={"graus": 90}
         )
     assert res.status_code == 404
+
+
+# ── Filtro por número de quartos ──────────────────────────────────────────────
+
+def test_listar_imoveis_dormitorios_exato_usa_teto(client):
+    """`dormitorios_min` + `dormitorios_max` iguais = contagem exata.
+
+    É o que o chip "2" do back-office manda. Sem o teto, escolher 2 quartos
+    traria também as coberturas de cinco — resultado errado que a tela não tem
+    como denunciar, por isso a regra é travada aqui.
+    """
+    count_res = MagicMock(count=1, data=[])
+    data_res = MagicMock(count=1, data=[IMOVEL_DB])
+    db = make_db_mock(count_res, data_res)
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/", params={"dormitorios_min": 2, "dormitorios_max": 2})
+
+    assert res.status_code == 200
+    assert ("dormitorios", 2) in [(c.args[0], c.args[1]) for c in db.gte.call_args_list if len(c.args) >= 2]
+    assert ("dormitorios", 2) in [(c.args[0], c.args[1]) for c in db.lte.call_args_list if len(c.args) >= 2]
+
+
+def test_listar_imoveis_dormitorios_min_sozinho_nao_poe_teto(client):
+    """O chip "4+" manda só o mínimo: nada de `lte` em dormitorios."""
+    count_res = MagicMock(count=1, data=[])
+    data_res = MagicMock(count=1, data=[IMOVEL_DB])
+    db = make_db_mock(count_res, data_res)
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/", params={"dormitorios_min": 4})
+
+    assert res.status_code == 200
+    assert ("dormitorios", 4) in [(c.args[0], c.args[1]) for c in db.gte.call_args_list if len(c.args) >= 2]
+    assert "dormitorios" not in [c.args[0] for c in db.lte.call_args_list if c.args]
+
+
+def test_exportar_imoveis_aceita_dormitorios_max(client):
+    """O CSV respeita o filtro de quartos igual à listagem."""
+    data_res = MagicMock(data=[IMOVEL_DB])
+    db = make_db_mock(data_res, MagicMock(data=[]))
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/exportar", params={"dormitorios_min": 3, "dormitorios_max": 3})
+
+    assert res.status_code == 200
+    assert ("dormitorios", 3) in [(c.args[0], c.args[1]) for c in db.lte.call_args_list if len(c.args) >= 2]
+
+
+# ── Ordenação da listagem ─────────────────────────────────────────────────────
+
+def test_listar_imoveis_ordena_por_dormitorios(client):
+    """`ordenar=dormitorios_asc` sobe do menor número de quartos para o maior.
+
+    É o que o chip "4+" manda junto: sem isso a lista sai por data de cadastro e
+    mistura os de quatro com os de sete, e o filtro que devia organizar a busca
+    devolve um monte indistinto. Desempate por mais novo.
+    """
+    count_res = MagicMock(count=1, data=[])
+    data_res = MagicMock(count=1, data=[IMOVEL_DB])
+    db = make_db_mock(count_res, data_res)
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/", params={"dormitorios_min": 4, "ordenar": "dormitorios_asc"})
+
+    assert res.status_code == 200
+    ordens = [(c.args[0], c.kwargs.get("desc")) for c in db.order.call_args_list if c.args]
+    assert ("dormitorios", False) in ordens
+    assert ("created_at", True) in ordens
+    # A contagem por quartos manda; a data é só desempate.
+    assert ordens.index(("dormitorios", False)) < ordens.index(("created_at", True))
+
+
+def test_listar_imoveis_sem_ordenar_mantem_mais_novo_primeiro(client):
+    """Sem `ordenar`, nada muda: a listagem continua por data, mais novo antes."""
+    count_res = MagicMock(count=1, data=[])
+    data_res = MagicMock(count=1, data=[IMOVEL_DB])
+    db = make_db_mock(count_res, data_res)
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/")
+
+    assert res.status_code == 200
+    ordens = [(c.args[0], c.kwargs.get("desc")) for c in db.order.call_args_list if c.args]
+    assert ordens == [("created_at", True)]
+
+
+def test_listar_imoveis_ordenar_invalido_cai_no_padrao(client):
+    """Parâmetro escrito errado não derruba a listagem — vira o padrão."""
+    count_res = MagicMock(count=1, data=[])
+    data_res = MagicMock(count=1, data=[IMOVEL_DB])
+    db = make_db_mock(count_res, data_res)
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/", params={"ordenar": "quartos_decrescente_zzz"})
+
+    assert res.status_code == 200
+    ordens = [(c.args[0], c.kwargs.get("desc")) for c in db.order.call_args_list if c.args]
+    assert ordens == [("created_at", True)]
+
+
+def test_exportar_imoveis_respeita_ordenacao(client):
+    """O CSV sai na mesma ordem que a tela — senão confere-se um contra o outro."""
+    data_res = MagicMock(data=[IMOVEL_DB])
+    db = make_db_mock(data_res, MagicMock(data=[]))
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/exportar", params={"ordenar": "dormitorios_asc"})
+
+    assert res.status_code == 200
+    ordens = [(c.args[0], c.kwargs.get("desc")) for c in db.order.call_args_list if c.args]
+    assert ("dormitorios", False) in ordens
+
+
+# ── Filtro multi-bairro ───────────────────────────────────────────────────────
+
+def test_listar_imoveis_aceita_varios_bairros(client):
+    """`?bairro=X&bairro=Y` vira um OR só — o painel voltou a poder marcar mais
+    de um bairro, e o endpoint do back-office precisava aceitar a lista (só o
+    endpoint público aceitava)."""
+    count_res = MagicMock(count=1, data=[])
+    data_res = MagicMock(count=1, data=[IMOVEL_DB])
+    db = make_db_mock(count_res, data_res)
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/", params=[("bairro", "Ipanema"), ("bairro", "Leblon")])
+
+    assert res.status_code == 200
+    clausulas = [c.args[0] for c in db.or_.call_args_list if c.args]
+    assert any("ipanema" in c and "leblon" in c for c in clausulas)
+
+
+def test_listar_imoveis_um_bairro_continua_ilike_simples(client):
+    """Com um bairro só, nada de OR: segue o ILIKE direto, como antes."""
+    count_res = MagicMock(count=1, data=[])
+    data_res = MagicMock(count=1, data=[IMOVEL_DB])
+    db = make_db_mock(count_res, data_res)
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/", params={"bairro": "Ipanema"})
+
+    assert res.status_code == 200
+    ilikes = [(c.args[0], c.args[1]) for c in db.ilike.call_args_list if len(c.args) >= 2]
+    assert ("bairro_norm", "%ipanema%") in ilikes
+    assert db.or_.call_count == 0
+
+
+def test_exportar_imoveis_aceita_varios_bairros(client):
+    """O CSV respeita a mesma seleção múltipla da tela."""
+    data_res = MagicMock(data=[IMOVEL_DB])
+    db = make_db_mock(data_res, MagicMock(data=[]))
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get(
+            "/imoveis/exportar", params=[("bairro", "Gávea"), ("bairro", "Humaitá")]
+        )
+
+    assert res.status_code == 200
+    clausulas = [c.args[0] for c in db.or_.call_args_list if c.args]
+    assert any("gavea" in c and "humaita" in c for c in clausulas)
+
+
+def test_listar_imoveis_ordena_por_dormitorios_desc(client):
+    """`dormitorios_desc` fecha o par do `dormitorios_asc`.
+
+    Existe porque a gaveta do painel passou a oferecer critério + direção: sem o
+    par, escolher "Quartos" e "Decrescente" não teria valor para mandar.
+    """
+    count_res = MagicMock(count=1, data=[])
+    data_res = MagicMock(count=1, data=[IMOVEL_DB])
+    db = make_db_mock(count_res, data_res)
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/", params={"ordenar": "dormitorios_desc"})
+
+    assert res.status_code == 200
+    ordens = [(c.args[0], c.kwargs.get("desc")) for c in db.order.call_args_list if c.args]
+    assert ("dormitorios", True) in ordens
+    assert ("created_at", True) in ordens

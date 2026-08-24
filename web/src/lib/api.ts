@@ -4,6 +4,11 @@ import { useAuthStore } from "./auth-store";
 export const api = axios.create({
   baseURL: "/api/proxy",
   headers: { "Content-Type": "application/json" },
+  // Array vira parâmetro repetido (`?bairro=A&bairro=B`), que é o formato que o
+  // FastAPI lê como `List[str]`. O padrão do axios v1 é `bairro[]=A&bairro[]=B`,
+  // e com os colchetes a API não reconhece o parâmetro — ignora em silêncio, o
+  // filtro simplesmente não filtra.
+  paramsSerializer: { indexes: null },
 });
 
 // Inclui o token JWT como Authorization header em todas as requisições.

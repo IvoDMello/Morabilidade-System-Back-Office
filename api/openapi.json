@@ -9880,18 +9880,23 @@
             }
           },
           {
+            "description": "Aceita múltiplos: ?bairro=Ipanema&bairro=Leblon (OR entre eles)",
             "in": "query",
             "name": "bairro",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
                 },
                 {
                   "type": "null"
                 }
               ],
+              "description": "Aceita múltiplos: ?bairro=Ipanema&bairro=Leblon (OR entre eles)",
               "title": "Bairro"
             }
           },
@@ -9925,6 +9930,22 @@
                 }
               ],
               "title": "Dormitorios Min"
+            }
+          },
+          {
+            "in": "query",
+            "name": "dormitorios_max",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Dormitorios Max"
             }
           },
           {
@@ -10057,6 +10078,24 @@
                 }
               ],
               "title": "Sem Foto"
+            }
+          },
+          {
+            "description": "preco_asc | preco_desc | area_asc | area_desc | dormitorios_asc | dormitorios_desc | mais_antigo | mais_novo",
+            "in": "query",
+            "name": "ordenar",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "preco_asc | preco_desc | area_asc | area_desc | dormitorios_asc | dormitorios_desc | mais_antigo | mais_novo",
+              "title": "Ordenar"
             }
           },
           {
@@ -10243,18 +10282,23 @@
             }
           },
           {
+            "description": "Aceita múltiplos: ?bairro=Ipanema&bairro=Leblon (OR entre eles)",
             "in": "query",
             "name": "bairro",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
                 },
                 {
                   "type": "null"
                 }
               ],
+              "description": "Aceita múltiplos: ?bairro=Ipanema&bairro=Leblon (OR entre eles)",
               "title": "Bairro"
             }
           },
@@ -10288,6 +10332,22 @@
                 }
               ],
               "title": "Dormitorios Min"
+            }
+          },
+          {
+            "in": "query",
+            "name": "dormitorios_max",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Dormitorios Max"
             }
           },
           {
@@ -10420,6 +10480,24 @@
                 }
               ],
               "title": "Sem Foto"
+            }
+          },
+          {
+            "description": "preco_asc | preco_desc | area_asc | area_desc | dormitorios_asc | dormitorios_desc | mais_antigo | mais_novo",
+            "in": "query",
+            "name": "ordenar",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "preco_asc | preco_desc | area_asc | area_desc | dormitorios_asc | dormitorios_desc | mais_antigo | mais_novo",
+              "title": "Ordenar"
             }
           }
         ],
@@ -10829,7 +10907,7 @@
             }
           },
           {
-            "description": "preco_asc | preco_desc | area_asc | area_desc | mais_antigo | mais_novo",
+            "description": "preco_asc | preco_desc | area_asc | area_desc | dormitorios_asc | dormitorios_desc | mais_antigo | mais_novo",
             "in": "query",
             "name": "ordenar",
             "required": false,
@@ -10842,7 +10920,7 @@
                   "type": "null"
                 }
               ],
-              "description": "preco_asc | preco_desc | area_asc | area_desc | mais_antigo | mais_novo",
+              "description": "preco_asc | preco_desc | area_asc | area_desc | dormitorios_asc | dormitorios_desc | mais_antigo | mais_novo",
               "title": "Ordenar"
             }
           },
