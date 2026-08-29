@@ -142,7 +142,9 @@ export default function DashboardHome() {
                 value={v(stats?.total_imoveis)}
                 icon={<Building2 className="w-5 h-5 text-blue-500" />}
                 color="blue"
-                href="/imoveis"
+                // O card conta todo o portfólio; a lista abre filtrada por
+                // disponível, então o link precisa pedir "todos" para bater.
+                href="/imoveis?disponibilidade=todos"
               />
               <StatCard
                 label="Imóveis disponíveis"
@@ -174,7 +176,7 @@ export default function DashboardHome() {
                 value={v(stats?.imoveis_sem_foto)}
                 icon={<ImageOff className="w-4 h-4 text-rose-500" />}
                 tone={stats?.imoveis_sem_foto ? "alert" : "neutral"}
-                href="/imoveis?sem_foto=1"
+                href="/imoveis?sem_foto=1&disponibilidade=todos"
                 hint="Imóveis à venda sem foto não convertem (locação não conta)"
               />
               <MiniCard
@@ -199,7 +201,7 @@ export default function DashboardHome() {
 
         {stats?.imovel_mais_antigo && (
           <Link
-            href={`/imoveis?codigo=${encodeURIComponent(stats.imovel_mais_antigo.codigo)}`}
+            href={`/imoveis?codigo=${encodeURIComponent(stats.imovel_mais_antigo.codigo)}&disponibilidade=todos`}
             className="mt-3 flex items-center gap-3 px-4 py-2.5 bg-white border border-slate-200 rounded-lg hover:border-slate-300 transition group"
           >
             <Clock className="w-4 h-4 text-slate-400 flex-shrink-0" />

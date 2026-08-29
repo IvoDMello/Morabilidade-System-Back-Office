@@ -52,12 +52,26 @@ interface Localidades {
   bairros_por_cidade: Record<string, string[]>;
 }
 
-const FILTROS_VAZIOS: Filtros = {
+// Disponibilidade: a lista abre só com o que está à venda/para alugar, porque
+// imóvel já fechado só interessa quando alguém pede. "Todos" continua a um
+// clique no select, e um link pode pedir a lista inteira com
+// `?disponibilidade=todos`.
+const DISP_PADRAO = "disponivel";
+const DISP_TODOS = "";
+
+function disponibilidadeDaUrl(valor: string | null): string {
+  if (valor === null) return DISP_PADRAO;
+  return valor === "todos" ? DISP_TODOS : valor;
+}
+
+// Estado inicial da gaveta e destino do botão "Limpar" — "limpo" aqui é o
+// padrão da tela, não o filtro vazio.
+const FILTROS_PADRAO: Filtros = {
   busca: "",
   codigo: "",
   descricao: "",
   tipo_negocio: "",
-  disponibilidade: "",
+  disponibilidade: DISP_PADRAO,
   cidade: "",
   bairros: [],
   tipo_imovel: "",
@@ -150,9 +164,9 @@ function ImoveisPageInner() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [filtros, setFiltros] = useState<Filtros>(() => ({
-    ...FILTROS_VAZIOS,
+    ...FILTROS_PADRAO,
     codigo: searchParams.get("codigo") ?? "",
-    disponibilidade: searchParams.get("disponibilidade") ?? "",
+    disponibilidade: disponibilidadeDaUrl(searchParams.get("disponibilidade")),
     tipo_imovel: searchParams.get("tipo_imovel") ?? "",
     quartos: searchParams.get("quartos") ?? "",
     sem_foto: searchParams.get("sem_foto") === "1",
@@ -294,9 +308,9 @@ setLoading(true);
   }
 
   function limparFiltros() {
-    setFiltros(FILTROS_VAZIOS);
+    setFiltros(FILTROS_PADRAO);
     setPage(1);
-    buscar(1, FILTROS_VAZIOS);
+    buscar(1, FILTROS_PADRAO);
   }
 
   async function handleDeletar() {
@@ -332,7 +346,16 @@ setLoading(true);
     };
   }
 
-  const temFiltrosAtivos = Object.values(filtros).some(Boolean);
+  // Comparado com o padrão, não com vazio: a disponibilidade já vem preenchida,
+  // então perguntar só se cada campo é truthy diria "tem filtro" sempre.
+  const temFiltrosAtivos = useMemo(
+    () =>
+      (Object.keys(FILTROS_PADRAO) as (keyof Filtros)[]).some((campo) => {
+        const atual = filtros[campo];
+        return Array.isArray(atual) ? atual.length > 0 : atual !== FILTROS_PADRAO[campo];
+      }),
+    [filtros],
+  );
 
   return (
     <div
