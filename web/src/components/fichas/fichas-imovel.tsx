@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
-  FileSignature, Plus, Copy, Check, Download, Ban, MessageCircle, Loader2,
+  FileSignature, Plus, Copy, Check, Download, Ban, MessageCircle, Loader2, Phone,
 } from "lucide-react";
 import { toast } from "sonner";
 import { api, getErrorMessage } from "@/lib/api";
@@ -291,6 +291,9 @@ function ListaFichas({
                     <span className="text-sm font-medium text-slate-800">{f.visitante_nome}</span>
                     <span className={`text-[11px] px-2 py-0.5 rounded-full border ${st.cls}`}>{st.label}</span>
                   </div>
+                  {f.visitante_telefone && (
+                    <TelefoneCopiavel telefone={f.visitante_telefone} />
+                  )}
                   <div className="text-xs text-slate-400 mt-0.5">
                     Emitida em {formatDataBR(f.created_at)}
                     {f.corretor_nome && ` · corretor: ${f.corretor_nome}`}
@@ -333,6 +336,36 @@ function ListaFichas({
         onConfirm={cancelar}
       />
     </div>
+  );
+}
+
+// O corretor liga/salva o contato direto do card, então o número fica visível e
+// copiável em um clique.
+function TelefoneCopiavel({ telefone }: { telefone: string }) {
+  const [copiado, setCopiado] = useState(false);
+
+  async function copiar() {
+    try {
+      await navigator.clipboard.writeText(telefone);
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2000);
+      toast.success("Número de telefone copiado");
+    } catch {
+      toast.error("Não foi possível copiar o número.");
+    }
+  }
+
+  return (
+    <button
+      type="button" onClick={copiar} title="Copiar número de telefone"
+      className="mt-0.5 inline-flex items-center gap-1 text-xs text-slate-500 hover:text-[#585a4f] transition"
+    >
+      <Phone className="w-3 h-3 shrink-0" />
+      <span className="tabular-nums">{telefone}</span>
+      {copiado
+        ? <Check className="w-3 h-3 shrink-0 text-emerald-500" />
+        : <Copy className="w-3 h-3 shrink-0 opacity-60" />}
+    </button>
   );
 }
 
