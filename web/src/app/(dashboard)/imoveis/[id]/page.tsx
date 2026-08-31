@@ -539,7 +539,7 @@ export default function EditarImovelPage({
         />
       )}
 
-      {abaAtiva === "fichas" && <FichasImovel imovelId={imovel.id} />}
+      {abaAtiva === "fichas" && <FichasImovel imovelId={imovel.id} imovelCodigo={imovel.codigo} />}
 
       {abaAtiva === "autorizacao" && <AutorizacaoImovel imovelId={imovel.id} />}
     </div>

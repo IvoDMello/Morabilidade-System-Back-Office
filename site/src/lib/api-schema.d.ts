@@ -1134,6 +1134,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/imoveis/{imovel_id}/relatorio-visitas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Baixar Relatorio Visitas
+         * @description Baixa o PDF com o histórico de visitas do imóvel, para mandar ao cliente.
+         *
+         *     Diferente do relatório de 30 dias, não tem janela nem e-mail: é só leitura,
+         *     cobre todas as fichas assinadas do imóvel e sai com o visitante identificado
+         *     por nome e sobrenome e o telefone mascarado, ver [relatorio_visitas_pdf].
+         */
+        get: operations["baixar_relatorio_visitas_imoveis__imovel_id__relatorio_visitas_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/imoveis/{imovel_id}/visitas": {
         parameters: {
             query?: never;
@@ -6265,6 +6289,37 @@ export interface operations {
         };
     };
     preview_relatorio_30dias_imoveis__imovel_id__relatorio_30dias_preview_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                imovel_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    baixar_relatorio_visitas_imoveis__imovel_id__relatorio_visitas_get: {
         parameters: {
             query?: never;
             header?: never;

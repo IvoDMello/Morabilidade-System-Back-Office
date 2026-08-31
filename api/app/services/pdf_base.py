@@ -13,6 +13,7 @@ import base64
 import io
 import logging
 import os
+import re
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -79,6 +80,36 @@ def fmt_brl(valor: Decimal | float | int) -> str:
 
 def fmt_data(d: date) -> str:
     return d.strftime("%d/%m/%Y")
+
+
+def nome_e_sobrenome(nome: str | None) -> str:
+    """Primeiro nome + último sobrenome ("Ana Clara de Souza Lima" -> "Ana Lima").
+
+    Usado nos relatórios que saem da imobiliária para o proprietário: identifica
+    a pessoa sem entregar o nome civil completo, que é dado de cadastro nosso.
+    """
+    partes = (nome or "").split()
+    if not partes:
+        return "-"
+    if len(partes) == 1:
+        return partes[0]
+    return f"{partes[0]} {partes[-1]}"
+
+
+def mascarar_telefone(valor: str | None) -> str:
+    """Telefone parcialmente oculto, no formato "219 **** - 9990".
+
+    Mantém DDD + primeiro dígito e os quatro últimos: o proprietário confere que
+    as visitas são de pessoas distintas e reais sem receber o contato do
+    visitante, que é base da imobiliária (e dado pessoal, na LGPD).
+    """
+    digitos = re.sub(r"\D", "", valor or "")
+    # Números vindos do WhatsApp chegam com o código do país na frente.
+    if len(digitos) in (12, 13) and digitos.startswith("55"):
+        digitos = digitos[2:]
+    if len(digitos) < 7:
+        return "-"
+    return f"{digitos[:3]} **** - {digitos[-4:]}"
 
 
 def quebrar_em_linhas(texto: str, max_chars: int) -> list[str]:

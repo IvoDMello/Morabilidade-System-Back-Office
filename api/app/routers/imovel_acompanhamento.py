@@ -1,6 +1,7 @@
 """
-Acompanhamento do imóvel: visitas, percepções internas e disparo do relatório
-automático de 30 dias enviado ao proprietário.
+Acompanhamento do imóvel: visitas, percepções internas, disparo do relatório
+automático de 30 dias enviado ao proprietário e o relatório de visitas avulso
+(histórico completo, gerado sob demanda para repassar ao cliente).
 
 Visitas e percepções persistem mesmo após o imóvel sair de "disponível", só
 somem se o imóvel for deletado (cascade na migration 020).
@@ -18,9 +19,11 @@ from pydantic import BaseModel, Field
 from app.auth.dependencies import get_current_user, require_admin
 from app.config import settings
 from app.database import supabase_admin
+from app.services.assinatura import pdf_response
 from app.services.email import enviar_relatorio_30dias
 from app.services.pdf_base import fmt_dt
 from app.services.relatorio_30dias_pdf import gerar_relatorio_30dias_pdf
+from app.services.relatorio_visitas_pdf import gerar_relatorio_visitas_pdf
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -283,6 +286,16 @@ def processar_relatorios_30dias() -> dict:
     return {"candidatos": len(candidatos), "enviados": enviados, "erros": erros}
 
 
+def _endereco_do_imovel(imovel: dict) -> str:
+    """Endereço em uma linha, do jeito que sai nos relatórios."""
+    return ", ".join(filter(None, [
+        imovel.get("logradouro"),
+        imovel.get("numero"),
+        imovel.get("bairro"),
+        imovel.get("cidade"),
+    ]))
+
+
 def _buscar_imovel_relatorio(imovel_id: str) -> dict:
     """Carrega os campos do imóvel necessários ao relatório, ou 404."""
     res = (
@@ -295,6 +308,55 @@ def _buscar_imovel_relatorio(imovel_id: str) -> dict:
     if not res or not res.data:
         raise HTTPException(status_code=404, detail="Imóvel não encontrado.")
     return res.data
+
+
+@router.get("/{imovel_id}/relatorio-visitas")
+def baixar_relatorio_visitas(
+    imovel_id: str,
+    current_user: dict = Depends(require_admin),
+):
+    """Baixa o PDF com o histórico de visitas do imóvel, para mandar ao cliente.
+
+    Diferente do relatório de 30 dias, não tem janela nem e-mail: é só leitura,
+    cobre todas as fichas assinadas do imóvel e sai com o visitante identificado
+    por nome e sobrenome e o telefone mascarado, ver [relatorio_visitas_pdf].
+    """
+    imovel = _buscar_imovel_relatorio(imovel_id)
+    try:
+        pdf_bytes = gerar_relatorio_visitas_pdf(_montar_dados_visitas(imovel))
+    except Exception as e:  # noqa: BLE001
+        logger.exception("Falha ao gerar relatório de visitas do imóvel %s", imovel.get("codigo"))
+        raise HTTPException(status_code=502, detail=f"Falha ao gerar o relatório: {e}")
+    return pdf_response(pdf_bytes, f"relatorio-visitas-{imovel['codigo']}.pdf")
+
+
+def _montar_dados_visitas(imovel: dict) -> dict:
+    """Coleta as fichas assinadas do imóvel (todas, da mais recente pra mais
+    antiga) e monta o dicionário que o PDF de visitas espera."""
+    fichas = (
+        supabase_admin.table("fichas_visita")
+        .select("visitante_nome, visitante_telefone, assinada_em, created_at")
+        .eq("imovel_id", imovel["id"])
+        .eq("status", "assinada")
+        .order("assinada_em", desc=True)
+        .execute()
+        .data or []
+    )
+    return {
+        "codigo": imovel.get("codigo"),
+        "endereco": _endereco_do_imovel(imovel),
+        "anunciado_em": fmt_dt(imovel.get("created_at")),
+        "emitido_em": fmt_dt(datetime.now(timezone.utc)),
+        "visitas": [
+            {
+                # Ficha antiga pode não ter `assinada_em`; a emissão serve de piso.
+                "nome": f.get("visitante_nome"),
+                "data": f.get("assinada_em") or f.get("created_at"),
+                "telefone": f.get("visitante_telefone"),
+            }
+            for f in fichas
+        ],
+    }
 
 
 @router.get("/{imovel_id}/relatorio-30dias/preview")
@@ -407,12 +469,7 @@ def _montar_relatorio(imovel: dict) -> tuple[dict, bytes]:
         .data or []
     )
 
-    endereco = ", ".join(filter(None, [
-        imovel.get("logradouro"),
-        imovel.get("numero"),
-        imovel.get("bairro"),
-        imovel.get("cidade"),
-    ]))
+    endereco = _endereco_do_imovel(imovel)
 
     anunciado_em = fmt_dt(imovel.get("created_at"))
 

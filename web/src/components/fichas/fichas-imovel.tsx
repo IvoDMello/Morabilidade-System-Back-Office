@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
-  FileSignature, Plus, Copy, Check, Download, Ban, MessageCircle, Loader2, Phone,
+  FileSignature, Plus, Copy, Check, Download, Ban, MessageCircle, Loader2, Phone, FileText,
 } from "lucide-react";
 import { toast } from "sonner";
 import { api, getErrorMessage } from "@/lib/api";
@@ -29,6 +29,8 @@ interface CorretorOption {
 
 interface Props {
   imovelId: string;
+  /** Código do imóvel (MOR-123), usado no nome do arquivo do relatório. */
+  imovelCodigo: string;
 }
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://morabilidade.com";
@@ -54,7 +56,7 @@ export const STATUS_STYLE: Record<Ficha["status"], { label: string; cls: string 
   expirada: { label: "Expirada", cls: "bg-red-50 text-red-600 border-red-200" },
 };
 
-export function FichasImovel({ imovelId }: Props) {
+export function FichasImovel({ imovelId, imovelCodigo }: Props) {
   // A API já devolve só as fichas do próprio corretor quando o perfil não é
   // admin; aqui a flag serve apenas para o rótulo da lista.
   const isAdmin = useAuthStore((s) => s.user?.perfil) === "admin";
@@ -85,7 +87,14 @@ export function FichasImovel({ imovelId }: Props) {
   return (
     <div className="space-y-4">
       <NovaFicha imovelId={imovelId} onCriada={carregar} />
-      <ListaFichas fichas={fichas} loading={loading} onAtualizar={carregar} soMinhas={!isAdmin} />
+      <ListaFichas
+        imovelId={imovelId}
+        imovelCodigo={imovelCodigo}
+        fichas={fichas}
+        loading={loading}
+        onAtualizar={carregar}
+        soMinhas={!isAdmin}
+      />
     </div>
   );
 }
@@ -205,11 +214,21 @@ function NovaFicha({ imovelId, onCriada }: { imovelId: string; onCriada: () => v
 // ── Lista ─────────────────────────────────────────────────────────────────────
 
 function ListaFichas({
-  fichas, loading, onAtualizar, soMinhas,
-}: { fichas: Ficha[]; loading: boolean; onAtualizar: () => void; soMinhas?: boolean }) {
+  imovelId, imovelCodigo, fichas, loading, onAtualizar, soMinhas,
+}: {
+  imovelId: string;
+  imovelCodigo: string;
+  fichas: Ficha[];
+  loading: boolean;
+  onAtualizar: () => void;
+  soMinhas?: boolean;
+}) {
   const [copiado, setCopiado] = useState<string | null>(null);
   const [confirmCancelar, setConfirmCancelar] = useState<Ficha | null>(null);
   const [cancelando, setCancelando] = useState(false);
+
+  // O relatório do proprietário só conta visita comprovada (ficha assinada).
+  const assinadas = fichas.filter((f) => f.status === "assinada").length;
 
   async function copiarLink(ficha: Ficha) {
     try {
@@ -273,6 +292,7 @@ function ListaFichas({
           {soMinhas ? "Minhas fichas emitidas" : "Fichas emitidas"}
         </h2>
         <span className="text-xs text-slate-400">· {fichas.length}</span>
+        <RelatorioVisitasButton imovelId={imovelId} imovelCodigo={imovelCodigo} assinadas={assinadas} />
       </div>
 
       {loading ? (
@@ -338,6 +358,63 @@ function ListaFichas({
     </div>
   );
 }
+
+// Relatório que a imobiliária manda pro proprietário comprovando o giro do
+// imóvel. Fica aqui, no topo da lista de fichas, porque é justamente o resumo
+// dessa lista: mesmas visitas, só que com nome e sobrenome e telefone mascarado.
+function RelatorioVisitasButton({
+  imovelId, imovelCodigo, assinadas,
+}: { imovelId: string; imovelCodigo: string; assinadas: number }) {
+  const [baixando, setBaixando] = useState(false);
+
+  async function baixar() {
+    setBaixando(true);
+    try {
+      const res = await api.get(`/imoveis/${imovelId}/relatorio-visitas`, { responseType: "blob" });
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: "application/pdf" }));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `relatorio-visitas-${imovelCodigo}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      // Em respostas blob o detalhe vem como Blob; tenta extrair, senão usa fallback.
+      let msg = "Erro ao gerar o relatório de visitas.";
+      const data = (err as { response?: { data?: unknown } })?.response?.data;
+      if (data instanceof Blob) {
+        try {
+          const parsed = JSON.parse(await data.text());
+          if (parsed?.detail) msg = String(parsed.detail);
+        } catch {}
+      } else {
+        msg = getErrorMessage(err, msg);
+      }
+      toast.error(msg);
+    } finally {
+      setBaixando(false);
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={baixar}
+      disabled={baixando || assinadas === 0}
+      title={
+        assinadas === 0
+          ? "Nenhuma ficha assinada ainda: o relatório sairia vazio"
+          : "Baixar o PDF de visitas para enviar ao proprietário"
+      }
+      className="ml-auto shrink-0 inline-flex items-center gap-1.5 border border-slate-200 text-slate-600 text-xs px-3 py-1.5 rounded-md transition hover:border-[#585a4f] hover:text-[#585a4f] disabled:opacity-50 disabled:hover:border-slate-200 disabled:hover:text-slate-600"
+    >
+      {baixando ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />}
+      Relatório de visitas
+    </button>
+  );
+}
+
 
 // O corretor liga/salva o contato direto do card, então o número fica visível e
 // copiável em um clique.
