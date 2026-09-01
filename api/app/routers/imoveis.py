@@ -86,10 +86,36 @@ def _gerar_codigo() -> str:
     return f"MB-{result.data:05d}"
 
 
+def _clausula_metragem(area_min, area_max) -> str:
+    """Faixa de metragem em sintaxe de `.or_()` do PostgREST.
+
+    A metragem que o usuário enxerga na listagem é a área útil, com a total
+    como reserva para o imóvel cadastrado só com ela (ver o card em
+    web/imoveis). O filtro precisa enxergar a mesma coisa: olhar só
+    `area_util` esconderia esses imóveis da busca sem dizer nada, e olhar as
+    duas colunas soltas faria um apartamento de 300 m² totais entrar numa
+    procura por 100–240 m² por causa da área que ninguém pediu.
+
+    Daí o OR de dois braços: área útil dentro da faixa, ou — só quando ela não
+    existe — área total dentro da faixa. Cada braço é um `and(...)`, e o
+    PostgREST aceita `and()` de uma condição só, o que deixa "só mínimo" e "só
+    máximo" saírem da mesma montagem.
+    """
+    util, total = [], ["area_util.is.null"]
+    if area_min is not None:
+        util.append(f"area_util.gte.{area_min}")
+        total.append(f"area_total.gte.{area_min}")
+    if area_max is not None:
+        util.append(f"area_util.lte.{area_max}")
+        total.append(f"area_total.lte.{area_max}")
+    return f"and({','.join(util)}),and({','.join(total)})"
+
+
 def _aplicar_filtros(query, *, tipo_negocio, disponibilidade, cidade, bairro,
                      tipo_imovel, dormitorios_min, preco_min, preco_max,
                      condicao, mobiliado, codigo, andar_max=None, q=None,
-                     descricao=None, dormitorios_max=None):
+                     descricao=None, dormitorios_max=None,
+                     area_min=None, area_max=None):
     if q:
         termo = _safe_for_or(q)
         if termo:
@@ -150,6 +176,11 @@ def _aplicar_filtros(query, *, tipo_negocio, disponibilidade, cidade, bairro,
             query = query.lte("valor_locacao", preco_max)
         else:
             query = query.lte("valor_venda", preco_max)
+    if area_min is not None or area_max is not None:
+        # Segundo `.or_()` da query quando o filtro de bairro também usa um: o
+        # PostgREST recebe os dois e faz o E entre eles, que é o esperado —
+        # "Copacabana E entre 100 e 240 m²".
+        query = query.or_(_clausula_metragem(area_min, area_max))
     return query
 
 
@@ -522,6 +553,11 @@ def exportar_imoveis_csv(
     dormitorios_max: Optional[int] = None,
     preco_min: Optional[float] = None,
     preco_max: Optional[float] = None,
+    area_min: Optional[float] = Query(
+        default=None, ge=0,
+        description="Metragem mínima em m². Compara com a área útil e, para quem não tem útil cadastrada, com a área total.",
+    ),
+    area_max: Optional[float] = Query(default=None, ge=0, description="Metragem máxima em m²"),
     condicao: Optional[CondicaoImovel] = None,
     mobiliado: Optional[Mobiliado] = None,
     codigo: Optional[str] = None,
@@ -537,6 +573,7 @@ def exportar_imoveis_csv(
         cidade=cidade, bairro=bairro, tipo_imovel=tipo_imovel,
         dormitorios_min=dormitorios_min, dormitorios_max=dormitorios_max,
         preco_min=preco_min, preco_max=preco_max,
+        area_min=area_min, area_max=area_max,
         condicao=condicao, mobiliado=mobiliado, codigo=codigo, q=q,
         descricao=descricao,
     )
@@ -621,6 +658,11 @@ def listar_imoveis(
     dormitorios_max: Optional[int] = None,
     preco_min: Optional[float] = None,
     preco_max: Optional[float] = None,
+    area_min: Optional[float] = Query(
+        default=None, ge=0,
+        description="Metragem mínima em m². Compara com a área útil e, para quem não tem útil cadastrada, com a área total.",
+    ),
+    area_max: Optional[float] = Query(default=None, ge=0, description="Metragem máxima em m²"),
     condicao: Optional[CondicaoImovel] = None,
     mobiliado: Optional[Mobiliado] = None,
     codigo: Optional[str] = None,
@@ -637,6 +679,7 @@ def listar_imoveis(
         cidade=cidade, bairro=bairro, tipo_imovel=tipo_imovel,
         dormitorios_min=dormitorios_min, dormitorios_max=dormitorios_max,
         preco_min=preco_min, preco_max=preco_max,
+        area_min=area_min, area_max=area_max,
         condicao=condicao, mobiliado=mobiliado, codigo=codigo, q=q,
         descricao=descricao,
     )

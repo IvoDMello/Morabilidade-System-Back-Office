@@ -9992,6 +9992,44 @@
             }
           },
           {
+            "description": "Metragem mínima em m². Compara com a área útil e, para quem não tem útil cadastrada, com a área total.",
+            "in": "query",
+            "name": "area_min",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0.0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Metragem mínima em m². Compara com a área útil e, para quem não tem útil cadastrada, com a área total.",
+              "title": "Area Min"
+            }
+          },
+          {
+            "description": "Metragem máxima em m²",
+            "in": "query",
+            "name": "area_max",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0.0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Metragem máxima em m²",
+              "title": "Area Max"
+            }
+          },
+          {
             "in": "query",
             "name": "condicao",
             "required": false,
@@ -10391,6 +10429,44 @@
                 }
               ],
               "title": "Preco Max"
+            }
+          },
+          {
+            "description": "Metragem mínima em m². Compara com a área útil e, para quem não tem útil cadastrada, com a área total.",
+            "in": "query",
+            "name": "area_min",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0.0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Metragem mínima em m². Compara com a área útil e, para quem não tem útil cadastrada, com a área total.",
+              "title": "Area Min"
+            }
+          },
+          {
+            "description": "Metragem máxima em m²",
+            "in": "query",
+            "name": "area_max",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0.0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Metragem máxima em m²",
+              "title": "Area Max"
             }
           },
           {

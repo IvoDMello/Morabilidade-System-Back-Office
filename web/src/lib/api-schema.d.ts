@@ -5458,6 +5458,10 @@ export interface operations {
                 dormitorios_max?: number | null;
                 preco_min?: number | null;
                 preco_max?: number | null;
+                /** @description Metragem mínima em m². Compara com a área útil e, para quem não tem útil cadastrada, com a área total. */
+                area_min?: number | null;
+                /** @description Metragem máxima em m² */
+                area_max?: number | null;
                 condicao?: components["schemas"]["CondicaoImovel"] | null;
                 mobiliado?: components["schemas"]["Mobiliado"] | null;
                 codigo?: string | null;
@@ -5563,6 +5567,10 @@ export interface operations {
                 dormitorios_max?: number | null;
                 preco_min?: number | null;
                 preco_max?: number | null;
+                /** @description Metragem mínima em m². Compara com a área útil e, para quem não tem útil cadastrada, com a área total. */
+                area_min?: number | null;
+                /** @description Metragem máxima em m² */
+                area_max?: number | null;
                 condicao?: components["schemas"]["CondicaoImovel"] | null;
                 mobiliado?: components["schemas"]["Mobiliado"] | null;
                 codigo?: string | null;

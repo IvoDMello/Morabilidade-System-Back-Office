@@ -40,6 +40,9 @@ interface Filtros {
   quartos: string;
   preco_min: string;
   preco_max: string;
+  /** Metragem em m², só dígitos. Vazio = sem teto/piso. Ver o bloco "Metragem". */
+  area_min: string;
+  area_max: string;
   /** Ordenação por valor: "" = sem ordenação. Ver lib/ordenacao-imoveis.ts. */
   ordenar_valor: DirecaoValor;
   sem_foto: boolean;
@@ -78,6 +81,8 @@ const FILTROS_PADRAO: Filtros = {
   quartos: "",
   preco_min: "",
   preco_max: "",
+  area_min: "",
+  area_max: "",
   ordenar_valor: "",
   sem_foto: false,
 };
@@ -202,6 +207,8 @@ function ImoveisPageInner() {
       );
       if (filtros.preco_min) params.preco_min = filtros.preco_min;
       if (filtros.preco_max) params.preco_max = filtros.preco_max;
+      if (filtros.area_min) params.area_min = filtros.area_min;
+      if (filtros.area_max) params.area_max = filtros.area_max;
       if (filtros.sem_foto) params.sem_foto = "true";
       const res = await api.get("/imoveis/exportar", { responseType: "blob", params });
       const blob = new Blob([res.data], { type: "text/csv;charset=utf-8" });
@@ -249,6 +256,8 @@ setLoading(true);
       );
       if (f.preco_min) params.preco_min = f.preco_min;
       if (f.preco_max) params.preco_max = f.preco_max;
+      if (f.area_min) params.area_min = f.area_min;
+      if (f.area_max) params.area_max = f.area_max;
       if (f.sem_foto) params.sem_foto = "true";
 
       const res = await api.get<ImovelListOut[]>("/imoveis/", { params });
@@ -662,6 +671,49 @@ setLoading(true);
                   quartosAberto: filtros.quartos === QUARTOS_ABERTO,
                 })}
               </p>
+            </div>
+
+            {/* Metragem. Mesma dupla min–max da faixa de valor, e de propósito:
+                quem procura "Copacabana entre 100 e 240 m²" preenche os dois
+                campos do mesmo jeito nos dois blocos. A API compara com a área
+                útil e, para o imóvel cadastrado só com a total, com a total —
+                a mesma metragem que o card mostra, senão a busca esconderia
+                imóvel que aparece na lista. */}
+            <div>
+              <label className={labelCls}>Metragem</label>
+              <div className="flex items-center gap-2">
+                {([
+                  ["area_min", "Mínima"],
+                  ["area_max", "Máxima"],
+                ] as const).map(([campo, placeholder], i) => (
+                  <div key={campo} className="contents">
+                    {i > 0 && <span className="shrink-0 text-[#a49d8b] select-none">–</span>}
+                    <div className="relative flex-1 min-w-0">
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        aria-label={`Metragem ${placeholder.toLowerCase()} em m²`}
+                        value={formatarMilhar(filtros[campo])}
+                        onChange={(e) => {
+                          const digitos = apenasDigitos(e.target.value);
+                          setFiltros((f) => ({ ...f, [campo]: digitos }));
+                        }}
+                        className={inputCls + " pr-9 tabular-nums"}
+                        placeholder={placeholder}
+                      />
+                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-[#a49d8b]">
+                        m²
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {filtros.area_min && filtros.area_max &&
+                Number(filtros.area_min) > Number(filtros.area_max) && (
+                <p className="mt-1.5 text-[11px] text-amber-600">
+                  A metragem mínima está maior que a máxima — nada vai aparecer.
+                </p>
+              )}
             </div>
 
             {/* Sem foto */}

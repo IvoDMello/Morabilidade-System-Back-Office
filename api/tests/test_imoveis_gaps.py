@@ -3,7 +3,7 @@
 e os caminhos de rollback (rotação de foto / upload de documento)."""
 from unittest.mock import AsyncMock, MagicMock, call, patch
 
-from app.routers.imoveis import _aplicar_filtros, _csv_safe
+from app.routers.imoveis import _aplicar_filtros, _clausula_metragem, _csv_safe
 from app.schemas.imovel import TipoNegocio
 from tests.conftest import make_db_mock
 from tests.test_imoveis import IMOVEL_DB
@@ -64,6 +64,60 @@ def test_aplicar_filtros_bairro_lista_multiplos_usa_or():
     or_clauses = " ".join(c.args[0] for c in q.or_.call_args_list if c.args)
     assert "bairro_norm.ilike.%pinheiros%" in or_clauses
     assert "bairro_norm.ilike.%moema%" in or_clauses
+
+
+# ── Metragem: área útil com a total como reserva ─────────────────────────────
+
+def test_clausula_metragem_faixa_completa_tem_os_dois_bracos():
+    # Braço 1: quem tem área útil é julgado por ela. Braço 2: só quem não tem
+    # cai na total — sem o `is.null`, um imóvel de 300 m² úteis entraria numa
+    # busca por 100–240 por causa de uma área total que ninguém pediu.
+    c = _clausula_metragem(100, 240)
+    assert c == (
+        "and(area_util.gte.100,area_util.lte.240),"
+        "and(area_util.is.null,area_total.gte.100,area_total.lte.240)"
+    )
+
+
+def test_clausula_metragem_aceita_so_um_lado():
+    assert _clausula_metragem(100, None) == (
+        "and(area_util.gte.100),and(area_util.is.null,area_total.gte.100)"
+    )
+    assert _clausula_metragem(None, 240) == (
+        "and(area_util.lte.240),and(area_util.is.null,area_total.lte.240)"
+    )
+
+
+def test_aplicar_filtros_bairro_e_metragem_convivem_na_mesma_query():
+    """"Copacabana entre 100 e 240 m²" — os dois filtros usam `.or_()`, e é
+    o E entre eles que responde a pergunta. Se um substituísse o outro, a lista
+    continuaria cheia, só que respondendo outra coisa."""
+    q = MagicMock()
+    for m in ("or_", "ilike", "eq", "gte", "lte"):
+        getattr(q, m).return_value = q
+
+    _aplicar_filtros(
+        q, tipo_negocio=None, disponibilidade=None, cidade=None,
+        bairro=["Copacabana", "Ipanema"], tipo_imovel=None, dormitorios_min=None,
+        preco_min=None, preco_max=None, condicao=None, mobiliado=None, codigo=None,
+        area_min=100, area_max=240,
+    )
+
+    clausulas = [c.args[0] for c in q.or_.call_args_list if c.args]
+    assert len(clausulas) == 2
+    assert any("bairro_norm.ilike.%copacabana%" in c for c in clausulas)
+    assert any("area_util.gte.100" in c for c in clausulas)
+
+
+def test_aplicar_filtros_sem_metragem_nao_toca_na_query():
+    q = MagicMock()
+    q.or_.return_value = q
+    _aplicar_filtros(
+        q, tipo_negocio=None, disponibilidade=None, cidade=None, bairro=None,
+        tipo_imovel=None, dormitorios_min=None, preco_min=None, preco_max=None,
+        condicao=None, mobiliado=None, codigo=None,
+    )
+    q.or_.assert_not_called()
 
 
 # ── _csv_safe: neutraliza fórmulas (CSV injection) ───────────────────────────
