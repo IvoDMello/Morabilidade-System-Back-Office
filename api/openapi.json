@@ -10130,7 +10130,7 @@
             }
           },
           {
-            "description": "preco_asc | preco_desc | area_asc | area_desc | dormitorios_asc | dormitorios_desc | mais_antigo | mais_novo",
+            "description": "preco_asc | preco_desc | area_asc | area_desc | metragem_asc | metragem_desc | dormitorios_asc | dormitorios_desc | mais_antigo | mais_novo. Aceita vários separados por vírgula; o primeiro manda e os seguintes desempatam.",
             "in": "query",
             "name": "ordenar",
             "required": false,
@@ -10143,7 +10143,7 @@
                   "type": "null"
                 }
               ],
-              "description": "preco_asc | preco_desc | area_asc | area_desc | dormitorios_asc | dormitorios_desc | mais_antigo | mais_novo",
+              "description": "preco_asc | preco_desc | area_asc | area_desc | metragem_asc | metragem_desc | dormitorios_asc | dormitorios_desc | mais_antigo | mais_novo. Aceita vários separados por vírgula; o primeiro manda e os seguintes desempatam.",
               "title": "Ordenar"
             }
           },
@@ -10570,7 +10570,7 @@
             }
           },
           {
-            "description": "preco_asc | preco_desc | area_asc | area_desc | dormitorios_asc | dormitorios_desc | mais_antigo | mais_novo",
+            "description": "preco_asc | preco_desc | area_asc | area_desc | metragem_asc | metragem_desc | dormitorios_asc | dormitorios_desc | mais_antigo | mais_novo. Aceita vários separados por vírgula; o primeiro manda e os seguintes desempatam.",
             "in": "query",
             "name": "ordenar",
             "required": false,
@@ -10583,7 +10583,7 @@
                   "type": "null"
                 }
               ],
-              "description": "preco_asc | preco_desc | area_asc | area_desc | dormitorios_asc | dormitorios_desc | mais_antigo | mais_novo",
+              "description": "preco_asc | preco_desc | area_asc | area_desc | metragem_asc | metragem_desc | dormitorios_asc | dormitorios_desc | mais_antigo | mais_novo. Aceita vários separados por vírgula; o primeiro manda e os seguintes desempatam.",
               "title": "Ordenar"
             }
           }
@@ -10994,7 +10994,7 @@
             }
           },
           {
-            "description": "preco_asc | preco_desc | area_asc | area_desc | dormitorios_asc | dormitorios_desc | mais_antigo | mais_novo",
+            "description": "preco_asc | preco_desc | area_asc | area_desc | metragem_asc | metragem_desc | dormitorios_asc | dormitorios_desc | mais_antigo | mais_novo. Aceita vários separados por vírgula; o primeiro manda e os seguintes desempatam.",
             "in": "query",
             "name": "ordenar",
             "required": false,
@@ -11007,7 +11007,7 @@
                   "type": "null"
                 }
               ],
-              "description": "preco_asc | preco_desc | area_asc | area_desc | dormitorios_asc | dormitorios_desc | mais_antigo | mais_novo",
+              "description": "preco_asc | preco_desc | area_asc | area_desc | metragem_asc | metragem_desc | dormitorios_asc | dormitorios_desc | mais_antigo | mais_novo. Aceita vários separados por vírgula; o primeiro manda e os seguintes desempatam.",
               "title": "Ordenar"
             }
           },

@@ -1082,3 +1082,163 @@ def test_listar_imoveis_ordena_por_dormitorios_desc(client):
     ordens = [(c.args[0], c.kwargs.get("desc")) for c in db.order.call_args_list if c.args]
     assert ("dormitorios", True) in ordens
     assert ("created_at", True) in ordens
+
+
+def test_listar_imoveis_ordena_por_metragem(client):
+    """`metragem_asc` ordena pela metragem que o card do back-office mostra.
+
+    Não é apelido de `area_asc`: aquele ordena por `area_util` pura, que é o que
+    o site público promete nos rótulos ("Maior área útil"). O back-office mostra
+    a área útil com a total de reserva, e o filtro de metragem já enxerga as
+    duas — ordenar por `area_util` mandaria para o fim da lista justamente os
+    imóveis que aparecem no card com metragem. Daí a coluna gerada.
+    """
+    count_res = MagicMock(count=1, data=[])
+    data_res = MagicMock(count=1, data=[IMOVEL_DB])
+    db = make_db_mock(count_res, data_res)
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/", params={"ordenar": "metragem_asc"})
+
+    assert res.status_code == 200
+    ordens = [(c.args[0], c.kwargs.get("desc")) for c in db.order.call_args_list if c.args]
+    assert ordens == [("area_exibida", False)]
+
+
+def test_listar_imoveis_ordena_por_metragem_desc(client):
+    """`metragem_desc` fecha o par — é o "maior metragem primeiro" da gaveta."""
+    count_res = MagicMock(count=1, data=[])
+    data_res = MagicMock(count=1, data=[IMOVEL_DB])
+    db = make_db_mock(count_res, data_res)
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/", params={"ordenar": "metragem_desc"})
+
+    assert res.status_code == 200
+    ordens = [(c.args[0], c.kwargs.get("desc")) for c in db.order.call_args_list if c.args]
+    assert ordens == [("area_exibida", True)]
+
+
+def test_area_asc_continua_na_area_util(client):
+    """O `area_asc` do site público não muda de sentido por causa do back-office.
+
+    Os rótulos de lá dizem "área útil"; se a chave antiga passasse a usar a
+    coluna com reserva, a listagem pública sairia ordenada por uma metragem
+    diferente da que o rótulo promete, sem ninguém pedir.
+    """
+    count_res = MagicMock(count=1, data=[])
+    data_res = MagicMock(count=1, data=[IMOVEL_DB])
+    db = make_db_mock(count_res, data_res)
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/", params={"ordenar": "area_asc"})
+
+    assert res.status_code == 200
+    ordens = [(c.args[0], c.kwargs.get("desc")) for c in db.order.call_args_list if c.args]
+    assert ordens == [("area_util", False)]
+
+
+def test_exportar_imoveis_respeita_ordenacao_por_metragem(client):
+    """O CSV sai na mesma ordem que a tela também quando é metragem."""
+    data_res = MagicMock(data=[IMOVEL_DB])
+    db = make_db_mock(data_res, MagicMock(data=[]))
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/exportar", params={"ordenar": "metragem_desc"})
+
+    assert res.status_code == 200
+    ordens = [(c.args[0], c.kwargs.get("desc")) for c in db.order.call_args_list if c.args]
+    assert ("area_exibida", True) in ordens
+
+
+def test_listar_imoveis_ordena_por_valor_e_metragem_juntos(client):
+    """Dois critérios: a posição na lista é a hierarquia.
+
+    O painel deixa marcar valor e metragem ao mesmo tempo, e é a vírgula que
+    carrega isso até o banco. Preço redondo repete muito — meia dúzia de
+    imóveis a R$ 1.200.000 —, e é dentro desses empates que a metragem resolve
+    alguma coisa; invertida a ordem das colunas, o desempate viraria o critério
+    principal e a lista sairia organizada pela coisa errada.
+    """
+    count_res = MagicMock(count=1, data=[])
+    data_res = MagicMock(count=1, data=[IMOVEL_DB])
+    db = make_db_mock(count_res, data_res)
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/", params={"ordenar": "preco_asc,metragem_desc"})
+
+    assert res.status_code == 200
+    ordens = [(c.args[0], c.kwargs.get("desc")) for c in db.order.call_args_list if c.args]
+    assert ordens == [("valor_venda", False), ("area_exibida", True)]
+
+
+def test_listar_imoveis_metragem_pode_vir_primeiro(client):
+    """Quem foi escolhido antes no painel manda — a lista não tem preferido."""
+    count_res = MagicMock(count=1, data=[])
+    data_res = MagicMock(count=1, data=[IMOVEL_DB])
+    db = make_db_mock(count_res, data_res)
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/", params={"ordenar": "metragem_asc,preco_desc"})
+
+    assert res.status_code == 200
+    ordens = [(c.args[0], c.kwargs.get("desc")) for c in db.order.call_args_list if c.args]
+    assert ordens == [("area_exibida", False), ("valor_venda", True)]
+
+
+def test_listar_imoveis_ordenar_em_locacao_usa_valor_locacao_na_lista(client):
+    """Na lista de critérios o preço continua seguindo o tipo de negócio."""
+    count_res = MagicMock(count=1, data=[])
+    data_res = MagicMock(count=1, data=[IMOVEL_DB])
+    db = make_db_mock(count_res, data_res)
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get(
+            "/imoveis/",
+            params={"tipo_negocio": "locacao", "ordenar": "metragem_desc,preco_asc"},
+        )
+
+    assert res.status_code == 200
+    ordens = [(c.args[0], c.kwargs.get("desc")) for c in db.order.call_args_list if c.args]
+    assert ordens == [("area_exibida", True), ("valor_locacao", False)]
+
+
+def test_listar_imoveis_criterio_repetido_nao_ordena_duas_vezes(client):
+    """Coluna repetida não faz efeito no SQL — sai da query em vez de poluí-la."""
+    count_res = MagicMock(count=1, data=[])
+    data_res = MagicMock(count=1, data=[IMOVEL_DB])
+    db = make_db_mock(count_res, data_res)
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/", params={"ordenar": "preco_asc,preco_desc"})
+
+    assert res.status_code == 200
+    ordens = [(c.args[0], c.kwargs.get("desc")) for c in db.order.call_args_list if c.args]
+    assert ordens == [("valor_venda", False)]
+
+
+def test_listar_imoveis_criterio_invalido_no_meio_da_lista_e_descartado(client):
+    """Um nome errado não leva junto os critérios que estavam certos."""
+    count_res = MagicMock(count=1, data=[])
+    data_res = MagicMock(count=1, data=[IMOVEL_DB])
+    db = make_db_mock(count_res, data_res)
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/", params={"ordenar": "preco_asc,zzz,metragem_desc"})
+
+    assert res.status_code == 200
+    ordens = [(c.args[0], c.kwargs.get("desc")) for c in db.order.call_args_list if c.args]
+    assert ordens == [("valor_venda", False), ("area_exibida", True)]
+
+
+def test_exportar_imoveis_respeita_os_dois_criterios(client):
+    """O CSV sai na mesma ordem que a tela — inclusive com o desempate."""
+    data_res = MagicMock(data=[IMOVEL_DB])
+    db = make_db_mock(data_res, MagicMock(data=[]))
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/exportar", params={"ordenar": "preco_asc,metragem_desc"})
+
+    assert res.status_code == 200
+    ordens = [(c.args[0], c.kwargs.get("desc")) for c in db.order.call_args_list if c.args]
+    assert ordens == [("valor_venda", False), ("area_exibida", True)]

@@ -184,6 +184,46 @@ def _aplicar_filtros(query, *, tipo_negocio, disponibilidade, cidade, bairro,
     return query
 
 
+def _criterio_de_ordenacao(criterio, campo_preco):
+    """Colunas de um critério, na forma `(coluna, kwargs do .order())`.
+
+    Devolve lista porque um critério pode valer mais de uma coluna (o de
+    dormitórios leva o desempate junto), e `None` quando o nome não é
+    conhecido — quem chama decide o que fazer com isso.
+    """
+    if criterio == "preco_asc":
+        return [(campo_preco, {"desc": False, "nullsfirst": False})]
+    if criterio == "preco_desc":
+        return [(campo_preco, {"desc": True, "nullsfirst": False})]
+    if criterio == "area_desc":
+        return [("area_util", {"desc": True, "nullsfirst": False})]
+    if criterio == "area_asc":
+        return [("area_util", {"desc": False, "nullsfirst": False})]
+    # `metragem_*` não é apelido de `area_*`: ordena pela metragem que o card do
+    # back-office mostra — área útil, com a total de reserva para o imóvel
+    # cadastrado só com ela (coluna gerada `area_exibida`, migration 053). O
+    # site público continua em `area_*`, área útil pura, que é o que os rótulos
+    # de lá prometem.
+    if criterio == "metragem_asc":
+        return [("area_exibida", {"desc": False, "nullsfirst": False})]
+    if criterio == "metragem_desc":
+        return [("area_exibida", {"desc": True, "nullsfirst": False})]
+    if criterio == "dormitorios_asc":
+        # Serve o filtro "4+" do back-office: quem pede quatro ou mais quer ver
+        # os de quatro antes dos de seis, e não a data de cadastro mandando na
+        # ordem. Desempate por mais novo, o mesmo critério do padrão.
+        return [("dormitorios", {"desc": False, "nullsfirst": False}),
+                ("created_at", {"desc": True})]
+    if criterio == "dormitorios_desc":
+        return [("dormitorios", {"desc": True, "nullsfirst": False}),
+                ("created_at", {"desc": True})]
+    if criterio == "mais_antigo":
+        return [("created_at", {"desc": False})]
+    if criterio == "mais_novo":
+        return [("created_at", {"desc": True})]
+    return None
+
+
 def _aplicar_ordenacao(query, ordenar, tipo_negocio):
     """Ordem da listagem, compartilhada pelo site público e pelo back-office.
 
@@ -191,33 +231,38 @@ def _aplicar_ordenacao(query, ordenar, tipo_negocio):
     back-office precisou da mesma coisa, para não nascer uma segunda tabela de
     `ordenar` capaz de divergir da primeira.
 
-    Valor desconhecido cai no padrão (mais novo primeiro) em vez de dar erro:
-    ordenação é preferência de exibição, e derrubar a listagem inteira por causa
-    de um parâmetro escrito errado seria uma troca ruim.
+    ── Mais de um critério ───────────────────────────────────────────────────
+    `ordenar` aceita uma lista separada por vírgula (`preco_asc,metragem_desc`)
+    e a posição é a hierarquia: o primeiro manda, os seguintes desempatam. Isso
+    nasceu do painel, onde valor e metragem podem estar marcados ao mesmo
+    tempo — preço redondo repete muito (meia dúzia de imóveis a R$ 1.200.000), e
+    é dentro desses empates que "maior metragem antes" resolve alguma coisa.
+    Um valor sozinho continua valendo, que é o que o site público manda.
+
+    Coluna repetida é ignorada na segunda aparição: no SQL ela não faria efeito
+    nenhum (o primeiro `ORDER BY` já esgotou o critério) e mandá-la duas vezes
+    só deixaria a query confusa de ler.
+
+    Critério desconhecido é descartado, e se não sobrar nenhum cai no padrão
+    (mais novo primeiro) em vez de dar erro: ordenação é preferência de
+    exibição, e derrubar a listagem inteira por causa de um parâmetro escrito
+    errado seria uma troca ruim.
     """
     campo_preco = "valor_locacao" if _ev(tipo_negocio) == TipoNegocio.locacao.value else "valor_venda"
-    if ordenar == "preco_asc":
-        return query.order(campo_preco, desc=False, nullsfirst=False)
-    if ordenar == "preco_desc":
-        return query.order(campo_preco, desc=True, nullsfirst=False)
-    if ordenar == "area_desc":
-        return query.order("area_util", desc=True, nullsfirst=False)
-    if ordenar == "area_asc":
-        return query.order("area_util", desc=False, nullsfirst=False)
-    if ordenar == "dormitorios_asc":
-        # Serve o filtro "4+" do back-office: quem pede quatro ou mais quer ver
-        # os de quatro antes dos de seis, e não a data de cadastro mandando na
-        # ordem. Desempate por mais novo, o mesmo critério do padrão.
-        return query.order("dormitorios", desc=False, nullsfirst=False).order(
-            "created_at", desc=True
-        )
-    if ordenar == "dormitorios_desc":
-        return query.order("dormitorios", desc=True, nullsfirst=False).order(
-            "created_at", desc=True
-        )
-    if ordenar == "mais_antigo":
-        return query.order("created_at", desc=False)
-    return query.order("created_at", desc=True)
+
+    colunas, vistas = [], set()
+    for criterio in (ordenar or "").split(","):
+        for coluna, kwargs in _criterio_de_ordenacao(criterio.strip(), campo_preco) or []:
+            if coluna in vistas:
+                continue
+            vistas.add(coluna)
+            colunas.append((coluna, kwargs))
+
+    if not colunas:
+        return query.order("created_at", desc=True)
+    for coluna, kwargs in colunas:
+        query = query.order(coluna, **kwargs)
+    return query
 
 
 def _normalizar_proprietario(raw: dict) -> Optional[dict]:
@@ -375,7 +420,7 @@ def imoveis_disponiveis_publico(
     preco_max: Optional[float] = None,
     condicao: Optional[CondicaoImovel] = None,
     mobiliado: Optional[Mobiliado] = None,
-    ordenar: Optional[str] = Query(default=None, description="preco_asc | preco_desc | area_asc | area_desc | dormitorios_asc | dormitorios_desc | mais_antigo | mais_novo"),
+    ordenar: Optional[str] = Query(default=None, description="preco_asc | preco_desc | area_asc | area_desc | metragem_asc | metragem_desc | dormitorios_asc | dormitorios_desc | mais_antigo | mais_novo. Aceita vários separados por vírgula; o primeiro manda e os seguintes desempatam."),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
 ):
@@ -564,7 +609,7 @@ def exportar_imoveis_csv(
     q: Optional[str] = Query(default=None, description="Busca livre por código, logradouro ou bairro"),
     descricao: Optional[str] = Query(default=None, description="Palavras que devem aparecer na descrição do imóvel"),
     sem_foto: Optional[bool] = None,
-    ordenar: Optional[str] = Query(default=None, description="preco_asc | preco_desc | area_asc | area_desc | dormitorios_asc | dormitorios_desc | mais_antigo | mais_novo"),
+    ordenar: Optional[str] = Query(default=None, description="preco_asc | preco_desc | area_asc | area_desc | metragem_asc | metragem_desc | dormitorios_asc | dormitorios_desc | mais_antigo | mais_novo. Aceita vários separados por vírgula; o primeiro manda e os seguintes desempatam."),
     current_user: dict = Depends(get_current_user),
 ):
     """Baixa imóveis como CSV respeitando os filtros ativos (UTF-8 com BOM, delimitador ';' para Excel PT-BR)."""
@@ -669,7 +714,7 @@ def listar_imoveis(
     q: Optional[str] = Query(default=None, description="Busca livre por código, logradouro ou bairro"),
     descricao: Optional[str] = Query(default=None, description="Palavras que devem aparecer na descrição do imóvel"),
     sem_foto: Optional[bool] = None,
-    ordenar: Optional[str] = Query(default=None, description="preco_asc | preco_desc | area_asc | area_desc | dormitorios_asc | dormitorios_desc | mais_antigo | mais_novo"),
+    ordenar: Optional[str] = Query(default=None, description="preco_asc | preco_desc | area_asc | area_desc | metragem_asc | metragem_desc | dormitorios_asc | dormitorios_desc | mais_antigo | mais_novo. Aceita vários separados por vírgula; o primeiro manda e os seguintes desempatam."),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
     current_user: dict = Depends(get_current_user),

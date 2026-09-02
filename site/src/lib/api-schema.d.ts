@@ -5458,6 +5458,10 @@ export interface operations {
                 dormitorios_max?: number | null;
                 preco_min?: number | null;
                 preco_max?: number | null;
+                /** @description Metragem mínima em m². Compara com a área útil e, para quem não tem útil cadastrada, com a área total. */
+                area_min?: number | null;
+                /** @description Metragem máxima em m² */
+                area_max?: number | null;
                 condicao?: components["schemas"]["CondicaoImovel"] | null;
                 mobiliado?: components["schemas"]["Mobiliado"] | null;
                 codigo?: string | null;
@@ -5466,7 +5470,7 @@ export interface operations {
                 /** @description Palavras que devem aparecer na descrição do imóvel */
                 descricao?: string | null;
                 sem_foto?: boolean | null;
-                /** @description preco_asc | preco_desc | area_asc | area_desc | dormitorios_asc | dormitorios_desc | mais_antigo | mais_novo */
+                /** @description preco_asc | preco_desc | area_asc | area_desc | metragem_asc | metragem_desc | dormitorios_asc | dormitorios_desc | mais_antigo | mais_novo. Aceita vários separados por vírgula; o primeiro manda e os seguintes desempatam. */
                 ordenar?: string | null;
                 page?: number;
                 page_size?: number;
@@ -5563,6 +5567,10 @@ export interface operations {
                 dormitorios_max?: number | null;
                 preco_min?: number | null;
                 preco_max?: number | null;
+                /** @description Metragem mínima em m². Compara com a área útil e, para quem não tem útil cadastrada, com a área total. */
+                area_min?: number | null;
+                /** @description Metragem máxima em m² */
+                area_max?: number | null;
                 condicao?: components["schemas"]["CondicaoImovel"] | null;
                 mobiliado?: components["schemas"]["Mobiliado"] | null;
                 codigo?: string | null;
@@ -5571,7 +5579,7 @@ export interface operations {
                 /** @description Palavras que devem aparecer na descrição do imóvel */
                 descricao?: string | null;
                 sem_foto?: boolean | null;
-                /** @description preco_asc | preco_desc | area_asc | area_desc | dormitorios_asc | dormitorios_desc | mais_antigo | mais_novo */
+                /** @description preco_asc | preco_desc | area_asc | area_desc | metragem_asc | metragem_desc | dormitorios_asc | dormitorios_desc | mais_antigo | mais_novo. Aceita vários separados por vírgula; o primeiro manda e os seguintes desempatam. */
                 ordenar?: string | null;
             };
             header?: never;
@@ -5741,7 +5749,7 @@ export interface operations {
                 preco_max?: number | null;
                 condicao?: components["schemas"]["CondicaoImovel"] | null;
                 mobiliado?: components["schemas"]["Mobiliado"] | null;
-                /** @description preco_asc | preco_desc | area_asc | area_desc | dormitorios_asc | dormitorios_desc | mais_antigo | mais_novo */
+                /** @description preco_asc | preco_desc | area_asc | area_desc | metragem_asc | metragem_desc | dormitorios_asc | dormitorios_desc | mais_antigo | mais_novo. Aceita vários separados por vírgula; o primeiro manda e os seguintes desempatam. */
                 ordenar?: string | null;
                 page?: number;
                 page_size?: number;

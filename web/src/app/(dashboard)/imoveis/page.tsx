@@ -19,8 +19,10 @@ import { FiltroMultiSelect } from "@/components/ui/FiltroMultiSelect";
 import { OPCOES_QUARTOS, QUARTOS_ABERTO, paramsDeQuartos } from "@/lib/filtro-quartos";
 import {
   ajudaDaOrdem,
+  alternarOrdem,
   paramsDeOrdenacao,
-  type DirecaoValor,
+  CRITERIOS,
+  type OrdemEscolhida,
 } from "@/lib/ordenacao-imoveis";
 import type { ImovelListOut } from "@/types";
 
@@ -43,8 +45,9 @@ interface Filtros {
   /** Metragem em m², só dígitos. Vazio = sem teto/piso. Ver o bloco "Metragem". */
   area_min: string;
   area_max: string;
-  /** Ordenação por valor: "" = sem ordenação. Ver lib/ordenacao-imoveis.ts. */
-  ordenar_valor: DirecaoValor;
+  /** Critérios de ordenação, do que manda para o que desempata. Vazio = sem
+      ordenação. Ver lib/ordenacao-imoveis.ts. */
+  ordenar: OrdemEscolhida;
   sem_foto: boolean;
 }
 
@@ -83,7 +86,7 @@ const FILTROS_PADRAO: Filtros = {
   preco_max: "",
   area_min: "",
   area_max: "",
-  ordenar_valor: "",
+  ordenar: [],
   sem_foto: false,
 };
 
@@ -201,7 +204,7 @@ function ImoveisPageInner() {
       Object.assign(
         params,
         paramsDeOrdenacao({
-          direcaoValor: filtros.ordenar_valor,
+          ordem: filtros.ordenar,
           quartosAberto: filtros.quartos === QUARTOS_ABERTO,
         }),
       );
@@ -250,7 +253,7 @@ setLoading(true);
       Object.assign(
         params,
         paramsDeOrdenacao({
-          direcaoValor: f.ordenar_valor,
+          ordem: f.ordenar,
           quartosAberto: f.quartos === QUARTOS_ABERTO,
         }),
       );
@@ -628,51 +631,6 @@ setLoading(true);
               )}
             </div>
 
-            {/* Ordenar por valor. Alternável como os chips de Contrato e
-                Quartos: clicar no que está ativo volta a lista para a ordem
-                normal — sem isso, uma vez ordenado por valor não haveria como
-                desfazer sem limpar a gaveta inteira. */}
-            <div>
-              <label className={labelCls}>Ordenar por valor</label>
-              <div className="grid grid-cols-2 gap-2">
-                {(["asc", "desc"] as const).map((dir) => {
-                  const ativo = filtros.ordenar_valor === dir;
-                  return (
-                    <button
-                      key={dir}
-                      type="button"
-                      aria-pressed={ativo}
-                      onClick={() =>
-                        setFiltros((f) => ({ ...f, ordenar_valor: ativo ? "" : dir }))
-                      }
-                      className={
-                        "flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium rounded-xl border transition " +
-                        (ativo
-                          ? "bg-[#26241c] text-white border-[#26241c]"
-                          : "bg-white text-[#4a473d] border-[#e8e5da] hover:border-[#d5d0c0]")
-                      }
-                    >
-                      {dir === "asc" ? (
-                        <ArrowUpNarrowWide className="w-3.5 h-3.5" />
-                      ) : (
-                        <ArrowDownWideNarrow className="w-3.5 h-3.5" />
-                      )}
-                      {dir === "asc" ? "Crescente" : "Decrescente"}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* "Crescente" sozinho não diz se o caro vem antes ou depois, e
-                  descobrir isso exigiria rodar a busca e olhar o resultado. */}
-              <p className="mt-2 text-[11px] text-[#a49d8b]">
-                {ajudaDaOrdem({
-                  direcaoValor: filtros.ordenar_valor,
-                  quartosAberto: filtros.quartos === QUARTOS_ABERTO,
-                })}
-              </p>
-            </div>
-
             {/* Metragem. Mesma dupla min–max da faixa de valor, e de propósito:
                 quem procura "Copacabana entre 100 e 240 m²" preenche os dois
                 campos do mesmo jeito nos dois blocos. A API compara com a área
@@ -714,6 +672,97 @@ setLoading(true);
                   A metragem mínima está maior que a máxima — nada vai aparecer.
                 </p>
               )}
+            </div>
+
+            {/* Ordenar. Fica depois das duas faixas porque ordena por elas:
+                valor e metragem, os mesmos números que os blocos acima
+                recortam.
+
+                Os dois critérios podem estar marcados juntos, e quem foi
+                escolhido primeiro manda — o segundo só desempata. Daí o "1º" e
+                o "2º" ao lado do título: sem eles a hierarquia ficaria
+                guardada só na ordem dos cliques, invisível, e reabrir a gaveta
+                no dia seguinte não diria qual dos dois está organizando a
+                lista. Com um critério só não aparece número nenhum, que aí não
+                há hierarquia a mostrar.
+
+                O rótulo visível é só "Crescente"/"Decrescente", que sozinho não
+                diz de qual dos dois critérios se trata; quem lê por leitor de
+                tela não tem a linha do grupo por perto, daí o aria-label
+                completo. */}
+            <div>
+              <label className={labelCls}>Ordenar</label>
+              {/* Critério acima do par, não ao lado: a gaveta tem 288px e
+                  "Decrescente" com o ícone já ocupa quase toda a metade da
+                  linha — uma coluna de rótulo à esquerda quebraria o texto dos
+                  botões. */}
+              <div className="space-y-3">
+                {CRITERIOS.map(({ criterio, titulo, asc, desc }) => {
+                  const posicao = filtros.ordenar.findIndex(
+                    (c) => c === asc.chave || c === desc.chave,
+                  );
+                  return (
+                    // group + aria-label: o par crescente/decrescente é uma
+                    // escolha só, e sem isso o "1º" ao lado do título fica
+                    // solto no meio de quatro botões, sem dizer a que critério
+                    // pertence para quem não enxerga o alinhamento.
+                    <div key={criterio} role="group" aria-label={`Ordenar por ${titulo}`}>
+                      <span className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-[#6b6758]">
+                        {titulo}
+                        {posicao >= 0 && filtros.ordenar.length > 1 && (
+                          <span className="rounded-md bg-[#eae7db] px-1.5 py-0.5 text-[10px] font-semibold text-[#6b6758]">
+                            {posicao + 1}º
+                          </span>
+                        )}
+                      </span>
+                      <div className="grid grid-cols-2 gap-2">
+                        {([
+                          [asc.chave, "Crescente"],
+                          [desc.chave, "Decrescente"],
+                        ] as const).map(([chave, texto]) => {
+                          const ativo = filtros.ordenar.includes(chave);
+                          return (
+                            <button
+                              key={chave}
+                              type="button"
+                              aria-pressed={ativo}
+                              aria-label={`Ordenar por ${criterio}, ${texto.toLowerCase()}`}
+                              onClick={() =>
+                                setFiltros((f) => ({
+                                  ...f,
+                                  ordenar: alternarOrdem(f.ordenar, chave),
+                                }))
+                              }
+                              className={
+                                "flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium rounded-xl border transition " +
+                                (ativo
+                                  ? "bg-[#26241c] text-white border-[#26241c]"
+                                  : "bg-white text-[#4a473d] border-[#e8e5da] hover:border-[#d5d0c0]")
+                              }
+                            >
+                              {chave === asc.chave ? (
+                                <ArrowUpNarrowWide className="w-3.5 h-3.5" />
+                              ) : (
+                                <ArrowDownWideNarrow className="w-3.5 h-3.5" />
+                              )}
+                              {texto}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* "Crescente" sozinho não diz se o caro vem antes ou depois, e
+                  descobrir isso exigiria rodar a busca e olhar o resultado. */}
+              <p className="mt-2 text-[11px] text-[#a49d8b]">
+                {ajudaDaOrdem({
+                  ordem: filtros.ordenar,
+                  quartosAberto: filtros.quartos === QUARTOS_ABERTO,
+                })}
+              </p>
             </div>
 
             {/* Sem foto */}
