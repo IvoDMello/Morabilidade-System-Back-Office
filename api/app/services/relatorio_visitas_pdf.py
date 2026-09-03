@@ -115,7 +115,7 @@ def gerar_relatorio_visitas_pdf(dados: dict) -> bytes:
 
     c.setFillColor(TEXTO_ESCURO)
     c.setFont("Helvetica-Bold", 11)
-    c.drawString(MARGEM, y, f"{qtd} visita{'s' if qtd != 1 else ''} com ficha de visita assinada.")
+    c.drawString(MARGEM, y, f"{qtd} visita{'s' if qtd != 1 else ''} com ficha de visita registrada.")
     y -= 5 * mm
     c.setFillColor(TEXTO_CLARO)
     c.setFont("Helvetica", 7.5)
@@ -142,7 +142,7 @@ def gerar_relatorio_visitas_pdf(dados: dict) -> bytes:
     else:
         c.setFillColor(TEXTO_CLARO)
         c.setFont("Helvetica-Oblique", 9)
-        c.drawString(MARGEM, y, "Nenhuma visita com ficha assinada registrada neste imóvel.")
+        c.drawString(MARGEM, y, "Nenhuma visita com ficha de visita registrada neste imóvel.")
         y -= 7 * mm
 
     # ── Footer ───────────────────────────────────────────────────────────────

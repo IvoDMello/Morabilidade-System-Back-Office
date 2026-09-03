@@ -318,8 +318,9 @@ def baixar_relatorio_visitas(
     """Baixa o PDF com o histórico de visitas do imóvel, para mandar ao cliente.
 
     Diferente do relatório de 30 dias, não tem janela nem e-mail: é só leitura,
-    cobre todas as fichas assinadas do imóvel e sai com o visitante identificado
-    por nome e sobrenome e o telefone mascarado, ver [relatorio_visitas_pdf].
+    cobre todas as fichas do imóvel (assinadas ou não) e sai com o visitante
+    identificado por nome e sobrenome e o telefone mascarado, ver
+    [relatorio_visitas_pdf].
     """
     imovel = _buscar_imovel_relatorio(imovel_id)
     try:
@@ -331,14 +332,13 @@ def baixar_relatorio_visitas(
 
 
 def _montar_dados_visitas(imovel: dict) -> dict:
-    """Coleta as fichas assinadas do imóvel (todas, da mais recente pra mais
-    antiga) e monta o dicionário que o PDF de visitas espera."""
+    """Coleta todas as fichas do imóvel, assinadas ou não (da mais recente pra
+    mais antiga) e monta o dicionário que o PDF de visitas espera."""
     fichas = (
         supabase_admin.table("fichas_visita")
         .select("visitante_nome, visitante_telefone, assinada_em, created_at")
         .eq("imovel_id", imovel["id"])
-        .eq("status", "assinada")
-        .order("assinada_em", desc=True)
+        .order("created_at", desc=True)
         .execute()
         .data or []
     )
