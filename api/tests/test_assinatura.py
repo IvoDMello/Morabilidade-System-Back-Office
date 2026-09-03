@@ -118,10 +118,15 @@ def test_token_expirado_cenarios():
     futuro = (agora + timedelta(days=1)).isoformat()
     assert token_expirado(passado, agora) is True
     assert token_expirado(futuro, agora) is False
-    assert token_expirado(None, agora) is False         # sem data não bloqueia
-    assert token_expirado("data-invalida", agora) is False
+    # Fail-closed: dado ausente ou ilegível bloqueia, senão o link nunca vence.
+    assert token_expirado(None, agora) is True
+    assert token_expirado("", agora) is True
+    assert token_expirado("data-invalida", agora) is True
     # Aceita sufixo Z (UTC) sem quebrar.
     assert token_expirado(passado.replace("+00:00", "Z"), agora) is True
+    # Data sem fuso é lida como UTC, não estoura TypeError na comparação.
+    assert token_expirado("2026-06-12T12:00:00", agora) is True
+    assert token_expirado("2026-06-14T12:00:00", agora) is False
 
 
 # ── Hash canônico ─────────────────────────────────────────────────────────────

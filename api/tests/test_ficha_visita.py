@@ -351,6 +351,27 @@ def test_ver_ficha_expirada_410(anon_client):
     assert res.status_code == 410
 
 
+def test_ver_ficha_com_status_expirada_410_mesmo_sem_data(anon_client):
+    """Status vencido é terminal: não volta a valer porque a data sumiu."""
+    expirada = dict(FICHA_ROW, status="expirada", token_expira_em=None)
+    db = make_db_mock(MagicMock(data=expirada))
+    with patch(ROUTER, db):
+        res = anon_client.get(f"/fichas-visita/assinar/{FICHA_ROW['token']}")
+    assert res.status_code == 410
+
+
+def test_ver_ficha_sem_data_de_expiracao_410(anon_client):
+    """Fail-closed: linha sem `token_expira_em` não é link eterno."""
+    sem_data = dict(FICHA_ROW, token_expira_em=None)
+    db = make_db_mock(
+        MagicMock(data=sem_data),  # select por token
+        MagicMock(data=[sem_data]),  # update status=expirada
+    )
+    with patch(ROUTER, db):
+        res = anon_client.get(f"/fichas-visita/assinar/{FICHA_ROW['token']}")
+    assert res.status_code == 410
+
+
 def test_assinar_sucesso(anon_client):
     assinada = dict(FICHA_ROW, status="assinada")
     db = make_db_mock(

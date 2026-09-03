@@ -345,6 +345,11 @@ def _ficha_assinavel(token: str) -> dict:
         return ficha
     if ficha.get("status") == "cancelada":
         raise HTTPException(status_code=410, detail="Esta ficha foi cancelada.")
+    # Status já vencido é terminal, não se reavalia pela data (paridade com
+    # `_checar_disponivel` das autorizações). Sem isto, uma ficha marcada
+    # "expirada" cuja data fosse ilegível voltava a ser assinável.
+    if ficha.get("status") == "expirada":
+        raise HTTPException(status_code=410, detail="O link de assinatura expirou.")
     if token_expirado(ficha.get("token_expira_em")):
         supabase_admin.table("fichas_visita").update({"status": "expirada"}).eq("id", ficha["id"]).execute()
         raise HTTPException(status_code=410, detail="O link de assinatura expirou.")

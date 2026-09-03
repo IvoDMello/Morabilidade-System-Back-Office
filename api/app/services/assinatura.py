@@ -84,15 +84,29 @@ def expira_em(agora: datetime, dias: int = TOKEN_VALIDADE_DIAS) -> str:
 
 
 def token_expirado(expira_em_iso: Optional[str], agora: Optional[datetime] = None) -> bool:
-    """True se o link de assinatura já venceu. Sem data ou data inválida → False
-    (não bloqueia: o registro segue válido até alguém setar uma data correta)."""
+    """True se o link de assinatura já venceu.
+
+    Fail-closed: sem data, ou com data ilegível, o link conta como VENCIDO.
+    A validade de `TOKEN_VALIDADE_DIAS` é o que limita o estrago de um token
+    vazado; enquanto o caso nulo passava, qualquer linha sem `token_expira_em`
+    (a coluna é nullable nas migrations 034/035) virava um link de assinatura
+    eterno. Quem emite o link sempre grava a data (`expira_em`), então ausência
+    é defeito de dado, e o custo de errar para o lado seguro é reemitir a ficha.
+
+    Datas sem fuso são lidas como UTC: `timestamptz` do Postgres sempre volta
+    com offset, mas um valor gravado fora da API derrubaria a comparação com
+    TypeError (500 num endpoint público) em vez de barrar o link.
+    """
     if not expira_em_iso:
-        return False
+        return True
     agora = agora or datetime.now(timezone.utc)
     try:
-        return datetime.fromisoformat(str(expira_em_iso).replace("Z", "+00:00")) < agora
-    except ValueError:
-        return False
+        vencimento = datetime.fromisoformat(str(expira_em_iso).replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return True
+    if vencimento.tzinfo is None:
+        vencimento = vencimento.replace(tzinfo=timezone.utc)
+    return vencimento < agora
 
 
 # ── Hash e resposta PDF ───────────────────────────────────────────────────────
