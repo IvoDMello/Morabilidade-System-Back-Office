@@ -166,3 +166,36 @@ export interface Documento {
   tamanho_bytes: number | null;
   criado_em: string;
 }
+
+/**
+ * Cartão da raia "Pauta de gravação": uma lista ordenada do que vai ser
+ * gravado. Fica fora do enum de status — não é uma captação, é uma agenda.
+ */
+export interface Pauta {
+  id: string;
+  titulo: string;
+  descricao: string | null;
+  data_alvo: string | null;
+  ordem: number;
+  concluida: boolean;
+  excluido_em: string | null;
+  criado_por: string | null;
+  criado_em: string;
+  atualizado_em: string;
+}
+
+/** Linha da pauta: texto livre, opcionalmente ligada a uma captação. */
+export interface PautaItem {
+  id: string;
+  pauta_id: string;
+  texto: string;
+  captacao_id: string | null;
+  concluido: boolean;
+  ordem: number;
+  criado_por: string | null;
+  criado_em: string;
+  atualizado_em: string;
+}
+
+/** Rótulo/tom da raia da pauta (não é um Status, mas aparece ao lado deles). */
+export const PAUTA_LABEL = "Pauta de gravação";

@@ -20,7 +20,7 @@ const capaCache = new Map<string, string>();
 export function CaptacaoCard({ card, overlay = false }: { card: Captacao; overlay?: boolean }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: card.id,
-    data: { card },
+    data: { tipo: "captacao", card },
   });
 
   const opinioes = useBoard((s) => s.opinioes[card.id]);

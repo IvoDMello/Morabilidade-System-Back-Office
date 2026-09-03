@@ -32,6 +32,9 @@ npm run dev
 Aplicar as migrations em `supabase/migrations/` (na ordem) no projeto Supabase:
 1. `0001_init_captacoes.sql`, schema, tabelas, índices, RLS, RPC `mover_cartao`.
 2. `0002_storage_bucket.sql`, bucket privado `captacoes` + políticas.
+3. Demais migrations em ordem numérica. A última, `0019_pauta.sql`, cria a raia
+   "Pauta de gravação" (`pauta` + `pauta_item`) e precisa ser aplicada antes do
+   deploy, senão o quadro carrega sem a raia.
 
 ## Deploy
 - **Vercel** (deploy único). Cron de arquivamento em `vercel.json`.

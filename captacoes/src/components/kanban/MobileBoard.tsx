@@ -22,16 +22,19 @@ import {
   CalendarDays,
   MessageSquare,
   CheckCircle2,
+  Clapperboard,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { BoardControls } from "@/components/board/BoardControls";
 import { PublicadasButton } from "@/components/board/PublicadasButton";
 import { NovaCaptacaoButton } from "@/components/captacao/NovaCaptacaoButton";
+import { MobilePauta } from "@/components/pauta/MobilePauta";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { FotosLightbox, type FotoRef } from "@/components/captacao/FotosLightbox";
 import { formatBRL, dataCurta, diasRestantes } from "@/lib/format";
 import { useBoard } from "@/stores/board";
+import { usePauta } from "@/stores/pauta";
 import { STATUS_STYLE, PILL_ORDER } from "@/lib/status-style";
 import { iniciaisNome } from "@/lib/opinioes";
 import type { Captacao, Decisao, Status } from "@/types";
@@ -352,6 +355,8 @@ export function MobileBoard({
   // Aba de status vem do store: sobrevive à ida ao detalhe e volta ao quadro.
   const { filtro, setFiltro, filtroStatus: filtro_, setFiltroStatus, opinioes } = useBoard();
   const naoLidas = Object.values(opinioes).reduce((n, o) => n + o.naoLidas, 0);
+  const totalPautas = usePauta((s) => s.pautas.length);
+  const naPauta = filtro_ === "pauta";
 
   const todas = useMemo(() => PILL_ORDER.flatMap((s) => byStatus[s]), [byStatus]);
   const filtradas = useMemo(() => visiveis(todas), [visiveis, todas]);
@@ -364,7 +369,8 @@ export function MobileBoard({
 
   // Buscando: mostra correspondências de todas as colunas (não prende à aba ativa).
   const buscando = filtro.trim().length > 0;
-  const lista = buscando || filtro_ === "all" ? filtradas : filtradas.filter((c) => c.status === filtro_);
+  const lista =
+    buscando || filtro_ === "all" ? filtradas : filtradas.filter((c) => c.status === filtro_);
 
   async function sair() {
     const supabase = createClient();
@@ -386,6 +392,11 @@ export function MobileBoard({
             <h1 className="mt-1 font-serif text-[30px] font-semibold leading-none">Seu quadro</h1>
             <p className="mt-2 inline-flex items-center gap-1.5 text-sm text-[#cfd0c9]">
               <LayoutGrid className="h-4 w-4" /> {todas.length} no quadro
+              {totalPautas > 0 && (
+                <span className="ml-1 inline-flex items-center gap-1 text-[#cfd0c9]">
+                  <Clapperboard className="h-3.5 w-3.5" /> {totalPautas} na pauta
+                </span>
+              )}
               {naoLidas > 0 && (
                 <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-[#d8cb6a] px-2 py-0.5 text-xs font-bold text-[#3a3408]">
                   <MessageSquare className="h-3 w-3" /> {naoLidas}
@@ -456,18 +467,32 @@ export function MobileBoard({
               dot={STATUS_STYLE[s].dot}
             />
           ))}
+          {/* Raia especial: agenda de gravação, fora do fluxo de status. */}
+          <Pill
+            ativo={naPauta}
+            onClick={() => setFiltroStatus("pauta")}
+            label="Pauta"
+            count={totalPautas}
+            dot="#c5b54a"
+          />
         </div>
       </div>
 
       {/* Lista */}
       <div className="flex-1 space-y-[14px] overflow-y-auto px-4 pb-28 pt-[18px]">
-        {lista.map((c) => (
-          <MobileCard key={c.id} card={c} onDecidir={onDecidir} onMover={onMover} onPublicar={onPublicar} />
-        ))}
-        {lista.length === 0 && (
-          <div className="mt-12 text-center text-sm text-[#9a9c90]">
-            {filtro.trim() ? `Nenhuma captação para “${filtro}”.` : "Nenhuma captação nesta visão."}
-          </div>
+        {naPauta ? (
+          <MobilePauta />
+        ) : (
+          <>
+            {lista.map((c) => (
+              <MobileCard key={c.id} card={c} onDecidir={onDecidir} onMover={onMover} onPublicar={onPublicar} />
+            ))}
+            {lista.length === 0 && (
+              <div className="mt-12 text-center text-sm text-[#9a9c90]">
+                {filtro.trim() ? `Nenhuma captação para “${filtro}”.` : "Nenhuma captação nesta visão."}
+              </div>
+            )}
+          </>
         )}
       </div>
 

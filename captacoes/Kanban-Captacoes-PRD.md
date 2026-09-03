@@ -66,6 +66,23 @@ Colunas (enum de status):
 - **Visita** e **gravação**: cada uma tem checkbox "concluído" + campo de data.
 - Opção **"visita e gravação no mesmo dia"** preenche ambas as datas de uma vez.
 
+### 2.4 Raia "Pauta de gravação" (agenda)
+
+Raia à direita das colunas de status, **fora do enum** — não é um estágio da
+captação, é a agenda de quem grava os vídeos. Serve para montar a sequência do
+que vai ser gravado (ex.: prioridades para o retorno de uma viagem).
+
+- Cada **cartão de pauta** tem título, dia previsto (opcional) e observações.
+- Dentro dele, uma **lista ordenada de itens**. O item é texto livre e pode
+  apontar para uma captação do quadro — arrastando o cartão da captação para
+  cima da pauta, ou escolhendo na sugestão do campo "adicionar à sequência".
+- Arrastar uma captação para a pauta **não muda o status dela**: ela continua
+  na coluna onde estava e ganha uma linha na agenda.
+- Ordenação: arrastar (desktop) ou setas ↑/↓ (mobile), com o mesmo fractional
+  indexing das colunas. Checkbox por item marca o que já foi gravado.
+- Tabelas: `pauta` e `pauta_item` (migration `0019_pauta.sql`), ambas com
+  realtime ligado.
+
 ---
 
 ## 3. Requisitos funcionais

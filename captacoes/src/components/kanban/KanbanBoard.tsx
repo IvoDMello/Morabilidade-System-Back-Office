@@ -21,7 +21,13 @@ import { GavetaDialog } from "./GavetaDialog";
 import { CaptacaoCard } from "./CaptacaoCard";
 import { MobileBoard } from "./MobileBoard";
 import { NovaCaptacaoButton } from "@/components/captacao/NovaCaptacaoButton";
+import { PautaLane, PAUTA_LANE_ID } from "@/components/pauta/PautaLane";
+import { PautaCardPreview } from "@/components/pauta/PautaCard";
+import { PautaItemPreview } from "@/components/pauta/PautaItemRow";
 import { useBoard } from "@/stores/board";
+import { usePauta } from "@/stores/pauta";
+import { usePautaAcoes } from "@/lib/usePautaAcoes";
+import { ordemNaPosicao, textoDaCaptacao } from "@/lib/pauta";
 import { useIsDesktop } from "@/lib/useIsDesktop";
 import { createClient } from "@/lib/supabase/client";
 import { orderBetween } from "@/lib/order";
@@ -29,25 +35,80 @@ import { filtrarCaptacoes, filtrarPorCriterios } from "@/lib/filter";
 import { fetchOpinioesResumo } from "@/lib/opinioes";
 import { confirmarDecisao, destinoDecisao } from "@/lib/decisao";
 import { ordenarCaptacoes, priorizarRevisaoGaveta } from "@/lib/sort";
-import { STATUSES, BOARD_STATUSES, STATUS_LABEL, type Captacao, type Decisao, type Status } from "@/types";
+import {
+  STATUSES,
+  BOARD_STATUSES,
+  STATUS_LABEL,
+  type Captacao,
+  type Decisao,
+  type Pauta,
+  type PautaItem,
+  type Status,
+} from "@/types";
+
+/** `data` que cada elemento arrastável/soltável do quadro publica no dnd-kit. */
+interface DragData {
+  tipo?: "captacao" | "pauta" | "pauta-item" | "pauta-drop" | "pauta-lane";
+  status?: Status;
+  card?: Captacao;
+  pauta?: Pauta;
+  item?: PautaItem;
+  pautaId?: string;
+}
+
+/**
+ * Em qual pauta o ponteiro soltou. O alvo pode ser o corpo do cartão
+ * ("pauta-drop"), o cabeçalho dele ("pauta") ou um item já existente.
+ * Devolve null quando a soltura não foi sobre nenhuma pauta.
+ *
+ * O `data` do dnd-kit é uma foto do último render; para o item vamos ao store
+ * saber em que pauta ele está agora (alguém pode tê-lo movido no meio do
+ * arrasto, via realtime).
+ */
+function pautaDoAlvo(over: DragData): string | null {
+  if (over.tipo === "pauta-drop") return over.pautaId ?? null;
+  if (over.tipo === "pauta") return over.pauta?.id ?? null;
+  if (over.tipo === "pauta-item" && over.item) {
+    return usePauta.getState().acharItem(over.item.id)?.pauta_id ?? null;
+  }
+  return null;
+}
 
 export function KanbanBoard({
   initial,
+  pautasIniciais,
+  itensIniciais,
   userEmail,
   userNome,
 }: {
   initial: Captacao[];
+  pautasIniciais: Pauta[];
+  itensIniciais: PautaItem[];
   userEmail: string;
   userNome: string;
 }) {
   const { byStatus, filtro, criterios, ordenacao, setCards, upsert, remove, applyMove, find, setConexao, beginSave, endSave, setOpinioes } =
     useBoard();
+  // Só `pautas` é assinado: a lista de itens muda a cada checkbox marcado e
+  // assinar ela aqui re-renderizaria o quadro inteiro. Onde os itens são
+  // necessários (arrasto e miniatura do overlay) lemos o estado do momento.
+  const pautas = usePauta((s) => s.pautas);
+  const setTudo = usePauta((s) => s.setTudo);
+  const upsertPauta = usePauta((s) => s.upsertPauta);
+  const removePauta = usePauta((s) => s.removePauta);
+  const upsertItem = usePauta((s) => s.upsertItem);
+  const removeItem = usePauta((s) => s.removeItem);
+  const acoesPauta = usePautaAcoes();
   const [activeId, setActiveId] = useState<string | null>(null);
   // Cartão recém-engavetado aguardando motivo/data de revisão.
   const [gavetaCard, setGavetaCard] = useState<Captacao | null>(null);
   const desktop = useIsDesktop();
 
   useEffect(() => setCards(initial), [initial, setCards]);
+  useEffect(
+    () => setTudo(pautasIniciais, itensIniciais),
+    [pautasIniciais, itensIniciais, setTudo]
+  );
 
   // Realtime: reflete no quadro o que outros usuários fizerem.
   useEffect(() => {
@@ -103,6 +164,31 @@ export function KanbanBoard({
       supabase.removeChannel(canal);
     };
   }, [setOpinioes]);
+
+  // Realtime da pauta: a agenda de gravação é montada a quatro mãos.
+  useEffect(() => {
+    const supabase = createClient();
+    const canal = supabase
+      .channel("board-pauta")
+      .on("postgres_changes", { event: "*", schema: "captacoes", table: "pauta" }, (payload) => {
+        if (payload.eventType === "DELETE") return removePauta((payload.old as Pauta).id);
+        const row = payload.new as Pauta;
+        // Soft-delete chega como UPDATE: sai da raia igual à captação.
+        if (row.excluido_em) removePauta(row.id);
+        else upsertPauta(row);
+      })
+      .on("postgres_changes", { event: "*", schema: "captacoes", table: "pauta_item" }, (payload) => {
+        if (payload.eventType === "DELETE") {
+          const antigo = payload.old as PautaItem;
+          return removeItem(antigo.id, antigo.pauta_id);
+        }
+        upsertItem(payload.new as PautaItem);
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(canal);
+    };
+  }, [upsertPauta, removePauta, upsertItem, removeItem]);
 
   // Rede do navegador: offline imediato cobre o caso sem internet.
   useEffect(() => {
@@ -221,15 +307,69 @@ export function KanbanBoard({
     const { active, over } = e;
     if (!over) return;
 
+    const activeData = (active.data.current ?? {}) as DragData;
+    const overData = (over.data.current ?? {}) as DragData;
+    const overId = String(over.id);
+    const naRaia = overId === PAUTA_LANE_ID || !!pautaDoAlvo(overData);
+
+    // --- cartão de pauta: só reordena dentro da própria raia ---
+    if (activeData.tipo === "pauta") {
+      // Do store, não do `data` do dnd-kit: a ordem pode ter mudado no meio.
+      const pauta = pautas.find((p) => p.id === String(active.id));
+      if (!pauta || !naRaia) return;
+      const lista = pautas.filter((p) => p.id !== pauta.id);
+      const alvo = overData.tipo === "pauta" ? overData.pauta?.id : undefined;
+      const i = alvo ? lista.findIndex((p) => p.id === alvo) : -1;
+      const ordem = ordemNaPosicao(lista, i < 0 ? lista.length : i);
+      if (ordem !== pauta.ordem) acoesPauta.reordenar(pauta, ordem);
+      return;
+    }
+
+    // --- item da pauta: reordena na mesma pauta ou muda de pauta ---
+    if (activeData.tipo === "pauta-item") {
+      const { itens, acharItem } = usePauta.getState();
+      const item = acharItem(String(active.id));
+      if (!item) return;
+      const destino = pautaDoAlvo(overData) ?? (overId === PAUTA_LANE_ID ? item.pauta_id : null);
+      if (!destino) return;
+      const lista = (itens[destino] ?? []).filter((i) => i.id !== item.id);
+      const alvo = overData.tipo === "pauta-item" ? overData.item?.id : undefined;
+      const i = alvo ? lista.findIndex((x) => x.id === alvo) : -1;
+      const ordem = ordemNaPosicao(lista, i < 0 ? lista.length : i);
+      if (destino === item.pauta_id && ordem === item.ordem) return;
+      acoesPauta.reordenarItem(item, destino, ordem);
+      return;
+    }
+
     const card = find(String(active.id));
     if (!card) return;
 
-    const overData = over.data.current as { status?: Status; card?: Captacao } | undefined;
+    // --- captação solta na pauta: vira linha da agenda e CONTINUA na coluna ---
+    if (naRaia) {
+      const { itens } = usePauta.getState();
+      const destino = pautaDoAlvo(overData);
+      if (!destino) {
+        toast.info("Solte a captação sobre uma pauta para entrar na sequência.");
+        return;
+      }
+      if ((itens[destino] ?? []).some((i) => i.captacao_id === card.id)) {
+        toast.info("Essa captação já está nessa pauta.");
+        return;
+      }
+      const novo = await acoesPauta.adicionarItem(destino, textoDaCaptacao(card), card.id);
+      if (novo) {
+        toast.success("Adicionada à pauta de gravação.", {
+          action: { label: "Desfazer", onClick: () => acoesPauta.excluirItem(novo) },
+        });
+      }
+      return;
+    }
+
     const toStatus: Status =
-      overData?.status ?? overData?.card?.status ?? (STATUSES.includes(over.id as Status) ? (over.id as Status) : card.status);
+      overData.status ?? overData.card?.status ?? (STATUSES.includes(over.id as Status) ? (over.id as Status) : card.status);
 
     const column = byStatus[toStatus].filter((c) => c.id !== card.id);
-    const overIndex = overData?.card ? column.findIndex((c) => c.id === overData.card!.id) : column.length;
+    const overIndex = overData.card ? column.findIndex((c) => c.id === overData.card!.id) : column.length;
     const before = overIndex > 0 ? column[overIndex - 1]?.ordem ?? null : null;
     const after = column[overIndex]?.ordem ?? null;
     const ordem = orderBetween(before, after);
@@ -242,8 +382,9 @@ export function KanbanBoard({
   const totalVisivel = BOARD_STATUSES.reduce((n, s) => n + visiveis(byStatus[s]).length, 0);
   const semResultado = totalCards > 0 && totalVisivel === 0;
 
-  // Primeiro uso: nenhuma captação cadastrada (idêntico em desktop e mobile).
-  if (totalCards === 0) {
+  // Primeiro uso: nada no quadro ainda (idêntico em desktop e mobile). Com
+  // pauta criada o quadro aparece normalmente, senão a raia ficaria inacessível.
+  if (totalCards === 0 && pautas.length === 0) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
         <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted text-muted-foreground">
@@ -272,26 +413,40 @@ export function KanbanBoard({
     );
   }
 
-  if (semResultado) {
-    return (
-      <div className="flex h-full items-center justify-center px-6 text-center text-sm text-muted-foreground">
-        {filtro.trim() ? `Nenhuma captação encontrada para “${filtro}”.` : "Nenhuma captação corresponde aos filtros."}
-      </div>
-    );
-  }
-
   const active = activeId ? find(activeId) : null;
+  const pautaAtiva = activeId ? pautas.find((p) => p.id === activeId) : undefined;
+  // Miniatura do arrasto: lida no início do gesto, não precisa ser reativa.
+  const itemAtivo = activeId ? usePauta.getState().acharItem(activeId) : undefined;
 
   return (
     <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={onDragStart} onDragEnd={onDragEnd}>
       {/* overscroll-x-contain: chegar ao fim das colunas não empurra a página
           nem dispara o "voltar" por gesto do navegador. */}
       <div className="flex h-full gap-3 overflow-x-auto overscroll-x-contain px-4 pb-4">
-        {BOARD_STATUSES.map((status) => (
-          <KanbanColumn key={status} status={status} cards={visiveis(byStatus[status])} />
-        ))}
+        {semResultado ? (
+          // Filtro sem resultado esvazia as colunas, mas a pauta continua à
+          // mão: ela não é filtrada junto com as captações.
+          <div className="flex min-w-[28rem] flex-1 items-center justify-center px-6 text-center text-sm text-muted-foreground">
+            {filtro.trim()
+              ? `Nenhuma captação encontrada para “${filtro}”.`
+              : "Nenhuma captação corresponde aos filtros."}
+          </div>
+        ) : (
+          BOARD_STATUSES.map((status) => (
+            <KanbanColumn key={status} status={status} cards={visiveis(byStatus[status])} />
+          ))
+        )}
+        <PautaLane />
       </div>
-      <DragOverlay>{active ? <CaptacaoCard card={active} overlay /> : null}</DragOverlay>
+      <DragOverlay>
+        {active ? (
+          <CaptacaoCard card={active} overlay />
+        ) : pautaAtiva ? (
+          <PautaCardPreview pauta={pautaAtiva} itens={usePauta.getState().itensDe(pautaAtiva.id).length} />
+        ) : itemAtivo ? (
+          <PautaItemPreview item={itemAtivo} />
+        ) : null}
+      </DragOverlay>
       <GavetaDialog key={gavetaCard?.id ?? "none"} card={gavetaCard} onClose={() => setGavetaCard(null)} />
     </DndContext>
   );

@@ -8,6 +8,12 @@ type ByStatus = Record<Status, Captacao[]>;
 
 export type Conexao = "conectando" | "online" | "offline";
 
+/**
+ * Aba ativa do quadro mobile: uma coluna de status ou a raia "pauta"
+ * (agenda de gravação), que não é um status de captação.
+ */
+export type VistaMobile = Status | "pauta";
+
 function empty(): ByStatus {
   return Object.fromEntries(STATUSES.map((s) => [s, []])) as unknown as ByStatus;
 }
@@ -52,12 +58,13 @@ function lerCriterios(): Criterios {
 /** Vista padrão do quadro mobile: a coluna que costuma exigir ação. */
 const FILTRO_STATUS_PADRAO: Status = "em_decisao";
 
-function lerFiltroStatus(): "all" | Status {
+function lerFiltroStatus(): "all" | VistaMobile {
   // sessionStorage sobrevive ao reload (F5 no detalhe) mas não vaza entre
   // abas/sessões. Guard de window: o módulo também é avaliado no SSR.
   if (typeof window === "undefined") return FILTRO_STATUS_PADRAO;
   try {
     const v = window.sessionStorage.getItem(FILTRO_STATUS_KEY);
+    if (v === "pauta") return "pauta";
     // "all" (aba "Todas", removida) e "publicada" (oculta) caem no padrão.
     if (v && v !== "all" && v !== "publicada" && (STATUSES as readonly string[]).includes(v)) return v as Status;
   } catch {
@@ -66,7 +73,7 @@ function lerFiltroStatus(): "all" | Status {
   return FILTRO_STATUS_PADRAO;
 }
 
-function gravarFiltroStatus(v: "all" | Status): void {
+function gravarFiltroStatus(v: "all" | VistaMobile): void {
   try {
     window.sessionStorage.setItem(FILTRO_STATUS_KEY, v);
   } catch {
@@ -85,9 +92,9 @@ interface BoardState {
   byStatus: ByStatus;
   filtro: string;
   setFiltro: (f: string) => void;
-  /** Pill/aba de status ativa no quadro mobile (persiste ao navegar pro detalhe e voltar). */
-  filtroStatus: "all" | Status;
-  setFiltroStatus: (s: "all" | Status) => void;
+  /** Pill/aba ativa no quadro mobile (persiste ao navegar pro detalhe e voltar). */
+  filtroStatus: "all" | VistaMobile;
+  setFiltroStatus: (s: "all" | VistaMobile) => void;
   criterios: Criterios;
   setCriterios: (c: Partial<Criterios>) => void;
   limparCriterios: () => void;
