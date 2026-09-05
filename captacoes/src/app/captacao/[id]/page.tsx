@@ -13,6 +13,7 @@ import { Agendamento } from "@/components/captacao/Agendamento";
 import { Galeria } from "@/components/captacao/Galeria";
 import { Documentos } from "@/components/captacao/Documentos";
 import { ExcluirCaptacao } from "@/components/captacao/ExcluirCaptacao";
+import { CompartilharCaptacao } from "@/components/captacao/CompartilharCaptacao";
 import { Historico } from "@/components/captacao/Historico";
 import { Opinioes } from "@/components/captacao/Opinioes";
 import { createClient } from "@/lib/supabase/server";
@@ -98,6 +99,11 @@ export default async function CaptacaoPage({ params }: { params: Promise<{ id: s
                 <Link2 className="h-4 w-4" /> Anúncio
               </a>
             )}
+          </div>
+        )}
+        {c.share_token && (
+          <div className="mt-3">
+            <CompartilharCaptacao token={c.share_token} endereco={c.endereco} />
           </div>
         )}
       </div>

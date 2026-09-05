@@ -33,7 +33,9 @@ export async function middleware(request: NextRequest) {
   // código na URL que só vira sessão depois que a página carrega no cliente.
   const isPublica =
     request.nextUrl.pathname.startsWith("/login") ||
-    request.nextUrl.pathname.startsWith("/redefinir-senha");
+    request.nextUrl.pathname.startsWith("/redefinir-senha") ||
+    // Página pública de compartilhamento (o token aleatório é o acesso).
+    request.nextUrl.pathname.startsWith("/p/");
   if (!user && !isPublica) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";

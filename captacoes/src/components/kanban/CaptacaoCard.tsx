@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useSortable } from "@dnd-kit/sortable";
@@ -10,12 +9,10 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { relativo, dataCurta, diasParado, diasRestantes, whatsappLink, formatarTelefone, formatBRL } from "@/lib/format";
-import { signedUrl } from "@/lib/storage";
+import { useCapaUrl } from "@/lib/capa";
+import { CompartilharCaptacao } from "@/components/captacao/CompartilharCaptacao";
 import { useBoard } from "@/stores/board";
 import { DECISAO_LABEL, type Captacao } from "@/types";
-
-// cache simples por sessão para não re-assinar a mesma capa a cada render
-const capaCache = new Map<string, string>();
 
 export function CaptacaoCard({ card, overlay = false }: { card: Captacao; overlay?: boolean }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -24,24 +21,7 @@ export function CaptacaoCard({ card, overlay = false }: { card: Captacao; overla
   });
 
   const opinioes = useBoard((s) => s.opinioes[card.id]);
-  const [capaUrl, setCapaUrl] = useState<string | null>(
-    card.capa_path ? capaCache.get(card.capa_path) ?? null : null
-  );
-
-  useEffect(() => {
-    const path = card.capa_path;
-    if (!path || capaCache.has(path)) return;
-    let ativo = true;
-    signedUrl(path, 3600)
-      .then((u) => {
-        capaCache.set(path, u);
-        if (ativo) setCapaUrl(u);
-      })
-      .catch(() => {});
-    return () => {
-      ativo = false;
-    };
-  }, [card.capa_path]);
+  const capaUrl = useCapaUrl(card.capa_path);
 
   const style = { transform: CSS.Translate.toString(transform), transition };
   const temPendencia = card.status === "aguardando_informacoes" && card.pendencias?.trim();
@@ -231,7 +211,7 @@ export function CaptacaoCard({ card, overlay = false }: { card: Captacao; overla
         </div>
       </Link>
 
-      {(card.whatsapp || card.anuncio_url) && (
+      {(card.whatsapp || card.anuncio_url || card.share_token) && (
         <div className="mt-2 flex flex-wrap gap-1.5">
           {card.whatsapp && whatsappLink(card.whatsapp) && (
             <a
@@ -256,6 +236,9 @@ export function CaptacaoCard({ card, overlay = false }: { card: Captacao; overla
             >
               <Link2 className="h-3.5 w-3.5" /> Anúncio
             </a>
+          )}
+          {card.share_token && (
+            <CompartilharCaptacao token={card.share_token} endereco={card.endereco} compact />
           )}
         </div>
       )}

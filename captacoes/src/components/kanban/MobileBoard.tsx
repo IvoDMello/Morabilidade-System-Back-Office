@@ -24,8 +24,11 @@ import {
   CheckCircle2,
   Clapperboard,
 } from "lucide-react";
+import Image from "next/image";
 import { Card } from "@/components/ui/card";
 import { BoardControls } from "@/components/board/BoardControls";
+import { CompartilharCaptacao } from "@/components/captacao/CompartilharCaptacao";
+import { useCapaUrl } from "@/lib/capa";
 import { PublicadasButton } from "@/components/board/PublicadasButton";
 import { NovaCaptacaoButton } from "@/components/captacao/NovaCaptacaoButton";
 import { MobilePauta } from "@/components/pauta/MobilePauta";
@@ -67,6 +70,7 @@ function MobileCard({
   const opinioes = useBoard((s) => s.opinioes[card.id]);
   const [fotos, setFotos] = useState<FotoRef[] | null>(null);
   const [viewer, setViewer] = useState<number | null>(null);
+  const capaUrl = useCapaUrl(card.capa_path);
   const router = useRouter();
   const naDecisao = card.status === "em_decisao" && !card.decisao;
   const prazoDecisao = naDecisao && card.em_decisao_desde ? diasRestantes(card.em_decisao_desde) : null;
@@ -154,20 +158,7 @@ function MobileCard({
               {revisarGaveta ? "revisar agora" : `revisar ${dataCurta(card.gaveta_revisao_em)}`}
             </span>
           )}
-          {card.capa_path ? (
-            // Tem fotos: chip abre o visualizador (o anúncio, se houver, vai pro expandir).
-            <button
-              type="button"
-              title="Ver fotos"
-              onClick={(e) => {
-                e.stopPropagation();
-                abrirFotos();
-              }}
-              className="inline-flex items-center gap-1 rounded-lg border border-[#ebece6] bg-[#f5f6f1] px-2 py-1 text-xs font-medium text-[#6e7063] active:bg-[#ebece6]"
-            >
-              <Images className="h-3.5 w-3.5 text-[#888b7e]" /> Fotos
-            </button>
-          ) : (
+          {!card.capa_path && (
             card.anuncio_url && (
               // Sem fotos, mas tem anúncio: chip abre o link direto.
               <a
@@ -195,6 +186,27 @@ function MobileCard({
           <ChevronDown className={cn("h-4 w-4 transition-transform", aberto && "rotate-180")} />
         </button>
       </div>
+
+      {/* Capa: quando há fotos anexadas, o card já mostra a imagem antes de
+          expandir; o toque abre o visualizador de fotos. */}
+      {card.capa_path && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            abrirFotos();
+          }}
+          aria-label="Ver fotos"
+          className="relative block aspect-[16/9] w-full overflow-hidden rounded-[13px] bg-[#eceee8]"
+        >
+          {capaUrl && (
+            <Image src={capaUrl} alt="" fill sizes="(max-width: 640px) 100vw, 400px" className="object-cover" />
+          )}
+          <span className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-lg bg-black/55 px-2 py-1 text-[11px] font-medium text-white backdrop-blur-sm">
+            <Images className="h-3 w-3" /> Fotos
+          </span>
+        </button>
+      )}
 
       {/* Endereço */}
       <p className="text-[17px] font-semibold leading-[1.28] text-[#2e302a]">{card.endereco}</p>
@@ -286,6 +298,11 @@ function MobileCard({
               ))}
             </div>
           </div>
+
+          {/* Compartilhar link público (WhatsApp) */}
+          {card.share_token && (
+            <CompartilharCaptacao token={card.share_token} endereco={card.endereco} />
+          )}
 
           {/* Atalho de publicação: fecha o ciclo de uma captação aprovada. */}
           {card.decisao === "aprovada" && (
