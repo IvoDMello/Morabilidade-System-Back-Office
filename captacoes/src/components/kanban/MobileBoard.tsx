@@ -474,6 +474,15 @@ export function MobileBoard({
           <span className="text-xs text-[#9a9c90]">Toque para analisar</span>
         </div>
         <div className="flex gap-2 overflow-x-auto overscroll-x-contain px-4 pb-3">
+          {/* Raia especial: agenda de gravação, fora do fluxo de status. Vem
+              primeiro — é a visão que se quer à mão ao abrir o app. */}
+          <Pill
+            ativo={naPauta}
+            onClick={() => setFiltroStatus("pauta")}
+            label="Pauta"
+            count={totalPautas}
+            dot="#c5b54a"
+          />
           {PILL_ORDER.map((s) => (
             <Pill
               key={s}
@@ -484,14 +493,6 @@ export function MobileBoard({
               dot={STATUS_STYLE[s].dot}
             />
           ))}
-          {/* Raia especial: agenda de gravação, fora do fluxo de status. */}
-          <Pill
-            ativo={naPauta}
-            onClick={() => setFiltroStatus("pauta")}
-            label="Pauta"
-            count={totalPautas}
-            dot="#c5b54a"
-          />
         </div>
       </div>
 

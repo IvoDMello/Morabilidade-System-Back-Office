@@ -423,6 +423,9 @@ export function KanbanBoard({
       {/* overscroll-x-contain: chegar ao fim das colunas não empurra a página
           nem dispara o "voltar" por gesto do navegador. */}
       <div className="flex h-full gap-3 overflow-x-auto overscroll-x-contain px-4 pb-4">
+        {/* Primeira raia do quadro: a ordem do que vai ser gravado é o que se
+            quer ver ao abrir o app, antes do fluxo de status das captações. */}
+        <PautaLane />
         {semResultado ? (
           // Filtro sem resultado esvazia as colunas, mas a pauta continua à
           // mão: ela não é filtrada junto com as captações.
@@ -436,7 +439,6 @@ export function KanbanBoard({
             <KanbanColumn key={status} status={status} cards={visiveis(byStatus[status])} />
           ))
         )}
-        <PautaLane />
       </div>
       <DragOverlay>
         {active ? (
