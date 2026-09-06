@@ -49,8 +49,11 @@
      rolagem — `none` mataria junto o scroll da página, e `pan-y` mataria a
      rolagem lateral DE DENTRO do board (as colunas do Kanban e a fita de
      pills do mobile precisam dela; touch-action de um ancestral limita os
-     descendentes). */
-  html {
+     descendentes).
+
+     A classe `zoom-livre` (posta pelo ZoomLock) abre exceção para as páginas
+     públicas de imóvel, onde ampliar a foto é justamente o ponto. */
+  html:not(.zoom-livre) {
     touch-action: pan-x pan-y;
   }
 

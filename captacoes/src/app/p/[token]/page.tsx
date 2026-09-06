@@ -1,5 +1,5 @@
 import { cache } from "react";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { BedDouble, Bath, Car, Scan, DoorOpen, Hotel, Building2 } from "lucide-react";
@@ -7,6 +7,19 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { formatBRL } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
+
+/**
+ * Sobrepõe o viewport travado do layout raiz: aqui o visitante é um cliente
+ * olhando fotos de imóvel no celular e precisa poder ampliar. As outras duas
+ * camadas da trava (gesture* e touch-action) saem no <ZoomLock />.
+ */
+export const viewport: Viewport = {
+  themeColor: "#585a4f",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+};
 
 const BUCKET = "captacoes";
 // Assinatura longa: o link fica útil no WhatsApp por uma semana; a página é
@@ -92,6 +105,9 @@ export async function generateMetadata({
     title: `${c.endereco} · Morabilidade`,
     description: partes.join(" · ") || "Veja as fotos e os detalhes do imóvel.",
     robots: { index: false },
+    // Limpa o manifest herdado do layout raiz: nada de oferecer ao cliente a
+    // instalação do PWA interno, cujo start_url é o quadro atrás do login.
+    manifest: null,
     openGraph: {
       title: c.endereco,
       description: partes.join(" · "),
