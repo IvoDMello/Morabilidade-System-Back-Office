@@ -1,0 +1,228 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *{ box-sizing:border-box; }
+    body{ margin:0; }
+    a{ color:#9a8d3a; } a:hover{ color:#7d7230; }
+  </style>
+</helmet>
+
+<div style="width:390px; height:1360px; background:#f3f4f0; font-family:'Inter',system-ui,sans-serif; display:flex; flex-direction:column; overflow:hidden;">
+
+  <!-- Header -->
+  <div style="flex:none; background:linear-gradient(150deg,#2c2e28 0%,#585a4f 58%,#454840 100%); padding:18px 18px 18px; color:#f3f4f0;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:13px;">
+      <img src="logo.png" alt="Morabilidade" style="height:29px; width:auto; object-fit:contain;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div style="width:34px; height:34px; border-radius:50%; background:#d8cb6a; color:#3a3408; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12.5px;">IV</div>
+        <button style="width:32px; height:32px; border:none; background:rgba(255,255,255,0.12); border-radius:10px; color:#dfe0da; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
+        </button>
+      </div>
+    </div>
+    <div style="font-size:10.5px; font-weight:600; letter-spacing:0.2em; color:#d8cb6a; margin-bottom:6px;">CAPTAÇÕES</div>
+    <div style="font-family:'Playfair Display',serif; font-weight:600; font-size:27px; line-height:1; letter-spacing:-0.01em;">Agenda</div>
+    <div style="margin-top:8px; color:#cfd0c9; font-size:13px;">5 a agendar · 3 compromissos esta semana</div>
+  </div>
+
+  <!-- Conteúdo -->
+  <div style="flex:1; min-height:0; overflow-y:auto; padding:18px; display:flex; flex-direction:column; gap:22px;">
+
+    <!-- ═══ Pendências ═══ -->
+    <div>
+      <div style="font-size:10.5px; font-weight:600; letter-spacing:0.09em; text-transform:uppercase; color:#9a9c90; margin-bottom:11px;">Pendências</div>
+      <div style="display:flex; flex-direction:column; gap:9px;">
+
+        <button style="display:flex; align-items:center; gap:13px; background:#ffffff; border:1px solid #e8e9e3; border-radius:15px; padding:14px; cursor:pointer; font-family:inherit; text-align:left; box-shadow:0 1px 2px rgba(46,48,42,0.04);">
+          <span style="flex:none; width:38px; height:38px; border-radius:12px; background:#e5efe8; display:flex; align-items:center; justify-content:center;">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#2f6b46" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 10.5L12 4l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"></path><path d="M9 21v-6h6v6"></path></svg>
+          </span>
+          <span style="flex:1; min-width:0;">
+            <span style="display:block; font-size:14.5px; font-weight:600; color:#2e302a;">Agendar visita</span>
+            <span style="display:block; font-size:12px; color:#8b8e82; margin-top:2px;">Barão da Torre, General Urquiza e mais 1</span>
+          </span>
+          <span style="flex:none; display:flex; align-items:center; gap:8px;">
+            <span style="min-width:24px; height:24px; padding:0 7px; border-radius:8px; background:#e5efe8; color:#2f6b46; font-size:12.5px; font-weight:700; display:flex; align-items:center; justify-content:center;">3</span>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#b0b2a8" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 6 15 12 9 18"></polyline></svg>
+          </span>
+        </button>
+
+        <button style="display:flex; align-items:center; gap:13px; background:#ffffff; border:1px solid #e8e9e3; border-radius:15px; padding:14px; cursor:pointer; font-family:inherit; text-align:left; box-shadow:0 1px 2px rgba(46,48,42,0.04);">
+          <span style="flex:none; width:38px; height:38px; border-radius:12px; background:#e3edf1; display:flex; align-items:center; justify-content:center;">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#2f5b6f" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="6" width="14" height="12" rx="2.5"></rect><path d="M16 10.5l6-3.5v10l-6-3.5z"></path></svg>
+          </span>
+          <span style="flex:1; min-width:0;">
+            <span style="display:block; font-size:14.5px; font-weight:600; color:#2e302a;">Agendar gravação</span>
+            <span style="display:block; font-size:12px; color:#8b8e82; margin-top:2px;">Vieira Souto e Redentor</span>
+          </span>
+          <span style="flex:none; display:flex; align-items:center; gap:8px;">
+            <span style="min-width:24px; height:24px; padding:0 7px; border-radius:8px; background:#e3edf1; color:#2f5b6f; font-size:12.5px; font-weight:700; display:flex; align-items:center; justify-content:center;">2</span>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#b0b2a8" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 6 15 12 9 18"></polyline></svg>
+          </span>
+        </button>
+
+      </div>
+    </div>
+
+    <!-- ═══ Próximos compromissos ═══ -->
+    <div>
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:11px;">
+        <span style="font-size:10.5px; font-weight:600; letter-spacing:0.09em; text-transform:uppercase; color:#9a9c90;">Próximos compromissos</span>
+        <span style="display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600; color:#8b8e82;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="5" width="18" height="16" rx="2.5"></rect><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+          na Google Agenda
+        </span>
+      </div>
+
+      <div style="font-size:11.5px; font-weight:700; color:#585a4f; margin-bottom:8px; letter-spacing:0.02em;">HOJE · 7 de setembro</div>
+      <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px;">
+        <div style="display:flex; gap:12px; background:#ffffff; border:1px solid #e8e9e3; border-left:3px solid #5a9a6e; border-radius:14px; padding:13px 14px; box-shadow:0 1px 2px rgba(46,48,42,0.04);">
+          <div style="flex:none; width:52px;">
+            <div style="font-size:15px; font-weight:700; color:#2e302a; letter-spacing:-0.01em;">14:00</div>
+            <div style="font-size:11px; color:#9a9c90; margin-top:1px;">1 hora</div>
+          </div>
+          <div style="flex:1; min-width:0; border-left:1px solid #f0f1ec; padding-left:12px;">
+            <div style="font-size:14px; font-weight:600; color:#2e302a; line-height:1.3;">Rua Redentor, 88</div>
+            <div style="font-size:12px; color:#6e7063; margin-top:3px;">Ipanema</div>
+            <span style="display:inline-flex; align-items:center; gap:5px; height:21px; padding:0 8px; margin-top:7px; border-radius:6px; background:#e5efe8; color:#2f6b46; font-size:11px; font-weight:600;">
+              <span style="width:6px; height:6px; border-radius:50%; background:#5a9a6e;"></span>Visita
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div style="font-size:11.5px; font-weight:700; color:#585a4f; margin-bottom:8px; letter-spacing:0.02em;">AMANHÃ · 8 de setembro</div>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <div style="display:flex; gap:12px; background:#ffffff; border:1px solid #e8e9e3; border-left:3px solid #5887a0; border-radius:14px; padding:13px 14px; box-shadow:0 1px 2px rgba(46,48,42,0.04);">
+          <div style="flex:none; width:52px;">
+            <div style="font-size:15px; font-weight:700; color:#2e302a; letter-spacing:-0.01em;">09:30</div>
+            <div style="font-size:11px; color:#9a9c90; margin-top:1px;">2 horas</div>
+          </div>
+          <div style="flex:1; min-width:0; border-left:1px solid #f0f1ec; padding-left:12px;">
+            <div style="font-size:14px; font-weight:600; color:#2e302a; line-height:1.3;">Av. Vieira Souto, 176</div>
+            <div style="font-size:12px; color:#6e7063; margin-top:3px;">Ipanema</div>
+            <span style="display:inline-flex; align-items:center; gap:5px; height:21px; padding:0 8px; margin-top:7px; border-radius:6px; background:#e3edf1; color:#2f5b6f; font-size:11px; font-weight:600;">
+              <span style="width:6px; height:6px; border-radius:50%; background:#5887a0;"></span>Gravação
+            </span>
+          </div>
+        </div>
+        <div style="display:flex; gap:12px; background:#ffffff; border:1px solid #e8e9e3; border-left:3px solid #5a9a6e; border-radius:14px; padding:13px 14px; box-shadow:0 1px 2px rgba(46,48,42,0.04);">
+          <div style="flex:none; width:52px;">
+            <div style="font-size:15px; font-weight:700; color:#2e302a; letter-spacing:-0.01em;">16:00</div>
+            <div style="font-size:11px; color:#9a9c90; margin-top:1px;">1 hora</div>
+          </div>
+          <div style="flex:1; min-width:0; border-left:1px solid #f0f1ec; padding-left:12px;">
+            <div style="font-size:14px; font-weight:600; color:#2e302a; line-height:1.3;">Rua General Urquiza, 96</div>
+            <div style="font-size:12px; color:#6e7063; margin-top:3px;">Leblon</div>
+            <span style="display:inline-flex; align-items:center; gap:5px; height:21px; padding:0 8px; margin-top:7px; border-radius:6px; background:#e5efe8; color:#2f6b46; font-size:11px; font-weight:600;">
+              <span style="width:6px; height:6px; border-radius:50%; background:#5a9a6e;"></span>Visita
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ Pauta de gravação ═══ -->
+    <div>
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:11px;">
+        <span style="font-size:10.5px; font-weight:600; letter-spacing:0.09em; text-transform:uppercase; color:#9a9c90;">Pauta de gravação</span>
+        <button style="display:flex; align-items:center; gap:5px; border:none; background:transparent; color:#9a8d3a; font-size:12px; font-weight:600; font-family:inherit; cursor:pointer; padding:0;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          Nova pauta
+        </button>
+      </div>
+
+      <div style="background:#ffffff; border:1px solid #e8e9e3; border-radius:16px; padding:15px; box-shadow:0 1px 2px rgba(46,48,42,0.04);">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <div>
+            <div style="font-family:'Playfair Display',serif; font-size:17px; font-weight:600; color:#2e302a;">Rodada de setembro</div>
+            <div style="font-size:12px; color:#8b8e82; margin-top:3px;">segunda, 9 de setembro · 4 itens</div>
+          </div>
+          <span style="display:inline-flex; align-items:center; height:23px; padding:0 9px; border-radius:7px; background:#f4f1d4; color:#857727; font-size:11.5px; font-weight:600;">2 de 4</span>
+        </div>
+
+        <div style="margin-top:13px; display:flex; flex-direction:column; gap:1px; background:#f0f1ec; border-radius:11px; overflow:hidden;">
+          <div style="background:#fafbf8; padding:11px 12px; display:flex; align-items:center; gap:10px;">
+            <span style="flex:none; width:19px; height:19px; border-radius:6px; background:#585a4f; display:flex; align-items:center; justify-content:center;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f3f4f0" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+            <span style="flex:1; font-size:13px; color:#9a9c90; text-decoration:line-through;">Vieira Souto, 176 — fachada e varanda</span>
+          </div>
+          <div style="background:#fafbf8; padding:11px 12px; display:flex; align-items:center; gap:10px;">
+            <span style="flex:none; width:19px; height:19px; border-radius:6px; background:#585a4f; display:flex; align-items:center; justify-content:center;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f3f4f0" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+            <span style="flex:1; font-size:13px; color:#9a9c90; text-decoration:line-through;">Jardim Botânico, 674 — sala e cozinha</span>
+          </div>
+          <div style="background:#ffffff; padding:11px 12px; display:flex; align-items:center; gap:10px;">
+            <span style="flex:none; width:19px; height:19px; border-radius:6px; border:1.5px solid #d0d1cb; background:#fff;"></span>
+            <span style="flex:1; font-size:13px; color:#3d3f36; font-weight:500;">Barão da Torre, 480 — quartos</span>
+          </div>
+          <div style="background:#ffffff; padding:11px 12px; display:flex; align-items:center; gap:10px;">
+            <span style="flex:none; width:19px; height:19px; border-radius:6px; border:1.5px solid #d0d1cb; background:#fff;"></span>
+            <span style="flex:1; font-size:13px; color:#3d3f36; font-weight:500;">Drone na orla, se o tempo ajudar</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ Gravadas ═══ -->
+    <div>
+      <div style="font-size:10.5px; font-weight:600; letter-spacing:0.09em; text-transform:uppercase; color:#9a9c90; margin-bottom:11px;">Gravadas</div>
+      <button style="width:100%; display:flex; align-items:center; gap:14px; background:linear-gradient(150deg,#3d3f36,#585a4f); border:none; border-radius:16px; padding:16px; cursor:pointer; font-family:inherit; text-align:left; box-shadow:0 12px 28px -14px rgba(46,48,42,0.55);">
+        <span style="flex:1; min-width:0;">
+          <span style="display:block; font-family:'Playfair Display',serif; font-size:29px; font-weight:600; color:#f3f4f0; line-height:1;">7</span>
+          <span style="display:block; font-size:12.5px; color:#cfd0c9; margin-top:6px;">gravações em setembro · 5 já no sistema</span>
+        </span>
+        <span style="flex:none; width:34px; height:34px; border-radius:11px; background:rgba(216,203,106,0.22); display:flex; align-items:center; justify-content:center;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#d8cb6a" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 6 15 12 9 18"></polyline></svg>
+        </span>
+      </button>
+    </div>
+
+  </div>
+
+  <!-- Abas -->
+  <div style="flex:none; display:flex; align-items:stretch; background:rgba(252,252,251,0.97); border-top:1px solid #e2e3dd; padding:7px 6px 11px;">
+    <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;">
+      <div style="position:relative; width:54px; height:27px; border-radius:14px; display:flex; align-items:center; justify-content:center;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9a9c90" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"></path><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
+        <span style="position:absolute; top:-3px; right:6px; min-width:17px; height:17px; padding:0 4px; border-radius:9px; background:#585a4f; color:#f3f4f0; font-size:9.5px; font-weight:700; display:flex; align-items:center; justify-content:center; border:2px solid #fcfcfb;">7</span>
+      </div>
+      <span style="font-size:10.5px; font-weight:500; color:#9a9c90;">Decidir</span>
+    </div>
+    <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;">
+      <div style="width:54px; height:27px; border-radius:14px; display:flex; align-items:center; justify-content:center;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9a9c90" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M8.5 12.5l2.5 2.5 4.5-5"></path></svg>
+      </div>
+      <span style="font-size:10.5px; font-weight:500; color:#9a9c90;">Aprovadas</span>
+    </div>
+    <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;">
+      <div style="width:54px; height:27px; border-radius:14px; background:#e6e8e1; display:flex; align-items:center; justify-content:center;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3d3f36" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="16" rx="2.5"></rect><line x1="3" y1="10" x2="21" y2="10"></line><line x1="8" y1="3" x2="8" y2="7"></line><line x1="16" y1="3" x2="16" y2="7"></line></svg>
+      </div>
+      <span style="font-size:10.5px; font-weight:600; color:#3d3f36;">Agenda</span>
+    </div>
+    <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;">
+      <div style="position:relative; width:54px; height:27px; border-radius:14px; display:flex; align-items:center; justify-content:center;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9a9c90" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"></circle><line x1="9" y1="9" x2="15" y2="15"></line><line x1="15" y1="9" x2="9" y2="15"></line></svg>
+        <span style="position:absolute; top:-3px; right:6px; min-width:17px; height:17px; padding:0 4px; border-radius:9px; background:#a85a5a; color:#fff; font-size:9.5px; font-weight:700; display:flex; align-items:center; justify-content:center; border:2px solid #fcfcfb;">3</span>
+      </div>
+      <span style="font-size:10.5px; font-weight:500; color:#9a9c90;">Negativadas</span>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":390,"height":1360}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

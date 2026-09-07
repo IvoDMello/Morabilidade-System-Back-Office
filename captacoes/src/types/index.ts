@@ -54,11 +54,29 @@ export const DECISAO_LABEL: Record<Decisao, string> = {
   reprovada: "Reprovada",
 };
 
-/** Critérios de ordenação dentro de cada coluna. */
-export type Ordenacao = "manual" | "recentes" | "antigas" | "valor_desc" | "valor_asc" | "paradas";
+/**
+ * Etapa: onde a captação está no fluxo. Exatamente UMA por captação, derivada
+ * do `status` (ver lib/etapa.ts). É o eixo das abas.
+ *
+ * Não confundir com Lista, que é como a equipe organiza — várias por captação.
+ */
+export type Etapa = "decidir" | "aprovada" | "negativada" | "publicada";
+
+export const ETAPA_LABEL: Record<Etapa, string> = {
+  decidir: "Decidir",
+  aprovada: "Aprovadas",
+  negativada: "Negativadas",
+  publicada: "Publicadas",
+};
+
+/**
+ * Critérios de ordenação da lista. "sequencia" é a ordem manual — e é ela
+ * que define a sequência de gravação dentro da lista aberta.
+ */
+export type Ordenacao = "sequencia" | "recentes" | "antigas" | "valor_desc" | "valor_asc" | "paradas";
 
 export const ORDENACAO_LABEL: Record<Ordenacao, string> = {
-  manual: "Ordem manual",
+  sequencia: "Sequência (manual)",
   recentes: "Mais recentes",
   antigas: "Mais antigas",
   valor_desc: "Maior valor",
@@ -66,20 +84,84 @@ export const ORDENACAO_LABEL: Record<Ordenacao, string> = {
   paradas: "Paradas há mais tempo",
 };
 
+/** Recortes de situação do painel de filtros (seleção múltipla, OU entre eles). */
+export const SITUACOES = [
+  "sem_agendamento",
+  "visita_agendada",
+  "gravacao_agendada",
+  "gravada",
+  "nao_gravada",
+  "no_sistema",
+  "paradas",
+] as const;
+
+export type Situacao = (typeof SITUACOES)[number];
+
+export const SITUACAO_LABEL: Record<Situacao, string> = {
+  sem_agendamento: "Sem agendamento",
+  visita_agendada: "Com visita agendada",
+  gravacao_agendada: "Com gravação agendada",
+  gravada: "Já gravada",
+  nao_gravada: "Não gravada",
+  no_sistema: "Já cadastrada no sistema",
+  paradas: "Paradas há 3+ dias",
+};
+
 /** Filtros estruturados aplicados além da busca por texto. */
 export interface Criterios {
+  listas: string[];
+  bairros: string[];
   valorMin: number | null;
   valorMax: number | null;
+  metragemMin: number | null;
+  metragemMax: number | null;
   quartosMin: number | null;
-  soParadas: boolean;
+  suitesMin: number | null;
+  vagasMin: number | null;
+  entradaDe: string | null;
+  entradaAte: string | null;
+  situacoes: Situacao[];
 }
 
 export const CRITERIOS_VAZIO: Criterios = {
+  listas: [],
+  bairros: [],
   valorMin: null,
   valorMax: null,
+  metragemMin: null,
+  metragemMax: null,
   quartosMin: null,
-  soParadas: false,
+  suitesMin: null,
+  vagasMin: null,
+  entradaDe: null,
+  entradaAte: null,
+  situacoes: [],
 };
+
+/** Paleta das listas — as seis do app de atendimento, no olive/gold daqui. */
+export const CORES_LISTA = ["cinza", "azul", "verde", "ambar", "rosa", "violeta"] as const;
+
+export type CorLista = (typeof CORES_LISTA)[number];
+
+export interface Lista {
+  id: string;
+  nome: string;
+  cor: CorLista;
+  /** Aparece sempre na barra; as de migração ficam recolhidas. */
+  permanente: boolean;
+  ordem: number;
+  criado_por: string | null;
+  criado_em: string;
+  atualizado_em: string;
+}
+
+/** Vínculo captação ↔ lista. `ordem` é a sequência de gravação DENTRO da lista. */
+export interface CaptacaoLista {
+  captacao_id: string;
+  lista_id: string;
+  ordem: number;
+  criado_em: string;
+}
 
 export interface Captacao {
   id: string;
@@ -112,8 +194,22 @@ export interface Captacao {
   gaveta_revisao_em: string | null;
   visita_concluida: boolean;
   visita_data: string | null;
+  /** Data e hora da visita (v2). Nulo em agendamento antigo — cair em `visita_data`. */
+  visita_em: string | null;
+  visita_duracao_min: number;
+  visita_google_event_id: string | null;
   gravacao_concluida: boolean;
   gravacao_data: string | null;
+  gravacao_em: string | null;
+  gravacao_duracao_min: number;
+  gravacao_google_event_id: string | null;
+  /** Motivo da reprovação: é o que vai ser dito ao proprietário no retorno. */
+  decisao_motivo: string | null;
+  retorno_responsavel: string | null;
+  retorno_prazo: string | null;
+  retorno_feito: boolean;
+  retorno_feito_em: string | null;
+  retorno_feito_por: string | null;
   capa_path: string | null;
   share_token: string | null;
   imovel_id: string | null;

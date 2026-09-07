@@ -8,7 +8,7 @@ export default function CaptacaoNotFound() {
       <h1 className="text-lg font-semibold">Captação não encontrada</h1>
       <p className="text-sm text-muted-foreground">Ela pode ter sido excluída.</p>
       <Button variant="outline" asChild>
-        <Link href="/board">
+        <Link href="/decidir">
           <ArrowLeft className="h-4 w-4" /> Voltar ao quadro
         </Link>
       </Button>

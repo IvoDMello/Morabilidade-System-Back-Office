@@ -1,8 +1,8 @@
 {
   "name": "Captações · Morabilidade",
   "short_name": "Captações",
-  "description": "Kanban de captações de imóveis",
-  "start_url": "/board",
+  "description": "Captações de imóveis: decidir, agendar e acompanhar",
+  "start_url": "/decidir",
   "display": "standalone",
   "background_color": "#585a4f",
   "theme_color": "#585a4f",

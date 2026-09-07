@@ -15,12 +15,28 @@ import { Documentos } from "@/components/captacao/Documentos";
 import { ExcluirCaptacao } from "@/components/captacao/ExcluirCaptacao";
 import { CompartilharCaptacao } from "@/components/captacao/CompartilharCaptacao";
 import { Historico } from "@/components/captacao/Historico";
+import { ListasDaCaptacao } from "@/components/captacao/ListasDaCaptacao";
 import { Opinioes } from "@/components/captacao/Opinioes";
 import { createClient } from "@/lib/supabase/server";
 import { STATUS_STYLE } from "@/lib/status-style";
+import { etapaDaCaptacao } from "@/lib/etapa";
 import type { Captacao, Documento, Midia, Opiniao, Perfil } from "@/types";
 
 export const dynamic = "force-dynamic";
+
+const VOLTAR_HREF: Record<string, string> = {
+  decidir: "/decidir",
+  aprovada: "/aprovadas",
+  negativada: "/negativadas",
+  publicada: "/aprovadas",
+};
+
+const VOLTAR_LABEL: Record<string, string> = {
+  decidir: "Decidir",
+  aprovada: "Aprovadas",
+  negativada: "Negativadas",
+  publicada: "Aprovadas",
+};
 
 export default async function CaptacaoPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -44,13 +60,16 @@ export default async function CaptacaoPage({ params }: { params: Promise<{ id: s
   const ramoAgendamento =
     c.status === "pendente_agendar_visita" || c.status === "pendente_agendar_gravacao";
   const st = STATUS_STYLE[c.status];
+  // Voltar leva para a aba de onde a captação veio, não para um quadro genérico.
+  const etapa = etapaDaCaptacao(c);
+  const voltarPara = VOLTAR_HREF[etapa];
 
   return (
     <main className="min-h-dvh bg-[#f3f4f0] pb-28">
       {/* Top bar */}
       <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[#e6e7e1] bg-white px-4 py-2.5">
-        <Link href="/board" className="inline-flex items-center gap-1.5 text-sm font-medium text-[#4a4d43]">
-          <ArrowLeft className="h-4 w-4" /> Voltar ao quadro
+        <Link href={voltarPara} className="inline-flex items-center gap-1.5 text-sm font-medium text-[#4a4d43]">
+          <ArrowLeft className="h-4 w-4" /> {VOLTAR_LABEL[etapa]}
         </Link>
         <ExcluirCaptacao id={c.id} />
       </div>
@@ -63,6 +82,9 @@ export default async function CaptacaoPage({ params }: { params: Promise<{ id: s
         >
           <span className="h-2 w-2 rounded-full" style={{ backgroundColor: st.dot }} /> {st.label}
         </span>
+        <div className="mt-2.5">
+          <ListasDaCaptacao captacaoId={c.id} />
+        </div>
         <h1 className="mt-3 font-serif text-[25px] font-semibold leading-[1.18] tracking-[-0.01em] text-[#2e302a]">
           {c.endereco}
           {c.unidade && <span className="text-[#7a7d70]"> · ap {c.unidade}</span>}
@@ -243,7 +265,7 @@ export default async function CaptacaoPage({ params }: { params: Promise<{ id: s
       </Card>
       </div>
 
-      <DecisaoBar captacao={c} />
+      <DecisaoBar captacao={c} perfis={(perfis ?? []) as Perfil[]} userId={auth.user?.id ?? ""} />
     </main>
   );
 }

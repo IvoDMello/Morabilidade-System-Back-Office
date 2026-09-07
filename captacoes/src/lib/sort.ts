@@ -40,11 +40,37 @@ export function priorizarRevisaoGaveta(cards: Captacao[]): Captacao[] {
 }
 
 /**
- * Ordena uma coluna conforme o critério escolhido, sem mutar a lista.
- * "manual" preserva a ordem já vinda do store (campo `ordem`).
+ * Sequência manual da lista aberta: a ordem em que as captações vão ser
+ * gravadas. Cada lista tem a sua (`captacao_lista.ordem`); na visão "Todas"
+ * vale a ordem geral do cartão (`captacao.ordem`).
+ *
+ * Quem não tem posição na lista vai para o fim, nunca para o topo por
+ * acidente; empate cai no id, para a ordem não dançar entre renderizações.
  */
-export function ordenarCaptacoes(cards: Captacao[], ord: Ordenacao): Captacao[] {
-  if (ord === "manual") return cards;
+export function ordenarPorSequencia(
+  cards: Captacao[],
+  ordemPorId?: Map<string, number>
+): Captacao[] {
+  const chave = (c: Captacao) =>
+    ordemPorId ? (ordemPorId.get(c.id) ?? Number.POSITIVE_INFINITY) : c.ordem;
+  return [...cards].sort((a, b) => {
+    const ka = chave(a);
+    const kb = chave(b);
+    if (ka !== kb) return ka < kb ? -1 : 1;
+    return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+  });
+}
+
+/**
+ * Ordena a lista conforme o critério escolhido, sem mutar a original.
+ * "sequencia" é a ordem manual — ver `ordenarPorSequencia`.
+ */
+export function ordenarCaptacoes(
+  cards: Captacao[],
+  ord: Ordenacao,
+  ordemPorId?: Map<string, number>
+): Captacao[] {
+  if (ord === "sequencia") return ordenarPorSequencia(cards, ordemPorId);
   const arr = [...cards];
   switch (ord) {
     case "recentes":

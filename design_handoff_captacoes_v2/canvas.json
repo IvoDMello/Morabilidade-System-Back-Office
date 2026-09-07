@@ -1,0 +1,78 @@
+{
+  "pages": [
+    { "id": "page-1", "name": "Telas principais" },
+    { "id": "page-2", "name": "Diálogos e negativas" },
+    { "id": "page-3", "name": "Desktop e estados" }
+  ],
+  "artboards": [
+    { "file": "Decidir.dc.html",   "page": "page-1", "x": 0,    "y": 0, "w": 390, "h": 1280, "title": "Decidir" },
+    { "file": "Main.dc.html",      "page": "page-1", "x": 510,  "y": 0, "w": 390, "h": 844,  "title": "Aprovadas", "is_interactive": true },
+    { "file": "Sequencia.dc.html", "page": "page-1", "x": 1020, "y": 0, "w": 390, "h": 844,  "title": "Aprovadas — sequência de gravação" },
+    { "file": "Filtrada.dc.html",  "page": "page-1", "x": 1530, "y": 0, "w": 390, "h": 844,  "title": "Aprovadas — filtrada" },
+    { "file": "Agenda.dc.html",    "page": "page-1", "x": 2040, "y": 0, "w": 390, "h": 1360, "title": "Agenda" },
+    { "file": "Gravadas.dc.html",  "page": "page-1", "x": 2550, "y": 0, "w": 390, "h": 1000, "title": "Gravadas" },
+
+    { "file": "Filtros.dc.html",              "page": "page-2", "x": 0,    "y": 0, "w": 390, "h": 1300, "title": "Filtros" },
+    { "file": "NovaLista.dc.html",            "page": "page-2", "x": 510,  "y": 0, "w": 390, "h": 844,  "title": "Nova lista" },
+    { "file": "AgendarVisita.dc.html",        "page": "page-2", "x": 1020, "y": 0, "w": 390, "h": 844,  "title": "Agendar visita" },
+    { "file": "Reprovar.dc.html",             "page": "page-2", "x": 1530, "y": 0, "w": 390, "h": 844,  "title": "Reprovar captação" },
+    { "file": "RetornosPendentes.dc.html",    "page": "page-2", "x": 2040, "y": 0, "w": 390, "h": 1220, "title": "Negativadas — retornos pendentes" },
+    { "file": "NegativadasHistorico.dc.html", "page": "page-2", "x": 2550, "y": 0, "w": 390, "h": 900,  "title": "Negativadas — histórico" },
+    { "file": "Detalhe.dc.html",              "page": "page-2", "x": 3060, "y": 0, "w": 390, "h": 1860, "title": "Detalhe da captação" },
+
+    { "file": "AprovadasDesktop.dc.html", "page": "page-3", "x": 0,    "y": 0,    "w": 1440, "h": 900, "title": "Aprovadas — desktop" },
+    { "file": "GravadasDesktop.dc.html",  "page": "page-3", "x": 1560, "y": 0,    "w": 1440, "h": 900, "title": "Gravadas — desktop" },
+    { "file": "Vazios.dc.html",           "page": "page-3", "x": 0,    "y": 1060, "w": 1944, "h": 600, "title": "Estados vazios" }
+  ],
+  "annotations": [
+    {
+      "id": "nota-listas",
+      "page": "page-1",
+      "x": 510,
+      "y": -190,
+      "w": 400,
+      "text": "A virada da v2: as colunas do Kanban viram ETAPA (uma só por captação) + LISTAS (várias).\n\nGaveta e Seleção Especial deixam de ser coluna e viram lista colorida. Achar imóvel passa a ser filtrar, não navegar entre colunas.\n\nEsta tela tem os controles funcionando: clique nas pills para filtrar."
+    },
+    {
+      "id": "nota-sequencia",
+      "page": "page-1",
+      "x": 1020,
+      "y": -190,
+      "w": 400,
+      "text": "A ordem manual da lista É a sequência de gravação, e é por lista — a fila de Prioridade não é a de Todas.\n\nArrastar na vertical dentro de uma lista funciona bem no dedo, ao contrário de arrastar entre colunas. Setas ↑↓ como alternativa.\n\nSustentado pela coluna `ordem` (fractional indexing) que já existe no banco."
+    },
+    {
+      "id": "nota-agenda",
+      "page": "page-1",
+      "x": 2040,
+      "y": -190,
+      "w": 400,
+      "text": "Substitui as três colunas \"pendente de…\".\n\nVisita e gravação viram compromissos com hora, espelhados na conta única da Morabilidade no Google Agenda (mesmo mecanismo já em produção no app de atendimento).\n\nO retorno negativo NÃO está aqui — é tarefa com dono e prazo, vive na aba Negativadas."
+    },
+    {
+      "id": "nota-gravadas",
+      "page": "page-1",
+      "x": 2550,
+      "y": -190,
+      "w": 400,
+      "text": "Contabilidade: quantas gravações, em que data, e o código do imóvel no sistema.\n\nQuando falta o código, o chip vazado \"não cadastrada\" transforma a ausência numa pendência visível.\n\nLê dados que já existem: gravacao_data, imovel_codigo, cadastrado_em, publicada_em."
+    },
+    {
+      "id": "nota-retornos",
+      "page": "page-2",
+      "x": 2040,
+      "y": -230,
+      "w": 400,
+      "text": "O motivo da reprovação é conteúdo de PRIMEIRA linha aqui — é o que a pessoa precisa ter na ponta da língua ao ligar para o proprietário.\n\nFiltro \"Suas\" ligado por padrão. Reprovar passa a coletar motivo + responsável (padrão Ivo, trocável) + prazo.\n\nAtrasados primeiro, em tom de alerta."
+    },
+    {
+      "id": "nota-migracao",
+      "page": "page-3",
+      "x": 0,
+      "y": -230,
+      "w": 460,
+      "text": "MIGRAÇÃO DOS DADOS\n\nCada captação carrega para a v2 uma lista com o nome exato da coluna em que está hoje — nada de classificação se perde.\n\nGaveta e Seleção Especial nascem permanentes; as demais são listas de migração, descartáveis depois.\n\nRegra técnica: migração aditiva. Nada de remover valor do enum status nem renomear coluna — é o que permite o rollback para a v1 sem rollback de banco, e o cron de arquivamento lê status direto."
+    }
+  ],
+  "launch": { "view": "canvas", "page": "page-1" }
+}

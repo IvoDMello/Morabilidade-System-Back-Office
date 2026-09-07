@@ -51,7 +51,7 @@ export function PublicarCaptacao({ captacao }: { captacao: Captacao }) {
       return;
     }
     toast.success("Captação publicada. Movida para a aba Publicadas.");
-    router.push("/board");
+    router.push("/aprovadas");
     router.refresh();
   }
 

@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { toast } from "sonner";
 import { usePauta } from "@/stores/pauta";
-import { useBoard } from "@/stores/board";
+import { useApp } from "@/stores/app";
 import { ordemNoFim } from "@/lib/pauta";
 import {
   atualizarItem,
@@ -32,7 +32,7 @@ import type { PautaDados } from "@/components/pauta/PautaDialog";
 export function usePautaAcoes() {
   return useMemo(() => {
     async function comSalvamento<T>(fn: () => Promise<T>): Promise<T> {
-      const { beginSave, endSave } = useBoard.getState();
+      const { beginSave, endSave } = useApp.getState();
       beginSave();
       const r = await fn();
       endSave(!!r);

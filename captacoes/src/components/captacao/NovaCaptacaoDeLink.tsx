@@ -38,7 +38,7 @@ export function NovaCaptacaoDeLink() {
       trigger={<span className="sr-only" aria-hidden />}
       // Fechou (salvando ou desistindo): tira os parâmetros para um F5 não
       // reabrir o formulário com dados que já viraram cartão.
-      onClose={() => router.replace("/board")}
+      onClose={() => router.replace("/decidir")}
     />
   );
 }

@@ -69,6 +69,19 @@
   }
 }
 
+@layer utilities {
+  /* Fitas roláveis (pills de lista, filtros, agenda) sem barra visível: a
+     rolagem lateral é descoberta pelo gesto, e a barra roubava altura em
+     telas pequenas. */
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* Respeita usuários que pedem menos movimento (acessibilidade). */
 @media (prefers-reduced-motion: reduce) {
   *,

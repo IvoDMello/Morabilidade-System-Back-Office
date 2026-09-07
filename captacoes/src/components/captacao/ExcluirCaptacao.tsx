@@ -35,7 +35,7 @@ export function ExcluirCaptacao({ id }: { id: string }) {
       return;
     }
     toast.success("Captação excluída.");
-    router.push("/board");
+    router.push("/decidir");
     router.refresh();
   }
 

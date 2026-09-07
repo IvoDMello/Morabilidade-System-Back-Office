@@ -41,7 +41,7 @@ export default function LoginPage() {
     }
     // Recarga real (não navegação interna): garante que o cookie de sessão
     // recém-gravado seja enviado ao middleware na 1ª tentativa.
-    window.location.assign("/board");
+    window.location.assign("/decidir");
   }
 
   return (

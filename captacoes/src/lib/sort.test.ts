@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { ordenarCaptacoes, priorizarRevisaoGaveta } from "./sort";
+import { ordenarCaptacoes, ordenarPorSequencia, priorizarRevisaoGaveta } from "./sort";
 import type { Captacao } from "@/types";
 
 function card(p: Partial<Captacao>): Captacao {
@@ -21,8 +21,8 @@ const lista = [
 ];
 
 describe("ordenarCaptacoes", () => {
-  it("manual preserva a referência original", () => {
-    expect(ordenarCaptacoes(lista, "manual")).toBe(lista);
+  it("sequência sem posições por lista cai na ordem do cartão", () => {
+    expect(ordenarCaptacoes(lista, "sequencia").map((c) => c.id)).toEqual(lista.map((c) => c.id));
   });
   it("recentes ordena por criado_em desc", () => {
     expect(ordenarCaptacoes(lista, "recentes").map((c) => c.id)).toEqual(["b", "c", "a"]);
@@ -69,5 +69,40 @@ describe("priorizarRevisaoGaveta", () => {
   it("lista com menos de dois cards de gaveta volta intacta", () => {
     const cards = [card({ id: "x", status: "novas" }), card({ id: "a", status: "gaveta" })];
     expect(priorizarRevisaoGaveta(cards)).toBe(cards);
+  });
+});
+
+describe("ordenarPorSequencia", () => {
+  const fila = [
+    card({ id: "x", ordem: 300 }),
+    card({ id: "y", ordem: 100 }),
+    card({ id: "z", ordem: 200 }),
+  ];
+
+  it("sem mapa, usa a ordem geral do cartão", () => {
+    expect(ordenarPorSequencia(fila).map((c) => c.id)).toEqual(["y", "z", "x"]);
+  });
+
+  it("com mapa, usa a sequência daquela lista", () => {
+    const naLista = new Map([
+      ["x", 10],
+      ["y", 30],
+      ["z", 20],
+    ]);
+    expect(ordenarPorSequencia(fila, naLista).map((c) => c.id)).toEqual(["x", "z", "y"]);
+  });
+
+  it("quem não está na lista vai para o fim, nunca para o topo", () => {
+    const naLista = new Map([
+      ["z", 20],
+      ["x", 10],
+    ]);
+    expect(ordenarPorSequencia(fila, naLista).map((c) => c.id)).toEqual(["x", "z", "y"]);
+  });
+
+  it("não muta o array recebido", () => {
+    const antes = fila.map((c) => c.id);
+    ordenarPorSequencia(fila);
+    expect(fila.map((c) => c.id)).toEqual(antes);
   });
 });

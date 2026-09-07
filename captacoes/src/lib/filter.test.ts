@@ -99,18 +99,51 @@ describe("filtrarPorCriterios", () => {
     const r = filtrarPorCriterios(porValor, { ...CRITERIOS_VAZIO, quartosMin: 3 });
     expect(r.map((c) => c.id)).toEqual(["medio", "caro"]);
   });
-  it("soParadas mantém só atualização antiga", () => {
+  it("situação 'paradas' mantém só atualização antiga", () => {
     const lst = [card({ id: "velho", atualizado_em: ontem() }), card({ id: "novo", atualizado_em: agora() })];
-    const r = filtrarPorCriterios(lst, { ...CRITERIOS_VAZIO, soParadas: true });
+    const r = filtrarPorCriterios(lst, { ...CRITERIOS_VAZIO, situacoes: ["paradas"] });
     expect(r.map((c) => c.id)).toEqual(["velho"]);
   });
-  it("soParadas ignora Gaveta e Seleção Especial mesmo com atualização antiga", () => {
+  it("situação 'paradas' ignora Gaveta e Seleção Especial mesmo com atualização antiga", () => {
     const lst = [
+      card({ id: "velho", atualizado_em: ontem() }),
       card({ id: "gaveta", status: "gaveta", atualizado_em: ontem() }),
       card({ id: "especial", status: "selecao_especial", atualizado_em: ontem() }),
-      card({ id: "velho", atualizado_em: ontem() }),
     ];
-    const r = filtrarPorCriterios(lst, { ...CRITERIOS_VAZIO, soParadas: true });
+    const r = filtrarPorCriterios(lst, { ...CRITERIOS_VAZIO, situacoes: ["paradas"] });
     expect(r.map((c) => c.id)).toEqual(["velho"]);
+  });
+  it("metragem mínima e máxima descartam nulos", () => {
+    const lst = [card({ id: "p", metragem: 80 }), card({ id: "g", metragem: 200 }), card({ id: "sem" })];
+    expect(filtrarPorCriterios(lst, { ...CRITERIOS_VAZIO, metragemMin: 100 }).map((c) => c.id)).toEqual(["g"]);
+    expect(filtrarPorCriterios(lst, { ...CRITERIOS_VAZIO, metragemMax: 100 }).map((c) => c.id)).toEqual(["p"]);
+  });
+  it("bairros filtram por OU", () => {
+    const lst = [card({ id: "a", bairro: "Ipanema" }), card({ id: "b", bairro: "Leblon" }), card({ id: "c", bairro: "Tijuca" })];
+    const r = filtrarPorCriterios(lst, { ...CRITERIOS_VAZIO, bairros: ["Ipanema", "Leblon"] });
+    expect(r.map((c) => c.id)).toEqual(["a", "b"]);
+  });
+  it("listas usam o contexto e descartam quem não tem vínculo", () => {
+    const lst = [card({ id: "a" }), card({ id: "b" })];
+    const ctx = { listasPorCaptacao: new Map([["a", ["L1"]]]) };
+    expect(filtrarPorCriterios(lst, { ...CRITERIOS_VAZIO, listas: ["L1"] }, ctx).map((c) => c.id)).toEqual(["a"]);
+    expect(filtrarPorCriterios(lst, { ...CRITERIOS_VAZIO, listas: ["L2"] }, ctx)).toHaveLength(0);
+  });
+  it("situações diferentes valem OU entre si", () => {
+    const lst = [
+      card({ id: "gravada", gravacao_concluida: true }),
+      card({ id: "sistema", imovel_codigo: "MOR-1" }),
+      card({ id: "nada" }),
+    ];
+    const r = filtrarPorCriterios(lst, { ...CRITERIOS_VAZIO, situacoes: ["gravada", "no_sistema"] });
+    expect(r.map((c) => c.id)).toEqual(["gravada", "sistema"]);
+  });
+  it("período de entrada usa decisao_em quando existe", () => {
+    const lst = [
+      card({ id: "dentro", criado_em: "2026-01-01T00:00:00Z", decisao_em: "2026-06-15T10:00:00Z" }),
+      card({ id: "fora", criado_em: "2026-01-01T00:00:00Z", decisao_em: "2026-08-15T10:00:00Z" }),
+    ];
+    const r = filtrarPorCriterios(lst, { ...CRITERIOS_VAZIO, entradaDe: "2026-06-01", entradaAte: "2026-06-30" });
+    expect(r.map((c) => c.id)).toEqual(["dentro"]);
   });
 });

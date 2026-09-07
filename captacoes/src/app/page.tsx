@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 
 export default function Home() {
-  redirect("/board");
+  // Decidir é a tela de abertura: é a fila que espera ação.
+  redirect("/decidir");
 }

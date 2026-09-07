@@ -1,0 +1,256 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *{ box-sizing:border-box; }
+    body{ margin:0; }
+    a{ color:#9a8d3a; } a:hover{ color:#7d7230; }
+    .noscroll::-webkit-scrollbar{ display:none; }
+    .noscroll{ scrollbar-width:none; }
+    .cell{ background:#fff; padding:11px 13px; }
+    .lbl{ font-size:10px; font-weight:600; letter-spacing:0.05em; text-transform:uppercase; color:#9a9c90; }
+    .val{ font-size:14px; font-weight:600; color:#3d3f36; margin-top:3px; }
+    .sec{ background:#fff; border:1px solid #e8e9e3; border-radius:18px; padding:17px; box-shadow:0 1px 2px rgba(46,48,42,0.04); }
+    .sech{ font-family:'Playfair Display',serif; font-weight:600; font-size:17px; color:#2e302a; }
+  </style>
+</helmet>
+
+<div style="width:390px; height:1860px; background:#f3f4f0; font-family:'Inter',system-ui,sans-serif; display:flex; flex-direction:column; overflow:hidden;">
+
+  <!-- Top bar -->
+  <div style="flex:none; background:#ffffff; border-bottom:1px solid #e6e7e1; padding:13px 16px; display:flex; align-items:center; justify-content:space-between;">
+    <button style="display:flex; align-items:center; gap:7px; border:none; background:transparent; color:#4a4d43; font-size:13.5px; font-weight:600; font-family:inherit; cursor:pointer; padding:0;">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+      Aprovadas
+    </button>
+    <div style="display:flex; align-items:center; gap:8px;">
+      <button style="width:32px; height:32px; border:none; background:#f3f4f0; border-radius:10px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#585a4f;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="2.6"></circle><circle cx="6" cy="12" r="2.6"></circle><circle cx="18" cy="19" r="2.6"></circle><line x1="8.3" y1="10.8" x2="15.7" y2="6.2"></line><line x1="8.3" y1="13.2" x2="15.7" y2="17.8"></line></svg>
+      </button>
+      <button style="width:32px; height:32px; border:none; background:#f7ecec; border-radius:10px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#a85a5a;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 21 6"></polyline><path d="M8 6V4.5A1.5 1.5 0 0 1 9.5 3h5A1.5 1.5 0 0 1 16 4.5V6"></path><path d="M5.5 6l1 14a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1l1-14"></path></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Hero -->
+  <div style="flex:none; background:#ffffff; padding:16px 18px 18px;">
+    <div style="display:flex; flex-wrap:wrap; align-items:center; gap:7px;">
+      <span style="display:inline-flex; align-items:center; gap:6px; height:25px; padding:0 10px; border-radius:8px; background:#e5efe8; color:#2f6b46; font-size:11.5px; font-weight:600;">
+        <span style="width:7px; height:7px; border-radius:50%; background:#5a9a6e;"></span>Pendente agendar visita
+      </span>
+      <span style="display:inline-flex; align-items:center; gap:5px; height:25px; padding:0 10px; border-radius:8px; background:#f4f1d4; color:#857727; font-size:11.5px; font-weight:600;">
+        <span style="width:6px; height:6px; border-radius:50%; background:#c5b54a;"></span>Prioridade
+      </span>
+      <button style="display:inline-flex; align-items:center; gap:5px; height:25px; padding:0 9px; border-radius:8px; background:#fff; border:1px dashed #c8cac1; color:#6e7063; font-size:11.5px; font-weight:600; font-family:inherit; cursor:pointer;">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        Lista
+      </button>
+    </div>
+
+    <div style="font-family:'Playfair Display',serif; font-weight:600; font-size:25px; line-height:1.18; letter-spacing:-0.01em; color:#2e302a; margin-top:12px;">Rua Barão da Torre, 480 / 802</div>
+    <div style="display:flex; align-items:center; gap:6px; margin-top:7px; color:#6e7063; font-size:13.5px; font-weight:500;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9a8d3a" strokeWidth="2" strokeLinecap="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"></path><circle cx="12" cy="10" r="2.6"></circle></svg>
+      Ipanema · 8º andar
+    </div>
+
+    <div style="display:flex; gap:9px; margin-top:15px;">
+      <div style="flex:1; display:flex; align-items:center; gap:9px; background:#eef4f0; border:1px solid #d8e7df; border-radius:13px; padding:9px 12px; min-width:0;">
+        <div style="flex:none; width:32px; height:32px; border-radius:50%; background:#dff0e5; color:#2f6b46; display:flex; align-items:center; justify-content:center;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.5 8.5 0 0 1-3.8-.9L3 21l2-5.2A8.4 8.4 0 0 1 12 3a8.4 8.4 0 0 1 9 8.5z"></path></svg>
+        </div>
+        <div style="min-width:0;">
+          <div style="font-size:13px; font-weight:600; color:#2e302a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Helena Braga</div>
+          <div style="font-size:11.5px; color:#5f7d6c;">(21) 99xxx-4402</div>
+        </div>
+      </div>
+      <button style="flex:none; display:flex; align-items:center; gap:7px; background:#faf7e8; border:1px solid #ece4b8; border-radius:13px; padding:0 14px; color:#9a8d3a; font-size:13px; font-weight:600; font-family:inherit; cursor:pointer;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"></path><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"></path></svg>
+        Anúncio
+      </button>
+    </div>
+  </div>
+
+  <!-- Conteúdo -->
+  <div style="flex:1; min-height:0; overflow-y:auto; padding:14px 18px 18px; display:flex; flex-direction:column; gap:13px;">
+
+    <!-- Situação -->
+    <div class="sec">
+      <div class="sech" style="margin-bottom:13px;">Situação</div>
+      <div style="display:flex; flex-direction:column; gap:1px; background:#eef0ea; border:1px solid #eef0ea; border-radius:12px; overflow:hidden;">
+        <div style="background:#fff; padding:12px 13px; display:flex; align-items:center; gap:11px;">
+          <span style="flex:none; width:24px; height:24px; border-radius:8px; background:#e5efe8; display:flex; align-items:center; justify-content:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2f6b46" strokeWidth="2.4" strokeLinecap="round"><path d="M3 10.5L12 4l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"></path></svg></span>
+          <span style="flex:1; font-size:13.5px; color:#3d3f36; font-weight:500;">Visita</span>
+          <span style="font-size:12.5px; font-weight:600; color:#9a3b3b;">a agendar</span>
+        </div>
+        <div style="background:#fff; padding:12px 13px; display:flex; align-items:center; gap:11px;">
+          <span style="flex:none; width:24px; height:24px; border-radius:8px; background:#e3edf1; display:flex; align-items:center; justify-content:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2f5b6f" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="6" width="14" height="12" rx="2.5"></rect><path d="M16 10.5l6-3.5v10l-6-3.5z"></path></svg></span>
+          <span style="flex:1; font-size:13.5px; color:#3d3f36; font-weight:500;">Gravação</span>
+          <span style="font-size:12.5px; font-weight:600; color:#b0b2a8;">—</span>
+        </div>
+        <div style="background:#fff; padding:12px 13px; display:flex; align-items:center; gap:11px;">
+          <span style="flex:none; width:24px; height:24px; border-radius:8px; background:#faf9ef; display:flex; align-items:center; justify-content:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9a8d3a" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"></rect><line x1="8" y1="9" x2="16" y2="9"></line><line x1="8" y1="14" x2="13" y2="14"></line></svg></span>
+          <span style="flex:1; font-size:13.5px; color:#3d3f36; font-weight:500;">No sistema</span>
+          <span style="font-size:12.5px; font-weight:600; color:#b0b2a8;">não cadastrada</span>
+        </div>
+      </div>
+      <button style="width:100%; margin-top:12px; display:flex; align-items:center; justify-content:center; gap:8px; padding:12px; border:1px solid #ece4b8; background:#faf7e8; color:#9a8d3a; border-radius:13px; font-size:13.5px; font-weight:600; font-family:inherit; cursor:pointer;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"></rect><line x1="8" y1="9" x2="16" y2="9"></line><line x1="8" y1="14" x2="13" y2="14"></line></svg>
+        Cadastrar no sistema
+      </button>
+    </div>
+
+    <!-- Dados -->
+    <div class="sec">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:13px;">
+        <div class="sech">Dados da captação</div>
+        <button style="display:flex; align-items:center; gap:6px; background:#f3f4f0; border:none; border-radius:9px; padding:7px 11px; color:#585a4f; font-size:12px; font-weight:600; font-family:inherit; cursor:pointer;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"></path></svg>
+          Editar
+        </button>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:1px; background:#eef0ea; border:1px solid #eef0ea; border-radius:12px; overflow:hidden;">
+        <div class="cell" style="grid-column:1 / -1;"><div class="lbl">Endereço</div><div class="val">Rua Barão da Torre, 480 / 802</div></div>
+        <div class="cell"><div class="lbl">Quartos</div><div class="val">3</div></div>
+        <div class="cell"><div class="lbl">Suítes</div><div class="val">1</div></div>
+        <div class="cell"><div class="lbl">Banheiros</div><div class="val">2</div></div>
+        <div class="cell"><div class="lbl">Vagas</div><div class="val">2</div></div>
+        <div class="cell"><div class="lbl">Metragem</div><div class="val">118 m²</div></div>
+        <div class="cell"><div class="lbl">Portaria</div><div class="val">24 horas</div></div>
+        <div class="cell" style="grid-column:1 / -1;"><div class="lbl">Proprietário</div><div class="val">Helena Braga</div></div>
+      </div>
+
+      <div style="display:flex; gap:10px; margin-top:13px;">
+        <div style="flex:1; background:#faf9ef; border:1px solid #ece9cf; border-radius:13px; padding:12px 13px;">
+          <div class="lbl">Valor de venda</div>
+          <div style="font-size:18px; font-weight:700; color:#3d3f36; margin-top:4px; letter-spacing:-0.01em;">R$ 2.450.000</div>
+        </div>
+        <div style="flex:none; width:126px; background:#f5f6f1; border:1px solid #e8e9e3; border-radius:13px; padding:12px 13px;">
+          <div class="lbl">Condomínio</div>
+          <div style="font-size:15px; font-weight:600; color:#5b5d52; margin-top:4px;">R$ 1.850</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fotos -->
+    <div class="sec">
+      <div class="sech" style="margin-bottom:13px;">Fotos e vídeos</div>
+      <div style="display:flex; gap:9px; overflow-x:auto;" class="noscroll">
+        <div style="flex:none; width:118px; height:90px; border-radius:13px; background-image:repeating-linear-gradient(135deg,#eceee8 0 10px,#e4e6df 10px 20px); border:1px solid #e2e3dd;"></div>
+        <div style="flex:none; width:118px; height:90px; border-radius:13px; background-image:repeating-linear-gradient(135deg,#eceee8 0 10px,#e4e6df 10px 20px); border:1px solid #e2e3dd;"></div>
+        <div style="flex:none; width:90px; height:90px; border-radius:13px; border:1px dashed #c8cac1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; color:#888b7e; cursor:pointer;">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          <span style="font-size:11px; font-weight:600;">Adicionar</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Documentos -->
+    <div class="sec">
+      <div class="sech" style="margin-bottom:13px;">Documentos</div>
+      <div style="display:flex; align-items:center; gap:11px; padding:11px 12px; background:#fafbf8; border:1px solid #eef0ea; border-radius:12px;">
+        <span style="flex:none; width:32px; height:32px; border-radius:9px; background:#eceee7; display:flex; align-items:center; justify-content:center; color:#6e7063;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"></path><polyline points="14 3 14 8 19 8"></polyline></svg>
+        </span>
+        <span style="flex:1; min-width:0;">
+          <span style="display:block; font-size:13px; font-weight:600; color:#3d3f36;">Matricula-atualizada.pdf</span>
+          <span style="display:block; font-size:11.5px; color:#9a9c90; margin-top:2px;">240 KB · há 2 dias</span>
+        </span>
+      </div>
+      <button style="width:100%; margin-top:9px; padding:11px; border:1px dashed #c8cac1; background:transparent; border-radius:12px; color:#6e7063; font-size:13px; font-weight:600; font-family:inherit; cursor:pointer;">Anexar documento</button>
+    </div>
+
+    <!-- Opiniões -->
+    <div class="sec">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:13px;">
+        <div class="sech">Opiniões</div>
+        <span style="display:inline-flex; align-items:center; height:22px; padding:0 9px; border-radius:7px; background:#f4f1d4; color:#857727; font-size:11px; font-weight:700;">2 novas</span>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:11px;">
+        <div style="display:flex; gap:10px;">
+          <div style="flex:none; width:28px; height:28px; border-radius:50%; background:#e8e8e4; color:#585a4f; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700;">RO</div>
+          <div style="flex:1; min-width:0; background:#fafbf8; border:1px solid #eef0ea; border-radius:12px; padding:10px 12px;">
+            <div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px;">
+              <span style="font-size:12.5px; font-weight:600; color:#3d3f36;">Rodrigo</span>
+              <span style="font-size:11px; color:#9a9c90;">há 3 horas</span>
+            </div>
+            <div style="font-size:13px; color:#4a4d43; line-height:1.45; margin-top:5px;">Vale a visita. A vista do 8º compensa a metragem menor.</div>
+          </div>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <div style="flex:none; width:28px; height:28px; border-radius:50%; background:#e8e8e4; color:#585a4f; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700;">LE</div>
+          <div style="flex:1; min-width:0; background:#fafbf8; border:1px solid #eef0ea; border-radius:12px; padding:10px 12px;">
+            <div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px;">
+              <span style="font-size:12.5px; font-weight:600; color:#3d3f36;">Leandro</span>
+              <span style="font-size:11px; color:#9a9c90;">há 1 hora</span>
+            </div>
+            <div style="font-size:13px; color:#4a4d43; line-height:1.45; margin-top:5px;">De acordo. Marca junto com a gravação para não subir duas vezes.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Histórico -->
+    <div class="sec">
+      <div class="sech" style="margin-bottom:14px;">Histórico</div>
+      <div style="display:flex; flex-direction:column; gap:0;">
+        <div style="display:flex; gap:12px;">
+          <div style="flex:none; display:flex; flex-direction:column; align-items:center;">
+            <span style="width:9px; height:9px; border-radius:50%; background:#5a9a6e;"></span>
+            <span style="width:1.5px; flex:1; background:#eceee8; min-height:26px;"></span>
+          </div>
+          <div style="flex:1; padding-bottom:14px;">
+            <div style="font-size:13.5px; font-weight:600; color:#3d3f36;">Em decisão → Pendente agendar visita</div>
+            <div style="font-size:11.5px; color:#9a9c90; margin-top:3px;">Rodrigo · há 12 horas</div>
+          </div>
+        </div>
+        <div style="display:flex; gap:12px;">
+          <div style="flex:none; display:flex; flex-direction:column; align-items:center;">
+            <span style="width:9px; height:9px; border-radius:50%; background:#d49a48;"></span>
+            <span style="width:1.5px; flex:1; background:#eceee8; min-height:26px;"></span>
+          </div>
+          <div style="flex:1; padding-bottom:14px;">
+            <div style="font-size:13.5px; font-weight:600; color:#3d3f36;">Novas → Em decisão</div>
+            <div style="font-size:11.5px; color:#9a9c90; margin-top:3px;">Ivo · há 2 dias</div>
+          </div>
+        </div>
+        <div style="display:flex; gap:12px;">
+          <div style="flex:none; display:flex; flex-direction:column; align-items:center;">
+            <span style="width:9px; height:9px; border-radius:50%; background:#c5b54a;"></span>
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:13.5px; font-weight:600; color:#3d3f36;">Captação criada</div>
+            <div style="font-size:11.5px; color:#9a9c90; margin-top:3px;">Ivo · 12/08</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Barra fixa: próxima ação pendente -->
+  <div style="flex:none; background:#ffffff; border-top:1px solid #e6e7e1; padding:13px 18px 18px; box-shadow:0 -6px 20px -12px rgba(46,48,42,0.2);">
+    <button style="width:100%; display:flex; align-items:center; justify-content:center; gap:9px; padding:15px; border:none; background:linear-gradient(150deg,#3a8a5c,#2f7350); color:#fff; border-radius:14px; font-size:15.5px; font-weight:700; font-family:inherit; cursor:pointer; box-shadow:0 8px 18px -8px rgba(47,107,70,0.6);">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round"><rect x="3" y="5" width="18" height="16" rx="2.5"></rect><line x1="3" y1="10" x2="21" y2="10"></line><line x1="8" y1="3" x2="8" y2="7"></line><line x1="16" y1="3" x2="16" y2="7"></line></svg>
+      Agendar visita
+    </button>
+  </div>
+
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":390,"height":1860}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

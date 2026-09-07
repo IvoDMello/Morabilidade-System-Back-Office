@@ -47,7 +47,7 @@ export default function RedefinirSenhaPage() {
       return;
     }
     toast.success("Senha redefinida.");
-    window.location.assign("/board");
+    window.location.assign("/decidir");
   }
 
   return (

@@ -17,7 +17,7 @@ export default function CaptacaoError({ error, reset }: { error: Error; reset: (
       <div className="flex gap-2">
         <Button onClick={reset}>Tentar novamente</Button>
         <Button variant="outline" asChild>
-          <Link href="/board">
+          <Link href="/decidir">
             <ArrowLeft className="h-4 w-4" /> Voltar ao quadro
           </Link>
         </Button>

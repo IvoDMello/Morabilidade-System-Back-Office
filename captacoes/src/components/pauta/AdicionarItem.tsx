@@ -2,10 +2,10 @@
 
 import { useMemo, useRef, useState } from "react";
 import { Building2, Plus } from "lucide-react";
-import { useBoard } from "@/stores/board";
+import { useApp } from "@/stores/app";
 import { filtrarCaptacoes } from "@/lib/filter";
 import { textoDaCaptacao } from "@/lib/pauta";
-import { BOARD_STATUSES } from "@/types";
+
 
 /**
  * Composer de item da pauta: um campo só.
@@ -24,14 +24,13 @@ export function AdicionarItem({
   const [texto, setTexto] = useState("");
   const [focado, setFocado] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const byStatus = useBoard((s) => s.byStatus);
+  const cards = useApp((s) => s.cards);
 
   const sugestoes = useMemo(() => {
     const busca = texto.trim();
     if (busca.length < 2) return [];
-    const todas = BOARD_STATUSES.flatMap((s) => byStatus[s]);
-    return filtrarCaptacoes(todas, busca).slice(0, 5);
-  }, [texto, byStatus]);
+    return filtrarCaptacoes(cards, busca).slice(0, 5);
+  }, [texto, cards]);
 
   function adicionar(captacaoId: string | null, textoFinal?: string) {
     const limpo = (textoFinal ?? texto).trim();

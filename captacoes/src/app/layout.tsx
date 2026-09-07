@@ -10,7 +10,7 @@ const playfair = Playfair_Display({ subsets: ["latin"], display: "swap", weight:
 
 export const metadata: Metadata = {
   title: "Captações · Morabilidade",
-  description: "Kanban de captações de imóveis",
+  description: "Captações de imóveis: decidir, agendar e acompanhar",
   manifest: "/manifest.webmanifest",
   // iOS: abre em tela cheia (standalone) ao "Adicionar à tela inicial".
   appleWebApp: {

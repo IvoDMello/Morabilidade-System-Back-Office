@@ -1,0 +1,271 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *{ box-sizing:border-box; }
+    body{ margin:0; }
+    a{ color:#9a8d3a; } a:hover{ color:#7d7230; }
+    .noscroll::-webkit-scrollbar{ display:none; }
+    .noscroll{ scrollbar-width:none; }
+  </style>
+</helmet>
+
+<div style="width:390px; height:844px; background:#f3f4f0; font-family:'Inter',system-ui,sans-serif; display:flex; flex-direction:column; overflow:hidden;">
+
+  <!-- ══════════ Header olive ══════════ -->
+  <div style="flex:none; background:linear-gradient(150deg,#2c2e28 0%,#585a4f 58%,#454840 100%); padding:18px 18px 16px; color:#f3f4f0;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+      <img src="logo.png" alt="Morabilidade" style="height:29px; width:auto; object-fit:contain;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div style="width:34px; height:34px; border-radius:50%; background:#d8cb6a; color:#3a3408; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12.5px;">IV</div>
+        <button style="width:32px; height:32px; border:none; background:rgba(255,255,255,0.12); border-radius:10px; color:#dfe0da; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
+        </button>
+      </div>
+    </div>
+
+    <div style="font-size:10.5px; font-weight:600; letter-spacing:0.2em; color:#d8cb6a; margin-bottom:6px;">CAPTAÇÕES</div>
+    <div style="font-family:'Playfair Display',serif; font-weight:600; font-size:27px; line-height:1; letter-spacing:-0.01em;">Aprovadas</div>
+    <div style="margin-top:8px; color:#cfd0c9; font-size:13px;">{{ subtitulo }}</div>
+
+    <div style="display:flex; gap:9px; margin-top:16px;">
+      <div style="flex:1; display:flex; align-items:center; gap:9px; background:rgba(255,255,255,0.14); border:1px solid rgba(255,255,255,0.18); border-radius:13px; padding:10px 13px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dfe0da" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <span style="font-size:13.5px; color:#c4c5be;">Buscar por endereço…</span>
+      </div>
+      <button style="flex:none; width:44px; border:1px solid rgba(255,255,255,0.18); background:rgba(255,255,255,0.14); border-radius:13px; color:#f3f4f0; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round"><line x1="4" y1="6" x2="20" y2="6"></line><line x1="7" y1="12" x2="17" y2="12"></line><line x1="10" y1="18" x2="14" y2="18"></line></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════ Barra de listas ══════════ -->
+  <div style="flex:none; background:#f3f4f0; border-bottom:1px solid #e2e3dd; padding:12px 0 11px;">
+    <div style="display:flex; align-items:center; gap:7px; overflow-x:auto; padding:0 18px;" class="noscroll">
+      <sc-for list="{{ pills }}" as="p" hint-placeholder-count="4">
+        <button onClick="{{ p.pick }}" style="{{ p.style }}">
+          <span style="{{ p.dotStyle }}"></span>
+          <span>{{ p.nome }}</span>
+          <span style="{{ p.countStyle }}">{{ p.count }}</span>
+        </button>
+      </sc-for>
+      <button style="flex:none; display:flex; align-items:center; gap:6px; height:34px; padding:0 13px; border:1px dashed #c8cac1; background:transparent; border-radius:11px; color:#6e7063; font-size:13px; font-weight:600; font-family:inherit; cursor:pointer; white-space:nowrap;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        Nova lista
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════ Ordenação ══════════ -->
+  <div style="flex:none; display:flex; align-items:center; justify-content:space-between; padding:11px 18px 3px;">
+    <button style="display:flex; align-items:center; gap:6px; background:#fff; border:1px solid #e2e3dd; border-radius:10px; padding:7px 11px; color:#4a4d43; font-size:12.5px; font-weight:600; font-family:inherit; cursor:pointer; box-shadow:0 1px 2px rgba(46,48,42,0.04);">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#888b7e" strokeWidth="2" strokeLinecap="round"><path d="M3 6h13M3 12h9M3 18h5"></path><path d="M18 9l3-3 3 3" transform="translate(-2 0)"></path></svg>
+      Mais recentes
+    </button>
+    <span style="font-size:12px; color:#9a9c90;">{{ contagem }}</span>
+  </div>
+
+  <!-- ══════════ Lista ══════════ -->
+  <div style="flex:1; min-height:0; overflow-y:auto; padding:11px 18px 18px; display:flex; flex-direction:column; gap:11px;" class="noscroll">
+    <sc-for list="{{ cards }}" as="c" hint-placeholder-count="4">
+      <div style="background:#ffffff; border:1px solid #e8e9e3; border-radius:16px; padding:12px; display:flex; gap:12px; box-shadow:0 1px 2px rgba(46,48,42,0.04), 0 10px 24px -18px rgba(46,48,42,0.22);">
+
+        <div style="{{ c.thumbStyle }}">
+          <sc-if value="{{ c.semFoto }}" hint-placeholder-val="{{ false }}">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b0b2a8" strokeWidth="1.8" strokeLinecap="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><path d="M21 15l-5-5L5 21"></path></svg>
+          </sc-if>
+        </div>
+
+        <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:5px;">
+          <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px;">
+            <div style="font-size:15px; font-weight:600; color:#2e302a; line-height:1.25; text-wrap:pretty;">{{ c.endereco }}</div>
+            <button style="flex:none; width:26px; height:26px; border:none; background:#f3f4f0; border-radius:8px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#888b7e;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
+            </button>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:5px; color:#6e7063; font-size:12.5px; font-weight:500;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9a8d3a" strokeWidth="2" strokeLinecap="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"></path><circle cx="12" cy="10" r="2.6"></circle></svg>
+            {{ c.bairro }}
+          </div>
+
+          <div style="font-size:12.5px; color:#888b7e;">{{ c.specs }}</div>
+
+          <div style="font-size:15px; font-weight:700; color:#3d3f36; letter-spacing:-0.01em;">{{ c.valor }}</div>
+
+          <div style="display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:1px;">
+            <sc-for list="{{ c.listas }}" as="l" hint-placeholder-count="1">
+              <span style="{{ l.style }}">
+                <span style="{{ l.dotStyle }}"></span>{{ l.nome }}
+              </span>
+            </sc-for>
+            <sc-if value="{{ c.temSelo }}" hint-placeholder-val="{{ true }}">
+              <span style="{{ c.seloStyle }}">{{ c.seloTexto }}</span>
+            </sc-if>
+            <sc-if value="{{ c.temCodigo }}" hint-placeholder-val="{{ false }}">
+              <span style="display:inline-flex; align-items:center; height:22px; padding:0 8px; border-radius:7px; background:#faf9ef; border:1px solid #ece9cf; color:#9a8d3a; font-family:ui-monospace,'SF Mono',Menlo,monospace; font-size:11px; font-weight:600;">{{ c.codigo }}</span>
+            </sc-if>
+          </div>
+
+          <div style="margin-top:4px; padding-top:8px; border-top:1px solid #f0f1ec; font-size:11.5px; color:#9a9c90;">{{ c.entrada }}</div>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+
+  <!-- ══════════ Barra de abas ══════════ -->
+  <div style="flex:none; display:flex; align-items:stretch; background:rgba(252,252,251,0.97); border-top:1px solid #e2e3dd; padding:7px 6px 11px;">
+
+    <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer;">
+      <div style="position:relative; width:54px; height:27px; border-radius:14px; display:flex; align-items:center; justify-content:center;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9a9c90" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"></path><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
+        <span style="position:absolute; top:-3px; right:6px; min-width:17px; height:17px; padding:0 4px; border-radius:9px; background:#585a4f; color:#f3f4f0; font-size:9.5px; font-weight:700; display:flex; align-items:center; justify-content:center; border:2px solid #fcfcfb;">7</span>
+      </div>
+      <span style="font-size:10.5px; font-weight:500; color:#9a9c90;">Decidir</span>
+    </div>
+
+    <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer;">
+      <div style="width:54px; height:27px; border-radius:14px; background:#e6e8e1; display:flex; align-items:center; justify-content:center;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3d3f36" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M8.5 12.5l2.5 2.5 4.5-5"></path></svg>
+      </div>
+      <span style="font-size:10.5px; font-weight:600; color:#3d3f36;">Aprovadas</span>
+    </div>
+
+    <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer;">
+      <div style="width:54px; height:27px; border-radius:14px; display:flex; align-items:center; justify-content:center;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9a9c90" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="16" rx="2.5"></rect><line x1="3" y1="10" x2="21" y2="10"></line><line x1="8" y1="3" x2="8" y2="7"></line><line x1="16" y1="3" x2="16" y2="7"></line></svg>
+      </div>
+      <span style="font-size:10.5px; font-weight:500; color:#9a9c90;">Agenda</span>
+    </div>
+
+    <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer;">
+      <div style="position:relative; width:54px; height:27px; border-radius:14px; display:flex; align-items:center; justify-content:center;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9a9c90" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"></circle><line x1="9" y1="9" x2="15" y2="15"></line><line x1="15" y1="9" x2="9" y2="15"></line></svg>
+        <span style="position:absolute; top:-3px; right:6px; min-width:17px; height:17px; padding:0 4px; border-radius:9px; background:#a85a5a; color:#fff; font-size:9.5px; font-weight:700; display:flex; align-items:center; justify-content:center; border:2px solid #fcfcfb;">3</span>
+      </div>
+      <span style="font-size:10.5px; font-weight:500; color:#9a9c90;">Negativadas</span>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+const LISTAS = {
+  prioridade: { nome: 'Prioridade',       dot: '#c5b54a', bg: '#f4f1d4', fg: '#857727' },
+  especial:   { nome: 'Seleção Especial', dot: '#a4739a', bg: '#f2e7ef', fg: '#6f3f63' },
+  gaveta:     { nome: 'Gaveta',           dot: '#8a8fa8', bg: '#e9eaf0', fg: '#565b72' },
+};
+
+const LISTRAS = 'repeating-linear-gradient(135deg,#eceee8 0 9px,#e4e6df 9px 18px)';
+
+const CARDS = [
+  { id: 1, endereco: 'Rua Barão da Torre, 480', bairro: 'Ipanema',
+    specs: '3 quartos · 1 suíte · 2 vagas · 118 m²', valor: 'R$ 2.450.000',
+    listas: ['prioridade'], selo: 'visita', entrada: 'aprovada em 12/08 · há 26 dias' },
+  { id: 2, endereco: 'Av. Vieira Souto, 176', bairro: 'Ipanema',
+    specs: '4 quartos · 2 suítes · 3 vagas · 240 m²', valor: 'R$ 8.900.000',
+    listas: ['prioridade', 'especial'], selo: 'gravacao', entrada: 'aprovada em 28/08 · há 10 dias' },
+  { id: 3, endereco: 'Rua General Urquiza, 96', bairro: 'Leblon',
+    specs: '3 quartos · 1 suíte · 2 vagas · 132 m²', valor: 'R$ 3.750.000',
+    listas: ['especial'], selo: 'visita', entrada: 'aprovada em 01/09 · há 6 dias' },
+  { id: 4, endereco: 'Rua Voluntários da Pátria, 320', bairro: 'Botafogo',
+    specs: '2 quartos · 1 vaga · 78 m²', valor: 'R$ 1.180.000',
+    listas: [], selo: 'gravada', codigo: 'MOR-1284', entrada: 'aprovada em 03/07 · há 66 dias' },
+  { id: 5, endereco: 'Rua Jardim Botânico, 674', bairro: 'Jardim Botânico',
+    specs: '3 quartos · 2 suítes · 2 vagas · 145 m²', valor: 'R$ 4.200.000',
+    listas: ['prioridade'], selo: 'gravada', entrada: 'aprovada em 20/08 · há 18 dias' },
+  { id: 6, endereco: 'Rua Marquês de Abrantes, 214', bairro: 'Flamengo',
+    specs: '2 quartos · 1 vaga · 92 m²', valor: 'R$ 985.000',
+    listas: ['gaveta'], selo: null, semFoto: true, entrada: 'aprovada em 15/05 · há 115 dias' },
+];
+
+const SELOS = {
+  visita:   { texto: 'Agendar visita',   bg: '#e5efe8', bd: '#c3e0cd', fg: '#2f6b46' },
+  gravacao: { texto: 'Agendar gravação', bg: '#e3edf1', bd: '#cbdde5', fg: '#2f5b6f' },
+  gravada:  { texto: 'Gravada 02/09',    bg: '#f5f6f1', bd: '#ebece6', fg: '#5b5d52' },
+};
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { lista: 'todas' };
+  }
+
+  renderVals() {
+    const ativa = this.state.lista;
+    const conta = (id) => CARDS.filter((c) => c.listas.indexOf(id) !== -1).length;
+
+    const defs = [
+      { id: 'todas', nome: 'Todas', count: CARDS.length, dot: null },
+      { id: 'prioridade', nome: LISTAS.prioridade.nome, count: conta('prioridade'), dot: LISTAS.prioridade.dot },
+      { id: 'especial', nome: LISTAS.especial.nome, count: conta('especial'), dot: LISTAS.especial.dot },
+      { id: 'gaveta', nome: LISTAS.gaveta.nome, count: conta('gaveta'), dot: LISTAS.gaveta.dot },
+    ];
+
+    const pills = defs.map((d) => {
+      const on = d.id === ativa;
+      return {
+        nome: d.nome,
+        count: d.count,
+        pick: () => this.setState({ lista: d.id }),
+        style: 'flex:none; display:flex; align-items:center; gap:7px; height:34px; padding:0 13px; border-radius:11px; font-size:13px; font-weight:600; font-family:inherit; cursor:pointer; white-space:nowrap; '
+          + (on ? 'background:#585a4f; border:1px solid #585a4f; color:#f3f4f0;' : 'background:#ffffff; border:1px solid #e2e3dd; color:#4a4d43;'),
+        dotStyle: d.dot === null
+          ? 'display:none;'
+          : 'width:8px; height:8px; border-radius:50%; flex:none; background:' + (on ? '#f3f4f0' : d.dot) + ';',
+        countStyle: 'font-size:12px; font-weight:600; opacity:0.62;',
+      };
+    });
+
+    const visiveis = ativa === 'todas'
+      ? CARDS
+      : CARDS.filter((c) => c.listas.indexOf(ativa) !== -1);
+
+    const cards = visiveis.map((c) => {
+      const selo = c.selo ? SELOS[c.selo] : null;
+      return {
+        endereco: c.endereco,
+        bairro: c.bairro,
+        specs: c.specs,
+        valor: c.valor,
+        entrada: c.entrada,
+        semFoto: c.semFoto === true,
+        thumbStyle: 'flex:none; width:64px; height:64px; border-radius:12px; border:1px solid #e2e3dd; display:flex; align-items:center; justify-content:center; '
+          + (c.semFoto ? 'background:#f3f4f0;' : 'background-image:' + LISTRAS + ';'),
+        listas: c.listas.map((id) => ({
+          nome: LISTAS[id].nome,
+          style: 'display:inline-flex; align-items:center; gap:5px; height:22px; padding:0 9px; border-radius:7px; font-size:11.5px; font-weight:600; background:' + LISTAS[id].bg + '; color:' + LISTAS[id].fg + ';',
+          dotStyle: 'width:6px; height:6px; border-radius:50%; background:' + LISTAS[id].dot + ';',
+        })),
+        temSelo: selo !== null,
+        seloTexto: selo ? selo.texto : '',
+        seloStyle: selo
+          ? 'display:inline-flex; align-items:center; height:22px; padding:0 9px; border-radius:7px; font-size:11.5px; font-weight:600; background:' + selo.bg + '; border:1px solid ' + selo.bd + '; color:' + selo.fg + ';'
+          : 'display:none;',
+        temCodigo: typeof c.codigo === 'string',
+        codigo: c.codigo || '',
+      };
+    });
+
+    const n = visiveis.length;
+    return {
+      pills,
+      cards,
+      subtitulo: CARDS.length + ' aprovadas · 3 aguardando agendamento',
+      contagem: n === CARDS.length ? n + ' captações' : n + ' de ' + CARDS.length,
+    };
+  }
+}
+</script>
+</body>
+</html>

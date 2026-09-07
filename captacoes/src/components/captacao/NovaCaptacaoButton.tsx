@@ -17,7 +17,7 @@ import { AnexosPicker } from "./AnexosPicker";
 import { createClient } from "@/lib/supabase/client";
 import { uploadFoto, uploadDocumento } from "@/lib/storage";
 import { orderBetween } from "@/lib/order";
-import { useBoard } from "@/stores/board";
+import { useApp } from "@/stores/app";
 import { dataCurta } from "@/lib/format";
 import type { CaptacaoInput } from "@/lib/schemas";
 import { STATUS_LABEL, type Captacao, type Status } from "@/types";
@@ -54,7 +54,7 @@ export function NovaCaptacaoButton({
   const [duplicadas, setDuplicadas] = useState<Duplicada[] | null>(null);
   const [pendente, setPendente] = useState<CaptacaoInput | null>(null);
   const router = useRouter();
-  const { byStatus, upsert } = useBoard();
+  const { cards, upsert } = useApp();
 
   function reset() {
     setFotos([]);
@@ -88,7 +88,10 @@ export function NovaCaptacaoButton({
       data: { user },
     } = await supabase.auth.getUser();
 
-    const primeira = byStatus.novas[0]?.ordem ?? null;
+    // Nasce no topo de "Novas": é a fila que a equipe olha primeiro.
+    const primeira = cards
+      .filter((c) => c.status === "novas")
+      .reduce<number | null>((min, c) => (min === null || c.ordem < min ? c.ordem : min), null);
     const ordem = orderBetween(null, primeira);
 
     const { data: row, error } = await supabase

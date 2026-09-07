@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Loader2, Check, Cloud, CloudOff, RefreshCw } from "lucide-react";
-import { useBoard } from "@/stores/board";
+import { useApp } from "@/stores/app";
 import { cn } from "@/lib/utils";
 
 /**
@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
  * e o status da conexão em tempo real (online / reconectando / offline).
  */
 export function SyncIndicator() {
-  const { salvando, salvoEm, conexao } = useBoard();
+  const { salvando, salvoEm, conexao } = useApp();
   const [mostrarSalvo, setMostrarSalvo] = useState(false);
 
   // "Salvo" aparece por alguns segundos após concluir uma gravação.
