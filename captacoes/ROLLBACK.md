@@ -87,7 +87,8 @@ migração que mexa em caminhos de arquivo, rodar:
 
 - [ ] Backup do bucket `captacoes` rodado no dia
 - [ ] Migrations `0021`, `0022` e `0023` aplicadas no Supabase, **nesta ordem**
-- [ ] Conferência da seção 8.5 do `REDESIGN-BRIEF.md`: a soma por status bate
+- [ ] `supabase/conferencia-v2.sql` rodado antes e depois: a soma por status bate
+      e a consulta 3 (captação sem lista) devolve zero linhas
 - [ ] `GOOGLE_CALENDAR_CLIENT_ID/SECRET/REFRESH_TOKEN` na Vercel (sem elas o
       agendamento funciona, mas não espelha na Agenda)
 - [ ] `npm run typecheck`, `npm run lint`, `npm test` e `npm run build` limpos

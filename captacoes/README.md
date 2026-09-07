@@ -57,6 +57,9 @@ Aplicar as migrations em `supabase/migrations/` (na ordem) no projeto Supabase:
    - `0023_agendamento_google.sql`, hora nos agendamentos e id do evento
      espelhado na Google Agenda.
 
+   Antes e depois, rodar `supabase/conferencia-v2.sql` (só leitura): confere
+   que nenhuma captação ficou sem lista e que o backfill do retorno acertou.
+
    As três são **aditivas**: nada sai do enum `captacoes.status`, nenhuma coluna
    é renomeada. É isso que permite voltar para a v1 sem rollback de banco — e o
    cron de arquivamento, que lê `status` direto, continua funcionando.
