@@ -10,8 +10,10 @@ export const dynamic = "force-dynamic";
  * Casca das quatro abas. Busca uma vez o que todas elas usam e entrega ao
  * store; trocar de aba passa a ser navegação de cliente, sem nova consulta.
  *
- * `publicada` fica de fora das abas (tem tela própria no menu ⋯), mas as
- * excluídas é que nunca entram — a lixeira tem consulta separada.
+ * As publicadas VÊM na consulta, ainda que não apareçam em nenhuma aba (a
+ * etapa delas é `publicada`): sem elas a contabilidade de gravações perderia
+ * justamente os casos completos — gravada, cadastrada e publicada. Só as
+ * excluídas ficam de fora; a lixeira tem consulta separada.
  */
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -22,7 +24,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         .from("captacao")
         .select("*")
         .is("excluido_em", null)
-        .neq("status", "publicada")
         .order("ordem", { ascending: true }),
       supabase.auth.getUser(),
       supabase.from("perfil").select("*"),

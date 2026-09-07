@@ -9,7 +9,7 @@ import { DecisaoBox } from "@/components/captacao/DecisaoBox";
 import { DecisaoBar } from "@/components/captacao/DecisaoBar";
 import { CadastrarImovel } from "@/components/captacao/CadastrarImovel";
 import { PublicarCaptacao } from "@/components/captacao/PublicarCaptacao";
-import { Agendamento } from "@/components/captacao/Agendamento";
+import { AgendamentoCard } from "@/components/captacao/AgendamentoCard";
 import { Galeria } from "@/components/captacao/Galeria";
 import { Documentos } from "@/components/captacao/Documentos";
 import { ExcluirCaptacao } from "@/components/captacao/ExcluirCaptacao";
@@ -57,8 +57,7 @@ export default async function CaptacaoPage({ params }: { params: Promise<{ id: s
 
   const c = captacao as Captacao;
   const nomes = Object.fromEntries(((perfis ?? []) as Perfil[]).map((p) => [p.user_id, p.nome]));
-  const ramoAgendamento =
-    c.status === "pendente_agendar_visita" || c.status === "pendente_agendar_gravacao";
+  const ramoAgendamento = etapaDaCaptacao(c) === "aprovada";
   const st = STATUS_STYLE[c.status];
   // Voltar leva para a aba de onde a captação veio, não para um quadro genérico.
   const etapa = etapaDaCaptacao(c);
@@ -207,7 +206,7 @@ export default async function CaptacaoPage({ params }: { params: Promise<{ id: s
             <CardTitle className="font-serif text-lg">Agendamento</CardTitle>
           </CardHeader>
           <CardContent>
-            <Agendamento captacao={c} />
+            <AgendamentoCard captacao={c} />
           </CardContent>
         </Card>
       )}

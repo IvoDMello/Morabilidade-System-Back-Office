@@ -75,6 +75,21 @@ describe("gravacoesNoPeriodo", () => {
   it("marcada como concluída mas sem data não conta", () => {
     expect(gravacoesNoPeriodo(lst, setembro).some((c) => c.id === "semData")).toBe(false);
   });
+
+  it("captação já publicada CONTA — é o caso mais completo, não o de fora", () => {
+    // A contabilidade não pode perder gravada → cadastrada → publicada. Por
+    // isso as publicadas entram na consulta do layout das abas, mesmo não
+    // aparecendo em nenhuma delas.
+    const publicada = card({
+      id: "publicada",
+      status: "publicada",
+      gravacao_data: "2026-09-03",
+      imovel_codigo: "MOR-1298",
+      publicada_em: "2026-09-06T10:00:00Z",
+    });
+    expect(gravacoesNoPeriodo([publicada], setembro).map((c) => c.id)).toEqual(["publicada"]);
+    expect(resumoGravacoes([publicada]).publicadas).toBe(1);
+  });
 });
 
 describe("resumoGravacoes", () => {
