@@ -1,4 +1,5 @@
 import type { Captacao } from "@/types";
+import { etapaDaCaptacao } from "./etapa";
 
 /**
  * Situação do retorno ao proprietário de uma captação reprovada.
@@ -10,9 +11,19 @@ import type { Captacao } from "@/types";
  */
 export type SituacaoRetorno = "atrasado" | "hoje" | "futuro" | "sem_prazo";
 
-/** Só a etapa Negativadas deve retorno, e só enquanto ninguém avisou. */
+/**
+ * Só a etapa Negativadas deve retorno, e só enquanto ninguém avisou.
+ *
+ * A chave é a ETAPA, não o campo `decisao`. Há captações reais em
+ * `pendente_negativa`/`negativada` com decisao nula ou até 'aprovada' —
+ * lixo herdado de movimentações antigas do quadro. Filtrar por `decisao`
+ * fazia essas sumirem da interface inteira: não apareciam em Decidir nem em
+ * Aprovadas (a etapa delas é negativada) nem em nenhuma das duas seções da
+ * aba Negativadas. `precisaRetorno` e `historicoNegativadas` juntas cobrem
+ * TODA a etapa, sem sobra — ver o teste "nenhuma captação da etapa some".
+ */
 export function precisaRetorno(c: Captacao): boolean {
-  return c.decisao === "reprovada" && !c.retorno_feito;
+  return etapaDaCaptacao(c) === "negativada" && !c.retorno_feito;
 }
 
 /**
@@ -93,10 +104,13 @@ export function responsavelPadrao(cards: Captacao[], userId: string): string {
   return melhor;
 }
 
-/** Negativadas já resolvidas: o histórico, mais recentes primeiro. */
+/**
+ * Negativadas já resolvidas: o histórico, mais recentes primeiro.
+ * Complemento exato de `precisaRetorno` dentro da etapa — ver o comentário lá.
+ */
 export function historicoNegativadas(cards: Captacao[]): Captacao[] {
   return cards
-    .filter((c) => c.decisao === "reprovada" && c.retorno_feito)
+    .filter((c) => etapaDaCaptacao(c) === "negativada" && c.retorno_feito)
     .sort((a, b) => {
       const ka = a.decisao_em ?? a.criado_em;
       const kb = b.decisao_em ?? b.criado_em;

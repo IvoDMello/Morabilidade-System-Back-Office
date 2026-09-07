@@ -28,11 +28,21 @@ function card(p: Partial<Captacao>): Captacao {
 }
 
 describe("precisaRetorno", () => {
-  it("só reprovada e ainda não avisada", () => {
+  it("etapa Negativadas e ainda não avisada", () => {
     expect(precisaRetorno(card({}))).toBe(true);
     expect(precisaRetorno(card({ retorno_feito: true }))).toBe(false);
-    expect(precisaRetorno(card({ decisao: "aprovada" }))).toBe(false);
-    expect(precisaRetorno(card({ decisao: null }))).toBe(false);
+  });
+
+  it("quem não está na etapa Negativadas não deve retorno", () => {
+    expect(precisaRetorno(card({ status: "novas", decisao: null }))).toBe(false);
+    expect(precisaRetorno(card({ status: "pendente_agendar_visita", decisao: "aprovada" }))).toBe(false);
+  });
+
+  it("vale a etapa, não o campo decisao — dado sujo do quadro antigo conta", () => {
+    // Existem em produção: pendente_negativa marcada como 'aprovada' e
+    // negativada com decisao nula. Antes elas sumiam da interface inteira.
+    expect(precisaRetorno(card({ status: "pendente_negativa", decisao: "aprovada" }))).toBe(true);
+    expect(precisaRetorno(card({ status: "negativada", decisao: null, retorno_feito: false }))).toBe(true);
   });
 });
 
@@ -125,5 +135,52 @@ describe("historicoNegativadas", () => {
       card({ id: "nova", retorno_feito: true, decisao_em: "2026-09-01T10:00:00Z" }),
     ];
     expect(historicoNegativadas(lst).map((c) => c.id)).toEqual(["nova", "velha"]);
+  });
+
+  it("não puxa quem está em outra etapa", () => {
+    const lst = [card({ id: "aprovada", status: "pendente_agendar_visita", decisao: "aprovada", retorno_feito: true })];
+    expect(historicoNegativadas(lst)).toHaveLength(0);
+  });
+});
+
+describe("nenhuma captação da etapa Negativadas some da tela", () => {
+  // Distribuição real da base em 07/09/2026, do retrato por status × decisão.
+  // A aba só desenha duas seções: retornos pendentes e histórico. Toda
+  // captação cuja etapa é 'negativada' precisa cair em exatamente uma delas.
+  const base: Captacao[] = [
+    card({ id: "pn-aprovada", status: "pendente_negativa", decisao: "aprovada", retorno_feito: false }),
+    card({ id: "neg-sem-1", status: "negativada", decisao: null, retorno_feito: true }),
+    card({ id: "neg-sem-2", status: "negativada", decisao: null, retorno_feito: true }),
+    card({ id: "neg-sem-3", status: "negativada", decisao: null, retorno_feito: true }),
+    card({ id: "neg-aprovada", status: "negativada", decisao: "aprovada", retorno_feito: true }),
+    card({ id: "neg-reprovada", status: "negativada", decisao: "reprovada", retorno_feito: true }),
+    // Fora da etapa: não podem aparecer em nenhuma das duas seções.
+    card({ id: "novas", status: "novas", decisao: null }),
+    card({ id: "aprovada", status: "pendente_agendar_visita", decisao: "aprovada" }),
+    card({ id: "gaveta-sem", status: "gaveta", decisao: null }),
+  ];
+
+  const daEtapa = ["pn-aprovada", "neg-sem-1", "neg-sem-2", "neg-sem-3", "neg-aprovada", "neg-reprovada"];
+
+  it("cada uma aparece em exatamente uma seção", () => {
+    const pendentes = retornosPendentes(base, HOJE).map((c) => c.id);
+    const historico = historicoNegativadas(base).map((c) => c.id);
+
+    expect([...pendentes, ...historico].sort()).toEqual([...daEtapa].sort());
+    expect(pendentes.filter((id) => historico.includes(id))).toEqual([]);
+  });
+
+  it("a pendente_negativa marcada como aprovada continua cobrando retorno", () => {
+    expect(retornosPendentes(base, HOJE).map((c) => c.id)).toContain("pn-aprovada");
+  });
+
+  it("captação de outra etapa não vaza para a aba", () => {
+    const naAba = [
+      ...retornosPendentes(base, HOJE).map((c) => c.id),
+      ...historicoNegativadas(base).map((c) => c.id),
+    ];
+    expect(naAba).not.toContain("novas");
+    expect(naAba).not.toContain("aprovada");
+    expect(naAba).not.toContain("gaveta-sem");
   });
 });
