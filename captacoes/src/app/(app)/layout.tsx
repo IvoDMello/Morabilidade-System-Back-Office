@@ -2,7 +2,8 @@ import { Suspense } from "react";
 import { AppShell } from "@/components/app/AppShell";
 import { NovaCaptacaoDeLink } from "@/components/captacao/NovaCaptacaoDeLink";
 import { createClient } from "@/lib/supabase/server";
-import type { Captacao, CaptacaoLista, Lista, Perfil } from "@/types";
+import { contarMidia } from "@/lib/midia";
+import type { Captacao, CaptacaoLista, Lista, Midia, Perfil } from "@/types";
 
 export const dynamic = "force-dynamic";
 
@@ -18,8 +19,14 @@ export const dynamic = "force-dynamic";
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
 
-  const [{ data: cards }, { data: auth }, { data: perfis }, { data: listas }, { data: vinculos }] =
-    await Promise.all([
+  const [
+    { data: cards },
+    { data: auth },
+    { data: perfis },
+    { data: listas },
+    { data: vinculos },
+    { data: midias },
+  ] = await Promise.all([
       supabase
         .from("captacao")
         .select("*")
@@ -29,6 +36,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       supabase.from("perfil").select("*"),
       supabase.from("lista").select("*").order("ordem", { ascending: true }),
       supabase.from("captacao_lista").select("*"),
+      // Só as duas colunas da contagem: o selo "8 fotos" do card não precisa
+      // dos caminhos no Storage, e a lista pode ser longa.
+      supabase.from("midia").select("captacao_id, tipo"),
     ]);
 
   const userEmail = auth.user?.email ?? "?";
@@ -41,6 +51,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         listas: (listas ?? []) as Lista[],
         vinculos: (vinculos ?? []) as CaptacaoLista[],
         perfis: (perfis ?? []) as Perfil[],
+        midia: contarMidia((midias ?? []) as Pick<Midia, "captacao_id" | "tipo">[]),
         userId: auth.user?.id ?? "",
         userNome: meuPerfil?.nome ?? userEmail,
       }}

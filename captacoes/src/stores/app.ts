@@ -13,6 +13,7 @@ import type {
   Status,
 } from "@/types";
 import { CRITERIOS_VAZIO, ORDENACAO_LABEL } from "@/types";
+import type { MidiaResumo } from "@/lib/midia";
 
 export type Conexao = "conectando" | "online" | "offline";
 
@@ -61,6 +62,8 @@ interface AppState {
   listas: Lista[];
   vinculos: CaptacaoLista[];
   perfis: Perfil[];
+  /** Quantas fotos/vídeos cada captação tem — selo do card recolhido. */
+  midia: Record<string, MidiaResumo>;
   userId: string;
   userNome: string;
 
@@ -91,6 +94,7 @@ interface AppState {
     listas: Lista[];
     vinculos: CaptacaoLista[];
     perfis: Perfil[];
+    midia: Record<string, MidiaResumo>;
     userId: string;
     userNome: string;
   }) => void;
@@ -114,6 +118,7 @@ export const useApp = create<AppState>((set, get) => ({
   listas: [],
   vinculos: [],
   perfis: [],
+  midia: {},
   userId: "",
   userNome: "",
 

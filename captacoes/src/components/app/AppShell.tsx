@@ -6,6 +6,7 @@ import { fetchOpinioesResumo } from "@/lib/opinioes";
 import { useApp } from "@/stores/app";
 import { contadores, hojeLocal } from "@/lib/contadores";
 import type { Captacao, CaptacaoLista, Lista, Perfil } from "@/types";
+import type { MidiaResumo } from "@/lib/midia";
 import { TabBar } from "./TabBar";
 
 export interface DadosIniciais {
@@ -13,6 +14,7 @@ export interface DadosIniciais {
   listas: Lista[];
   vinculos: CaptacaoLista[];
   perfis: Perfil[];
+  midia: Record<string, MidiaResumo>;
   userId: string;
   userNome: string;
 }

@@ -3,10 +3,21 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Check, ChevronRight, ImageOff, MapPin, MessageSquare, Timer, X } from "lucide-react";
+import {
+  Check,
+  ChevronRight,
+  ImageIcon,
+  ImageOff,
+  Link2,
+  MapPin,
+  MessageSquare,
+  Timer,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import { AppHeader } from "@/components/app/AppHeader";
 import { FiltrosSheet } from "@/components/app/FiltrosSheet";
+import { MenuDaCaptacao } from "@/components/app/MenuDaCaptacao";
 import { VazioDecidir } from "@/components/app/Vazios";
 import { ReprovarDialog } from "@/components/captacao/ReprovarDialog";
 import { Avatar } from "@/components/Avatar";
@@ -17,6 +28,7 @@ import { contadores, hojeLocal } from "@/lib/contadores";
 import { engavetadaSemDecisao, etapaDaCaptacao } from "@/lib/etapa";
 import { filtrarCaptacoes, filtrarPorCriterios } from "@/lib/filter";
 import { corDaLista, indexarListas } from "@/lib/listas";
+import { MIDIA_VAZIA, rotuloMidia } from "@/lib/midia";
 import { priorizarRevisaoGaveta } from "@/lib/sort";
 import { useCapaUrl } from "@/lib/capa";
 import { dataCurta, diasParado, formatBRL, relativo } from "@/lib/format";
@@ -72,9 +84,7 @@ export default function DecidirPage() {
         contadores={nums}
         onAbrirFiltros={() => setFiltrosAberto(true)}
         subtitulo={
-          naEtapa.length === 0
-            ? "Nada esperando decisão"
-            : `${naEtapa.length} aguardando sua decisão`
+          naEtapa.length === 0 ? "Nada esperando decisão" : `${naEtapa.length} aguardando sua decisão`
         }
       />
 
@@ -123,11 +133,18 @@ export default function DecidirPage() {
                 </button>
 
                 {engavetadasAbertas && (
-                  <div className="mt-2.5 flex flex-col gap-2.5">
-                    {engavetadas.map((c) => (
-                      <CardDecisao key={c.id} captacao={c} listas={porCaptacao.get(c.id) ?? []} />
-                    ))}
-                  </div>
+                  <>
+                    <p className="mt-2.5 px-1 text-[11.5px] leading-relaxed text-muted-foreground">
+                      Estão aqui porque vieram das colunas Gaveta ou Seleção Especial sem decisão
+                      registrada. Para tirar uma da gaveta, use o menu ⋯ do cartão → «Voltar para a
+                      fila de decisão» — as listas continuam como estão.
+                    </p>
+                    <div className="mt-2.5 flex flex-col gap-2.5">
+                      {engavetadas.map((c) => (
+                        <CardDecisao key={c.id} captacao={c} listas={porCaptacao.get(c.id) ?? []} />
+                      ))}
+                    </div>
+                  </>
                 )}
               </section>
             )}
@@ -158,16 +175,26 @@ function TituloGrupo({ status, titulo, total }: { status: Status; titulo: string
   );
 }
 
-/** Cartão da fila de decisão: tudo que trava a decisão à vista, e os dois botões. */
+/**
+ * Cartão da fila de decisão: tudo que trava a decisão à vista, e os dois
+ * botões.
+ *
+ * O corpo abre o detalhe por um link esticado (`inset-0`) em vez de um
+ * `<Link>` envolvendo tudo: o anúncio e o menu são interativos, e âncora
+ * dentro de âncora é HTML inválido — o link do anúncio não abriria.
+ */
 function CardDecisao({ captacao, listas }: { captacao: Captacao; listas: Lista[] }) {
   const capa = useCapaUrl(captacao.capa_path);
   const opinioes = useApp((s) => s.opinioes[captacao.id]);
+  const midia = useApp((s) => s.midia[captacao.id]) ?? MIDIA_VAZIA;
   const { decidir, beginSave, endSave } = useApp();
   const [reprovando, setReprovando] = useState(false);
   const [salvando, setSalvando] = useState(false);
 
   const estilo = STATUS_STYLE[captacao.status];
   const parada = diasParado(captacao.atualizado_em);
+  const selo = rotuloMidia(midia);
+  const totalMidia = midia.fotos + midia.videos;
 
   async function aprovar() {
     if (!confirmarDecisao(captacao, "aprovada")) return;
@@ -190,7 +217,13 @@ function CardDecisao({ captacao, listas }: { captacao: Captacao; listas: Lista[]
   }
 
   return (
-    <article className="rounded-[18px] border bg-card p-[15px] shadow-[0_1px_2px_rgba(46,48,42,0.04),0_10px_24px_-18px_rgba(46,48,42,0.22)]">
+    <article className="relative rounded-[18px] border bg-card p-[15px] shadow-[0_1px_2px_rgba(46,48,42,0.04),0_10px_24px_-18px_rgba(46,48,42,0.22)]">
+      <Link
+        href={`/captacao/${captacao.id}`}
+        className="absolute inset-0 z-0 rounded-[18px] focus-visible:ring-2 focus-visible:ring-ring"
+        aria-label={`Abrir ${captacao.endereco}`}
+      />
+
       <div className="mb-2.5 flex items-center justify-between gap-2">
         <span
           className="inline-flex h-6 items-center gap-1.5 rounded-lg px-2.5 text-[11.5px] font-semibold"
@@ -200,7 +233,7 @@ function CardDecisao({ captacao, listas }: { captacao: Captacao; listas: Lista[]
           {estilo.short}
         </span>
 
-        <span className="flex items-center gap-2">
+        <span className="relative z-10 flex items-center gap-2">
           {opinioes?.naoLidas ? (
             <span className="inline-flex items-center gap-1 rounded-lg bg-[#eef4f0] px-2 py-0.5 text-[11.5px] font-semibold text-[#2f6b46]">
               <MessageSquare className="h-3 w-3" />
@@ -215,21 +248,31 @@ function CardDecisao({ captacao, listas }: { captacao: Captacao; listas: Lista[]
           ) : (
             <span className="text-[11.5px] text-muted-foreground">{relativo(captacao.criado_em)}</span>
           )}
+          <MenuDaCaptacao captacao={captacao} />
         </span>
       </div>
 
-      <Link href={`/captacao/${captacao.id}`} className="flex gap-3">
-        {captacao.capa_path && (
-          <div className="relative h-[62px] w-[62px] flex-none overflow-hidden rounded-xl border bg-muted">
-            {capa ? (
-              <Image src={capa} alt="" fill sizes="62px" className="object-cover" />
-            ) : (
-              <span className="flex h-full items-center justify-center">
-                <ImageOff className="h-4 w-4 text-muted-foreground/60" />
-              </span>
-            )}
-          </div>
-        )}
+      <div className="flex gap-3">
+        {/* Capa com o selo de quantas mídias existem: "tem material?" é o que
+            decide se dá para avaliar sem abrir o detalhe. */}
+        <div className="relative h-[62px] w-[62px] flex-none overflow-hidden rounded-xl border bg-muted">
+          {capa ? (
+            <Image src={capa} alt="" fill sizes="62px" className="object-cover" />
+          ) : (
+            <span className="flex h-full items-center justify-center">
+              <ImageOff className="h-4 w-4 text-muted-foreground/60" />
+            </span>
+          )}
+          {totalMidia > 0 && (
+            <span
+              className="absolute bottom-0.5 right-0.5 flex items-center gap-0.5 rounded-md bg-black/65 px-1 py-px text-[10px] font-bold text-white"
+              aria-label={selo ?? undefined}
+            >
+              <ImageIcon className="h-2.5 w-2.5" strokeWidth={2.4} aria-hidden />
+              {totalMidia}
+            </span>
+          )}
+        </div>
 
         <div className="min-w-0 flex-1">
           <h3 className="text-[16.5px] font-semibold leading-tight text-foreground [text-wrap:pretty]">
@@ -252,7 +295,29 @@ function CardDecisao({ captacao, listas }: { captacao: Captacao; listas: Lista[]
             </p>
           )}
         </div>
-      </Link>
+      </div>
+
+      {(captacao.anuncio_url || selo) && (
+        <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+          {captacao.anuncio_url && (
+            <a
+              href={captacao.anuncio_url}
+              target="_blank"
+              rel="noreferrer"
+              className="relative z-10 inline-flex h-6 items-center gap-1.5 rounded-md border border-[#ece4b8] bg-[#faf7e8] px-2.5 text-[11.5px] font-semibold text-[#9a8d3a] hover:bg-[#f5efd8]"
+            >
+              <Link2 className="h-3 w-3" />
+              Ver anúncio
+            </a>
+          )}
+          {selo && (
+            <span className="inline-flex h-6 items-center gap-1.5 rounded-md border bg-muted px-2.5 text-[11.5px] font-semibold text-muted-foreground">
+              <ImageIcon className="h-3 w-3" />
+              {selo}
+            </span>
+          )}
+        </div>
+      )}
 
       {captacao.status === "aguardando_informacoes" && captacao.pendencias && (
         <div className="mt-3 rounded-xl border border-[#eae2c4] bg-[#f7f3e8] p-3">
@@ -291,7 +356,7 @@ function CardDecisao({ captacao, listas }: { captacao: Captacao; listas: Lista[]
         </div>
       )}
 
-      <div className="mt-3.5 flex gap-2.5">
+      <div className="relative z-10 mt-3.5 flex gap-2.5">
         <button
           type="button"
           onClick={aprovar}
@@ -312,9 +377,7 @@ function CardDecisao({ captacao, listas }: { captacao: Captacao; listas: Lista[]
         </button>
       </div>
 
-      {captacao.criado_por && (
-        <Autor userId={captacao.criado_por} />
-      )}
+      {captacao.criado_por && <Autor userId={captacao.criado_por} />}
 
       <ReprovarDialog captacao={captacao} open={reprovando} onOpenChange={setReprovando} />
     </article>
