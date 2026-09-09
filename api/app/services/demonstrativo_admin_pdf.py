@@ -39,8 +39,19 @@ MARGEM = 15 * mm
 LIMITE_INFERIOR = 24 * mm
 
 
-def _primeiro_nome(nome: str) -> str:
-    return (nome or "").strip().split(" ")[0] or "proprietário(a)"
+# Conectivos ficam em minúscula: "Fernanda Andrade de Souza", não "De Souza".
+_CONECTIVOS = {"de", "da", "do", "das", "dos", "e"}
+
+
+def _nome_titulo(nome: str) -> str:
+    """Nome completo com a primeira letra de cada nome em maiúscula."""
+    partes = (nome or "").strip().split()
+    if not partes:
+        return "-"
+    return " ".join(
+        p.lower() if i and p.lower() in _CONECTIVOS else p.capitalize()
+        for i, p in enumerate(partes)
+    )
 
 
 def _truncar(c: canvas.Canvas, texto: str, fonte: str, tam: float, largura_max: float) -> str:
@@ -88,7 +99,6 @@ def gerar_demonstrativo_admin_pdf(
     c.drawRightString(largura - MARGEM, altura - 22 * mm, f"Competência: {mes_label}")
 
     nome = bloco.get("nome") or "-"
-    pnome = _primeiro_nome(nome)
     itens = bloco.get("itens") or []
     qtd = len(itens)
 
@@ -96,8 +106,15 @@ def gerar_demonstrativo_admin_pdf(
 
     # ── Saudação + introdução ────────────────────────────────────────────────
     c.setFillColor(TEXTO_ESCURO)
-    c.setFont("Helvetica-Bold", 22)
-    c.drawString(MARGEM, y, f"Olá, {pnome}!")
+    c.setFont("Helvetica-Bold", 18)
+    contratante = f"Contratante: {_nome_titulo(nome)}"
+    # nome longo não pode estourar a margem direita
+    largura_util = largura - 2 * MARGEM
+    tamanho = 18
+    while tamanho > 10 and c.stringWidth(contratante, "Helvetica-Bold", tamanho) > largura_util:
+        tamanho -= 1
+    c.setFont("Helvetica-Bold", tamanho)
+    c.drawString(MARGEM, y, contratante)
     y -= 9 * mm
 
     c.setFillColor(TEXTO_CLARO)
@@ -291,19 +308,6 @@ def gerar_demonstrativo_admin_pdf(
     c.setFillColor(DOURADO)
     c.setFont("Helvetica-Bold", 16)
     c.drawString(rx, ry, fmt_brl(total_comissao))
-
-    y = box_y - 12 * mm
-
-    # ── Fechamento ───────────────────────────────────────────────────────────
-    c.setFillColor(TEXTO_CLARO)
-    c.setFont("Helvetica-Oblique", 10.5)
-    c.drawString(
-        MARGEM, y,
-        f"Obrigado pela parceria de sempre, {pnome}. Seguimos cuidando da sua "
-        "carteira com o",
-    )
-    y -= 5 * mm
-    c.drawString(MARGEM, y, "mesmo zelo do primeiro dia.")
 
     draw_brand_footer(c, largura)
 
