@@ -36,6 +36,16 @@ export function AppShell({ inicial, children }: { inicial: DadosIniciais; childr
   // O servidor é a fonte da verdade a cada navegação; o store só reflete.
   useEffect(() => hidratar(inicial), [inicial, hidratar]);
 
+  // Trava a rolagem do documento enquanto o app está na tela: a casca já ocupa
+  // a viewport inteira e cada aba tem seu próprio container rolável. Sem isto o
+  // corpo ganha uma rolagem residual de alguns pixels no celular e a TabBar do
+  // rodapé sobe junto com o conteúdo (ver `.app-fixo` no globals.css).
+  useEffect(() => {
+    const raiz = document.documentElement;
+    raiz.classList.add("app-fixo");
+    return () => raiz.classList.remove("app-fixo");
+  }, []);
+
   // Realtime das captações: o quadro é usado a quatro mãos.
   useEffect(() => {
     const supabase = createClient();
@@ -117,7 +127,10 @@ export function AppShell({ inicial, children }: { inicial: DadosIniciais; childr
   const nums = useMemo(() => contadores(cards, hojeLocal(), userId), [cards, userId]);
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden bg-background">
+    // `h-dvh` sozinho já serve quando `.app-fixo` ainda não entrou (primeiro
+    // quadro); `max-h-full` só morde depois dela, e aí prende a casca à altura
+    // exata da viewport para a TabBar nunca ser empurrada para fora.
+    <div className="flex h-dvh max-h-full flex-col overflow-hidden bg-background">
       <div className="flex min-h-0 flex-1 flex-col">{children}</div>
       <TabBar contadores={nums} />
     </div>

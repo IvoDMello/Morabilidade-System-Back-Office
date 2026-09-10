@@ -143,6 +143,32 @@ describe("historicoNegativadas", () => {
   });
 });
 
+describe("botão \"Retorno dado\" tira da fila e joga no histórico", () => {
+  // O que o botão do cartão faz é exatamente isto: virar `retorno_feito`.
+  // Este teste tranca o efeito de ponta a ponta — sair de "retornos
+  // pendentes" e aparecer em "histórico de negativadas" — porque é o único
+  // caminho da aba para arquivar uma negativada.
+  const pendente = card({ id: "x", retorno_responsavel: "u1", retorno_prazo: "2026-09-10" });
+
+  it("antes do clique, está na fila e fora do histórico", () => {
+    expect(retornosPendentes([pendente], HOJE, "u1").map((c) => c.id)).toEqual(["x"]);
+    expect(historicoNegativadas([pendente])).toHaveLength(0);
+  });
+
+  it("depois do clique, sai da fila e entra no histórico", () => {
+    const depois = { ...pendente, retorno_feito: true, retorno_feito_por: "u1" } as Captacao;
+    expect(retornosPendentes([depois], HOJE, "u1")).toHaveLength(0);
+    expect(retornosPendentes([depois], HOJE)).toHaveLength(0);
+    expect(historicoNegativadas([depois]).map((c) => c.id)).toEqual(["x"]);
+  });
+
+  it("e para de contar como atrasado", () => {
+    const vencido = card({ id: "v", retorno_responsavel: "u1", retorno_prazo: "2026-09-01" });
+    expect(contarAtrasados([vencido], HOJE, "u1")).toBe(1);
+    expect(contarAtrasados([{ ...vencido, retorno_feito: true } as Captacao], HOJE, "u1")).toBe(0);
+  });
+});
+
 describe("nenhuma captação da etapa Negativadas some da tela", () => {
   // Distribuição real da base em 07/09/2026, do retrato por status × decisão.
   // A aba só desenha duas seções: retornos pendentes e histórico. Toda

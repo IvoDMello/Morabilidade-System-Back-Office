@@ -67,6 +67,27 @@
     overflow-x: clip;
     overscroll-behavior-x: none;
   }
+
+  /* Casca das quatro abas: o DOCUMENTO não rola — quem rola é o container
+     interno de cada aba. Sem isto o <body min-h-dvh> fica alguns pixels mais
+     alto que a viewport visível no celular, o corpo inteiro ganha rolagem
+     própria e a barra de abas do rodapé sai da tela junto com o conteúdo.
+
+     Escopado por classe (posta pelo AppShell enquanto ele está montado)
+     porque as páginas públicas de imóvel dependem da rolagem do documento —
+     e porque `overflow-y: hidden` na raiz faria dela um container de rolagem,
+     o mesmo motivo que levou o `clip` acima. Dentro do app não há nenhum
+     elemento sticky preso ao documento, então aqui isso não custa nada. */
+  html.app-fixo,
+  html.app-fixo body {
+    height: 100%;
+    /* Zera o `min-h-dvh` do <body>: com ele de pé, um `dvh` maior que a altura
+       real deixaria o corpo mais alto que a raiz travada e a barra de abas
+       voltaria a ser cortada — agora sem nem poder rolar até ela. */
+    min-height: 0;
+    overflow-y: hidden;
+    overscroll-behavior-y: none;
+  }
 }
 
 @layer utilities {
