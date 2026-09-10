@@ -108,6 +108,8 @@ interface AppState {
 
   upsertLista: (l: Lista) => void;
   removerLista: (id: string) => void;
+  /** Troca listas e vínculos pelo que veio do servidor, sem deixar referência órfã. */
+  reconciliarListas: (listas: Lista[], vinculos: CaptacaoLista[]) => void;
   /** Liga/desliga o vínculo captação↔lista de forma otimista. */
   setVinculo: (captacaoId: string, listaId: string, dentro: boolean, ordem?: number) => void;
   setOrdemVinculo: (captacaoId: string, listaId: string, ordem: number) => void;
@@ -202,12 +204,51 @@ export const useApp = create<AppState>((set, get) => ({
     }),
 
   removerLista: (id) =>
-    set((state) => ({
-      listas: state.listas.filter((l) => l.id !== id),
-      // Apagar uma lista remove a etiqueta, nunca a captação.
-      vinculos: state.vinculos.filter((v) => v.lista_id !== id),
-      listaAtiva: state.listaAtiva === id ? null : state.listaAtiva,
-    })),
+    set((state) => {
+      // A lista apagada não pode sobreviver em nenhum estado que aponte para
+      // ela: sem esta limpeza a tela continuava filtrada por um id morto —
+      // nenhuma captação casava e não havia pill nem chip para desfazer.
+      const criterios = state.criterios.listas.includes(id)
+        ? { ...state.criterios, listas: state.criterios.listas.filter((x) => x !== id) }
+        : state.criterios;
+      if (criterios !== state.criterios) gravarStorage(CRITERIOS_KEY, JSON.stringify(criterios));
+
+      const listaAtiva = state.listaAtiva === id ? null : state.listaAtiva;
+      // O storage também: sem isto o id morto voltava no primeiro recarregar.
+      if (listaAtiva !== state.listaAtiva) gravarStorage(LISTA_KEY, "");
+
+      return {
+        listas: state.listas.filter((l) => l.id !== id),
+        // Apagar uma lista remove a etiqueta, nunca a captação.
+        vinculos: state.vinculos.filter((v) => v.lista_id !== id),
+        listaAtiva,
+        criterios,
+      };
+    }),
+
+  /**
+   * Recarga das listas vinda do realtime (alguém do time criou, renomeou ou
+   * apagou uma). Passa pelo mesmo cuidado do `removerLista`: se a lista que
+   * VOCÊ tinha ativa ou filtrada foi apagada por outra pessoa, o id morto
+   * precisa sair daqui também — senão a sua tela ficava vazia, filtrada por
+   * algo que não existe mais e sem pill acesa para desfazer.
+   */
+  reconciliarListas: (listas, vinculos) =>
+    set((state) => {
+      const vivas = new Set(listas.map((l) => l.id));
+
+      const listasFiltro = state.criterios.listas.filter((id) => vivas.has(id));
+      const criterios =
+        listasFiltro.length === state.criterios.listas.length
+          ? state.criterios
+          : { ...state.criterios, listas: listasFiltro };
+      if (criterios !== state.criterios) gravarStorage(CRITERIOS_KEY, JSON.stringify(criterios));
+
+      const listaAtiva = state.listaAtiva && vivas.has(state.listaAtiva) ? state.listaAtiva : null;
+      if (listaAtiva !== state.listaAtiva) gravarStorage(LISTA_KEY, "");
+
+      return { listas, vinculos, listaAtiva, criterios };
+    }),
 
   setVinculo: (captacaoId, listaId, dentro, ordem = 0) =>
     set((state) => {

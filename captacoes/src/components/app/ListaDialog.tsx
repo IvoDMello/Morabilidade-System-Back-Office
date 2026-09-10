@@ -51,16 +51,16 @@ export function ListaDialog({
     if (!nomeValido) return;
     setSalvando(true);
     if (lista) {
-      const ok = await editarLista(lista.id, { nome, cor });
+      const r = await editarLista(lista.id, { nome, cor });
       setSalvando(false);
-      if (!ok) return toast.error("Não foi possível salvar a lista.");
+      if (!r.ok) return toast.error(r.erro);
       toast.success("Lista atualizada.");
     } else {
-      const nova = await criarLista(nome, cor);
+      const r = await criarLista(nome, cor);
       setSalvando(false);
-      if (!nova) return toast.error("Não foi possível criar a lista. O nome já existe?");
-      toast.success(`Lista "${nova.nome}" criada.`);
-      onCriada?.(nova);
+      if (!r.ok) return toast.error(r.erro);
+      toast.success(`Lista "${r.dados.nome}" criada.`);
+      onCriada?.(r.dados);
     }
     onOpenChange(false);
   }
@@ -75,9 +75,9 @@ export function ListaDialog({
     if (!window.confirm(aviso)) return;
 
     setSalvando(true);
-    const ok = await excluirLista(lista.id);
+    const r = await excluirLista(lista.id);
     setSalvando(false);
-    if (!ok) return toast.error("Não foi possível apagar a lista.");
+    if (!r.ok) return toast.error(r.erro);
     toast.success("Lista apagada. Nenhuma captação foi excluída.");
     onOpenChange(false);
   }
@@ -90,7 +90,8 @@ export function ListaDialog({
         <DialogHeader>
           <DialogTitle className="font-serif text-xl">{lista ? "Editar lista" : "Nova lista"}</DialogTitle>
           <DialogDescription>
-            Listas organizam as aprovadas. Uma captação pode estar em quantas você quiser.
+            Listas organizam as aprovadas — mas dá para etiquetar antes, ainda em Decidir. Uma
+            captação pode estar em quantas você quiser.
           </DialogDescription>
         </DialogHeader>
 

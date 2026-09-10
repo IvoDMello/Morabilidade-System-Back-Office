@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Pencil, Plus } from "lucide-react";
 import { useApp } from "@/stores/app";
-import { corDaLista, separarListas } from "@/lib/listas";
+import { contarPorLista, corDaLista, pillsDaBarra } from "@/lib/listas";
 import { cn, CONTAINER } from "@/lib/utils";
 import type { Captacao, Lista } from "@/types";
 import { ListaDialog } from "./ListaDialog";
@@ -12,30 +12,35 @@ import { ListaDialog } from "./ListaDialog";
  * Barra de listas — o substituto das colunas do Kanban. Pills roláveis com
  * ponto colorido, nome e contagem; a ativa filtra a tela inteira.
  *
- * As listas de migração (criadas na virada, com o nome da coluna antiga)
- * ficam atrás de "ver todas" para não empurrar Prioridade e Gaveta para fora
- * da tela no primeiro dia.
+ * Só as listas HERDADAS da virada (com o nome da coluna antiga) e sem
+ * captação aqui ficam atrás de "ver todas", para não empurrarem Prioridade e
+ * Gaveta para fora da tela. Lista que alguém criou aparece sempre — ver
+ * `pillsDaBarra`.
+ *
+ * A barra vive na aba Aprovadas, mas etiquetar também acontece em Decidir:
+ * por isso a pill traz duas contagens, quantas a lista tem AQUI e quantas
+ * ainda estão fora.
  */
 export function ListaPills({ visiveis }: { visiveis: Captacao[] }) {
-  const { listas, vinculos, listaAtiva, setListaAtiva } = useApp();
+  const { cards, listas, vinculos, listaAtiva, setListaAtiva } = useApp();
   const [novaAberta, setNovaAberta] = useState(false);
   const [editando, setEditando] = useState<Lista | null>(null);
   const [verTodas, setVerTodas] = useState(false);
 
-  const contagem = useMemo(() => {
-    const idsVisiveis = new Set(visiveis.map((c) => c.id));
-    const out = new Map<string, number>();
-    for (const v of vinculos) {
-      if (!idsVisiveis.has(v.captacao_id)) continue;
-      out.set(v.lista_id, (out.get(v.lista_id) ?? 0) + 1);
-    }
-    return out;
-  }, [vinculos, visiveis]);
+  const contagem = useMemo(
+    () =>
+      contarPorLista(
+        vinculos,
+        new Set(visiveis.map((c) => c.id)),
+        new Set(cards.map((c) => c.id))
+      ),
+    [vinculos, visiveis, cards]
+  );
 
-  const { fixas, migracao } = useMemo(() => separarListas(listas), [listas]);
-  // Lista de migração vazia não merece espaço na barra.
-  const extras = migracao.filter((l) => (contagem.get(l.id) ?? 0) > 0);
-  const mostradas = verTodas ? [...fixas, ...extras] : fixas;
+  const { mostradas, ocultas } = useMemo(
+    () => pillsDaBarra(listas, contagem, listaAtiva, verTodas),
+    [listas, contagem, listaAtiva, verTodas]
+  );
 
   return (
     <>
@@ -48,12 +53,14 @@ export function ListaPills({ visiveis }: { visiveis: Captacao[] }) {
           {mostradas.map((l) => {
             const cor = corDaLista(l);
             const ativa = listaAtiva === l.id;
+            const n = contagem.get(l.id);
             return (
               <Pill
                 key={l.id}
                 ativa={ativa}
                 nome={l.nome}
-                contagem={contagem.get(l.id) ?? 0}
+                contagem={n?.aqui ?? 0}
+                fora={n?.fora ?? 0}
                 dot={cor.dot}
                 onClick={() => setListaAtiva(ativa ? null : l.id)}
                 onEditar={() => setEditando(l)}
@@ -61,13 +68,13 @@ export function ListaPills({ visiveis }: { visiveis: Captacao[] }) {
             );
           })}
 
-          {!verTodas && extras.length > 0 && (
+          {ocultas > 0 && (
             <button
               type="button"
               onClick={() => setVerTodas(true)}
               className="h-[34px] flex-none rounded-[11px] border border-dashed px-3 text-[13px] font-semibold text-muted-foreground"
             >
-              + {extras.length} {extras.length === 1 ? "lista" : "listas"}
+              + {ocultas} {ocultas === 1 ? "lista" : "listas"}
             </button>
           )}
 
@@ -100,6 +107,7 @@ function Pill({
   ativa,
   nome,
   contagem,
+  fora = 0,
   dot,
   onClick,
   onEditar,
@@ -107,6 +115,8 @@ function Pill({
   ativa: boolean;
   nome: string;
   contagem: number;
+  /** Captações da lista que ainda não chegaram em Aprovadas. */
+  fora?: number;
   dot?: string;
   onClick: () => void;
   onEditar?: () => void;
@@ -140,6 +150,17 @@ function Pill({
         )}
         {nome}
         <span className="text-xs opacity-60">{contagem}</span>
+        {/* Uma lista pode ser montada lá em Decidir, pelo menu ⋯ do cartão.
+            Sem este segundo número, ela aparecia aqui como um "0" seco e
+            parecia que as etiquetas não tinham pegado. */}
+        {fora > 0 && (
+          <span
+            className="text-xs opacity-45"
+            title={`${fora} ${fora === 1 ? "captação ainda não está" : "captações ainda não estão"} em Aprovadas`}
+          >
+            +{fora}
+          </span>
+        )}
       </button>
       {ativa && onEditar && (
         <button

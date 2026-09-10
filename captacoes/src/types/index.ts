@@ -147,7 +147,7 @@ export interface Lista {
   id: string;
   nome: string;
   cor: CorLista;
-  /** Aparece sempre na barra; as de migração ficam recolhidas. */
+  /** Aparece sempre na barra; as herdadas da virada ficam recolhidas quando vazias. */
   permanente: boolean;
   ordem: number;
   criado_por: string | null;

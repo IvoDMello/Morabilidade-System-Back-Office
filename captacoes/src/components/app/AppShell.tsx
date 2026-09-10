@@ -80,10 +80,12 @@ export function AppShell({ inicial, children }: { inicial: DadosIniciais; childr
         supabase.from("lista").select("*").order("ordem", { ascending: true }),
         supabase.from("captacao_lista").select("*"),
       ]);
-      useApp.setState({
-        listas: (listas ?? []) as Lista[],
-        vinculos: (vinculos ?? []) as CaptacaoLista[],
-      });
+      // `null` aqui é erro de consulta, não "nenhuma lista": aplicar isso
+      // apagaria a barra de listas de quem está só com a rede oscilando.
+      if (!listas || !vinculos) return;
+      useApp
+        .getState()
+        .reconciliarListas(listas as Lista[], vinculos as CaptacaoLista[]);
     };
 
     const canal = supabase
