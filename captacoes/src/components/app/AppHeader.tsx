@@ -49,21 +49,31 @@ export function AppHeader({
       className="flex-none px-[18px] pb-4 pt-[18px] text-[#f3f4f0]"
       style={{ background: "linear-gradient(150deg,#2c2e28 0%,#585a4f 58%,#454840 100%)" }}
     >
-      <div className="mb-3.5 flex items-center justify-between gap-4">
-        <Link href="/decidir" aria-label="Início">
+      <div className="mb-3 flex items-center justify-between gap-3 lg:gap-4">
+        <Link href="/decidir" aria-label="Início" className="flex-none">
           <Image
             src="/logo.png"
             alt="Morabilidade"
             width={512}
             height={288}
-            className="h-[38px] w-auto object-contain lg:h-[44px]"
+            className="h-[50px] w-auto object-contain lg:h-[46px]"
             priority
           />
         </Link>
 
+        {/* Título no meio da própria linha da logo — só abaixo do lg, onde a
+            nav das abas não disputa esse espaço. Trunca porque o vão entre a
+            logo e os botões é estreito em tela pequena. */}
+        <div className="min-w-0 flex-1 text-center lg:hidden">
+          <p className="text-[9px] font-semibold tracking-[0.18em] text-primary">CAPTAÇÕES</p>
+          <h1 className="truncate font-serif text-[19px] font-semibold leading-tight tracking-[-0.01em] sm:text-[23px]">
+            {titulo}
+          </h1>
+        </div>
+
         <NavDesktop contadores={contadores} />
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-none items-center gap-2.5">
           <SyncIndicator />
           <div className="hidden lg:block">
             <NovaCaptacaoButton />
@@ -73,11 +83,13 @@ export function AppHeader({
         </div>
       </div>
 
-      <div className="text-center lg:text-left">
+      <div className="hidden lg:block">
         <p className="mb-1.5 text-[10.5px] font-semibold tracking-[0.2em] text-primary">CAPTAÇÕES</p>
         <h1 className="font-serif text-[27px] font-semibold leading-none tracking-[-0.01em]">{titulo}</h1>
-        {subtitulo && <div className="mt-2 text-[13px] text-white/75">{subtitulo}</div>}
       </div>
+      {subtitulo && (
+        <div className="text-center text-[13px] text-white/75 lg:mt-2 lg:text-left">{subtitulo}</div>
+      )}
 
       {busca && (
         <div className="mt-4 flex gap-2.5">
