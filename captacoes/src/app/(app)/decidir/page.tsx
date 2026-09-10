@@ -35,8 +35,11 @@ import { priorizarRevisaoGaveta } from "@/lib/sort";
 import { useCapaUrl } from "@/lib/capa";
 import { dataCurta, diasParado, formatBRL, formatarTelefone, relativo, whatsappLink } from "@/lib/format";
 import { STATUS_STYLE } from "@/lib/status-style";
-import { cn } from "@/lib/utils";
+import { cn, CONTAINER, HOVER_CARD } from "@/lib/utils";
 import type { Captacao, Lista, Status } from "@/types";
+
+/** Uma coluna no celular, duas no desktop, três em tela larga. */
+const GRADE = "flex flex-col gap-2.5 lg:grid lg:grid-cols-2 lg:gap-3 xl:grid-cols-3";
 
 const GRUPOS: { status: Status; titulo: string }[] = [
   { status: "aguardando_informacoes", titulo: "Aguardando informações" },
@@ -90,7 +93,7 @@ export default function DecidirPage() {
         }
       />
 
-      <div className="no-scrollbar flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto px-[18px] pb-5 pt-4">
+      <div className={cn(CONTAINER, "no-scrollbar flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto px-[18px] pb-5 pt-4 [&>*]:shrink-0 lg:gap-3 lg:px-6 lg:pb-8")}>
         {vazio ? (
           <VazioDecidir />
         ) : (
@@ -100,9 +103,14 @@ export default function DecidirPage() {
                 g.itens.length > 0 && (
                   <section key={g.status} className="flex flex-col gap-2.5">
                     <TituloGrupo status={g.status} titulo={g.titulo} total={g.itens.length} />
-                    {g.itens.map((c) => (
-                      <CardDecisao key={c.id} captacao={c} listas={porCaptacao.get(c.id) ?? []} />
-                    ))}
+                    {/* No desktop a fila vira grade: o cartão foi desenhado para
+                        ~380px e esticá-lo até 1180px só afasta o endereço dos
+                        dois botões. Em coluna, cabem três de relance. */}
+                    <div className={GRADE}>
+                      {g.itens.map((c) => (
+                        <CardDecisao key={c.id} captacao={c} listas={porCaptacao.get(c.id) ?? []} />
+                      ))}
+                    </div>
                   </section>
                 )
             )}
@@ -141,7 +149,7 @@ export default function DecidirPage() {
                       registrada. Para tirar uma da gaveta, use o menu ⋯ do cartão → «Voltar para a
                       fila de decisão» — as listas continuam como estão.
                     </p>
-                    <div className="mt-2.5 flex flex-col gap-2.5">
+                    <div className={cn(GRADE, "mt-2.5")}>
                       {engavetadas.map((c) => (
                         <CardDecisao key={c.id} captacao={c} listas={porCaptacao.get(c.id) ?? []} />
                       ))}
@@ -223,7 +231,10 @@ function CardDecisao({ captacao, listas }: { captacao: Captacao; listas: Lista[]
   }
 
   return (
-    <article className="relative rounded-[18px] border bg-card p-[15px] shadow-[0_1px_2px_rgba(46,48,42,0.04),0_10px_24px_-18px_rgba(46,48,42,0.22)]">
+    <article className={cn(
+      "relative flex flex-col rounded-[18px] border bg-card p-[15px] shadow-[0_1px_2px_rgba(46,48,42,0.04),0_10px_24px_-18px_rgba(46,48,42,0.22)]",
+      HOVER_CARD
+    )}>
       <Link
         href={`/captacao/${captacao.id}`}
         className="absolute inset-0 z-0 rounded-[18px] focus-visible:ring-2 focus-visible:ring-ring"
@@ -395,7 +406,7 @@ function CardDecisao({ captacao, listas }: { captacao: Captacao; listas: Lista[]
         </div>
       )}
 
-      <div className="relative z-10 mt-3.5 flex gap-2.5">
+      <div className="relative z-10 mt-3.5 flex gap-2.5 lg:mt-auto lg:pt-3.5">
         <button
           type="button"
           onClick={aprovar}

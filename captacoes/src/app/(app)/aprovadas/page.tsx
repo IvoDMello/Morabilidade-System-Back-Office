@@ -17,7 +17,7 @@ import { moverNaSequencia } from "@/lib/listas-api";
 import { vizinhosDoDestino } from "@/lib/order";
 import { ordenarCaptacoes } from "@/lib/sort";
 import { CRITERIOS_VAZIO, ORDENACAO_LABEL, type Ordenacao } from "@/types";
-import { cn } from "@/lib/utils";
+import { cn, CONTAINER } from "@/lib/utils";
 
 const ORDENACOES = Object.keys(ORDENACAO_LABEL) as Ordenacao[];
 
@@ -105,7 +105,7 @@ export default function AprovadasPage() {
 
       <ListaPills visiveis={aprovadas} />
 
-      <div className="flex flex-none items-center justify-between gap-3 px-[18px] pb-1 pt-3">
+      <div className={cn(CONTAINER, "flex flex-none items-center justify-between gap-3 px-[18px] pb-1 pt-3 lg:px-6")}>
         <label className="relative">
           <ArrowUpDown className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <span className="sr-only">Ordenar</span>
@@ -133,7 +133,7 @@ export default function AprovadasPage() {
       </div>
 
       {emSequencia && (
-        <div className="flex-none px-[18px] pt-2">
+        <div className={cn(CONTAINER, "flex-none px-[18px] pt-2 lg:px-6")}>
           <p className="text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground">
             Sequência de gravação
           </p>
@@ -142,7 +142,7 @@ export default function AprovadasPage() {
       )}
 
       {(filtrosAtivos > 0 || buscando) && (
-        <div className="no-scrollbar flex flex-none items-center gap-2 overflow-x-auto px-[18px] pt-3">
+        <div className={cn(CONTAINER, "no-scrollbar flex flex-none items-center gap-2 overflow-x-auto px-[18px] pt-3 lg:px-6")}>
           <ChipsAtivos />
           <button
             type="button"
@@ -154,16 +154,27 @@ export default function AprovadasPage() {
         </div>
       )}
 
-      <div className="no-scrollbar flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto px-[18px] pb-5 pt-3">
+      <div
+        className={cn(
+          CONTAINER,
+          "no-scrollbar min-h-0 flex-1 overflow-y-auto px-[18px] pb-5 pt-3 lg:px-6 lg:pb-8",
+          "flex flex-col gap-2.5",
+          // Sequência é uma fila numerada: em duas colunas o «1, 2, 3» passaria
+          // a serpentear pela tela e a ordem deixaria de ser óbvia.
+          !emSequencia && "xl:grid xl:grid-cols-2 xl:content-start xl:gap-3"
+        )}
+      >
         {fila.length === 0 ? (
-          <VazioAprovadas
-            filtrando={filtrosAtivos > 0 || buscando || listaAtiva !== null}
-            total={aprovadas.length}
-            onLimpar={() => {
-              limparCriterios();
-              setCriterios(CRITERIOS_VAZIO);
-            }}
-          />
+          <div className="xl:col-span-2">
+            <VazioAprovadas
+              filtrando={filtrosAtivos > 0 || buscando || listaAtiva !== null}
+              total={aprovadas.length}
+              onLimpar={() => {
+                limparCriterios();
+                setCriterios(CRITERIOS_VAZIO);
+              }}
+            />
+          </div>
         ) : (
           fila.map((c, i) => (
             <CaptacaoRow

@@ -40,7 +40,11 @@ export function ZoomLock() {
 
   useEffect(() => {
     const raiz = document.documentElement;
-    if (!travar) {
+    // No desktop o pinch é o do trackpad — no Safari do macOS ele também
+    // dispara `gesture*`, e travá-lo ali seria tirar o zoom de quem tem
+    // ponteiro de verdade. A trava existe para o dedo.
+    const dedo = window.matchMedia("(pointer: coarse)").matches;
+    if (!travar || !dedo) {
       raiz.classList.add(LIVRE);
       return () => raiz.classList.remove(LIVRE);
     }

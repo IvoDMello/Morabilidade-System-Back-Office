@@ -77,13 +77,13 @@ export function FiltrosSheet({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[92dvh] max-w-md flex-col gap-0 p-0">
+      <DialogContent className="flex max-h-[92dvh] max-w-md flex-col gap-0 p-0 lg:max-w-3xl">
         <DialogHeader className="flex-none border-b px-5 py-4">
           <DialogTitle className="font-serif text-xl">Filtros</DialogTitle>
           <DialogDescription>Refine as captações desta aba.</DialogDescription>
         </DialogHeader>
 
-        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5">
+        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5 lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-6 lg:gap-y-5 lg:space-y-0">
           {todasListas.length > 0 && (
             <Secao titulo="Listas">
               <div className="flex flex-wrap gap-2">

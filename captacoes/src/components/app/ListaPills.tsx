@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Pencil, Plus } from "lucide-react";
 import { useApp } from "@/stores/app";
 import { corDaLista, separarListas } from "@/lib/listas";
-import { cn } from "@/lib/utils";
+import { cn, CONTAINER } from "@/lib/utils";
 import type { Captacao, Lista } from "@/types";
 import { ListaDialog } from "./ListaDialog";
 
@@ -42,7 +42,7 @@ export function ListaPills({ visiveis }: { visiveis: Captacao[] }) {
       <div className="flex-none border-b bg-background py-3">
         {/* `scroll-px` reserva a mesma folga das laterais quando a pill ativa
             é trazida para a área visível — sem isso ela encosta na borda. */}
-        <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto scroll-px-[18px] px-[18px]">
+        <div className={cn(CONTAINER, "no-scrollbar flex items-center gap-1.5 overflow-x-auto scroll-px-[18px] px-[18px] lg:px-6")}>
           <Pill ativa={listaAtiva === null} onClick={() => setListaAtiva(null)} nome="Todas" contagem={visiveis.length} />
 
           {mostradas.map((l) => {

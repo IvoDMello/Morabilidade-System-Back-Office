@@ -16,7 +16,7 @@ import {
   resumoGravacoes,
   type Periodo,
 } from "@/lib/gravacoes";
-import { cn } from "@/lib/utils";
+import { cn, CONTAINER } from "@/lib/utils";
 
 type Atalho = "mes" | "anterior" | "90d";
 
@@ -72,83 +72,87 @@ export default function GravadasPage() {
 
   return (
     <>
-      <header className="flex flex-none items-center gap-3 border-b bg-card px-[18px] py-3.5">
-        <Link
-          href="/agenda"
-          aria-label="Voltar para a agenda"
-          className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-muted text-secondary"
-        >
-          <ChevronLeft className="h-[17px] w-[17px]" strokeWidth={2.2} />
-        </Link>
-        <h1 className="flex-1 font-serif text-[19px] font-semibold text-foreground">Gravadas</h1>
+      <header className="flex-none border-b bg-card">
+        <div className={cn(CONTAINER, "flex items-center gap-3 px-[18px] py-3.5 lg:px-6")}>
+          <Link
+            href="/agenda"
+            aria-label="Voltar para a agenda"
+            className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-muted text-secondary"
+          >
+            <ChevronLeft className="h-[17px] w-[17px]" strokeWidth={2.2} />
+          </Link>
+          <h1 className="flex-1 font-serif text-[19px] font-semibold text-foreground">Gravadas</h1>
+        </div>
       </header>
 
-      <div className="flex-none border-b bg-card px-[18px] pb-5 pt-1.5">
-        <div className="flex items-end justify-between">
-          <div>
-            <p className="font-serif text-[52px] font-semibold leading-none tracking-[-0.02em] text-foreground">
-              {resumo.total}
-            </p>
-            <p className="mt-2 text-[13px] text-muted-foreground">
-              {resumo.total === 1 ? "gravação" : "gravações"} em{" "}
-              <strong className="font-semibold text-foreground">{rotuloPeriodo}</strong>
-            </p>
+      <div className="flex-none border-b bg-card">
+        <div className={cn(CONTAINER, "px-[18px] pb-5 pt-1.5 lg:px-6")}>
+          <div className="flex items-end justify-between">
+            <div>
+              <p className="font-serif text-[52px] font-semibold leading-none tracking-[-0.02em] text-foreground">
+                {resumo.total}
+              </p>
+              <p className="mt-2 text-[13px] text-muted-foreground">
+                {resumo.total === 1 ? "gravação" : "gravações"} em{" "}
+                <strong className="font-semibold text-foreground">{rotuloPeriodo}</strong>
+              </p>
+            </div>
+
+            {delta !== null && delta !== 0 && (
+              <div className="pb-1 text-right">
+                <p
+                  className={cn(
+                    "inline-flex items-center gap-1.5 text-xs font-semibold",
+                    delta > 0 ? "text-[#2f6b46]" : "text-[#9a3b3b]"
+                  )}
+                >
+                  {delta > 0 ? (
+                    <TrendingUp className="h-3.5 w-3.5" />
+                  ) : (
+                    <TrendingDown className="h-3.5 w-3.5" />
+                  )}
+                  {delta > 0 ? "+" : ""}
+                  {delta}
+                </p>
+                <p className="mt-1 text-[11px] text-muted-foreground">vs. mês anterior ({anterior})</p>
+              </div>
+            )}
           </div>
 
-          {delta !== null && delta !== 0 && (
-            <div className="pb-1 text-right">
-              <p
-                className={cn(
-                  "inline-flex items-center gap-1.5 text-xs font-semibold",
-                  delta > 0 ? "text-[#2f6b46]" : "text-[#9a3b3b]"
-                )}
-              >
-                {delta > 0 ? (
-                  <TrendingUp className="h-3.5 w-3.5" />
-                ) : (
-                  <TrendingDown className="h-3.5 w-3.5" />
-                )}
-                {delta > 0 ? "+" : ""}
-                {delta}
-              </p>
-              <p className="mt-1 text-[11px] text-muted-foreground">vs. mês anterior ({anterior})</p>
+          {resumo.total > 0 && (
+            <div className="mt-4 flex gap-2.5 lg:max-w-xl">
+              <Tile label="No sistema" valor={resumo.noSistema} />
+              <Tile
+                label="Sem cadastro"
+                valor={resumo.semCadastro}
+                destaque={resumo.semCadastro > 0}
+              />
+              <Tile label="Publicadas" valor={resumo.publicadas} />
             </div>
           )}
-        </div>
 
-        {resumo.total > 0 && (
-          <div className="mt-4 flex gap-2.5">
-            <Tile label="No sistema" valor={resumo.noSistema} />
-            <Tile
-              label="Sem cadastro"
-              valor={resumo.semCadastro}
-              destaque={resumo.semCadastro > 0}
-            />
-            <Tile label="Publicadas" valor={resumo.publicadas} />
+          <div className="no-scrollbar mt-4 flex items-center gap-1.5 overflow-x-auto">
+            {(Object.keys(ATALHO_LABEL) as Atalho[]).map((a) => (
+              <button
+                key={a}
+                type="button"
+                onClick={() => setAtalho(a)}
+                aria-pressed={atalho === a}
+                className={cn(
+                  "h-[33px] flex-none rounded-[11px] border px-3.5 text-[12.5px] font-semibold",
+                  atalho === a
+                    ? "border-secondary bg-secondary text-secondary-foreground"
+                    : "border-input bg-card text-foreground"
+                )}
+              >
+                {ATALHO_LABEL[a]}
+              </button>
+            ))}
           </div>
-        )}
-
-        <div className="no-scrollbar mt-4 flex items-center gap-1.5 overflow-x-auto">
-          {(Object.keys(ATALHO_LABEL) as Atalho[]).map((a) => (
-            <button
-              key={a}
-              type="button"
-              onClick={() => setAtalho(a)}
-              aria-pressed={atalho === a}
-              className={cn(
-                "h-[33px] flex-none rounded-[11px] border px-3.5 text-[12.5px] font-semibold",
-                atalho === a
-                  ? "border-secondary bg-secondary text-secondary-foreground"
-                  : "border-input bg-card text-foreground"
-              )}
-            >
-              {ATALHO_LABEL[a]}
-            </button>
-          ))}
         </div>
       </div>
 
-      <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-[18px] py-[18px]">
+      <div className={cn(CONTAINER, "no-scrollbar min-h-0 flex-1 overflow-y-auto px-[18px] py-[18px] lg:px-6")}>
         {gravadas.length === 0 ? (
           <VazioGravacoes periodo={rotuloPeriodo} />
         ) : (
@@ -172,7 +176,7 @@ export default function GravadasPage() {
                     <Link
                       key={c.id}
                       href={`/captacao/${c.id}`}
-                      className="flex items-center gap-3.5 bg-card px-3.5 py-3.5"
+                      className="flex items-center gap-3.5 bg-card px-3.5 py-3.5 lg:transition-colors lg:hover:bg-muted/50"
                     >
                       <span className="w-11 flex-none text-center">
                         <span className="block font-serif text-[19px] font-semibold leading-none text-foreground">

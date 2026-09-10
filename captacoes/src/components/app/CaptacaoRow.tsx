@@ -9,7 +9,7 @@ import { corDaLista } from "@/lib/listas";
 import { MIDIA_VAZIA, rotuloMidia } from "@/lib/midia";
 import { PENDENCIA_LABEL, foiGravada, pendenciaDaCaptacao } from "@/lib/etapa";
 import { dataCurta, diasParado, formatBRL, relativo } from "@/lib/format";
-import { cn } from "@/lib/utils";
+import { cn, HOVER_CARD } from "@/lib/utils";
 import type { Captacao, Lista } from "@/types";
 import { MenuDaCaptacao } from "./MenuDaCaptacao";
 
@@ -67,7 +67,12 @@ export function CaptacaoRow({
   const selo = rotuloMidia(midia);
 
   return (
-    <article className="relative flex gap-3 rounded-2xl border bg-card p-3 shadow-[0_1px_2px_rgba(46,48,42,0.04),0_10px_24px_-18px_rgba(46,48,42,0.22)]">
+    <article
+      className={cn(
+        "relative flex gap-3 rounded-2xl border bg-card p-3 shadow-[0_1px_2px_rgba(46,48,42,0.04),0_10px_24px_-18px_rgba(46,48,42,0.22)]",
+        HOVER_CARD
+      )}
+    >
       {/* Link esticado: o corpo do card abre o detalhe, sem engolir os botões. */}
       <Link
         href={`/captacao/${captacao.id}`}

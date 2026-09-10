@@ -21,9 +21,17 @@ import { createClient } from "@/lib/supabase/server";
 import { STATUS_STYLE } from "@/lib/status-style";
 import { etapaDaCaptacao } from "@/lib/etapa";
 import { PARAM_NOVA } from "@/lib/captacao-link";
+import { cn } from "@/lib/utils";
 import type { Captacao, Documento, Midia, Opiniao, Perfil } from "@/types";
 
 export const dynamic = "force-dynamic";
+
+/**
+ * O detalhe é um formulário longo, não um painel: no desktop ele para de
+ * esticar antes das abas (1180px) — linha de texto e campo largos demais
+ * cansam mais do que ajudam.
+ */
+const TRILHO = "mx-auto w-full max-w-[900px]";
 
 const VOLTAR_HREF: Record<string, string> = {
   decidir: "/decidir",
@@ -74,80 +82,84 @@ export default async function CaptacaoPage({ params }: { params: Promise<{ id: s
     : null;
 
   return (
-    <main className="min-h-dvh bg-[#f3f4f0] pb-28">
+    <main className="min-h-dvh bg-[#f3f4f0] pb-28 lg:pb-12">
       {/* Top bar */}
-      <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[#e6e7e1] bg-white px-4 py-2.5">
-        <Link href={voltarPara} className="inline-flex items-center gap-1.5 text-sm font-medium text-[#4a4d43]">
-          <ArrowLeft className="h-4 w-4" /> {VOLTAR_LABEL[etapa]}
-        </Link>
-        <ExcluirCaptacao id={c.id} />
+      <div className="sticky top-0 z-10 border-b border-[#e6e7e1] bg-white">
+        <div className={cn(TRILHO, "flex items-center justify-between px-4 py-2.5")}>
+          <Link href={voltarPara} className="inline-flex items-center gap-1.5 text-sm font-medium text-[#4a4d43]">
+            <ArrowLeft className="h-4 w-4" /> {VOLTAR_LABEL[etapa]}
+          </Link>
+          <ExcluirCaptacao id={c.id} />
+        </div>
       </div>
 
       {/* Hero */}
-      <div className="bg-white px-4 pb-5 pt-4">
-        <span
-          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold"
-          style={{ backgroundColor: st.bg, color: st.fg }}
-        >
-          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: st.dot }} /> {st.label}
-        </span>
-        <div className="mt-2.5">
-          <ListasDaCaptacao captacaoId={c.id} />
+      <div className="bg-white">
+        <div className={cn(TRILHO, "px-4 pb-5 pt-4")}>
+          <span
+            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold"
+            style={{ backgroundColor: st.bg, color: st.fg }}
+          >
+            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: st.dot }} /> {st.label}
+          </span>
+          <div className="mt-2.5">
+            <ListasDaCaptacao captacaoId={c.id} />
+          </div>
+          <h1 className="mt-3 font-serif text-[25px] font-semibold leading-[1.18] tracking-[-0.01em] text-[#2e302a]">
+            {c.endereco}
+            {c.unidade && <span className="text-[#7a7d70]"> · ap {c.unidade}</span>}
+          </h1>
+          {c.bairro && <p className="mt-1 text-sm text-[#7a7d70]">{c.bairro}</p>}
+          {(c.proprietario_nome || c.whatsapp || c.anuncio_url) && (
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              {c.whatsapp && whatsappLink(c.whatsapp) ? (
+                <a
+                  href={whatsappLink(c.whatsapp)!}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 rounded-xl border border-[#d8e7df] bg-[#eef4f0] px-3 py-2 text-sm font-medium text-[#2f6b46]"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  <span>
+                    {c.proprietario_nome ?? "Contato"} · {formatarTelefone(c.whatsapp)}
+                  </span>
+                </a>
+              ) : (
+                c.proprietario_nome && (
+                  <span className="inline-flex items-center gap-2 rounded-xl border border-[#e8e9e3] bg-[#f5f6f1] px-3 py-2 text-sm text-[#585a4f]">
+                    {c.proprietario_nome}
+                  </span>
+                )
+              )}
+              {c.anuncio_url && (
+                <a
+                  href={c.anuncio_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-[#ece4b8] bg-[#faf7e8] px-3 py-2 text-sm font-medium text-[#9a8d3a]"
+                >
+                  <Link2 className="h-4 w-4" /> Anúncio
+                </a>
+              )}
+              {outraDoNumero && (
+                <Link
+                  href={outraDoNumero}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-[#e8e9e3] bg-[#f5f6f1] px-3 py-2 text-sm font-medium text-[#585a4f]"
+                >
+                  <UserPlus className="h-4 w-4" /> Outra captação deste número
+                </Link>
+              )}
+            </div>
+          )}
+          {c.share_token && (
+            <div className="mt-3">
+              <CompartilharCaptacao token={c.share_token} endereco={c.endereco} />
+            </div>
+          )}
         </div>
-        <h1 className="mt-3 font-serif text-[25px] font-semibold leading-[1.18] tracking-[-0.01em] text-[#2e302a]">
-          {c.endereco}
-          {c.unidade && <span className="text-[#7a7d70]"> · ap {c.unidade}</span>}
-        </h1>
-        {c.bairro && <p className="mt-1 text-sm text-[#7a7d70]">{c.bairro}</p>}
-        {(c.proprietario_nome || c.whatsapp || c.anuncio_url) && (
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            {c.whatsapp && whatsappLink(c.whatsapp) ? (
-              <a
-                href={whatsappLink(c.whatsapp)!}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl border border-[#d8e7df] bg-[#eef4f0] px-3 py-2 text-sm font-medium text-[#2f6b46]"
-              >
-                <MessageCircle className="h-4 w-4" />
-                <span>
-                  {c.proprietario_nome ?? "Contato"} · {formatarTelefone(c.whatsapp)}
-                </span>
-              </a>
-            ) : (
-              c.proprietario_nome && (
-                <span className="inline-flex items-center gap-2 rounded-xl border border-[#e8e9e3] bg-[#f5f6f1] px-3 py-2 text-sm text-[#585a4f]">
-                  {c.proprietario_nome}
-                </span>
-              )
-            )}
-            {c.anuncio_url && (
-              <a
-                href={c.anuncio_url}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-xl border border-[#ece4b8] bg-[#faf7e8] px-3 py-2 text-sm font-medium text-[#9a8d3a]"
-              >
-                <Link2 className="h-4 w-4" /> Anúncio
-              </a>
-            )}
-            {outraDoNumero && (
-              <Link
-                href={outraDoNumero}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-[#e8e9e3] bg-[#f5f6f1] px-3 py-2 text-sm font-medium text-[#585a4f]"
-              >
-                <UserPlus className="h-4 w-4" /> Outra captação deste número
-              </Link>
-            )}
-          </div>
-        )}
-        {c.share_token && (
-          <div className="mt-3">
-            <CompartilharCaptacao token={c.share_token} endereco={c.endereco} />
-          </div>
-        )}
       </div>
 
-      <div className="space-y-[14px] px-4 py-[18px]">
+      <div className={cn(TRILHO, "space-y-[14px] px-4 py-[18px] lg:py-6")}>
 
       {(c.valor_venda != null || c.valor_aluguel != null || c.valor_condominio != null || c.valor_iptu != null) && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

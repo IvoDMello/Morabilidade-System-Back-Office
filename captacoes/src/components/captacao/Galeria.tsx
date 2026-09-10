@@ -289,7 +289,7 @@ export function Galeria({
       {fotos.length > 0 && (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onReorder}>
           <SortableContext items={fotos.map((f) => f.id)} strategy={rectSortingStrategy}>
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5">
               {fotos.map((m, i) => (
                 <SortableFoto
                   key={m.id}

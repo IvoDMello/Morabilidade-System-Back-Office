@@ -17,7 +17,7 @@ import { contadores, hojeLocal } from "@/lib/contadores";
 import { PENDENCIA_LABEL, etapaDaCaptacao, pendenciaDaCaptacao } from "@/lib/etapa";
 import { agruparPorDia, proximosCompromissos, rotuloDoDia, type TipoCompromisso } from "@/lib/agendamento";
 import { gravacoesNoPeriodo, mesDe, resumoGravacoes } from "@/lib/gravacoes";
-import { cn } from "@/lib/utils";
+import { cn, CONTAINER } from "@/lib/utils";
 import type { Captacao } from "@/types";
 
 export default function AgendaPage() {
@@ -63,14 +63,14 @@ export default function AgendaPage() {
         subtitulo={`${nums.agenda} a agendar · ${dias.reduce((n, d) => n + d.itens.length, 0)} compromissos à frente`}
       />
 
-      <div className="no-scrollbar flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-[18px] pb-6 pt-[18px]">
+      <div className={cn(CONTAINER, "no-scrollbar flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-[18px] pb-6 pt-[18px] [&>*]:shrink-0 lg:px-6 lg:pb-8")}>
         {semNada ? (
           <VazioAgenda pendentes={0} />
         ) : (
           <>
             {(pendencias.visita.length > 0 || pendencias.gravacao.length > 0) && (
               <Secao titulo="Pendências">
-                <div className="flex flex-col gap-2.5">
+                <div className="flex flex-col gap-2.5 lg:grid lg:grid-cols-2 lg:items-start lg:gap-3">
                   <GrupoPendencia
                     tipo="visita"
                     itens={pendencias.visita}
@@ -100,7 +100,7 @@ export default function AgendaPage() {
                     <p className="mb-2 text-[11.5px] font-bold uppercase tracking-wide text-secondary">
                       {rotuloDoDia(d.dia, hoje)}
                     </p>
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-2 lg:grid lg:grid-cols-2 lg:gap-2.5 xl:grid-cols-3">
                       {d.itens.map((k) => (
                         <button
                           key={`${k.captacao.id}-${k.tipo}`}
@@ -174,7 +174,7 @@ export default function AgendaPage() {
               Nenhuma pauta montada. Uma pauta é a sessão de gravação de um dia.
             </p>
           ) : (
-            <div className="flex flex-col gap-2.5">
+            <div className="flex flex-col gap-2.5 lg:grid lg:grid-cols-2 lg:items-start lg:gap-3">
               {pautas.map((p) => {
                 const dela = itensDe(p.id);
                 const { feitos, total } = progresso(dela);

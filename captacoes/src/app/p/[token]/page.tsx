@@ -146,13 +146,17 @@ export default async function CaptacaoPublicaPage({
     <main className="min-h-dvh bg-[#f3f4f0] pb-12">
       {/* Marca */}
       <header
-        className="px-5 py-4 text-[#f3f4f0]"
+        className="py-4 text-[#f3f4f0]"
         style={{ background: "linear-gradient(150deg,#2c2e28 0%,#585a4f 58%,#454840 100%)" }}
       >
-        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#d8cb6a]">
-          Morabilidade
-        </p>
-        <p className="mt-0.5 text-sm text-[#cfd0c9]">Apresentação de imóvel</p>
+        {/* Mesmo trilho do conteúdo: no desktop a marca ficaria no canto
+            da tela e o imóvel no meio. */}
+        <div className="mx-auto max-w-2xl px-5">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#d8cb6a]">
+            Morabilidade
+          </p>
+          <p className="mt-0.5 text-sm text-[#cfd0c9]">Apresentação de imóvel</p>
+        </div>
       </header>
 
       <div className="mx-auto max-w-2xl px-4">

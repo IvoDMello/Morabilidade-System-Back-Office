@@ -12,7 +12,7 @@ import { SyncIndicator } from "@/components/board/SyncIndicator";
 import { createClient } from "@/lib/supabase/client";
 import { useApp } from "@/stores/app";
 import { CRITERIOS_VAZIO } from "@/types";
-import { cn, ITEM_MENU } from "@/lib/utils";
+import { cn, CONTAINER, ITEM_MENU } from "@/lib/utils";
 import { NavDesktop } from "./TabBar";
 import type { Contadores } from "@/lib/contadores";
 
@@ -46,100 +46,104 @@ export function AppHeader({
 
   return (
     <header
-      className="flex-none px-[18px] pb-4 pt-[18px] text-[#f3f4f0]"
+      className="flex-none px-[18px] pb-4 pt-[18px] text-[#f3f4f0] lg:px-6 lg:pb-5"
       style={{ background: "linear-gradient(150deg,#2c2e28 0%,#585a4f 58%,#454840 100%)" }}
     >
-      <div className="mb-3 flex items-center justify-between gap-3 lg:gap-4">
-        <Link href="/decidir" aria-label="Início" className="flex-none">
-          {/* logo-compacta: o /logo.png tem 58% de margem transparente em volta
-              da marca (512x288 para um desenho de 249x121), então aqui, onde a
-              altura é apertada, ele renderizava minúsculo. Este é o mesmo
-              arquivo sem a margem — o login segue com a versão folgada. */}
-          <Image
-            src="/logo-compacta.png"
-            alt="Morabilidade"
-            width={249}
-            height={121}
-            className="h-[44px] w-auto object-contain lg:h-10"
-            priority
-          />
-        </Link>
-
-        {/* Título no meio da própria linha da logo — só abaixo do lg, onde a
-            nav das abas não disputa esse espaço. Trunca porque o vão entre a
-            logo e os botões é estreito em tela pequena. */}
-        <div className="min-w-0 flex-1 text-center lg:hidden">
-          <p className="text-[9px] font-semibold tracking-[0.18em] text-primary">CAPTAÇÕES</p>
-          <h1 className="truncate font-serif text-[19px] font-semibold leading-tight tracking-[-0.01em] sm:text-[23px]">
-            {titulo}
-          </h1>
-        </div>
-
-        <NavDesktop contadores={contadores} />
-
-        <div className="flex flex-none items-center gap-2.5">
-          <SyncIndicator />
-          <div className="hidden lg:block">
-            <NovaCaptacaoButton />
-          </div>
-          <Avatar nome={userNome} size={34} />
-          <MenuMais onSair={sair} />
-        </div>
-      </div>
-
-      <div className="hidden lg:block">
-        <p className="mb-1.5 text-[10.5px] font-semibold tracking-[0.2em] text-primary">CAPTAÇÕES</p>
-        <h1 className="font-serif text-[27px] font-semibold leading-none tracking-[-0.01em]">{titulo}</h1>
-      </div>
-      {subtitulo && (
-        <div className="text-center text-[13px] text-white/75 lg:mt-2 lg:text-left">{subtitulo}</div>
-      )}
-
-      {busca && (
-        <div className="mt-4 flex gap-2.5">
-          <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/60" />
-            <input
-              value={filtro}
-              onChange={(e) => setFiltro(e.target.value)}
-              placeholder="Endereço, nome, final do telefone…"
-              aria-label="Buscar captação"
-              className="h-[42px] w-full rounded-[13px] border border-white/[0.18] bg-white/[0.14] pl-10 pr-9 text-[13.5px] text-white placeholder:text-white/55 outline-none focus-visible:border-primary"
+      {/* O olive sangra de ponta a ponta, mas o conteúdo anda no mesmo trilho
+          do corpo: sem isso a logo fica no canto da tela e os cartões no meio. */}
+      <div className={CONTAINER}>
+        <div className="mb-3 flex items-center justify-between gap-3 lg:gap-4">
+          <Link href="/decidir" aria-label="Início" className="flex-none">
+            {/* logo-compacta: o /logo.png tem 58% de margem transparente em volta
+                da marca (512x288 para um desenho de 249x121), então aqui, onde a
+                altura é apertada, ele renderizava minúsculo. Este é o mesmo
+                arquivo sem a margem — o login segue com a versão folgada. */}
+            <Image
+              src="/logo-compacta.png"
+              alt="Morabilidade"
+              width={249}
+              height={121}
+              className="h-[44px] w-auto object-contain lg:h-10"
+              priority
             />
-            {filtro && (
+          </Link>
+
+          {/* Título no meio da própria linha da logo — só abaixo do lg, onde a
+              nav das abas não disputa esse espaço. Trunca porque o vão entre a
+              logo e os botões é estreito em tela pequena. */}
+          <div className="min-w-0 flex-1 text-center lg:hidden">
+            <p className="text-[9px] font-semibold tracking-[0.18em] text-primary">CAPTAÇÕES</p>
+            <h1 className="truncate font-serif text-[19px] font-semibold leading-tight tracking-[-0.01em] sm:text-[23px]">
+              {titulo}
+            </h1>
+          </div>
+
+          <NavDesktop contadores={contadores} />
+
+          <div className="flex flex-none items-center gap-2.5">
+            <SyncIndicator />
+            <div className="hidden lg:block">
+              <NovaCaptacaoButton />
+            </div>
+            <Avatar nome={userNome} size={34} />
+            <MenuMais onSair={sair} />
+          </div>
+        </div>
+
+        <div className="hidden lg:block">
+          <p className="mb-1.5 text-[10.5px] font-semibold tracking-[0.2em] text-primary">CAPTAÇÕES</p>
+          <h1 className="font-serif text-[27px] font-semibold leading-none tracking-[-0.01em]">{titulo}</h1>
+        </div>
+        {subtitulo && (
+          <div className="text-center text-[13px] text-white/75 lg:mt-2 lg:text-left">{subtitulo}</div>
+        )}
+
+        {busca && (
+          <div className="mt-4 flex gap-2.5 lg:max-w-[520px]">
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/60" />
+              <input
+                value={filtro}
+                onChange={(e) => setFiltro(e.target.value)}
+                placeholder="Endereço, nome, final do telefone…"
+                aria-label="Buscar captação"
+                className="h-[42px] w-full rounded-[13px] border border-white/[0.18] bg-white/[0.14] pl-10 pr-9 text-[13.5px] text-white placeholder:text-white/55 outline-none focus-visible:border-primary"
+              />
+              {filtro && (
+                <button
+                  type="button"
+                  onClick={() => setFiltro("")}
+                  aria-label="Limpar busca"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-1 text-white/70 hover:bg-white/10"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+
+            {onAbrirFiltros && (
               <button
                 type="button"
-                onClick={() => setFiltro("")}
-                aria-label="Limpar busca"
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-1 text-white/70 hover:bg-white/10"
+                onClick={onAbrirFiltros}
+                aria-label={`Filtros${filtrosAtivos > 0 ? ` (${filtrosAtivos} ativos)` : ""}`}
+                className={cn(
+                  "relative flex h-[42px] w-11 flex-none items-center justify-center rounded-[13px] border text-white",
+                  filtrosAtivos > 0
+                    ? "border-primary bg-primary/20"
+                    : "border-white/[0.18] bg-white/[0.14]"
+                )}
               >
-                <X className="h-4 w-4" />
+                <SlidersHorizontal className="h-[18px] w-[18px]" />
+                {filtrosAtivos > 0 && (
+                  <span className="absolute -right-1.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-[#4b4d44] bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+                    {filtrosAtivos}
+                  </span>
+                )}
               </button>
             )}
           </div>
-
-          {onAbrirFiltros && (
-            <button
-              type="button"
-              onClick={onAbrirFiltros}
-              aria-label={`Filtros${filtrosAtivos > 0 ? ` (${filtrosAtivos} ativos)` : ""}`}
-              className={cn(
-                "relative flex h-[42px] w-11 flex-none items-center justify-center rounded-[13px] border text-white",
-                filtrosAtivos > 0
-                  ? "border-primary bg-primary/20"
-                  : "border-white/[0.18] bg-white/[0.14]"
-              )}
-            >
-              <SlidersHorizontal className="h-[18px] w-[18px]" />
-              {filtrosAtivos > 0 && (
-                <span className="absolute -right-1.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-[#4b4d44] bg-primary px-1 text-[10px] font-bold text-primary-foreground">
-                  {filtrosAtivos}
-                </span>
-              )}
-            </button>
-          )}
-        </div>
-      )}
+        )}
+      </div>
     </header>
   );
 }

@@ -12,7 +12,7 @@ import { createClient } from "@/lib/supabase/client";
 import { contadores, hojeLocal } from "@/lib/contadores";
 import { historicoNegativadas, retornosPendentes, situacaoRetorno } from "@/lib/retorno";
 import { dataCurta, whatsappLink } from "@/lib/format";
-import { cn } from "@/lib/utils";
+import { cn, CONTAINER, HOVER_CARD } from "@/lib/utils";
 import type { Captacao } from "@/types";
 
 export default function NegativadasPage() {
@@ -54,34 +54,37 @@ export default function NegativadasPage() {
         }
       />
 
-      <div className="flex-none border-b bg-background px-[18px] py-3">
-        <div className="flex rounded-xl bg-muted p-[3px]">
-          <button
-            type="button"
-            onClick={() => setSomenteSuas(true)}
-            aria-pressed={somenteSuas}
-            className={cn(
-              "h-[34px] flex-1 rounded-[9px] text-[13px] font-semibold",
-              somenteSuas ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
-            )}
-          >
-            Suas <span className="opacity-55">{suas.length}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setSomenteSuas(false)}
-            aria-pressed={!somenteSuas}
-            className={cn(
-              "h-[34px] flex-1 rounded-[9px] text-[13px] font-semibold",
-              !somenteSuas ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
-            )}
-          >
-            Todas <span className="opacity-55">{todas.length}</span>
-          </button>
+      <div className="flex-none border-b bg-background">
+        <div className={cn(CONTAINER, "px-[18px] py-3 lg:px-6")}>
+          {/* Alternador Suas/Todas: no desktop não precisa ocupar a largura toda. */}
+          <div className="flex rounded-xl bg-muted p-[3px] lg:max-w-xs">
+            <button
+              type="button"
+              onClick={() => setSomenteSuas(true)}
+              aria-pressed={somenteSuas}
+              className={cn(
+                "h-[34px] flex-1 rounded-[9px] text-[13px] font-semibold",
+                somenteSuas ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+              )}
+            >
+              Suas <span className="opacity-55">{suas.length}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSomenteSuas(false)}
+              aria-pressed={!somenteSuas}
+              className={cn(
+                "h-[34px] flex-1 rounded-[9px] text-[13px] font-semibold",
+                !somenteSuas ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+              )}
+            >
+              Todas <span className="opacity-55">{todas.length}</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="no-scrollbar flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto px-[18px] pb-6 pt-4">
+      <div className={cn(CONTAINER, "no-scrollbar flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto px-[18px] pb-6 pt-4 [&>*]:shrink-0 lg:px-6 lg:pb-8")}>
         {fila.length === 0 ? (
           <VazioRetornos suas={somenteSuas} />
         ) : (
@@ -92,9 +95,11 @@ export default function NegativadasPage() {
               </span>
               <span className="h-px flex-1 bg-border" />
             </div>
-            {fila.map((c) => (
-              <CardRetorno key={c.id} captacao={c} hoje={hoje} />
-            ))}
+            <div className={GRADE}>
+              {fila.map((c) => (
+                <CardRetorno key={c.id} captacao={c} hoje={hoje} />
+              ))}
+            </div>
           </>
         )}
 
@@ -124,7 +129,7 @@ export default function NegativadasPage() {
             </button>
 
             {historicoAberto && (
-              <div className="mt-2.5 flex flex-col gap-2.5">
+              <div className={cn(GRADE, "mt-2.5")}>
                 {historico.map((c) => (
                   <CardHistorico key={c.id} captacao={c} />
                 ))}
@@ -136,6 +141,9 @@ export default function NegativadasPage() {
     </>
   );
 }
+
+/** Mesma grade das outras abas: uma coluna no celular, duas no desktop. */
+const GRADE = "flex flex-col gap-2.5 lg:grid lg:grid-cols-2 lg:items-start lg:gap-3";
 
 const FAIXA = {
   atrasado: { bg: "#f7ecec", bd: "#f0dcdc", fg: "#8a4444", Icone: AlertCircle },
@@ -171,7 +179,12 @@ function CardRetorno({ captacao, hoje }: { captacao: Captacao; hoje: string }) {
   return (
     <article
       className={cn(
-        "overflow-hidden rounded-[17px] border bg-card shadow-[0_1px_2px_rgba(46,48,42,0.04),0_10px_24px_-18px_rgba(46,48,42,0.22)]",
+        // `shrink-0` não é decorativo: o `overflow-hidden` daqui zera a altura
+        // mínima automática do cartão, e num container flex-column sem espaço
+        // sobrando ele era ESPREMIDO em vez de rolar — cortava o rodapé do
+        // cartão e escondia justamente o botão "Retorno dado".
+        "shrink-0 overflow-hidden rounded-[17px] border bg-card shadow-[0_1px_2px_rgba(46,48,42,0.04),0_10px_24px_-18px_rgba(46,48,42,0.22)]",
+        HOVER_CARD,
         situacao === "atrasado" && "border-[#e6c5c5]"
       )}
     >
