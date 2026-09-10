@@ -112,6 +112,14 @@ export function Footer() {
             <span className="block sm:inline sm:before:content-['·'] sm:before:mx-1.5">
               CRECI J 13167
             </span>
+            <span className="block sm:inline sm:before:content-['·'] sm:before:mx-1.5">
+              <Link
+                href="/politica-de-privacidade"
+                className="text-white/60 underline hover:text-white transition"
+              >
+                Política de Privacidade
+              </Link>
+            </span>
           </p>
           <p className="text-xs text-white/55 tracking-widest uppercase sm:justify-self-end text-center sm:text-right">
             Simples · Eficiente · Humanizada
