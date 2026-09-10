@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Trash, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { ITEM_MENU } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -60,14 +61,10 @@ export function LixeiraButton() {
       }}
     >
       <DialogTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          title="Lixeira"
-          className="text-secondary-foreground hover:bg-secondary-foreground/10"
-        >
-          <Trash className="h-4 w-4" />
-        </Button>
+        <button type="button" className={ITEM_MENU}>
+          <Trash className="h-4 w-4 flex-none text-muted-foreground" />
+          Lixeira
+        </button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

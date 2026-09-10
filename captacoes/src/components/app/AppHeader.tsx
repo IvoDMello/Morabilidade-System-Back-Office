@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LogOut, MoreVertical, Search, SlidersHorizontal, X } from "lucide-react";
+import { LogOut, MoreVertical, Plus, Search, SlidersHorizontal, X } from "lucide-react";
 import { Avatar } from "@/components/Avatar";
 import { NovaCaptacaoButton } from "@/components/captacao/NovaCaptacaoButton";
 import { PublicadasButton } from "@/components/board/PublicadasButton";
@@ -12,7 +12,7 @@ import { SyncIndicator } from "@/components/board/SyncIndicator";
 import { createClient } from "@/lib/supabase/client";
 import { useApp } from "@/stores/app";
 import { CRITERIOS_VAZIO } from "@/types";
-import { cn } from "@/lib/utils";
+import { cn, ITEM_MENU } from "@/lib/utils";
 import { NavDesktop } from "./TabBar";
 import type { Contadores } from "@/lib/contadores";
 
@@ -56,7 +56,7 @@ export function AppHeader({
             alt="Morabilidade"
             width={512}
             height={288}
-            className="h-[29px] w-auto object-contain lg:h-9"
+            className="h-[38px] w-auto object-contain lg:h-[44px]"
             priority
           />
         </Link>
@@ -73,9 +73,11 @@ export function AppHeader({
         </div>
       </div>
 
-      <p className="mb-1.5 text-[10.5px] font-semibold tracking-[0.2em] text-primary">CAPTAÇÕES</p>
-      <h1 className="font-serif text-[27px] font-semibold leading-none tracking-[-0.01em]">{titulo}</h1>
-      {subtitulo && <div className="mt-2 text-[13px] text-white/75">{subtitulo}</div>}
+      <div className="text-center lg:text-left">
+        <p className="mb-1.5 text-[10.5px] font-semibold tracking-[0.2em] text-primary">CAPTAÇÕES</p>
+        <h1 className="font-serif text-[27px] font-semibold leading-none tracking-[-0.01em]">{titulo}</h1>
+        {subtitulo && <div className="mt-2 text-[13px] text-white/75">{subtitulo}</div>}
+      </div>
 
       {busca && (
         <div className="mt-4 flex gap-2.5">
@@ -136,18 +138,21 @@ function MenuMais({ onSair }: { onSair: () => void }) {
       >
         <MoreVertical className="h-[17px] w-[17px]" />
       </summary>
-      <div className="absolute right-0 top-10 z-30 flex w-56 flex-col items-stretch gap-1 rounded-xl border bg-card p-2 text-foreground shadow-lg [&_button]:w-full [&_button]:justify-start">
-        <div className="lg:hidden">
-          <NovaCaptacaoButton />
+      <div className="absolute right-0 top-10 z-30 flex w-56 flex-col items-stretch rounded-xl border bg-card p-2 text-foreground shadow-lg">
+        <div className="mb-1 border-b pb-1 lg:hidden">
+          <NovaCaptacaoButton
+            trigger={
+              <button type="button" className={cn(ITEM_MENU, "font-semibold")}>
+                <Plus className="h-4 w-4 flex-none text-primary" strokeWidth={2.4} />
+                Nova captação
+              </button>
+            }
+          />
         </div>
         <PublicadasButton />
         <LixeiraButton />
-        <button
-          type="button"
-          onClick={onSair}
-          className="mt-1 flex items-center gap-2.5 border-t px-2 pb-1 pt-2.5 text-left text-sm hover:bg-muted"
-        >
-          <LogOut className="h-4 w-4 text-muted-foreground" />
+        <button type="button" onClick={onSair} className={cn(ITEM_MENU, "mt-1 border-t pt-2.5")}>
+          <LogOut className="h-4 w-4 flex-none text-muted-foreground" />
           Sair
         </button>
       </div>

@@ -11,8 +11,7 @@ import {
   DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, ITEM_MENU } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { dataCurta, relativo } from "@/lib/format";
 
@@ -39,7 +38,7 @@ function inicioDoMes(): number {
 }
 
 /** Aba oculta: captações já gravadas e publicadas, consultáveis pela data. */
-export function PublicadasButton({ className }: { className?: string }) {
+export function PublicadasButton() {
   const [open, setOpen] = useState(false);
   const [itens, setItens] = useState<Publicada[]>([]);
   const [carregando, setCarregando] = useState(false);
@@ -93,19 +92,15 @@ export function PublicadasButton({ className }: { className?: string }) {
       }}
     >
       <DialogTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          title="Publicadas"
-          className={cn("relative text-secondary-foreground hover:bg-secondary-foreground/10", className)}
-        >
-          <CheckCircle2 className="h-4 w-4" />
+        <button type="button" className={ITEM_MENU}>
+          <CheckCircle2 className="h-4 w-4 flex-none text-muted-foreground" />
+          <span className="flex-1">Publicadas</span>
           {noMes > 0 && (
-            <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-positive px-1 text-[9px] font-bold leading-none text-white">
+            <span className="rounded-md bg-positive/10 px-1.5 py-0.5 text-[11px] font-bold text-positive">
               {noMes}
             </span>
           )}
-        </Button>
+        </button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
