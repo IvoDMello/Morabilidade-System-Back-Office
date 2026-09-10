@@ -51,12 +51,16 @@ export function AppHeader({
     >
       <div className="mb-3 flex items-center justify-between gap-3 lg:gap-4">
         <Link href="/decidir" aria-label="Início" className="flex-none">
+          {/* logo-compacta: o /logo.png tem 58% de margem transparente em volta
+              da marca (512x288 para um desenho de 249x121), então aqui, onde a
+              altura é apertada, ele renderizava minúsculo. Este é o mesmo
+              arquivo sem a margem — o login segue com a versão folgada. */}
           <Image
-            src="/logo.png"
+            src="/logo-compacta.png"
             alt="Morabilidade"
-            width={512}
-            height={288}
-            className="h-[50px] w-auto object-contain lg:h-[46px]"
+            width={249}
+            height={121}
+            className="h-[44px] w-auto object-contain lg:h-10"
             priority
           />
         </Link>
