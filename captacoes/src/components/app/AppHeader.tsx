@@ -102,7 +102,7 @@ export function AppHeader({
             <input
               value={filtro}
               onChange={(e) => setFiltro(e.target.value)}
-              placeholder="Buscar por endereço…"
+              placeholder="Endereço, nome, final do telefone…"
               aria-label="Buscar captação"
               className="h-[42px] w-full rounded-[13px] border border-white/[0.18] bg-white/[0.14] pl-10 pr-9 text-[13.5px] text-white placeholder:text-white/55 outline-none focus-visible:border-primary"
             />

@@ -10,6 +10,7 @@ import {
   ImageOff,
   Link2,
   MapPin,
+  MessageCircle,
   MessageSquare,
   Timer,
   X,
@@ -31,7 +32,7 @@ import { corDaLista, indexarListas } from "@/lib/listas";
 import { MIDIA_VAZIA, rotuloMidia } from "@/lib/midia";
 import { priorizarRevisaoGaveta } from "@/lib/sort";
 import { useCapaUrl } from "@/lib/capa";
-import { dataCurta, diasParado, formatBRL, relativo } from "@/lib/format";
+import { dataCurta, diasParado, formatBRL, formatarTelefone, relativo, whatsappLink } from "@/lib/format";
 import { STATUS_STYLE } from "@/lib/status-style";
 import { cn } from "@/lib/utils";
 import type { Captacao, Lista, Status } from "@/types";
@@ -195,6 +196,10 @@ function CardDecisao({ captacao, listas }: { captacao: Captacao; listas: Lista[]
   const parada = diasParado(captacao.atualizado_em);
   const selo = rotuloMidia(midia);
   const totalMidia = midia.fotos + midia.videos;
+  const zap = whatsappLink(captacao.whatsapp);
+  const contato = [captacao.proprietario_nome, captacao.whatsapp && formatarTelefone(captacao.whatsapp)]
+    .filter(Boolean)
+    .join(" · ");
 
   async function aprovar() {
     if (!confirmarDecisao(captacao, "aprovada")) return;
@@ -297,8 +302,26 @@ function CardDecisao({ captacao, listas }: { captacao: Captacao; listas: Lista[]
         </div>
       </div>
 
-      {(captacao.anuncio_url || selo) && (
+      {(contato || captacao.anuncio_url || selo) && (
         <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+          {/* Contato do proprietário: sem ele a decisão para — quem aprova
+              precisa ligar em seguida, e o número estava só no detalhe. */}
+          {contato &&
+            (zap ? (
+              <a
+                href={zap}
+                target="_blank"
+                rel="noreferrer"
+                className="relative z-10 inline-flex h-6 items-center gap-1.5 rounded-md border border-[#d8e7df] bg-[#eef4f0] px-2.5 text-[11.5px] font-semibold text-[#2f6b46] hover:bg-[#e4eee9]"
+              >
+                <MessageCircle className="h-3 w-3" />
+                {contato}
+              </a>
+            ) : (
+              <span className="inline-flex h-6 items-center gap-1.5 rounded-md border bg-muted px-2.5 text-[11.5px] font-semibold text-muted-foreground">
+                {contato}
+              </span>
+            ))}
           {captacao.anuncio_url && (
             <a
               href={captacao.anuncio_url}
