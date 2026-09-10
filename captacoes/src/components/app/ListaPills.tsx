@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Pencil, Plus } from "lucide-react";
 import { useApp } from "@/stores/app";
 import { corDaLista, separarListas } from "@/lib/listas";
@@ -40,7 +40,9 @@ export function ListaPills({ visiveis }: { visiveis: Captacao[] }) {
   return (
     <>
       <div className="flex-none border-b bg-background py-3">
-        <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto px-[18px]">
+        {/* `scroll-px` reserva a mesma folga das laterais quando a pill ativa
+            é trazida para a área visível — sem isso ela encosta na borda. */}
+        <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto scroll-px-[18px] px-[18px]">
           <Pill ativa={listaAtiva === null} onClick={() => setListaAtiva(null)} nome="Todas" contagem={visiveis.length} />
 
           {mostradas.map((l) => {
@@ -109,8 +111,17 @@ function Pill({
   onClick: () => void;
   onEditar?: () => void;
 }) {
+  const ref = useRef<HTMLSpanElement>(null);
+
+  // Ao ficar ativa a pill cresce (ganha o botão de editar) e pode passar da
+  // borda da barra rolável — quem clicou na ponta direita via a própria pill
+  // cortada. Traz de volta o pedaço que ficou de fora.
+  useEffect(() => {
+    if (ativa) ref.current?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
+  }, [ativa]);
+
   return (
-    <span className="flex flex-none items-center">
+    <span ref={ref} className="flex flex-none items-center">
       <button
         type="button"
         onClick={onClick}
