@@ -63,11 +63,19 @@ export function NovaCaptacaoButton({
     setPendente(null);
   }
 
-  /** Antes de criar: procura captações com o mesmo telefone, anúncio ou endereço. */
+  /**
+   * Antes de criar: procura captações do MESMO IMÓVEL — mesmo endereço ou
+   * mesmo anúncio, inclusive na lixeira.
+   *
+   * O telefone ficou de fora de propósito: número repetido quase sempre é o
+   * mesmo proprietário com outro imóvel, e segurar o cadastro por causa dele
+   * atrapalhava mais do que ajudava. Ele agora aparece enquanto se digita, com
+   * as captações que já existem naquele número (ver TelefoneJaCadastrado).
+   */
   async function handleSubmit(data: CaptacaoInput) {
     const supabase = createClient();
     const { data: rows, error } = await supabase.rpc("buscar_duplicadas", {
-      p_whatsapp: data.whatsapp ?? null,
+      p_whatsapp: null,
       p_anuncio_url: data.anuncio_url ?? null,
       p_endereco: data.endereco ?? null,
     });
@@ -167,7 +175,7 @@ export function NovaCaptacaoButton({
             <div className="flex items-start gap-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
               <p>
-                Já existe captação com esse telefone ou anúncio. Confira antes de cadastrar de
+                Já existe captação com esse endereço ou anúncio. Confira antes de cadastrar de
                 novo, pode ser o mesmo imóvel.
               </p>
             </div>
@@ -216,6 +224,7 @@ export function NovaCaptacaoButton({
             defaultValues={defaults}
             onSubmit={handleSubmit}
             submitLabel="Criar captação"
+            checarTelefone
           />
         </div>
       </DialogContent>

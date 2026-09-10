@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, MessageCircle, Link2 } from "lucide-react";
+import { ArrowLeft, MessageCircle, Link2, UserPlus } from "lucide-react";
 import { whatsappLink, formatarTelefone, formatBRL } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +20,7 @@ import { Opinioes } from "@/components/captacao/Opinioes";
 import { createClient } from "@/lib/supabase/server";
 import { STATUS_STYLE } from "@/lib/status-style";
 import { etapaDaCaptacao } from "@/lib/etapa";
+import { PARAM_NOVA } from "@/lib/captacao-link";
 import type { Captacao, Documento, Midia, Opiniao, Perfil } from "@/types";
 
 export const dynamic = "force-dynamic";
@@ -62,6 +63,15 @@ export default async function CaptacaoPage({ params }: { params: Promise<{ id: s
   // Voltar leva para a aba de onde a captação veio, não para um quadro genérico.
   const etapa = etapaDaCaptacao(c);
   const voltarPara = VOLTAR_HREF[etapa];
+  // Outro imóvel do mesmo proprietário: abre o formulário de captação nova já
+  // com o contato preenchido, pelo mesmo link que o copiloto do WhatsApp usa.
+  const outraDoNumero = c.whatsapp
+    ? `/decidir?${new URLSearchParams({
+        [PARAM_NOVA]: "1",
+        whatsapp: c.whatsapp,
+        ...(c.proprietario_nome ? { proprietario_nome: c.proprietario_nome } : {}),
+      })}`
+    : null;
 
   return (
     <main className="min-h-dvh bg-[#f3f4f0] pb-28">
@@ -119,6 +129,14 @@ export default async function CaptacaoPage({ params }: { params: Promise<{ id: s
               >
                 <Link2 className="h-4 w-4" /> Anúncio
               </a>
+            )}
+            {outraDoNumero && (
+              <Link
+                href={outraDoNumero}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-[#e8e9e3] bg-[#f5f6f1] px-3 py-2 text-sm font-medium text-[#585a4f]"
+              >
+                <UserPlus className="h-4 w-4" /> Outra captação deste número
+              </Link>
             )}
           </div>
         )}

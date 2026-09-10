@@ -9,22 +9,32 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { captacaoSchema, type CaptacaoInput } from "@/lib/schemas";
 import { maskTelefone } from "@/lib/format";
+import { TelefoneJaCadastrado } from "./TelefoneJaCadastrado";
 
 export function CaptacaoForm({
   defaultValues,
   onSubmit,
   submitLabel = "Salvar",
+  checarTelefone = false,
 }: {
   defaultValues?: Partial<CaptacaoInput>;
   /** Retornar false sinaliza falha: o formulário continua marcado como sujo. */
   onSubmit: (data: CaptacaoInput) => Promise<void | boolean>;
   submitLabel?: string;
+  /**
+   * Avisa, ao digitar o WhatsApp, se o número já tem captação. Só faz sentido
+   * onde o store do quadro está hidratado (é dele que sai a lista) — hoje, no
+   * cadastro de captação nova.
+   */
+  checarTelefone?: boolean;
 }) {
   const {
     register,
     control,
     handleSubmit,
     reset,
+    setValue,
+    watch,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<CaptacaoInput>({
     resolver: zodResolver(captacaoSchema),
@@ -124,6 +134,15 @@ export function CaptacaoForm({
           {errors.whatsapp && <p className="text-xs text-destructive">{errors.whatsapp.message}</p>}
         </div>
       </div>
+
+      {checarTelefone && (
+        <TelefoneJaCadastrado
+          whatsapp={watch("whatsapp")}
+          onUsarProprietario={(nome) =>
+            setValue("proprietario_nome", nome, { shouldDirty: true })
+          }
+        />
+      )}
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="space-y-1.5">
