@@ -176,7 +176,7 @@ export function CaptacaoForm({
 
       <div className="space-y-1.5">
         <Label htmlFor="pendencias">Pendências / dificuldades</Label>
-        <Textarea id="pendencias" {...register("pendencias")} placeholder="Relevante na coluna 'Aguardando informações'" />
+        <Textarea id="pendencias" {...register("pendencias")} placeholder="O que trava esta captação" />
       </div>
 
       <div className="flex items-center justify-end gap-3">

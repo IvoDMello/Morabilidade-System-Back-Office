@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
+  AlertTriangle,
   Check,
   ChevronRight,
   ImageIcon,
@@ -230,15 +231,27 @@ function CardDecisao({ captacao, listas }: { captacao: Captacao; listas: Lista[]
       />
 
       <div className="mb-2.5 flex items-center justify-between gap-2">
-        <span
-          className="inline-flex h-6 items-center gap-1.5 rounded-lg px-2.5 text-[11.5px] font-semibold"
-          style={{ background: estilo.bg, color: estilo.fg }}
-        >
-          <span className="h-[7px] w-[7px] rounded-full" style={{ background: estilo.dot }} />
-          {estilo.short}
+        <span className="flex min-w-0 items-center gap-1.5">
+          <span
+            className="inline-flex h-6 flex-none items-center gap-1.5 rounded-lg px-2.5 text-[11.5px] font-semibold"
+            style={{ background: estilo.bg, color: estilo.fg }}
+          >
+            <span className="h-[7px] w-[7px] rounded-full" style={{ background: estilo.dot }} />
+            {estilo.short}
+          </span>
+
+          {/* Marcador, não o texto: o aviso tem de ser legível de relance numa
+              fila longa, e um trecho truncado aqui brigaria por espaço com o
+              selo e o "parada há X dias". O texto inteiro fica no box abaixo. */}
+          {captacao.pendencias && (
+            <span className="inline-flex h-6 min-w-0 items-center gap-1 rounded-lg border border-[#eae2c4] bg-[#f7f3e8] px-2 text-[11.5px] font-semibold text-[#857727]">
+              <AlertTriangle className="h-3 w-3 flex-none" strokeWidth={2.4} />
+              <span className="truncate">Pendência</span>
+            </span>
+          )}
         </span>
 
-        <span className="relative z-10 flex items-center gap-2">
+        <span className="relative z-10 flex flex-none items-center gap-2 whitespace-nowrap">
           {opinioes?.naoLidas ? (
             <span className="inline-flex items-center gap-1 rounded-lg bg-[#eef4f0] px-2 py-0.5 text-[11.5px] font-semibold text-[#2f6b46]">
               <MessageSquare className="h-3 w-3" />
@@ -342,10 +355,13 @@ function CardDecisao({ captacao, listas }: { captacao: Captacao; listas: Lista[]
         </div>
       )}
 
-      {captacao.status === "aguardando_informacoes" && captacao.pendencias && (
+      {/* Pendência não é exclusividade de "Aguardando informações": o campo é
+          usado como "o que trava esta captação" em qualquer coluna, e preso ao
+          status o texto não aparecia em lugar nenhum fora do detalhe. */}
+      {captacao.pendencias && (
         <div className="mt-3 rounded-xl border border-[#eae2c4] bg-[#f7f3e8] p-3">
           <p className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-wider text-[#9a8d3a]">
-            Falta chegar
+            {captacao.status === "aguardando_informacoes" ? "Falta chegar" : "Pendência"}
           </p>
           <p className="text-[13px] leading-relaxed text-[#5f5a3f]">{captacao.pendencias}</p>
         </div>
