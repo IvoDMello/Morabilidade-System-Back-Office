@@ -41,10 +41,16 @@ export function ExcluirCaptacao({ id }: { id: string }) {
 
   return (
     <Dialog>
+      {/* Mora no cabeçalho olive: contorno em vez de fundo, e um vermelho
+          claro o bastante para ser lido ali — o destructive do tema é escuro
+          demais contra o olive. */}
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10">
-          <Trash2 className="h-4 w-4" /> Excluir
-        </Button>
+        <button
+          type="button"
+          className="inline-flex h-9 flex-none items-center gap-1.5 rounded-xl border border-[#8f6d68] px-3 text-[13px] font-semibold text-[#eaa9a3] transition-colors hover:bg-[#e0a9a9]/15"
+        >
+          <Trash2 className="h-3.5 w-3.5" /> Excluir
+        </button>
       </DialogTrigger>
       <DialogContent className="max-w-sm">
         <DialogHeader>

@@ -49,14 +49,14 @@ export function TabBar({ contadores }: { contadores: Contadores }) {
             key={aba.href}
             href={aba.href}
             aria-current={ativa ? "page" : undefined}
-            className="flex flex-1 flex-col items-center gap-0.5 py-0.5"
+            // O realce da aba ativa envolve ícone E rótulo: a pílula só atrás
+            // do ícone lia como "botão", e não como "você está aqui".
+            className={cn(
+              "mx-0.5 flex flex-1 flex-col items-center gap-0.5 rounded-2xl py-1.5 transition-colors",
+              ativa && "bg-primary/30"
+            )}
           >
-            <span
-              className={cn(
-                "relative flex h-7 w-14 items-center justify-center rounded-full transition-colors",
-                ativa && "bg-secondary/15"
-              )}
-            >
+            <span className="relative flex h-6 w-14 items-center justify-center">
               <aba.Icone
                 className={cn("h-5 w-5", ativa ? "text-foreground" : "text-muted-foreground")}
                 strokeWidth={ativa ? 2 : 1.9}

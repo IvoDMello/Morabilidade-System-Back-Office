@@ -7,13 +7,11 @@ import {
   AlertTriangle,
   Check,
   ChevronRight,
+  Home,
   ImageIcon,
-  ImageOff,
   Link2,
-  MapPin,
   MessageCircle,
   MessageSquare,
-  Timer,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -33,7 +31,15 @@ import { corDaLista, indexarListas } from "@/lib/listas";
 import { MIDIA_VAZIA, rotuloMidia } from "@/lib/midia";
 import { priorizarRevisaoGaveta } from "@/lib/sort";
 import { useCapaUrl } from "@/lib/capa";
-import { dataCurta, diasParado, formatBRL, formatarTelefone, relativo, whatsappLink } from "@/lib/format";
+import {
+  dataCurta,
+  diasParado,
+  formatBRL,
+  formatarTelefone,
+  relativo,
+  resumoSpecs,
+  whatsappLink,
+} from "@/lib/format";
 import { STATUS_STYLE } from "@/lib/status-style";
 import { cn, CONTAINER, HOVER_CARD } from "@/lib/utils";
 import type { Captacao, Lista, Status } from "@/types";
@@ -80,6 +86,9 @@ export default function DecidirPage() {
   );
 
   const grupos = GRUPOS.map((g) => ({ ...g, itens: daFila.filter((c) => c.status === g.status) }));
+  // Conta sobre a etapa inteira, não sobre a fila filtrada: é o mesmo universo
+  // do "N aguardando sua decisão" que aparece ao lado.
+  const novas = naEtapa.filter((c) => c.status === "novas").length;
   const vazio = daFila.length === 0 && engavetadas.length === 0;
 
   return (
@@ -89,7 +98,24 @@ export default function DecidirPage() {
         contadores={nums}
         onAbrirFiltros={() => setFiltrosAberto(true)}
         subtitulo={
-          naEtapa.length === 0 ? "Nada esperando decisão" : `${naEtapa.length} aguardando sua decisão`
+          naEtapa.length === 0 ? (
+            "Nada esperando decisão"
+          ) : (
+            // O tamanho da fila é o número que decide se dá para abrir o app
+            // agora ou depois — por isso vem em corpo grande, e as novas (as
+            // que ninguém olhou ainda) puxam o olho em dourado do outro lado.
+            <span className="flex items-baseline gap-2">
+              <span className="font-serif text-[26px] font-semibold leading-none text-white">
+                {naEtapa.length}
+              </span>
+              <span>aguardando sua decisão</span>
+              {novas > 0 && (
+                <span className="ml-auto flex-none text-[12.5px] font-semibold text-primary">
+                  {novas} nova{novas > 1 ? "s" : ""}
+                </span>
+              )}
+            </span>
+          )
         }
       />
 
@@ -102,7 +128,7 @@ export default function DecidirPage() {
               (g) =>
                 g.itens.length > 0 && (
                   <section key={g.status} className="flex flex-col gap-2.5">
-                    <TituloGrupo status={g.status} titulo={g.titulo} total={g.itens.length} />
+                    <TituloGrupo titulo={g.titulo} total={g.itens.length} />
                     {/* No desktop a fila vira grade: o cartão foi desenhado para
                         ~380px e esticá-lo até 1180px só afasta o endereço dos
                         dois botões. Em coluna, cabem três de relance. */}
@@ -172,18 +198,27 @@ function contarRevisaoVencida(cards: Captacao[]): number {
   return cards.filter((c) => c.gaveta_revisao_em != null && c.gaveta_revisao_em <= hoje).length;
 }
 
-function TituloGrupo({ status, titulo, total }: { status: Status; titulo: string; total: number }) {
+/**
+ * Separador de grupo: só o nome da etapa e quantas são. Sem ponto colorido nem
+ * fio atravessando — a cor do status já vem no selo de cada cartão, e repetir
+ * o código de cores no título deixava a fila listrada.
+ */
+function TituloGrupo({ titulo, total }: { titulo: string; total: number }) {
   return (
     <div className="flex items-center gap-2 pt-1.5">
-      <span className="h-[7px] w-[7px] rounded-full" style={{ background: STATUS_STYLE[status].dot }} />
-      <span className="text-[11px] font-semibold uppercase tracking-[0.09em] text-muted-foreground">
+      <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
         {titulo}
       </span>
-      <span className="text-[11px] font-semibold text-muted-foreground/70">{total}</span>
-      <span className="h-px flex-1 bg-border" />
+      <span className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-muted px-1.5 text-[10.5px] font-semibold text-muted-foreground">
+        {total}
+      </span>
     </div>
   );
 }
+
+/** Fita de chips do cartão — todos com o mesmo peso visual. */
+const CHIP =
+  "inline-flex h-[26px] items-center gap-1.5 rounded-lg border bg-muted/50 px-2.5 text-[11.5px] font-medium text-muted-foreground";
 
 /**
  * Cartão da fila de decisão: tudo que trava a decisão à vista, e os dois
@@ -241,55 +276,15 @@ function CardDecisao({ captacao, listas }: { captacao: Captacao; listas: Lista[]
         aria-label={`Abrir ${captacao.endereco}`}
       />
 
-      <div className="mb-2.5 flex items-center justify-between gap-2">
-        <span className="flex min-w-0 items-center gap-1.5">
-          <span
-            className="inline-flex h-6 flex-none items-center gap-1.5 rounded-lg px-2.5 text-[11.5px] font-semibold"
-            style={{ background: estilo.bg, color: estilo.fg }}
-          >
-            <span className="h-[7px] w-[7px] rounded-full" style={{ background: estilo.dot }} />
-            {estilo.short}
-          </span>
-
-          {/* Marcador, não o texto: o aviso tem de ser legível de relance numa
-              fila longa, e um trecho truncado aqui brigaria por espaço com o
-              selo e o "parada há X dias". O texto inteiro fica no box abaixo. */}
-          {captacao.pendencias && (
-            <span className="inline-flex h-6 min-w-0 items-center gap-1 rounded-lg border border-[#eae2c4] bg-[#f7f3e8] px-2 text-[11.5px] font-semibold text-[#857727]">
-              <AlertTriangle className="h-3 w-3 flex-none" strokeWidth={2.4} />
-              <span className="truncate">Pendência</span>
-            </span>
-          )}
-        </span>
-
-        <span className="relative z-10 flex flex-none items-center gap-2 whitespace-nowrap">
-          {opinioes?.naoLidas ? (
-            <span className="inline-flex items-center gap-1 rounded-lg bg-[#eef4f0] px-2 py-0.5 text-[11.5px] font-semibold text-[#2f6b46]">
-              <MessageSquare className="h-3 w-3" />
-              {opinioes.naoLidas} nova{opinioes.naoLidas > 1 ? "s" : ""}
-            </span>
-          ) : null}
-          {parada >= 3 ? (
-            <span className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-[#a06a4a]">
-              <Timer className="h-3 w-3" />
-              parada há {parada} dias
-            </span>
-          ) : (
-            <span className="text-[11.5px] text-muted-foreground">{relativo(captacao.criado_em)}</span>
-          )}
-          <MenuDaCaptacao captacao={captacao} />
-        </span>
-      </div>
-
       <div className="flex gap-3">
         {/* Capa com o selo de quantas mídias existem: "tem material?" é o que
             decide se dá para avaliar sem abrir o detalhe. */}
-        <div className="relative h-[62px] w-[62px] flex-none overflow-hidden rounded-xl border bg-muted">
+        <div className="relative h-12 w-12 flex-none overflow-hidden rounded-xl border bg-muted">
           {capa ? (
-            <Image src={capa} alt="" fill sizes="62px" className="object-cover" />
+            <Image src={capa} alt="" fill sizes="48px" className="object-cover" />
           ) : (
             <span className="flex h-full items-center justify-center">
-              <ImageOff className="h-4 w-4 text-muted-foreground/60" />
+              <Home className="h-4 w-4 text-muted-foreground/60" />
             </span>
           )}
           {totalMidia > 0 && (
@@ -304,16 +299,36 @@ function CardDecisao({ captacao, listas }: { captacao: Captacao; listas: Lista[]
         </div>
 
         <div className="min-w-0 flex-1">
-          <h3 className="text-[16.5px] font-semibold leading-tight text-foreground [text-wrap:pretty]">
-            {captacao.endereco}
-            {captacao.unidade && <span className="text-muted-foreground"> / {captacao.unidade}</span>}
-          </h3>
+          <div className="flex items-start justify-between gap-2.5">
+            <h3 className="min-w-0 text-[16.5px] font-semibold leading-tight text-foreground [text-wrap:pretty]">
+              {captacao.endereco}
+              {captacao.unidade && <span className="text-muted-foreground"> / {captacao.unidade}</span>}
+            </h3>
+
+            {/* O tempo parada é o que ordena a atenção numa fila longa, então
+                vira número grande no canto — e só quando já pesa (3 dias+).
+                Antes disso a idade da captação é só contexto, em texto miúdo. */}
+            <span className="relative z-10 flex flex-none items-start gap-0.5">
+              {parada >= 3 ? (
+                <span className="pt-px text-right">
+                  <span className="block text-[19px] font-bold leading-none tracking-[-0.01em] text-foreground">
+                    {parada}
+                  </span>
+                  <span className="mt-1 block text-[9px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                    dias parada
+                  </span>
+                </span>
+              ) : (
+                <span className="pt-0.5 text-[11.5px] text-muted-foreground">
+                  {relativo(captacao.criado_em)}
+                </span>
+              )}
+              <MenuDaCaptacao captacao={captacao} />
+            </span>
+          </div>
 
           {captacao.bairro && (
-            <p className="mt-1.5 flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground">
-              <MapPin className="h-3.5 w-3.5 text-[#9a8d3a]" />
-              {captacao.bairro}
-            </p>
+            <p className="mt-1 text-[13px] font-medium text-muted-foreground">{captacao.bairro}</p>
           )}
 
           <p className="mt-1.5 text-[12.5px] text-muted-foreground">{resumoSpecs(captacao)}</p>
@@ -326,52 +341,13 @@ function CardDecisao({ captacao, listas }: { captacao: Captacao; listas: Lista[]
         </div>
       </div>
 
-      {(contato || captacao.anuncio_url || selo) && (
-        <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-          {/* Contato do proprietário: sem ele a decisão para — quem aprova
-              precisa ligar em seguida, e o número estava só no detalhe. */}
-          {contato &&
-            (zap ? (
-              <a
-                href={zap}
-                target="_blank"
-                rel="noreferrer"
-                className="relative z-10 inline-flex h-6 items-center gap-1.5 rounded-md border border-[#d8e7df] bg-[#eef4f0] px-2.5 text-[11.5px] font-semibold text-[#2f6b46] hover:bg-[#e4eee9]"
-              >
-                <MessageCircle className="h-3 w-3" />
-                {contato}
-              </a>
-            ) : (
-              <span className="inline-flex h-6 items-center gap-1.5 rounded-md border bg-muted px-2.5 text-[11.5px] font-semibold text-muted-foreground">
-                {contato}
-              </span>
-            ))}
-          {captacao.anuncio_url && (
-            <a
-              href={captacao.anuncio_url}
-              target="_blank"
-              rel="noreferrer"
-              className="relative z-10 inline-flex h-6 items-center gap-1.5 rounded-md border border-[#ece4b8] bg-[#faf7e8] px-2.5 text-[11.5px] font-semibold text-[#9a8d3a] hover:bg-[#f5efd8]"
-            >
-              <Link2 className="h-3 w-3" />
-              Ver anúncio
-            </a>
-          )}
-          {selo && (
-            <span className="inline-flex h-6 items-center gap-1.5 rounded-md border bg-muted px-2.5 text-[11.5px] font-semibold text-muted-foreground">
-              <ImageIcon className="h-3 w-3" />
-              {selo}
-            </span>
-          )}
-        </div>
-      )}
-
       {/* Pendência não é exclusividade de "Aguardando informações": o campo é
           usado como "o que trava esta captação" em qualquer coluna, e preso ao
           status o texto não aparecia em lugar nenhum fora do detalhe. */}
       {captacao.pendencias && (
         <div className="mt-3 rounded-xl border border-[#eae2c4] bg-[#f7f3e8] p-3">
-          <p className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-wider text-[#9a8d3a]">
+          <p className="mb-1.5 flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-wider text-[#9a8d3a]">
+            <AlertTriangle className="h-3.5 w-3.5 flex-none" strokeWidth={2.2} />
             {captacao.status === "aguardando_informacoes" ? "Falta chegar" : "Pendência"}
           </p>
           <p className="text-[13px] leading-relaxed text-[#5f5a3f]">{captacao.pendencias}</p>
@@ -387,6 +363,65 @@ function CardDecisao({ captacao, listas }: { captacao: Captacao; listas: Lista[]
           <p className="text-[13px] leading-relaxed text-foreground/80">{captacao.gaveta_motivo}</p>
         </div>
       )}
+
+      {/* Fita de contexto: status, com quem falar e o que já existe de material.
+          Fica depois do que trava a captação e antes dos botões, na ordem em
+          que a decisão é tomada — leio o problema, vejo com quem resolvo,
+          decido. Tudo no mesmo cinza de propósito: o único código de cor aqui
+          é o pontinho do status. */}
+      <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+        {/* Contato do proprietário: sem ele a decisão para — quem aprova
+            precisa ligar em seguida, e o número estava só no detalhe. */}
+        {contato &&
+          (zap ? (
+            <a
+              href={zap}
+              target="_blank"
+              rel="noreferrer"
+              className={cn(CHIP, "relative z-10 min-w-0 hover:bg-muted")}
+            >
+              <MessageCircle className="h-3 w-3 flex-none" />
+              <span className="truncate">{contato}</span>
+            </a>
+          ) : (
+            <span className={cn(CHIP, "min-w-0")}>
+              <span className="truncate">{contato}</span>
+            </span>
+          ))}
+
+        <span className={CHIP}>
+          <span className="h-[7px] w-[7px] flex-none rounded-full" style={{ background: estilo.dot }} />
+          {estilo.short}
+        </span>
+
+        {captacao.anuncio_url && (
+          <a
+            href={captacao.anuncio_url}
+            target="_blank"
+            rel="noreferrer"
+            className={cn(CHIP, "relative z-10 hover:bg-muted")}
+          >
+            <Link2 className="h-3 w-3 flex-none" />
+            Anúncio
+          </a>
+        )}
+
+        {selo && (
+          <span className={CHIP}>
+            <ImageIcon className="h-3 w-3 flex-none" />
+            {selo}
+          </span>
+        )}
+
+        {/* Opiniões não lidas mantêm a cor: é a única coisa desta fita que
+            pede uma ação antes de decidir. */}
+        {opinioes?.naoLidas ? (
+          <span className="inline-flex h-[26px] items-center gap-1.5 rounded-lg border border-[#d8e7df] bg-[#eef4f0] px-2.5 text-[11.5px] font-semibold text-[#2f6b46]">
+            <MessageSquare className="h-3 w-3 flex-none" />
+            {opinioes.naoLidas} nova{opinioes.naoLidas > 1 ? "s" : ""}
+          </span>
+        ) : null}
+      </div>
 
       {listas.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-1.5">
@@ -406,12 +441,15 @@ function CardDecisao({ captacao, listas }: { captacao: Captacao; listas: Lista[]
         </div>
       )}
 
+      {/* Aprovar é o caminho esperado e vem preenchido; reprovar é a exceção e
+          fica em contorno. Os dois lado a lado e do mesmo tamanho porque a
+          escolha é de quem decide, não do botão mais bonito. */}
       <div className="relative z-10 mt-3.5 flex gap-2.5 lg:mt-auto lg:pt-3.5">
         <button
           type="button"
           onClick={aprovar}
           disabled={salvando}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[#c3e0cd] bg-[#ecf5ef] py-3 text-sm font-semibold text-[#2f6b46] disabled:opacity-60"
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-[#2f6b46] py-3 text-sm font-semibold text-white disabled:opacity-60"
         >
           <Check className="h-4 w-4" strokeWidth={2.3} />
           Aprovar
@@ -420,7 +458,7 @@ function CardDecisao({ captacao, listas }: { captacao: Captacao; listas: Lista[]
           type="button"
           onClick={() => setReprovando(true)}
           disabled={salvando}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[#e6c5c5] bg-[#f7ecec] py-3 text-sm font-semibold text-[#9a3b3b] disabled:opacity-60"
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[#e2bebe] bg-card py-3 text-sm font-semibold text-[#9a3b3b] disabled:opacity-60"
         >
           <X className="h-4 w-4" strokeWidth={2.3} />
           Reprovar
@@ -443,14 +481,4 @@ function Autor({ userId }: { userId: string }) {
       <span className="text-[12.5px] text-muted-foreground">{perfil.nome}</span>
     </div>
   );
-}
-
-function resumoSpecs(c: Captacao): string {
-  const partes: string[] = [];
-  if (c.quartos != null) partes.push(`${c.quartos} ${c.quartos === 1 ? "quarto" : "quartos"}`);
-  if (c.suites) partes.push(`${c.suites} ${c.suites === 1 ? "suíte" : "suítes"}`);
-  if (c.banheiros != null) partes.push(`${c.banheiros} ${c.banheiros === 1 ? "banheiro" : "banheiros"}`);
-  if (c.vagas) partes.push(`${c.vagas} ${c.vagas === 1 ? "vaga" : "vagas"}`);
-  if (c.metragem != null) partes.push(`${c.metragem} m²`);
-  return partes.join(" · ");
 }

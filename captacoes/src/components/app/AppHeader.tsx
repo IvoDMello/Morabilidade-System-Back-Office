@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LogOut, MoreVertical, Plus, Search, SlidersHorizontal, X } from "lucide-react";
+import { ListFilter, LogOut, MoreHorizontal, Plus, Search, X } from "lucide-react";
 import { Avatar } from "@/components/Avatar";
 import { NovaCaptacaoButton } from "@/components/captacao/NovaCaptacaoButton";
 import { PublicadasButton } from "@/components/board/PublicadasButton";
@@ -68,10 +68,11 @@ export function AppHeader({
             />
           </Link>
 
-          {/* Título no meio da própria linha da logo — só abaixo do lg, onde a
-              nav das abas não disputa esse espaço. Trunca porque o vão entre a
-              logo e os botões é estreito em tela pequena. */}
-          <div className="min-w-0 flex-1 text-center lg:hidden">
+          {/* Título colado na logo, separado por um fio — só abaixo do lg, onde
+              a nav das abas não disputa esse espaço. Trunca porque o vão entre
+              a logo e os botões é estreito em tela pequena. */}
+          <span aria-hidden className="h-9 w-px flex-none bg-white/15 lg:hidden" />
+          <div className="min-w-0 flex-1 lg:hidden">
             <p className="text-[9px] font-semibold tracking-[0.18em] text-primary">CAPTAÇÕES</p>
             <h1 className="truncate font-serif text-[19px] font-semibold leading-tight tracking-[-0.01em] sm:text-[23px]">
               {titulo}
@@ -90,12 +91,16 @@ export function AppHeader({
           </div>
         </div>
 
+        {/* Fio horizontal: separa "quem sou / quem está logado" do resumo da
+            aba, que no celular virou a linha de números logo abaixo. */}
+        <div aria-hidden className="h-px bg-white/10 lg:hidden" />
+
         <div className="hidden lg:block">
           <p className="mb-1.5 text-[10.5px] font-semibold tracking-[0.2em] text-primary">CAPTAÇÕES</p>
           <h1 className="font-serif text-[27px] font-semibold leading-none tracking-[-0.01em]">{titulo}</h1>
         </div>
         {subtitulo && (
-          <div className="text-center text-[13px] text-white/75 lg:mt-2 lg:text-left">{subtitulo}</div>
+          <div className="mt-3 text-[13px] text-white/75 lg:mt-2">{subtitulo}</div>
         )}
 
         {busca && (
@@ -105,7 +110,7 @@ export function AppHeader({
               <input
                 value={filtro}
                 onChange={(e) => setFiltro(e.target.value)}
-                placeholder="Endereço, nome, final do telefone…"
+                placeholder="Endereço, nome, telefone…"
                 aria-label="Buscar captação"
                 className="h-[42px] w-full rounded-[13px] border border-white/[0.18] bg-white/[0.14] pl-10 pr-9 text-[13.5px] text-white placeholder:text-white/55 outline-none focus-visible:border-primary"
               />
@@ -133,7 +138,7 @@ export function AppHeader({
                     : "border-white/[0.18] bg-white/[0.14]"
                 )}
               >
-                <SlidersHorizontal className="h-[18px] w-[18px]" />
+                <ListFilter className="h-[18px] w-[18px]" />
                 {filtrosAtivos > 0 && (
                   <span className="absolute -right-1.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-[#4b4d44] bg-primary px-1 text-[10px] font-bold text-primary-foreground">
                     {filtrosAtivos}
@@ -156,7 +161,7 @@ function MenuMais({ onSair }: { onSair: () => void }) {
         aria-label="Mais opções"
         className="flex h-8 w-8 cursor-pointer list-none items-center justify-center rounded-[10px] bg-white/[0.12] text-white/85 [&::-webkit-details-marker]:hidden"
       >
-        <MoreVertical className="h-[17px] w-[17px]" />
+        <MoreHorizontal className="h-[17px] w-[17px]" />
       </summary>
       <div className="absolute right-0 top-10 z-30 flex w-56 flex-col items-stretch rounded-xl border bg-card p-2 text-foreground shadow-lg">
         <div className="mb-1 border-b pb-1 lg:hidden">

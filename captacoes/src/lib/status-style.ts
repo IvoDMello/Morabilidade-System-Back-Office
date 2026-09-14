@@ -2,7 +2,8 @@ import { STATUS_LABEL, type Status } from "@/types";
 
 /**
  * Estilo visual por status (handoff do redesign de Captações).
- * `short` = rótulo curto do badge nos cards; `label` (de STATUS_LABEL) = rótulo
+ * `short` = rótulo curto do badge nos cards, no singular porque o selo fala de
+ * UMA captação ("Nova", não "Novas" — o plural é do título do grupo); `label` (de STATUS_LABEL) = rótulo
  * completo no detalhe. `dot`/`bg`/`fg` são hexes finais do design.
  */
 export interface StatusStyle {
@@ -15,7 +16,7 @@ export interface StatusStyle {
 
 export const STATUS_STYLE: Record<Status, StatusStyle> = {
   aguardando_informacoes: { label: STATUS_LABEL.aguardando_informacoes, short: "Aguardando info", dot: "#b0b2a8", bg: "#ebece7", fg: "#5f6157" },
-  novas: { label: STATUS_LABEL.novas, short: "Novas", dot: "#c5b54a", bg: "#f4f1d4", fg: "#857727" },
+  novas: { label: STATUS_LABEL.novas, short: "Nova", dot: "#c5b54a", bg: "#f4f1d4", fg: "#857727" },
   em_decisao: { label: STATUS_LABEL.em_decisao, short: "Em decisão", dot: "#d49a48", bg: "#f7ecd9", fg: "#8f6320" },
   pendente_agendar_visita: { label: STATUS_LABEL.pendente_agendar_visita, short: "Agendar visita", dot: "#5a9a6e", bg: "#e5efe8", fg: "#2f6b46" },
   pendente_agendar_gravacao: { label: STATUS_LABEL.pendente_agendar_gravacao, short: "Agendar gravação", dot: "#5887a0", bg: "#e3edf1", fg: "#2f5b6f" },
