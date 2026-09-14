@@ -2,6 +2,8 @@ import { withSentryConfig } from "@sentry/nextjs";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // badge "N" do Next em dev ficava por cima da navegação inferior
+  devIndicators: false,
   // thumbs já vêm comprimidos do cliente (WebP); não reotimizar (poupa cota Vercel)
   images: { unoptimized: true },
   experimental: {
