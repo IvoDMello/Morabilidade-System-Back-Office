@@ -137,7 +137,7 @@ export default async function CaptacaoPage({ params }: { params: Promise<{ id: s
             </p>
             <p className="truncate text-[15px] font-semibold" style={{ color: HEADER.titulo }}>
               {c.endereco}
-              {c.unidade && ` · ap ${c.unidade}`}
+              {c.apto && ` · ap ${c.apto}`}
             </p>
           </div>
 
@@ -168,7 +168,7 @@ export default async function CaptacaoPage({ params }: { params: Promise<{ id: s
             style={{ color: HEADER.titulo }}
           >
             {c.endereco}
-            {c.unidade && <span style={{ color: HEADER.complemento }}> · ap {c.unidade}</span>}
+            {c.apto && <span style={{ color: HEADER.complemento }}> · ap {c.apto}</span>}
           </h1>
 
           {/* Bairro e ficha na mesma linha: é o cabeçalho de uma captação, não

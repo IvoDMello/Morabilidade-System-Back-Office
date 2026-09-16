@@ -118,16 +118,16 @@ export function CaptacaoForm({
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <Label htmlFor="unidade" className={ROTULO}>
-            Apto / unidade
+          <Label htmlFor="apto" className={ROTULO}>
+            Apto
           </Label>
-          <Input id="unidade" placeholder="302" className={CAMPO} {...register("unidade")} />
+          <Input id="apto" placeholder="302" className={CAMPO} {...register("apto")} />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="andar" className={ROTULO}>
-            Andar
+          <Label htmlFor="unidade" className={ROTULO}>
+            Unidade
           </Label>
-          <Input id="andar" type="number" min={0} placeholder="—" className={CAMPO} {...register("andar")} />
+          <Input id="unidade" placeholder="—" className={CAMPO} {...register("unidade")} />
         </div>
       </div>
 

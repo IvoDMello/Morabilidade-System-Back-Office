@@ -129,7 +129,7 @@ export function CaptacaoRow({
         <div className="flex items-start justify-between gap-2">
           <p className="text-[15px] font-semibold leading-tight text-foreground [text-wrap:pretty]">
             {captacao.endereco}
-            {captacao.unidade && <span className="text-muted-foreground"> / {captacao.unidade}</span>}
+            {captacao.apto && <span className="text-muted-foreground"> / {captacao.apto}</span>}
           </p>
           <div className="relative z-10 flex flex-none items-center gap-1.5">
             {opinioes?.naoLidas ? (

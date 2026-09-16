@@ -302,7 +302,7 @@ function CardDecisao({ captacao, listas }: { captacao: Captacao; listas: Lista[]
           <div className="flex items-start justify-between gap-2.5">
             <h3 className="min-w-0 text-[16.5px] font-semibold leading-tight text-foreground [text-wrap:pretty]">
               {captacao.endereco}
-              {captacao.unidade && <span className="text-muted-foreground"> / {captacao.unidade}</span>}
+              {captacao.apto && <span className="text-muted-foreground"> / {captacao.apto}</span>}
             </h3>
 
             {/* O tempo parada é o que ordena a atenção numa fila longa, então

@@ -30,9 +30,9 @@ const urlOpcional = z.preprocess(
 
 export const captacaoSchema = z.object({
   endereco: z.string().min(1, "Endereço é obrigatório"),
+  apto: z.string().max(60).nullable().optional(),
   unidade: z.string().max(60).nullable().optional(),
   bairro: z.string().max(120).nullable().optional(),
-  andar: numeroOpcional,
   quartos: numeroOpcional,
   suites: numeroOpcional,
   banheiros: numeroOpcional,

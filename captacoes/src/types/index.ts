@@ -168,6 +168,7 @@ export interface Captacao {
   status: Status;
   ordem: number;
   endereco: string;
+  apto: string | null;
   unidade: string | null;
   bairro: string | null;
   andar: number | null;

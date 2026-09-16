@@ -24,11 +24,11 @@ export function progresso(itens: PautaItem[]): { feitos: number; total: number }
 
 /**
  * Texto padrão do item criado ao arrastar uma captação para a pauta.
- * Endereço + unidade, que é como o cartão se identifica no quadro.
+ * Endereço + apto, que é como o cartão se identifica no quadro.
  */
-export function textoDaCaptacao(c: Pick<Captacao, "endereco" | "unidade" | "bairro">): string {
+export function textoDaCaptacao(c: Pick<Captacao, "endereco" | "apto" | "bairro">): string {
   const partes = [c.endereco.trim()];
-  if (c.unidade?.trim()) partes.push(`ap ${c.unidade.trim()}`);
+  if (c.apto?.trim()) partes.push(`ap ${c.apto.trim()}`);
   if (c.bairro?.trim()) partes.push(c.bairro.trim());
   return partes.join(" · ");
 }

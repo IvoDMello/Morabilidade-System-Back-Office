@@ -49,13 +49,13 @@ describe("progresso", () => {
 });
 
 describe("textoDaCaptacao", () => {
-  it("junta endereço, unidade e bairro", () => {
-    expect(textoDaCaptacao({ endereco: "Rua Chile 220", unidade: "802", bairro: "Centro" })).toBe(
+  it("junta endereço, apto e bairro", () => {
+    expect(textoDaCaptacao({ endereco: "Rua Chile 220", apto: "802", bairro: "Centro" })).toBe(
       "Rua Chile 220 · ap 802 · Centro"
     );
   });
   it("ignora campos vazios", () => {
-    expect(textoDaCaptacao({ endereco: " Av. Atlântica 1500 ", unidade: "", bairro: null })).toBe(
+    expect(textoDaCaptacao({ endereco: " Av. Atlântica 1500 ", apto: "", bairro: null })).toBe(
       "Av. Atlântica 1500"
     );
   });

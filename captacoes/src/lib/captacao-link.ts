@@ -19,6 +19,7 @@ export const PARAM_NOVA = "nova";
 /** Campos de texto aceitos no link (mesmos nomes das colunas). */
 const CAMPOS_TEXTO = [
   "endereco",
+  "apto",
   "unidade",
   "bairro",
   "tipo_portaria",
@@ -30,7 +31,7 @@ const CAMPOS_TEXTO = [
 ] as const;
 
 /** Campos numéricos inteiros aceitos no link. */
-const CAMPOS_NUMERO = ["andar", "quartos", "suites", "banheiros", "vagas"] as const;
+const CAMPOS_NUMERO = ["quartos", "suites", "banheiros", "vagas"] as const;
 
 /** Corta valores absurdos: o formulário é para revisão humana, não para colar um livro. */
 const MAX_TEXTO = 2000;
