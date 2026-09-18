@@ -65,10 +65,18 @@ export function ordenarRetornos(cards: Captacao[], hoje: string): Captacao[] {
 /**
  * Retornos pendentes, opcionalmente só os de uma pessoa (o filtro "Suas",
  * ligado por padrão na aba). Sem `userId`, devolve os do time inteiro.
+ *
+ * "Suas" inclui de propósito os retornos SEM RESPONSÁVEL. Um retorno sem
+ * dono não é de ninguém, e filtrar por igualdade estrita o escondia de
+ * todo mundo: como a aba abre em "Suas", a captação saía de Decidir e não
+ * aparecia em lugar nenhum. Aparecer para todos é o erro certo a cometer —
+ * alguém assume, em vez de o proprietario nunca receber retorno.
  */
 export function retornosPendentes(cards: Captacao[], hoje: string, userId?: string): Captacao[] {
   const fila = cards.filter(
-    (c) => precisaRetorno(c) && (userId === undefined || c.retorno_responsavel === userId)
+    (c) =>
+      precisaRetorno(c) &&
+      (userId === undefined || c.retorno_responsavel === userId || c.retorno_responsavel == null)
   );
   return ordenarRetornos(fila, hoje);
 }

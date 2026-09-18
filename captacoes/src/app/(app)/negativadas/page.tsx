@@ -232,12 +232,19 @@ function CardRetorno({ captacao, hoje }: { captacao: Captacao; hoje: string }) {
           </div>
         ) : (
           <p className="mt-3 rounded-xl border border-dashed bg-muted/30 p-3 text-[12.5px] text-muted-foreground">
-            Sem motivo registrado — esta captação foi reprovada antes da v2.
+            Sem motivo registrado — reprovada sem passar pelo formulário.
           </p>
         )}
 
         <div className="mt-3 flex flex-wrap items-center gap-2 text-[11.5px] text-muted-foreground">
-          {responsavel && <span>Com {responsavel.nome.split(" ")[0]}</span>}
+          {responsavel ? (
+            <span>Com {responsavel.nome.split(" ")[0]}</span>
+          ) : (
+            // Sem dono ele aparece para todo mundo em "Suas" (ver
+            // `retornosPendentes`); dizer isso evita a dúvida de por que
+            // este cartão está na minha fila.
+            <span className="font-semibold text-[#8a4444]">Sem responsável</span>
+          )}
           {situacao === "sem_prazo" && <span>· sem prazo</span>}
           {situacao === "futuro" && <span>· até {dataCurta(captacao.retorno_prazo)}</span>}
         </div>

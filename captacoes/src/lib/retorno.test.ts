@@ -105,8 +105,14 @@ describe("retornosPendentes", () => {
     expect(retornosPendentes(fila, HOJE).map((c) => c.id)).toEqual(["meu", "dele", "orfao"]);
   });
 
-  it('com userId devolve só os da pessoa ("Suas")', () => {
-    expect(retornosPendentes(fila, HOJE, "u1").map((c) => c.id)).toEqual(["meu"]);
+  it('com userId devolve os da pessoa MAIS os sem dono ("Suas")', () => {
+    // O órfão entra de propósito: filtrando por igualdade estrita ele não
+    // aparecia para ninguém, e como a aba abre em "Suas" a captação sumia.
+    expect(retornosPendentes(fila, HOJE, "u1").map((c) => c.id)).toEqual(["meu", "orfao"]);
+  });
+
+  it('mas nunca o retorno de OUTRA pessoa', () => {
+    expect(retornosPendentes(fila, HOJE, "u1").map((c) => c.id)).not.toContain("dele");
   });
 
   it("quem já teve retorno some da fila", () => {
@@ -140,6 +146,42 @@ describe("historicoNegativadas", () => {
   it("não puxa quem está em outra etapa", () => {
     const lst = [card({ id: "aprovada", status: "pendente_agendar_visita", decisao: "aprovada", retorno_feito: true })];
     expect(historicoNegativadas(lst)).toHaveLength(0);
+  });
+});
+
+describe("retorno sem responsável não pode ficar invisível", () => {
+  // Reprovar pelo desktop chamava `decidirCaptacao` direto, sem passar pelo
+  // ReprovarDialog: a captação ia para a etapa negativada sem responsável
+  // nenhum. Como a aba abre em "Suas", ela sumia — fora de Decidir e fora
+  // de Negativadas ao mesmo tempo.
+  const semDono = card({ id: "orfa", retorno_responsavel: null, retorno_prazo: null });
+  const doU1 = card({ id: "meu", retorno_responsavel: "u1" });
+  const doU2 = card({ id: "dela", retorno_responsavel: "u2" });
+  const base = [semDono, doU1, doU2];
+
+  it('aparece em "Suas" para qualquer pessoa', () => {
+    expect(retornosPendentes(base, HOJE, "u1").map((c) => c.id)).toContain("orfa");
+    expect(retornosPendentes(base, HOJE, "u2").map((c) => c.id)).toContain("orfa");
+  });
+
+  it('não vaza o retorno de outra pessoa junto', () => {
+    expect(retornosPendentes(base, HOJE, "u1").map((c) => c.id)).not.toContain("dela");
+  });
+
+  it('continua aparecendo em "Todas"', () => {
+    expect(retornosPendentes(base, HOJE).map((c) => c.id)).toContain("orfa");
+  });
+
+  it("some da fila quando alguém dá o retorno", () => {
+    const feito = [{ ...semDono, retorno_feito: true } as Captacao];
+    expect(retornosPendentes(feito, HOJE, "u1")).toHaveLength(0);
+    expect(historicoNegativadas(feito).map((c) => c.id)).toEqual(["orfa"]);
+  });
+
+  it("sem prazo, não vira atrasado para todo mundo", () => {
+    // Reprovação que pulou o formulário também vem sem prazo: ela precisa
+    // ser vista, mas não pode pintar a aba de vermelho para a equipe toda.
+    expect(contarAtrasados(base, HOJE, "u1")).toBe(0);
   });
 });
 

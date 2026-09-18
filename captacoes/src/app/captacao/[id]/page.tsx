@@ -197,7 +197,12 @@ export default async function CaptacaoPage({ params }: { params: Promise<{ id: s
             <CardTitle className="font-serif text-lg">Decisão</CardTitle>
           </CardHeader>
           <CardContent>
-            <DecisaoBox captacao={c} autorNome={c.decisao_autor ? nomes[c.decisao_autor] ?? null : null} />
+            <DecisaoBox
+              captacao={c}
+              autorNome={c.decisao_autor ? nomes[c.decisao_autor] ?? null : null}
+              perfis={(perfis ?? []) as Perfil[]}
+              userId={auth.user?.id ?? ""}
+            />
           </CardContent>
         </Card>
       )}
