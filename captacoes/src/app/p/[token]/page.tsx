@@ -1,6 +1,6 @@
 import { cache } from "react";
 import type { Metadata, Viewport } from "next";
-import Image from "next/image";
+import { GaleriaPublica } from "./GaleriaPublica";
 import { notFound } from "next/navigation";
 import { BedDouble, Bath, Car, Scan, DoorOpen, Hotel, Building2 } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -79,12 +79,17 @@ const getCaptacao = cache(async (token: string) => {
     const { data: signed } = await supabase.storage.from(BUCKET).createSignedUrls(paths, EXPIRA_S);
     fotos = (signed ?? []).flatMap((s) => (s.signedUrl ? [s.signedUrl] : []));
   }
-  let capa: string | null = fotos[0] ?? null;
-  if (c.capa_path) {
+  // A capa é quase sempre uma das mídias; o que interessa aqui é a POSIÇÃO
+  // dela, para o álbum em tela cheia abrir na foto em que o cliente tocou e a
+  // grade abaixo não repeti-la. Capa fora da lista (mídia removida depois de
+  // eleita) entra como primeira do carrossel.
+  let capaIndex = c.capa_path ? paths.indexOf(c.capa_path) : -1;
+  if (c.capa_path && capaIndex < 0) {
     const { data: s } = await supabase.storage.from(BUCKET).createSignedUrl(c.capa_path, EXPIRA_S);
-    capa = s?.signedUrl ?? capa;
+    if (s?.signedUrl) fotos = [s.signedUrl, ...fotos];
   }
-  return { c, fotos, capa };
+  if (capaIndex < 0) capaIndex = 0;
+  return { c, fotos, capaIndex, capa: fotos[capaIndex] ?? null };
 });
 
 export async function generateMetadata({
@@ -124,7 +129,7 @@ export default async function CaptacaoPublicaPage({
   const { token } = await params;
   const res = await getCaptacao(token);
   if (!res) notFound();
-  const { c, fotos, capa } = res;
+  const { c, fotos, capaIndex } = res;
 
   const specs: { icon: typeof BedDouble; valor: string; label: string }[] = [];
   if (c.quartos != null) specs.push({ icon: BedDouble, valor: String(c.quartos), label: c.quartos === 1 ? "quarto" : "quartos" });
@@ -160,78 +165,56 @@ export default async function CaptacaoPublicaPage({
       </header>
 
       <div className="mx-auto max-w-2xl px-4">
-        {/* Capa */}
-        {capa && (
-          <div className="relative mt-4 aspect-[16/10] w-full overflow-hidden rounded-2xl bg-[#e2e3dd] shadow-[0_10px_30px_-18px_rgba(46,48,42,0.4)]">
-            <Image src={capa} alt={c.endereco} fill priority sizes="(max-width: 672px) 100vw, 672px" className="object-cover" />
-          </div>
-        )}
+        {/* A capa e a grade de fotos são as pontas da <GaleriaPublica />; o que
+            vai aqui no meio continua sendo renderizado no servidor. */}
+        <GaleriaPublica fotos={fotos} capaIndex={capaIndex} endereco={c.endereco}>
+          {/* Título */}
+          <h1 className="mt-5 font-serif text-[26px] font-semibold leading-[1.2] tracking-[-0.01em] text-[#2e302a]">
+            {c.endereco}
+          </h1>
+          {c.bairro && <p className="mt-1 text-[15px] text-[#7a7d70]">{c.bairro}</p>}
 
-        {/* Título */}
-        <h1 className="mt-5 font-serif text-[26px] font-semibold leading-[1.2] tracking-[-0.01em] text-[#2e302a]">
-          {c.endereco}
-        </h1>
-        {c.bairro && <p className="mt-1 text-[15px] text-[#7a7d70]">{c.bairro}</p>}
-
-        {/* Specs */}
-        {specs.length > 0 && (
-          <div className="mt-4 flex flex-wrap gap-2">
-            {specs.map((s, i) => (
-              <span
-                key={i}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-[#e8e9e3] bg-white px-3 py-1.5 text-sm text-[#4a4d43]"
-              >
-                <s.icon className="h-4 w-4 text-[#9a8d3a]" />
-                <strong className="font-semibold">{s.valor}</strong> {s.label}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {/* Valores */}
-        {valores.length > 0 && (
-          <div className="mt-5 grid grid-cols-2 gap-3">
-            {valores.map((x) => (
-              <div key={x.label} className="rounded-2xl border border-[#e8e9e3] bg-white p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9a9c90]">
-                  {x.label}
-                </p>
-                <p
-                  className={
-                    x.destaque
-                      ? "mt-1 text-lg font-bold text-[#857727]"
-                      : "mt-1 text-base font-semibold text-[#4a4d43]"
-                  }
-                >
-                  {formatBRL(x.v!)}
-                  {"sufixo" in x && x.sufixo && (
-                    <span className="text-sm font-medium text-[#9a9c90]">{x.sufixo}</span>
-                  )}
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Galeria */}
-        {fotos.length > 1 && (
-          <>
-            <h2 className="mt-7 font-serif text-lg font-semibold text-[#2e302a]">Fotos</h2>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              {fotos.slice(1).map((url, i) => (
-                <a
+          {/* Specs */}
+          {specs.length > 0 && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {specs.map((s, i) => (
+                <span
                   key={i}
-                  href={url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="relative aspect-[4/3] overflow-hidden rounded-xl bg-[#e2e3dd]"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-[#e8e9e3] bg-white px-3 py-1.5 text-sm text-[#4a4d43]"
                 >
-                  <Image src={url} alt="" fill loading="lazy" sizes="(max-width: 672px) 50vw, 336px" className="object-cover transition-transform duration-300 hover:scale-[1.03]" />
-                </a>
+                  <s.icon className="h-4 w-4 text-[#9a8d3a]" />
+                  <strong className="font-semibold">{s.valor}</strong> {s.label}
+                </span>
               ))}
             </div>
-          </>
-        )}
+          )}
+
+          {/* Valores */}
+          {valores.length > 0 && (
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              {valores.map((x) => (
+                <div key={x.label} className="rounded-2xl border border-[#e8e9e3] bg-white p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9a9c90]">
+                    {x.label}
+                  </p>
+                  <p
+                    className={
+                      x.destaque
+                        ? "mt-1 text-lg font-bold text-[#857727]"
+                        : "mt-1 text-base font-semibold text-[#4a4d43]"
+                    }
+                  >
+                    {formatBRL(x.v!)}
+                    {"sufixo" in x && x.sufixo && (
+                      <span className="text-sm font-medium text-[#9a9c90]">{x.sufixo}</span>
+                    )}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+
+        </GaleriaPublica>
 
         <footer className="mt-10 border-t border-[#e2e3dd] pt-4 text-center text-xs text-[#9a9c90]">
           Compartilhado pela equipe Morabilidade.
