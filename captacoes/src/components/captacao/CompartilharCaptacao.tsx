@@ -3,22 +3,17 @@
 import { useState } from "react";
 import { Share2, Check, Copy } from "lucide-react";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { BOTAO_SECUNDARIO } from "@/lib/utils";
 
 /**
  * Botões de compartilhamento do link público (/p/[token]) da captação:
  * WhatsApp (wa.me com o texto pronto) + copiar link. No celular, quando o
  * navegador oferece o share nativo, usa a folha de compartilhamento.
+ *
+ * Devolve os dois botões soltos, sem casca: quem chama é que decide a grade —
+ * no detalhe eles dividem a largura com o link do anúncio.
  */
-export function CompartilharCaptacao({
-  token,
-  endereco,
-  compact = false,
-}: {
-  token: string;
-  endereco: string;
-  compact?: boolean;
-}) {
+export function CompartilharCaptacao({ token, endereco }: { token: string; endereco: string }) {
   const [copiado, setCopiado] = useState(false);
   const url = () => `${window.location.origin}/p/${token}`;
   const texto = () => `${endereco} — veja as fotos e os detalhes: ${url()}`;
@@ -50,35 +45,24 @@ export function CompartilharCaptacao({
   }
 
   return (
-    <div className={cn("flex flex-wrap gap-1.5", compact && "gap-1")} onClick={(e) => e.stopPropagation()}>
+    <>
       <button
         type="button"
         onClick={compartilhar}
         title="Compartilhar no WhatsApp"
-        className={cn(
-          "inline-flex items-center gap-1.5 rounded-lg border border-[#d8e7df] bg-[#eef4f0] font-medium text-[#2f6b46] transition-colors hover:bg-[#e2efe7] active:brightness-95",
-          compact ? "px-2 py-1 text-xs" : "px-2.5 py-1.5 text-[13px]"
-        )}
+        className={BOTAO_SECUNDARIO}
       >
-        <Share2 className={compact ? "h-3.5 w-3.5" : "h-4 w-4"} />
+        <Share2 className="h-4 w-4 flex-none" />
         Compartilhar
       </button>
-      <button
-        type="button"
-        onClick={copiar}
-        title="Copiar link público"
-        className={cn(
-          "inline-flex items-center gap-1.5 rounded-lg border border-[#e2e3dd] bg-white font-medium text-[#4a4d43] transition-colors hover:bg-[#f5f6f1] active:bg-[#eceee8]",
-          compact ? "px-2 py-1 text-xs" : "px-2.5 py-1.5 text-[13px]"
-        )}
-      >
+      <button type="button" onClick={copiar} title="Copiar link público" className={BOTAO_SECUNDARIO}>
         {copiado ? (
-          <Check className={cn("text-[#2f6b46]", compact ? "h-3.5 w-3.5" : "h-4 w-4")} />
+          <Check className="h-4 w-4 flex-none text-[#2f6b46]" />
         ) : (
-          <Copy className={compact ? "h-3.5 w-3.5" : "h-4 w-4"} />
+          <Copy className="h-4 w-4 flex-none" />
         )}
         {copiado ? "Copiado" : "Copiar link"}
       </button>
-    </div>
+    </>
   );
 }

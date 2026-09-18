@@ -24,3 +24,11 @@ export const CONTAINER = "mx-auto w-full max-w-[1180px]";
 /** Elevação no hover — só onde existe ponteiro de verdade. */
 export const HOVER_CARD =
   "lg:transition-shadow lg:hover:shadow-[0_2px_4px_rgba(46,48,42,0.06),0_16px_32px_-20px_rgba(46,48,42,0.32)]";
+
+/**
+ * Ação secundária do detalhe (compartilhar, copiar link, abrir anúncio): todas
+ * do mesmo tamanho e do mesmo cinza, porque nenhuma delas é a decisão — essa
+ * mora na barra verde do rodapé.
+ */
+export const BOTAO_SECUNDARIO =
+  "inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#e2e3dd] bg-white px-3 text-[13.5px] font-medium text-[#4a4d43] transition-colors hover:bg-[#f5f6f1] active:bg-[#eceee8]";

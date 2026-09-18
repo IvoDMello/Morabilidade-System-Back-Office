@@ -24,6 +24,9 @@ export function SyncIndicator() {
   let icon: React.ReactNode;
   let texto: string;
   let cor: string;
+  // Estado de repouso ("tudo sincronizado") não é notícia: no celular ele só
+  // ocupava a linha da logo. Some abaixo do lg; salvando/offline continuam.
+  let repouso = false;
 
   if (salvando > 0) {
     icon = <Loader2 className="h-3.5 w-3.5 animate-spin" />;
@@ -45,11 +48,16 @@ export function SyncIndicator() {
     icon = <Cloud className="h-3.5 w-3.5" />;
     texto = "Sincronizado";
     cor = "text-secondary-foreground/60";
+    repouso = true;
   }
 
   return (
     <span
-      className={cn("inline-flex items-center gap-1.5 text-xs font-medium", cor)}
+      className={cn(
+        "items-center gap-1.5 text-xs font-medium",
+        repouso ? "hidden lg:inline-flex" : "inline-flex",
+        cor
+      )}
       title={conexao === "online" ? "Atualizações em tempo real ativas" : "Tempo real indisponível"}
       aria-live="polite"
     >

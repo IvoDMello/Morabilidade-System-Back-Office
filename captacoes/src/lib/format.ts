@@ -1,3 +1,5 @@
+import type { Captacao } from "@/types";
+
 const RTF = new Intl.RelativeTimeFormat("pt-BR", { numeric: "auto" });
 
 /** "há 2 dias", "há 3 h", "agora". */
@@ -97,4 +99,19 @@ export function formatarTelefone(tel: string | null): string {
   if (d.length === 11) return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
   if (d.length === 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
   return tel ?? "";
+}
+
+/**
+ * "2 quartos · 1 suíte · 210 m²" — a ficha do imóvel em uma linha, na ordem em
+ * que quem avalia lê. Omite o que não foi preenchido em vez de mostrar zero:
+ * "0 vagas" e "vaga não informada" são coisas diferentes.
+ */
+export function resumoSpecs(c: Captacao): string {
+  const partes: string[] = [];
+  if (c.quartos != null) partes.push(`${c.quartos} ${c.quartos === 1 ? "quarto" : "quartos"}`);
+  if (c.suites) partes.push(`${c.suites} ${c.suites === 1 ? "suíte" : "suítes"}`);
+  if (c.banheiros != null) partes.push(`${c.banheiros} ${c.banheiros === 1 ? "banheiro" : "banheiros"}`);
+  if (c.vagas) partes.push(`${c.vagas} ${c.vagas === 1 ? "vaga" : "vagas"}`);
+  if (c.metragem != null) partes.push(`${c.metragem} m²`);
+  return partes.join(" · ");
 }

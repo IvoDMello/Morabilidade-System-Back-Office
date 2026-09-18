@@ -60,7 +60,7 @@ export function formInicial(c: Captacao): CadastroForm {
     bairro: c.bairro ?? "",
     logradouro: c.endereco ?? "",
     numero: "",
-    complemento: c.unidade ? `Apto ${c.unidade}` : "",
+    complemento: c.apto ? `Apto ${c.apto}` : "",
     andar: numToStr(c.andar),
     dormitorios: numToStr(c.quartos),
     suites: numToStr(c.suites),

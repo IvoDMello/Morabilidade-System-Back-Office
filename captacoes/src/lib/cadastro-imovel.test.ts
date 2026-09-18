@@ -90,9 +90,9 @@ describe("formInicial", () => {
     expect(formInicial(captacao({ endereco: "X" })).observacoes_internas).toBe("");
   });
 
-  it("unidade pré-preenche o complemento", () => {
-    expect(formInicial(captacao({ endereco: "Rua X", unidade: "302" })).complemento).toBe("Apto 302");
-    expect(formInicial(captacao({ endereco: "Rua X", unidade: null })).complemento).toBe("");
+  it("apto pré-preenche o complemento", () => {
+    expect(formInicial(captacao({ endereco: "Rua X", apto: "302" })).complemento).toBe("Apto 302");
+    expect(formInicial(captacao({ endereco: "Rua X", apto: null })).complemento).toBe("");
   });
 
   it("lida com captação sem dados (campos nulos)", () => {

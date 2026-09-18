@@ -26,9 +26,9 @@ export function EditCaptacao({ captacao }: { captacao: Captacao }) {
     <CaptacaoForm
       defaultValues={{
         endereco: captacao.endereco,
+        apto: captacao.apto,
         unidade: captacao.unidade,
         bairro: captacao.bairro,
-        andar: captacao.andar,
         quartos: captacao.quartos,
         suites: captacao.suites,
         banheiros: captacao.banheiros,

@@ -66,7 +66,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, naAgenda: false });
   }
 
-  const endereco = [c.endereco, c.unidade].filter(Boolean).join(" / ");
+  const endereco = [c.endereco, c.apto].filter(Boolean).join(" / ");
   const eventId = await salvarEvento(
     {
       titulo: `${LABEL[tipo]} — ${endereco}`,

@@ -83,7 +83,7 @@ export function TelefoneJaCadastrado({
               className="inline-flex items-center gap-1.5 font-medium hover:underline"
             >
               {c.endereco}
-              {c.unidade ? ` · ap ${c.unidade}` : ""}
+              {c.apto ? ` · ap ${c.apto}` : ""}
               <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
             </a>
             <span className="mt-0.5 block text-[11px] text-muted-foreground">

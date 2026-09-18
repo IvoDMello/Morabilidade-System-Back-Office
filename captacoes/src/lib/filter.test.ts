@@ -52,8 +52,8 @@ describe("filtrarCaptacoes", () => {
   it("sem correspondência retorna vazio", () => {
     expect(filtrarCaptacoes(lista, "inexistente")).toHaveLength(0);
   });
-  it("busca pela unidade (nº do apartamento)", () => {
-    const lst = [card({ endereco: "Rua M", unidade: "302" })];
+  it("busca pelo apto (nº do apartamento)", () => {
+    const lst = [card({ endereco: "Rua M", apto: "302" })];
     expect(filtrarCaptacoes(lst, "302")).toHaveLength(1);
   });
   it("busca pelo bairro", () => {

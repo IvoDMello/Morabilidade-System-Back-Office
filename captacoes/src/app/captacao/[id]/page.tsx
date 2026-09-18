@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, MessageCircle, Link2, UserPlus } from "lucide-react";
-import { whatsappLink, formatarTelefone, formatBRL } from "@/lib/format";
+import { ChevronLeft, MessageCircle, Link2, UserPlus } from "lucide-react";
+import { whatsappLink, formatarTelefone, formatBRL, diasParado, resumoSpecs } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EditCaptacao } from "@/components/captacao/EditCaptacao";
@@ -21,7 +21,7 @@ import { createClient } from "@/lib/supabase/server";
 import { STATUS_STYLE } from "@/lib/status-style";
 import { etapaDaCaptacao } from "@/lib/etapa";
 import { PARAM_NOVA } from "@/lib/captacao-link";
-import { cn } from "@/lib/utils";
+import { BOTAO_SECUNDARIO, cn } from "@/lib/utils";
 import type { Captacao, Documento, Midia, Opiniao, Perfil } from "@/types";
 
 export const dynamic = "force-dynamic";
@@ -32,6 +32,35 @@ export const dynamic = "force-dynamic";
  * cansam mais do que ajudam.
  */
 const TRILHO = "mx-auto w-full max-w-[900px]";
+
+/**
+ * Olive chapado, não o degradê das abas: a barra de cima é sticky e precisa de
+ * fundo opaco próprio — com degradê, a emenda entre ela e o herói apareceria
+ * assim que a página rolasse.
+ */
+const OLIVE = "#45443c";
+
+/**
+ * O cabeçalho não usa branco transparente: sobre o olive ele sai acinzentado e
+ * frio. Os tons abaixo são quentes de propósito — é a mesma família do
+ * dourado da marca, puxada para baixo até dar contraste no fundo escuro.
+ */
+const HEADER = {
+  /** "CAPTAÇÃO · DECIDIR" e o rodapé de specs. */
+  caption: "#a9a184",
+  ficha: "#a8a595",
+  /** Endereço e complemento: o número do apartamento vem em dourado. */
+  titulo: "#f5f3ec",
+  complemento: "#b8a56b",
+} as const;
+
+/**
+ * Título de seção: serifa com o fio dourado por baixo, do tamanho da palavra.
+ * É o que separa um bloco do outro num formulário longo sem precisar de mais
+ * uma borda.
+ */
+const TITULO_SECAO =
+  "inline-block border-b-2 border-primary pb-2 font-serif text-lg leading-snug text-[#2e302a]";
 
 const VOLTAR_HREF: Record<string, string> = {
   decidir: "/decidir",
@@ -71,6 +100,9 @@ export default async function CaptacaoPage({ params }: { params: Promise<{ id: s
   // Voltar leva para a aba de onde a captação veio, não para um quadro genérico.
   const etapa = etapaDaCaptacao(c);
   const voltarPara = VOLTAR_HREF[etapa];
+  const parada = diasParado(c.atualizado_em);
+  const resumo = resumoSpecs(c);
+  const zap = c.whatsapp ? whatsappLink(c.whatsapp) : null;
   // Outro imóvel do mesmo proprietário: abre o formulário de captação nova já
   // com o contato preenchido, pelo mesmo link que o copiloto do WhatsApp usa.
   const outraDoNumero = c.whatsapp
@@ -83,108 +115,172 @@ export default async function CaptacaoPage({ params }: { params: Promise<{ id: s
 
   return (
     <main className="min-h-dvh bg-[#f3f4f0] pb-28 lg:pb-12">
-      {/* Top bar */}
-      <div className="sticky top-0 z-10 border-b border-[#e6e7e1] bg-white">
-        <div className={cn(TRILHO, "flex items-center justify-between px-4 py-2.5")}>
-          <Link href={voltarPara} className="inline-flex items-center gap-1.5 text-sm font-medium text-[#4a4d43]">
-            <ArrowLeft className="h-4 w-4" /> {VOLTAR_LABEL[etapa]}
+      {/* Barra de cima: fica grudada no topo porque o detalhe é um formulário
+          longo — a pessoa precisa saber de qual captação é o campo que está
+          preenchendo, e ter a saída à mão, sem rolar de volta. */}
+      <div className="sticky top-0 z-20 text-white" style={{ background: OLIVE }}>
+        <div className={cn(TRILHO, "flex items-center gap-3 px-4 py-2.5")}>
+          <Link
+            href={voltarPara}
+            aria-label={`Voltar para ${VOLTAR_LABEL[etapa]}`}
+            className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-black/25 text-white/90 transition-colors hover:bg-black/40"
+          >
+            <ChevronLeft className="h-5 w-5" />
           </Link>
+
+          <div className="min-w-0 flex-1">
+            <p
+              className="text-[9px] font-semibold uppercase tracking-[0.18em]"
+              style={{ color: HEADER.caption }}
+            >
+              Captação · {VOLTAR_LABEL[etapa]}
+            </p>
+            <p className="truncate text-[15px] font-semibold" style={{ color: HEADER.titulo }}>
+              {c.endereco}
+              {c.apto && ` · ap ${c.apto}`}
+            </p>
+          </div>
+
           <ExcluirCaptacao id={c.id} />
         </div>
       </div>
 
-      {/* Hero */}
-      <div className="bg-white">
-        <div className={cn(TRILHO, "px-4 pb-5 pt-4")}>
-          <span
-            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold"
-            style={{ backgroundColor: st.bg, color: st.fg }}
-          >
-            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: st.dot }} /> {st.label}
-          </span>
-          <div className="mt-2.5">
-            <ListasDaCaptacao captacaoId={c.id} />
+      {/* Herói */}
+      <div className="text-white" style={{ background: OLIVE }}>
+        <div className={cn(TRILHO, "px-4 pb-5 pt-1.5")}>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex h-[25px] items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.10] px-2.5 text-[11.5px] font-semibold text-[#d9cf9e]">
+              <span className="h-[7px] w-[7px] rounded-full" style={{ backgroundColor: st.dot }} />
+              {st.short}
+            </span>
+
+            <ListasDaCaptacao captacaoId={c.id} tom="escuro" />
+
+            {parada >= 3 && (
+              <span className="ml-auto flex-none text-[12px] font-medium text-[#b9a96e]">
+                parada há {parada} dias
+              </span>
+            )}
           </div>
-          <h1 className="mt-3 font-serif text-[25px] font-semibold leading-[1.18] tracking-[-0.01em] text-[#2e302a]">
+
+          <h1
+            className="mt-3.5 font-serif text-[26px] font-semibold leading-[1.18] tracking-[-0.01em]"
+            style={{ color: HEADER.titulo }}
+          >
             {c.endereco}
-            {c.unidade && <span className="text-[#7a7d70]"> · ap {c.unidade}</span>}
+            {c.apto && <span style={{ color: HEADER.complemento }}> · ap {c.apto}</span>}
           </h1>
-          {c.bairro && <p className="mt-1 text-sm text-[#7a7d70]">{c.bairro}</p>}
-          {(c.proprietario_nome || c.whatsapp || c.anuncio_url) && (
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              {c.whatsapp && whatsappLink(c.whatsapp) ? (
-                <a
-                  href={whatsappLink(c.whatsapp)!}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-xl border border-[#d8e7df] bg-[#eef4f0] px-3 py-2 text-sm font-medium text-[#2f6b46]"
-                >
-                  <MessageCircle className="h-4 w-4" />
-                  <span>
-                    {c.proprietario_nome ?? "Contato"} · {formatarTelefone(c.whatsapp)}
-                  </span>
-                </a>
-              ) : (
-                c.proprietario_nome && (
-                  <span className="inline-flex items-center gap-2 rounded-xl border border-[#e8e9e3] bg-[#f5f6f1] px-3 py-2 text-sm text-[#585a4f]">
-                    {c.proprietario_nome}
-                  </span>
-                )
-              )}
-              {c.anuncio_url && (
-                <a
-                  href={c.anuncio_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-[#ece4b8] bg-[#faf7e8] px-3 py-2 text-sm font-medium text-[#9a8d3a]"
-                >
-                  <Link2 className="h-4 w-4" /> Anúncio
-                </a>
-              )}
-              {outraDoNumero && (
-                <Link
-                  href={outraDoNumero}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-[#e8e9e3] bg-[#f5f6f1] px-3 py-2 text-sm font-medium text-[#585a4f]"
-                >
-                  <UserPlus className="h-4 w-4" /> Outra captação deste número
-                </Link>
-              )}
-            </div>
-          )}
-          {c.share_token && (
-            <div className="mt-3">
-              <CompartilharCaptacao token={c.share_token} endereco={c.endereco} />
-            </div>
+
+          {/* Bairro e ficha na mesma linha: é o cabeçalho de uma captação, não
+              a busca — quem abriu já sabe o endereço e quer o resto. */}
+          {(c.bairro || resumo) && (
+            <p className="mt-1.5 text-[13px]" style={{ color: HEADER.ficha }}>
+              {[c.bairro, resumo].filter(Boolean).join(" · ")}
+            </p>
           )}
         </div>
       </div>
 
+      {/* Contato: a primeira coisa depois do endereço porque quase toda
+          decisão passa por falar com o proprietário. */}
+      {(c.proprietario_nome || c.whatsapp || c.share_token || c.anuncio_url || outraDoNumero) && (
+        <div className={cn(TRILHO, "px-4 pt-[18px]")}>
+          <div className="rounded-[18px] border border-[#e8e9e3] bg-white p-4 shadow-[0_1px_2px_rgba(46,48,42,0.04)]">
+            {(c.proprietario_nome || c.whatsapp) && (
+              <div className="flex items-center gap-3">
+                <MessageCircle className="h-5 w-5 flex-none text-[#7a7d70]" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[15px] font-semibold text-[#2e302a]">
+                    {c.proprietario_nome ?? "Contato"}
+                  </p>
+                  {c.whatsapp && (
+                    <p className="text-[12.5px] font-medium text-[#2f6b46]">
+                      {formatarTelefone(c.whatsapp)}
+                    </p>
+                  )}
+                </div>
+                {zap && (
+                  <a
+                    href={zap}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex h-10 flex-none items-center rounded-xl bg-[#2f6b46] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#285c3c]"
+                  >
+                    Chamar
+                  </a>
+                )}
+              </div>
+            )}
+
+            {(c.share_token || c.anuncio_url) && (
+              <div
+                className={cn(
+                  "grid grid-cols-2 gap-2.5",
+                  (c.proprietario_nome || c.whatsapp) && "mt-3.5"
+                )}
+              >
+                {c.share_token && (
+                  <CompartilharCaptacao token={c.share_token} endereco={c.endereco} />
+                )}
+                {c.anuncio_url && (
+                  <a
+                    href={c.anuncio_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={cn(BOTAO_SECUNDARIO, !c.share_token && "col-span-2")}
+                  >
+                    <Link2 className="h-4 w-4 flex-none" /> Anúncio
+                  </a>
+                )}
+              </div>
+            )}
+
+            {/* Tracejado de propósito: não é uma ação sobre ESTA captação, é
+                um atalho para começar outra com o mesmo contato. */}
+            {outraDoNumero && (
+              <Link
+                href={outraDoNumero}
+                className="mt-2.5 flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-dashed border-[#d2d4cb] text-[13.5px] font-medium text-[#7a7d70] transition-colors hover:bg-[#f5f6f1]"
+              >
+                <UserPlus className="h-4 w-4" /> Outra captação deste número
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className={cn(TRILHO, "space-y-[14px] px-4 py-[18px] lg:py-6")}>
 
       {(c.valor_venda != null || c.valor_aluguel != null || c.valor_condominio != null || c.valor_iptu != null) && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="rounded-lg border bg-card p-3">
-            <p className="text-xs text-muted-foreground">Venda</p>
-            <p className="text-base font-semibold text-primary">{formatBRL(c.valor_venda)}</p>
-          </div>
-          <div className="rounded-lg border bg-card p-3">
-            <p className="text-xs text-muted-foreground">Aluguel</p>
-            <p className="text-base font-semibold text-primary">{formatBRL(c.valor_aluguel)}</p>
-          </div>
-          <div className="rounded-lg border bg-card p-3">
-            <p className="text-xs text-muted-foreground">Condomínio</p>
-            <p className="text-base font-semibold">{formatBRL(c.valor_condominio)}</p>
-          </div>
-          <div className="rounded-lg border bg-card p-3">
-            <p className="text-xs text-muted-foreground">IPTU</p>
-            <p className="text-base font-semibold">{formatBRL(c.valor_iptu)}</p>
-          </div>
+        // Mesma caixa e mesmo rótulo miúdo da composição, um degrau acima no
+        // tamanho: venda e aluguel são o que se compara entre captações.
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+          {[
+            { rotulo: "Venda", valor: c.valor_venda, forte: true },
+            { rotulo: "Aluguel", valor: c.valor_aluguel, forte: true },
+            { rotulo: "Condomínio", valor: c.valor_condominio, forte: false },
+            { rotulo: "IPTU", valor: c.valor_iptu, forte: false },
+          ].map((v) => (
+            <div key={v.rotulo} className="rounded-[14px] border border-[#e8e9e3] bg-white p-3">
+              <p className="text-[9.5px] font-semibold uppercase tracking-[0.1em] text-[#8b8e82]">
+                {v.rotulo}
+              </p>
+              <p
+                className={cn(
+                  "mt-1 text-[15px] font-bold tracking-[-0.01em]",
+                  v.forte ? "text-[#2e302a]" : "text-[#6e7063]"
+                )}
+              >
+                {formatBRL(v.valor)}
+              </p>
+            </div>
+          ))}
         </div>
       )}
 
       <Card className="rounded-[18px] border-[#e8e9e3]">
         <CardHeader>
-          <CardTitle className="font-serif text-lg">Dados da captação</CardTitle>
+          <CardTitle className={TITULO_SECAO}>Dados da captação</CardTitle>
         </CardHeader>
         <CardContent>
           <EditCaptacao captacao={c} />
@@ -194,7 +290,7 @@ export default async function CaptacaoPage({ params }: { params: Promise<{ id: s
       {(c.status === "em_decisao" || c.decisao) && (
         <Card className="rounded-[18px] border-[#e8e9e3]">
           <CardHeader>
-            <CardTitle className="font-serif text-lg">Decisão</CardTitle>
+            <CardTitle className={TITULO_SECAO}>Decisão</CardTitle>
           </CardHeader>
           <CardContent>
             <DecisaoBox
@@ -210,7 +306,7 @@ export default async function CaptacaoPage({ params }: { params: Promise<{ id: s
       {c.decisao === "aprovada" && (
         <Card className="rounded-[18px] border-[#e8e9e3]">
           <CardHeader>
-            <CardTitle className="font-serif text-lg">Cadastro no sistema</CardTitle>
+            <CardTitle className={TITULO_SECAO}>Cadastro no sistema</CardTitle>
           </CardHeader>
           <CardContent>
             {c.imovel_codigo ? (
@@ -238,7 +334,7 @@ export default async function CaptacaoPage({ params }: { params: Promise<{ id: s
       {ramoAgendamento && (
         <Card className="rounded-[18px] border-[#e8e9e3]">
           <CardHeader>
-            <CardTitle className="font-serif text-lg">Agendamento</CardTitle>
+            <CardTitle className={TITULO_SECAO}>Agendamento</CardTitle>
           </CardHeader>
           <CardContent>
             <AgendamentoCard captacao={c} />
@@ -249,7 +345,7 @@ export default async function CaptacaoPage({ params }: { params: Promise<{ id: s
       {(c.decisao === "aprovada" || c.status === "publicada") && (
         <Card className="rounded-[18px] border-[#e8e9e3]">
           <CardHeader>
-            <CardTitle className="font-serif text-lg">Publicação</CardTitle>
+            <CardTitle className={TITULO_SECAO}>Publicação</CardTitle>
           </CardHeader>
           <CardContent>
             <PublicarCaptacao captacao={c} />
@@ -259,7 +355,7 @@ export default async function CaptacaoPage({ params }: { params: Promise<{ id: s
 
       <Card className="rounded-[18px] border-[#e8e9e3]">
         <CardHeader>
-          <CardTitle className="font-serif text-lg">Fotos e vídeos</CardTitle>
+          <CardTitle className={TITULO_SECAO}>Fotos e vídeos</CardTitle>
         </CardHeader>
         <CardContent>
           <Galeria captacaoId={c.id} midiasIniciais={(midias ?? []) as Midia[]} capaInicial={c.capa_path} />
@@ -268,7 +364,7 @@ export default async function CaptacaoPage({ params }: { params: Promise<{ id: s
 
       <Card className="rounded-[18px] border-[#e8e9e3]">
         <CardHeader>
-          <CardTitle className="font-serif text-lg">Documentos</CardTitle>
+          <CardTitle className={TITULO_SECAO}>Documentos</CardTitle>
         </CardHeader>
         <CardContent>
           <Documentos captacaoId={c.id} docsIniciais={(docs ?? []) as Documento[]} />
@@ -277,7 +373,7 @@ export default async function CaptacaoPage({ params }: { params: Promise<{ id: s
 
       <Card className="rounded-[18px] border-[#e8e9e3]">
         <CardHeader>
-          <CardTitle className="font-serif text-lg">Opiniões da equipe</CardTitle>
+          <CardTitle className={TITULO_SECAO}>Opiniões da equipe</CardTitle>
         </CardHeader>
         <CardContent>
           <Opinioes
@@ -291,7 +387,7 @@ export default async function CaptacaoPage({ params }: { params: Promise<{ id: s
 
       <Card className="rounded-[18px] border-[#e8e9e3]">
         <CardHeader>
-          <CardTitle className="font-serif text-lg">Histórico</CardTitle>
+          <CardTitle className={TITULO_SECAO}>Histórico</CardTitle>
         </CardHeader>
         <CardContent>
           <Historico eventos={(eventos ?? []) as never} nomes={nomes} />

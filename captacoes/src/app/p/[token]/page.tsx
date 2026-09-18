@@ -31,7 +31,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 interface Publica {
   id: string;
   endereco: string;
-  unidade: string | null;
+  apto: string | null;
   bairro: string | null;
   andar: number | null;
   quartos: number | null;
@@ -58,7 +58,7 @@ const getCaptacao = cache(async (token: string) => {
   const { data } = await supabase
     .from("captacao")
     .select(
-      "id,endereco,unidade,bairro,andar,quartos,suites,banheiros,vagas,metragem,tipo_portaria,valor_venda,valor_aluguel,valor_condominio,valor_iptu,capa_path"
+      "id,endereco,apto,bairro,andar,quartos,suites,banheiros,vagas,metragem,tipo_portaria,valor_venda,valor_aluguel,valor_condominio,valor_iptu,capa_path"
     )
     .eq("share_token", token)
     .is("excluido_em", null)

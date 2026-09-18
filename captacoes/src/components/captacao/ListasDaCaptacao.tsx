@@ -15,7 +15,14 @@ import type { Lista } from "@/types";
  * Busca sozinha: o detalhe vive fora do store das abas (é uma rota própria,
  * aberta direto por link) e não pode depender de ele estar hidratado.
  */
-export function ListasDaCaptacao({ captacaoId }: { captacaoId: string }) {
+export function ListasDaCaptacao({
+  captacaoId,
+  tom = "claro",
+}: {
+  captacaoId: string;
+  /** "escuro" = desenhado sobre o cabeçalho olive do detalhe. */
+  tom?: "claro" | "escuro";
+}) {
   const [listas, setListas] = useState<Lista[]>([]);
   const [dentro, setDentro] = useState<Set<string>>(new Set());
   const [menuAberto, setMenuAberto] = useState(false);
@@ -104,7 +111,12 @@ export function ListasDaCaptacao({ captacaoId }: { captacaoId: string }) {
         type="button"
         onClick={() => setMenuAberto((v) => !v)}
         aria-expanded={menuAberto}
-        className="inline-flex h-[25px] items-center gap-1.5 rounded-lg border border-dashed border-[#c8cac1] px-2.5 text-[11.5px] font-semibold text-muted-foreground"
+        className={cn(
+          "inline-flex h-[25px] items-center gap-1.5 rounded-lg border border-dashed px-2.5 text-[11.5px] font-semibold",
+          tom === "escuro"
+            ? "border-[#6e6c61] text-[#b9b7ac] hover:bg-white/10"
+            : "border-[#c8cac1] text-muted-foreground"
+        )}
       >
         <Plus className="h-3 w-3" strokeWidth={2.6} />
         Lista
@@ -118,7 +130,10 @@ export function ListasDaCaptacao({ captacaoId }: { captacaoId: string }) {
             className="fixed inset-0 z-20 cursor-default"
             onClick={() => setMenuAberto(false)}
           />
-          <div className="absolute left-0 top-9 z-30 max-h-64 w-60 overflow-y-auto rounded-xl border bg-card p-1 shadow-lg">
+          {/* `text-foreground` explícito: no detalhe este menu abre dentro do
+              cabeçalho olive, que pinta seus filhos de branco — sem isto os
+              nomes das listas saem brancos sobre o card branco. */}
+          <div className="absolute left-0 top-9 z-30 max-h-64 w-60 overflow-y-auto rounded-xl border bg-card p-1 text-foreground shadow-lg">
             {listas.map((l) => {
               const cor = corDaLista(l);
               const on = dentro.has(l.id);
