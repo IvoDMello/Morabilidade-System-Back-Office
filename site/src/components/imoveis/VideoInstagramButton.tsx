@@ -25,7 +25,7 @@ export function VideoInstagramButton({ codigo, url }: Props) {
       className="mt-3 w-full flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold text-white transition hover:opacity-90"
       style={{ background: "linear-gradient(135deg, #3e4037 0%, #585a4f 72%, #d8cb6a 100%)" }}
     >
-      <Instagram className="w-4 h-4" /> Ver vídeo no Instagram
+      <Instagram className="w-4 h-4" /> Anúncio no Instagram
     </a>
   );
 }

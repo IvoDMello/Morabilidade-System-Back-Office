@@ -4,8 +4,8 @@
 -- canais, e a página do imóvel no site passa a oferecer os dois botões, um
 -- embaixo do outro. Campo público, flui pelo /imoveis/publico/{codigo}.
 --
--- ⚠️ PENDENTE DE EXECUÇÃO no Supabase, rodar no SQL Editor antes do deploy da
--- API que já grava a coluna.
+-- APLICADA no Supabase em 2026-09-20. Idempotente (IF NOT EXISTS), não precisa
+-- rodar de novo.
 
 ALTER TABLE imoveis
   ADD COLUMN IF NOT EXISTS youtube_url TEXT;

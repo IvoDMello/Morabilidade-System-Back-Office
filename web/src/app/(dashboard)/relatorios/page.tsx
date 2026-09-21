@@ -448,7 +448,7 @@ export default function RelatoriosPage() {
                 <div className="h-7 w-12 bg-slate-100 rounded animate-pulse" />
               )}
               <p className="text-xs text-slate-500 mt-0.5">
-                Cliques em “Ver vídeo no Instagram”
+                Cliques nos botões de vídeo do imóvel
                 <span className="block text-[11px] text-slate-400">últimos 90 dias</span>
               </p>
             </div>
