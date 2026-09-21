@@ -165,7 +165,7 @@ class VideoPayload(BaseModel):
 @router.post("/publico/video", status_code=status.HTTP_204_NO_CONTENT, tags=["Analytics"])
 @limiter.limit("120/minute")
 def track_video(request: Request, body: VideoPayload):
-    """Clique no botão 'Ver vídeo no Instagram' da página do imóvel."""
+    """Clique num dos botões de vídeo (Instagram/YouTube) da página do imóvel."""
     imovel_id = _resolve_imovel_id(body.imovel_codigo)
     if not imovel_id:
         return  # silencioso: código inválido não derruba o site

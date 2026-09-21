@@ -74,6 +74,7 @@ export interface Imovel {
   descricao?: string;
   observacoes_internas?: string;
   instagram_url?: string;
+  youtube_url?: string;
   corretor_id?: string;
   proprietario_id?: string | null;
   proprietario?: {

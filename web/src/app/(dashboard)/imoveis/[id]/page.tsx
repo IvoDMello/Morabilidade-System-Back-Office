@@ -421,6 +421,7 @@ export default function EditarImovelPage({
     descricao: imovel.descricao ?? "",
     observacoes_internas: imovel.observacoes_internas ?? "",
     instagram_url: imovel.instagram_url ?? "",
+    youtube_url: imovel.youtube_url ?? "",
     corretor_id: imovel.corretor_id ?? null,
     proprietario_id: imovel.proprietario_id ?? null,
     destaque_ordem: imovel.destaque_ordem ?? null,

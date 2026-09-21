@@ -1146,8 +1146,9 @@ export interface paths {
          * @description Baixa o PDF com o histórico de visitas do imóvel, para mandar ao cliente.
          *
          *     Diferente do relatório de 30 dias, não tem janela nem e-mail: é só leitura,
-         *     cobre todas as fichas assinadas do imóvel e sai com o visitante identificado
-         *     por nome e sobrenome e o telefone mascarado, ver [relatorio_visitas_pdf].
+         *     cobre todas as fichas do imóvel (assinadas ou não) e sai com o visitante
+         *     identificado por nome e sobrenome e o telefone mascarado, ver
+         *     [relatorio_visitas_pdf].
          */
         get: operations["baixar_relatorio_visitas_imoveis__imovel_id__relatorio_visitas_get"];
         put?: never;
@@ -1661,7 +1662,7 @@ export interface paths {
         put?: never;
         /**
          * Track Video
-         * @description Clique no botão 'Ver vídeo no Instagram' da página do imóvel.
+         * @description Clique num dos botões de vídeo (Instagram/YouTube) da página do imóvel.
          */
         post: operations["track_video_publico_video_post"];
         delete?: never;
@@ -3065,6 +3066,8 @@ export interface components {
             valor_sob_consulta: boolean;
             /** Valor Venda */
             valor_venda?: number | string | null;
+            /** Youtube Url */
+            youtube_url?: string | null;
         };
         /**
          * ImovelDoProprietario
@@ -3255,6 +3258,8 @@ export interface components {
             valor_sob_consulta: boolean;
             /** Valor Venda */
             valor_venda?: number | null;
+            /** Youtube Url */
+            youtube_url?: string | null;
         };
         /** ImovelUpdate */
         ImovelUpdate: {
@@ -3335,6 +3340,8 @@ export interface components {
             valor_sob_consulta: boolean;
             /** Valor Venda */
             valor_venda?: number | string | null;
+            /** Youtube Url */
+            youtube_url?: string | null;
         };
         /** LocalidadesOut */
         LocalidadesOut: {

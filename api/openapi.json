@@ -4164,6 +4164,17 @@
               }
             ],
             "title": "Valor Venda"
+          },
+          "youtube_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Youtube Url"
           }
         },
         "required": [
@@ -4911,6 +4922,17 @@
               }
             ],
             "title": "Valor Venda"
+          },
+          "youtube_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Youtube Url"
           }
         },
         "required": [
@@ -5358,6 +5380,17 @@
               }
             ],
             "title": "Valor Venda"
+          },
+          "youtube_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Youtube Url"
           }
         },
         "title": "ImovelUpdate",
@@ -11934,7 +11967,7 @@
     },
     "/imoveis/{imovel_id}/relatorio-visitas": {
       "get": {
-        "description": "Baixa o PDF com o histórico de visitas do imóvel, para mandar ao cliente.\n\nDiferente do relatório de 30 dias, não tem janela nem e-mail: é só leitura,\ncobre todas as fichas assinadas do imóvel e sai com o visitante identificado\npor nome e sobrenome e o telefone mascarado, ver [relatorio_visitas_pdf].",
+        "description": "Baixa o PDF com o histórico de visitas do imóvel, para mandar ao cliente.\n\nDiferente do relatório de 30 dias, não tem janela nem e-mail: é só leitura,\ncobre todas as fichas do imóvel (assinadas ou não) e sai com o visitante\nidentificado por nome e sobrenome e o telefone mascarado, ver\n[relatorio_visitas_pdf].",
         "operationId": "baixar_relatorio_visitas_imoveis__imovel_id__relatorio_visitas_get",
         "parameters": [
           {
@@ -13614,7 +13647,7 @@
     },
     "/publico/video": {
       "post": {
-        "description": "Clique no botão 'Ver vídeo no Instagram' da página do imóvel.",
+        "description": "Clique num dos botões de vídeo (Instagram/YouTube) da página do imóvel.",
         "operationId": "track_video_publico_video_post",
         "requestBody": {
           "content": {

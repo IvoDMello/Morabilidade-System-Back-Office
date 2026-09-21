@@ -12,6 +12,7 @@ import { WhatsAppButtonImovel } from "@/components/imoveis/WhatsAppButtonImovel"
 import { FavoritoButton } from "@/components/imoveis/FavoritoButton";
 import { CompartilharButton } from "@/components/imoveis/CompartilharButton";
 import { VideoInstagramButton } from "@/components/imoveis/VideoInstagramButton";
+import { VideoYoutubeButton } from "@/components/imoveis/VideoYoutubeButton";
 import MapaRegiaoClient from "@/components/imoveis/MapaRegiaoClient";
 import { getImovel } from "@/lib/api";
 import { geocodificarEndereco } from "@/lib/geocoding";
@@ -364,6 +365,11 @@ export default async function DetalheImovelPage({ params }: Props) {
               {/* Vídeo do imóvel no Instagram (client component, rastreia o clique) */}
               {imovel.instagram_url && (
                 <VideoInstagramButton codigo={imovel.codigo} url={imovel.instagram_url} />
+              )}
+
+              {/* Mesmo vídeo no YouTube, quando o imóvel também está publicado lá */}
+              {imovel.youtube_url && (
+                <VideoYoutubeButton codigo={imovel.codigo} url={imovel.youtube_url} />
               )}
 
               <p className="text-xs text-slate-400 text-center mt-3">

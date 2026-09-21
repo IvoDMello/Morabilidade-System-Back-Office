@@ -79,6 +79,7 @@ export interface Imovel {
   condominio_mensal?: number;
   descricao?: string;
   instagram_url?: string;
+  youtube_url?: string;
   fotos: Foto[];
   tags: Tag[];
   created_at: string;

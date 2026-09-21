@@ -67,6 +67,7 @@ const schema = z.object({
   descricao: z.string().optional(),
   observacoes_internas: z.string().optional(),
   instagram_url: z.string().optional(),
+  youtube_url: z.string().optional(),
   corretor_id: z.string().optional().nullable(),
   proprietario_id: z.string().optional().nullable(),
   destaque_ordem: z.preprocess(
@@ -974,6 +975,17 @@ export function ImovelForm({
             <FieldError message={errors.instagram_url?.message} />
             <p className="mt-1 text-xs text-slate-400">
               Aparece como botão na página do imóvel no site.
+            </p>
+          </div>
+
+          {/* col-start-1 joga o campo para a linha de baixo: o link do YouTube fica
+              embaixo do Instagram, e não ao lado dele, na grade de duas colunas. */}
+          <div className="lg:col-start-1">
+            <Label>Link do vídeo no YouTube</Label>
+            <input {...register("youtube_url")} className={inputClass} placeholder="https://www.youtube.com/watch?v=..." />
+            <FieldError message={errors.youtube_url?.message} />
+            <p className="mt-1 text-xs text-slate-400">
+              Aparece como botão na página do imóvel no site, abaixo do Instagram.
             </p>
           </div>
 
