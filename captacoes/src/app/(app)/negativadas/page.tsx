@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AlertCircle, Archive, Check, ChevronRight, Clock, MapPin, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { AppHeader } from "@/components/app/AppHeader";
+import { ResultadosGlobais } from "@/components/app/ResultadosGlobais";
 import { VazioRetornos } from "@/components/app/Vazios";
 import { Avatar } from "@/components/Avatar";
 import { useApp } from "@/stores/app";
@@ -35,7 +36,6 @@ export default function NegativadasPage() {
       <AppHeader
         titulo="Negativadas"
         contadores={nums}
-        busca={false}
         subtitulo={
           todas.length === 0 ? (
             "Nenhum retorno pendente"
@@ -85,6 +85,11 @@ export default function NegativadasPage() {
       </div>
 
       <div className={cn(CONTAINER, "no-scrollbar flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto px-[18px] pb-6 pt-4 [&>*]:shrink-0 lg:px-6 lg:pb-8")}>
+        {/* Esta aba é organizada por prazo de retorno, não pelo termo buscado:
+            a consulta responde num painel próprio, incluindo as negativadas —
+            o histórico daqui vem recolhido e uma busca não o abriria. */}
+        <ResultadosGlobais className="mb-1" />
+
         {fila.length === 0 ? (
           <VazioRetornos suas={somenteSuas} />
         ) : (

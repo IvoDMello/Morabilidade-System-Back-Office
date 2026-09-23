@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { CalendarDays, ChevronRight, Home, Plus, Trash2, Video } from "lucide-react";
 import { AppHeader } from "@/components/app/AppHeader";
+import { ResultadosGlobais } from "@/components/app/ResultadosGlobais";
 import { VazioAgenda } from "@/components/app/Vazios";
 import { AgendarDialog } from "@/components/agenda/AgendarDialog";
 import { useApp } from "@/stores/app";
@@ -59,11 +60,15 @@ export default function AgendaPage() {
       <AppHeader
         titulo="Agenda"
         contadores={nums}
-        busca={false}
         subtitulo={`${nums.agenda} a agendar · ${dias.reduce((n, d) => n + d.itens.length, 0)} compromissos à frente`}
       />
 
       <div className={cn(CONTAINER, "no-scrollbar flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-[18px] pb-6 pt-[18px] [&>*]:shrink-0 lg:px-6 lg:pb-8")}>
+        {/* A agenda é um calendário, não uma lista: o termo buscado não a
+            filtra, abre este painel em cima dela. Sem isto, procurar um
+            endereço daqui obrigava a trocar de aba antes de digitar. */}
+        <ResultadosGlobais />
+
         {semNada ? (
           <VazioAgenda pendentes={0} />
         ) : (

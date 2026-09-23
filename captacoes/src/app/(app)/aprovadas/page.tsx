@@ -7,6 +7,7 @@ import { AppHeader, contarCriterios } from "@/components/app/AppHeader";
 import { ListaPills } from "@/components/app/ListaPills";
 import { CaptacaoRow } from "@/components/app/CaptacaoRow";
 import { FiltrosSheet } from "@/components/app/FiltrosSheet";
+import { ResultadosGlobais } from "@/components/app/ResultadosGlobais";
 import { VazioAprovadas } from "@/components/app/Vazios";
 import { useApp } from "@/stores/app";
 import { contadores, hojeLocal } from "@/lib/contadores";
@@ -187,6 +188,11 @@ export default function AprovadasPage() {
             />
           ))
         )}
+
+        {/* A busca do cabeçalho é do app inteiro, não desta aba: o que casou
+            em Decidir, Negativadas ou Publicadas aparece aqui. Ocupa as duas
+            colunas — é um painel, não mais um item da grade. */}
+        <ResultadosGlobais excluir="aprovada" className="mt-2 xl:col-span-2" />
       </div>
 
       <FiltrosSheet open={filtrosAberto} onOpenChange={setFiltrosAberto} universo={daLista} />

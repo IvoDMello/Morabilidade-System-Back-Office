@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { AppHeader } from "@/components/app/AppHeader";
 import { FiltrosSheet } from "@/components/app/FiltrosSheet";
 import { MenuDaCaptacao } from "@/components/app/MenuDaCaptacao";
+import { ResultadosGlobais } from "@/components/app/ResultadosGlobais";
 import { VazioDecidir } from "@/components/app/Vazios";
 import { ReprovarDialog } from "@/components/captacao/ReprovarDialog";
 import { Avatar } from "@/components/Avatar";
@@ -90,6 +91,7 @@ export default function DecidirPage() {
   // do "N aguardando sua decisão" que aparece ao lado.
   const novas = naEtapa.filter((c) => c.status === "novas").length;
   const vazio = daFila.length === 0 && engavetadas.length === 0;
+  const buscando = filtro.trim().length > 0;
 
   return (
     <>
@@ -121,7 +123,15 @@ export default function DecidirPage() {
 
       <div className={cn(CONTAINER, "no-scrollbar flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto px-[18px] pb-5 pt-4 [&>*]:shrink-0 lg:gap-3 lg:px-6 lg:pb-8")}>
         {vazio ? (
-          <VazioDecidir />
+          // Buscando, a fila vazia não é "fila zerada": é só esta aba que não
+          // tem o termo. O painel logo abaixo diz onde ele está.
+          buscando ? (
+            <p className="px-1 pt-1 text-[12.5px] text-muted-foreground">
+              Nenhuma captação em Decidir com «{filtro.trim()}».
+            </p>
+          ) : (
+            <VazioDecidir />
+          )
         ) : (
           <>
             {grupos.map(
@@ -186,6 +196,10 @@ export default function DecidirPage() {
             )}
           </>
         )}
+
+        {/* A busca do cabeçalho é do app inteiro, não desta aba: o que casou
+            em Aprovadas, Negativadas ou Publicadas aparece aqui. */}
+        <ResultadosGlobais excluir="decidir" className="mt-2" />
       </div>
 
       <FiltrosSheet open={filtrosAberto} onOpenChange={setFiltrosAberto} universo={naEtapa} />

@@ -19,18 +19,21 @@ import type { Contadores } from "@/lib/contadores";
 /**
  * Cabeçalho olive do app. A logo fica aqui, não só no login: é o que dá cara
  * de produto da casa a uma ferramenta interna que os sócios abrem o dia todo.
+ *
+ * A busca vive aqui e vale para o app inteiro: o termo é um só (store
+ * `filtro`) e cada aba mostra o que casou fora dela no painel
+ * `ResultadosGlobais`. Por isso o campo aparece nas quatro abas, inclusive
+ * nas que não são listas (Agenda e Negativadas).
  */
 export function AppHeader({
   titulo,
   subtitulo,
   contadores,
-  busca = true,
   onAbrirFiltros,
 }: {
   titulo: string;
   subtitulo?: React.ReactNode;
   contadores: Contadores;
-  busca?: boolean;
   onAbrirFiltros?: () => void;
 }) {
   const router = useRouter();
@@ -103,51 +106,49 @@ export function AppHeader({
           <div className="mt-3 text-[13px] text-white/75 lg:mt-2">{subtitulo}</div>
         )}
 
-        {busca && (
-          <div className="mt-4 flex gap-2.5 lg:max-w-[520px]">
-            <div className="relative flex-1">
-              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/60" />
-              <input
-                value={filtro}
-                onChange={(e) => setFiltro(e.target.value)}
-                placeholder="Endereço, nome, telefone…"
-                aria-label="Buscar captação"
-                className="h-[42px] w-full rounded-[13px] border border-white/[0.18] bg-white/[0.14] pl-10 pr-9 text-[13.5px] text-white placeholder:text-white/55 outline-none focus-visible:border-primary"
-              />
-              {filtro && (
-                <button
-                  type="button"
-                  onClick={() => setFiltro("")}
-                  aria-label="Limpar busca"
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-1 text-white/70 hover:bg-white/10"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
-            </div>
-
-            {onAbrirFiltros && (
+        <div className="mt-4 flex gap-2.5 lg:max-w-[520px]">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/60" />
+            <input
+              value={filtro}
+              onChange={(e) => setFiltro(e.target.value)}
+              placeholder="Buscar em todas as abas…"
+              aria-label="Buscar captação em todas as abas"
+              className="h-[42px] w-full rounded-[13px] border border-white/[0.18] bg-white/[0.14] pl-10 pr-9 text-[13.5px] text-white placeholder:text-white/55 outline-none focus-visible:border-primary"
+            />
+            {filtro && (
               <button
                 type="button"
-                onClick={onAbrirFiltros}
-                aria-label={`Filtros${filtrosAtivos > 0 ? ` (${filtrosAtivos} ativos)` : ""}`}
-                className={cn(
-                  "relative flex h-[42px] w-11 flex-none items-center justify-center rounded-[13px] border text-white",
-                  filtrosAtivos > 0
-                    ? "border-primary bg-primary/20"
-                    : "border-white/[0.18] bg-white/[0.14]"
-                )}
+                onClick={() => setFiltro("")}
+                aria-label="Limpar busca"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-1 text-white/70 hover:bg-white/10"
               >
-                <ListFilter className="h-[18px] w-[18px]" />
-                {filtrosAtivos > 0 && (
-                  <span className="absolute -right-1.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-[#4b4d44] bg-primary px-1 text-[10px] font-bold text-primary-foreground">
-                    {filtrosAtivos}
-                  </span>
-                )}
+                <X className="h-4 w-4" />
               </button>
             )}
           </div>
-        )}
+
+          {onAbrirFiltros && (
+            <button
+              type="button"
+              onClick={onAbrirFiltros}
+              aria-label={`Filtros${filtrosAtivos > 0 ? ` (${filtrosAtivos} ativos)` : ""}`}
+              className={cn(
+                "relative flex h-[42px] w-11 flex-none items-center justify-center rounded-[13px] border text-white",
+                filtrosAtivos > 0
+                  ? "border-primary bg-primary/20"
+                  : "border-white/[0.18] bg-white/[0.14]"
+              )}
+            >
+              <ListFilter className="h-[18px] w-[18px]" />
+              {filtrosAtivos > 0 && (
+                <span className="absolute -right-1.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-[#4b4d44] bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+                  {filtrosAtivos}
+                </span>
+              )}
+            </button>
+          )}
+        </div>
       </div>
     </header>
   );
