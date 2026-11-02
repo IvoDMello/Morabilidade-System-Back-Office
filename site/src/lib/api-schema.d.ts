@@ -1671,6 +1671,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/radar/publico/busca": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Buscar
+         * @description Busca de vendas (ITBI) por prédio, rua ou bairro. Sempre medianas.
+         */
+        get: operations["buscar_radar_publico_busca_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/radar/publico/info": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Info
+         * @description Até quando vão os dados (rodapé da página).
+         */
+        get: operations["info_radar_publico_info_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/radar/publico/sugestoes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Sugerir
+         * @description Autocomplete de logradouros e bairros.
+         */
+        get: operations["sugerir_radar_publico_sugestoes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/relatorios": {
         parameters: {
             query?: never;
@@ -3640,6 +3700,249 @@ export interface components {
             nome: string;
             /** Telefone */
             telefone?: string | null;
+        };
+        /**
+         * RadarBuscaOut
+         * @description Resultado da busca. `tipo` diz quais campos vêm preenchidos:
+         *
+         *     - predio: titulo, bairros, resumo, tipologias, transacoes (paginadas)
+         *     - rua: titulo, bairros, resumo, tipologias, predios (paginados), sem_numero
+         *     - bairro: titulo, resumo, tipologias, por_tipologia, ruas
+         *     - ambiguo: opcoes (o visitante escolhe e a página busca por `cl`)
+         *     - nenhum: sugestoes; se a rua existe mas o número não, cl e numeros_proximos
+         */
+        RadarBuscaOut: {
+            /** Apelido */
+            apelido?: string | null;
+            /** Bairro */
+            bairro?: string | null;
+            /**
+             * Bairros
+             * @default []
+             */
+            bairros: string[];
+            /** Cl */
+            cl?: number | null;
+            /** Consulta */
+            consulta: string;
+            /** Dados Ate */
+            dados_ate?: string | null;
+            /** Numero */
+            numero?: number | null;
+            /**
+             * Numeros Proximos
+             * @default []
+             */
+            numeros_proximos: number[];
+            /**
+             * Opcoes
+             * @default []
+             */
+            opcoes: components["schemas"]["RadarOpcao"][];
+            /**
+             * Pagina
+             * @default 1
+             */
+            pagina: number;
+            periodo: components["schemas"]["RadarPeriodo"];
+            /**
+             * Por Pagina
+             * @default 20
+             */
+            por_pagina: number;
+            /**
+             * Por Tipologia
+             * @default []
+             */
+            por_tipologia: components["schemas"]["RadarTipologiaResumo"][];
+            /**
+             * Predios
+             * @default []
+             */
+            predios: components["schemas"]["RadarPredio"][];
+            resumo?: components["schemas"]["RadarResumo"] | null;
+            /**
+             * Ruas
+             * @default []
+             */
+            ruas: components["schemas"]["RadarRua"][];
+            /**
+             * Sem Numero
+             * @default 0
+             */
+            sem_numero: number;
+            /**
+             * Sugestoes
+             * @default []
+             */
+            sugestoes: components["schemas"]["RadarSugestao"][];
+            /**
+             * Tipo
+             * @enum {string}
+             */
+            tipo: "predio" | "rua" | "bairro" | "ambiguo" | "nenhum";
+            /**
+             * Tipologias
+             * @default []
+             */
+            tipologias: components["schemas"]["RadarTipologia"][];
+            /** Titulo */
+            titulo?: string | null;
+            /**
+             * Total
+             * @default 0
+             */
+            total: number;
+            /**
+             * Total Historico
+             * @default 0
+             */
+            total_historico: number;
+            /**
+             * Transacoes
+             * @default []
+             */
+            transacoes: components["schemas"]["RadarTransacao"][];
+        };
+        /**
+         * RadarInfo
+         * @description Rodapé da página: até quando vão os dados e quantas transações há.
+         */
+        RadarInfo: {
+            /** Dados Ate */
+            dados_ate?: string | null;
+            /** Transacoes */
+            transacoes: number;
+        };
+        /**
+         * RadarOpcao
+         * @description Logradouro candidato quando o nome digitado existe em mais de uma rua.
+         */
+        RadarOpcao: {
+            /** Bairros */
+            bairros: string[];
+            /** Cl */
+            cl: number;
+            /** Nome */
+            nome: string;
+            /** Tem Numero */
+            tem_numero?: boolean | null;
+            /** Transacoes */
+            transacoes: number;
+        };
+        /** RadarPeriodo */
+        RadarPeriodo: {
+            /** Ate */
+            ate?: string | null;
+            /** Desde */
+            desde?: string | null;
+            /** Padrao */
+            padrao: boolean;
+        };
+        /** RadarPredio */
+        RadarPredio: {
+            /** Mediana M2 */
+            mediana_m2?: number | null;
+            /** Numero */
+            numero: number;
+            /** Tipologia */
+            tipologia: string;
+            /** Transacoes */
+            transacoes: number;
+            /**
+             * Ultima
+             * Format: date
+             */
+            ultima: string;
+        };
+        /** RadarResumo */
+        RadarResumo: {
+            /** Mediana Area */
+            mediana_area?: number | null;
+            /** Mediana M2 */
+            mediana_m2?: number | null;
+            /** Mediana Valor */
+            mediana_valor?: number | null;
+            /** Transacoes */
+            transacoes: number;
+        };
+        /** RadarRua */
+        RadarRua: {
+            /** Cl */
+            cl: number;
+            /** Mediana M2 */
+            mediana_m2?: number | null;
+            /** Nome */
+            nome: string;
+            /** Transacoes */
+            transacoes: number;
+        };
+        /**
+         * RadarSugestao
+         * @description Item do autocomplete. `consulta` é o texto que vai para a caixa de busca.
+         */
+        RadarSugestao: {
+            /** Bairro */
+            bairro?: string | null;
+            /** Cl */
+            cl?: number | null;
+            /** Consulta */
+            consulta: string;
+            /** Detalhe */
+            detalhe?: string | null;
+            /** Rotulo */
+            rotulo: string;
+            /**
+             * Tipo
+             * @enum {string}
+             */
+            tipo: "logradouro" | "bairro";
+            /** Transacoes */
+            transacoes: number;
+        };
+        /** RadarTipologia */
+        RadarTipologia: {
+            /** Rotulo */
+            rotulo: string;
+            /** Transacoes */
+            transacoes: number;
+            /** Valor */
+            valor: string;
+        };
+        /** RadarTipologiaResumo */
+        RadarTipologiaResumo: {
+            /** Mediana Area */
+            mediana_area?: number | null;
+            /** Mediana M2 */
+            mediana_m2?: number | null;
+            /** Mediana Valor */
+            mediana_valor?: number | null;
+            /** Rotulo */
+            rotulo: string;
+            /** Transacoes */
+            transacoes: number;
+            /** Valor */
+            valor: string;
+        };
+        /** RadarTransacao */
+        RadarTransacao: {
+            /** Area */
+            area: number;
+            /**
+             * Competencia
+             * Format: date
+             */
+            competencia: string;
+            /** Complemento */
+            complemento?: string | null;
+            /** Parcial */
+            parcial: boolean;
+            /** Tipologia */
+            tipologia: string;
+            /** Valor Declarado */
+            valor_declarado: number;
+            /** Valor M2 */
+            valor_m2?: number | null;
         };
         /** ReajusteCreate */
         ReajusteCreate: {
@@ -7384,6 +7687,108 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    buscar_radar_publico_busca_get: {
+        parameters: {
+            query?: {
+                /** @description Prédio, rua ou bairro ("Vieira Souto 510", "Ipanema") */
+                q?: string | null;
+                /** @description Código do logradouro (escolha feita na página) */
+                cl?: number | null;
+                /** @description Número do prédio, junto com cl */
+                numero?: number | null;
+                /** @description Bairro (chave ou nome) */
+                bairro?: string | null;
+                /** @description Filtro, ex.: "APARTAMENTO" */
+                tipologia?: string | null;
+                /** @description Ano inicial */
+                desde?: number | null;
+                /** @description Ano final */
+                ate?: number | null;
+                /** @description Ignora o padrão de 5 anos */
+                todo_periodo?: boolean;
+                /** @description Ordem dos prédios de uma rua */
+                ordem?: "numero" | "transacoes";
+                pagina?: number;
+                por_pagina?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RadarBuscaOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    info_radar_publico_info_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RadarInfo"];
+                };
+            };
+        };
+    };
+    sugerir_radar_publico_sugestoes_get: {
+        parameters: {
+            query: {
+                q: string;
+                limite?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RadarSugestao"][];
+                };
             };
             /** @description Validation Error */
             422: {

@@ -29,7 +29,7 @@ if settings.sentry_dsn:
         ],
     )
 from app.limiter import limiter
-from app.routers import analytics, autorizacoes, clientes, configuracoes, contato, fichas_visita, imoveis, imovel_acompanhamento, locacoes, oportunidades, tags, users
+from app.routers import analytics, autorizacoes, clientes, configuracoes, contato, fichas_visita, imoveis, imovel_acompanhamento, locacoes, oportunidades, radar, tags, users
 from app.auth.router import router as auth_router
 from app.auth.dependencies import get_current_user
 from app.database import supabase_admin
@@ -96,6 +96,8 @@ app.include_router(fichas_visita.router, prefix="/fichas-visita", tags=["Fichas 
 app.include_router(autorizacoes.router, prefix="/autorizacoes", tags=["Autorizações"])
 app.include_router(analytics.router, tags=["Analytics"])
 app.include_router(configuracoes.router, prefix="/configuracoes", tags=["Configurações"])
+# MoraMétrica (codinome Radar): vendas por endereço com os dados de ITBI
+app.include_router(radar.router, prefix="/radar", tags=["Site Público"])
 
 
 @app.get("/", tags=["Health"])

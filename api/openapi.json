@@ -6331,6 +6331,637 @@
         "title": "ProprietarioIn",
         "type": "object"
       },
+      "RadarBuscaOut": {
+        "description": "Resultado da busca. `tipo` diz quais campos vêm preenchidos:\n\n- predio: titulo, bairros, resumo, tipologias, transacoes (paginadas)\n- rua: titulo, bairros, resumo, tipologias, predios (paginados), sem_numero\n- bairro: titulo, resumo, tipologias, por_tipologia, ruas\n- ambiguo: opcoes (o visitante escolhe e a página busca por `cl`)\n- nenhum: sugestoes; se a rua existe mas o número não, cl e numeros_proximos",
+        "properties": {
+          "apelido": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Apelido"
+          },
+          "bairro": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bairro"
+          },
+          "bairros": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Bairros",
+            "type": "array"
+          },
+          "cl": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cl"
+          },
+          "consulta": {
+            "title": "Consulta",
+            "type": "string"
+          },
+          "dados_ate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dados Ate"
+          },
+          "numero": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numero"
+          },
+          "numeros_proximos": {
+            "default": [],
+            "items": {
+              "type": "integer"
+            },
+            "title": "Numeros Proximos",
+            "type": "array"
+          },
+          "opcoes": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/RadarOpcao"
+            },
+            "title": "Opcoes",
+            "type": "array"
+          },
+          "pagina": {
+            "default": 1,
+            "title": "Pagina",
+            "type": "integer"
+          },
+          "periodo": {
+            "$ref": "#/components/schemas/RadarPeriodo"
+          },
+          "por_pagina": {
+            "default": 20,
+            "title": "Por Pagina",
+            "type": "integer"
+          },
+          "por_tipologia": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/RadarTipologiaResumo"
+            },
+            "title": "Por Tipologia",
+            "type": "array"
+          },
+          "predios": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/RadarPredio"
+            },
+            "title": "Predios",
+            "type": "array"
+          },
+          "resumo": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RadarResumo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ruas": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/RadarRua"
+            },
+            "title": "Ruas",
+            "type": "array"
+          },
+          "sem_numero": {
+            "default": 0,
+            "title": "Sem Numero",
+            "type": "integer"
+          },
+          "sugestoes": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/RadarSugestao"
+            },
+            "title": "Sugestoes",
+            "type": "array"
+          },
+          "tipo": {
+            "enum": [
+              "predio",
+              "rua",
+              "bairro",
+              "ambiguo",
+              "nenhum"
+            ],
+            "title": "Tipo",
+            "type": "string"
+          },
+          "tipologias": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/RadarTipologia"
+            },
+            "title": "Tipologias",
+            "type": "array"
+          },
+          "titulo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Titulo"
+          },
+          "total": {
+            "default": 0,
+            "title": "Total",
+            "type": "integer"
+          },
+          "total_historico": {
+            "default": 0,
+            "title": "Total Historico",
+            "type": "integer"
+          },
+          "transacoes": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/RadarTransacao"
+            },
+            "title": "Transacoes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "tipo",
+          "consulta",
+          "periodo"
+        ],
+        "title": "RadarBuscaOut",
+        "type": "object"
+      },
+      "RadarInfo": {
+        "description": "Rodapé da página: até quando vão os dados e quantas transações há.",
+        "properties": {
+          "dados_ate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dados Ate"
+          },
+          "transacoes": {
+            "title": "Transacoes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "transacoes"
+        ],
+        "title": "RadarInfo",
+        "type": "object"
+      },
+      "RadarOpcao": {
+        "description": "Logradouro candidato quando o nome digitado existe em mais de uma rua.",
+        "properties": {
+          "bairros": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Bairros",
+            "type": "array"
+          },
+          "cl": {
+            "title": "Cl",
+            "type": "integer"
+          },
+          "nome": {
+            "title": "Nome",
+            "type": "string"
+          },
+          "tem_numero": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tem Numero"
+          },
+          "transacoes": {
+            "title": "Transacoes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "cl",
+          "nome",
+          "bairros",
+          "transacoes"
+        ],
+        "title": "RadarOpcao",
+        "type": "object"
+      },
+      "RadarPeriodo": {
+        "properties": {
+          "ate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ate"
+          },
+          "desde": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Desde"
+          },
+          "padrao": {
+            "title": "Padrao",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "padrao"
+        ],
+        "title": "RadarPeriodo",
+        "type": "object"
+      },
+      "RadarPredio": {
+        "properties": {
+          "mediana_m2": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mediana M2"
+          },
+          "numero": {
+            "title": "Numero",
+            "type": "integer"
+          },
+          "tipologia": {
+            "title": "Tipologia",
+            "type": "string"
+          },
+          "transacoes": {
+            "title": "Transacoes",
+            "type": "integer"
+          },
+          "ultima": {
+            "format": "date",
+            "title": "Ultima",
+            "type": "string"
+          }
+        },
+        "required": [
+          "numero",
+          "transacoes",
+          "ultima",
+          "tipologia"
+        ],
+        "title": "RadarPredio",
+        "type": "object"
+      },
+      "RadarResumo": {
+        "properties": {
+          "mediana_area": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mediana Area"
+          },
+          "mediana_m2": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mediana M2"
+          },
+          "mediana_valor": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mediana Valor"
+          },
+          "transacoes": {
+            "title": "Transacoes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "transacoes"
+        ],
+        "title": "RadarResumo",
+        "type": "object"
+      },
+      "RadarRua": {
+        "properties": {
+          "cl": {
+            "title": "Cl",
+            "type": "integer"
+          },
+          "mediana_m2": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mediana M2"
+          },
+          "nome": {
+            "title": "Nome",
+            "type": "string"
+          },
+          "transacoes": {
+            "title": "Transacoes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "cl",
+          "nome",
+          "transacoes"
+        ],
+        "title": "RadarRua",
+        "type": "object"
+      },
+      "RadarSugestao": {
+        "description": "Item do autocomplete. `consulta` é o texto que vai para a caixa de busca.",
+        "properties": {
+          "bairro": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bairro"
+          },
+          "cl": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cl"
+          },
+          "consulta": {
+            "title": "Consulta",
+            "type": "string"
+          },
+          "detalhe": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detalhe"
+          },
+          "rotulo": {
+            "title": "Rotulo",
+            "type": "string"
+          },
+          "tipo": {
+            "enum": [
+              "logradouro",
+              "bairro"
+            ],
+            "title": "Tipo",
+            "type": "string"
+          },
+          "transacoes": {
+            "title": "Transacoes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "tipo",
+          "rotulo",
+          "consulta",
+          "transacoes"
+        ],
+        "title": "RadarSugestao",
+        "type": "object"
+      },
+      "RadarTipologia": {
+        "properties": {
+          "rotulo": {
+            "title": "Rotulo",
+            "type": "string"
+          },
+          "transacoes": {
+            "title": "Transacoes",
+            "type": "integer"
+          },
+          "valor": {
+            "title": "Valor",
+            "type": "string"
+          }
+        },
+        "required": [
+          "valor",
+          "rotulo",
+          "transacoes"
+        ],
+        "title": "RadarTipologia",
+        "type": "object"
+      },
+      "RadarTipologiaResumo": {
+        "properties": {
+          "mediana_area": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mediana Area"
+          },
+          "mediana_m2": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mediana M2"
+          },
+          "mediana_valor": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mediana Valor"
+          },
+          "rotulo": {
+            "title": "Rotulo",
+            "type": "string"
+          },
+          "transacoes": {
+            "title": "Transacoes",
+            "type": "integer"
+          },
+          "valor": {
+            "title": "Valor",
+            "type": "string"
+          }
+        },
+        "required": [
+          "valor",
+          "rotulo",
+          "transacoes"
+        ],
+        "title": "RadarTipologiaResumo",
+        "type": "object"
+      },
+      "RadarTransacao": {
+        "properties": {
+          "area": {
+            "title": "Area",
+            "type": "number"
+          },
+          "competencia": {
+            "format": "date",
+            "title": "Competencia",
+            "type": "string"
+          },
+          "complemento": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Complemento"
+          },
+          "parcial": {
+            "title": "Parcial",
+            "type": "boolean"
+          },
+          "tipologia": {
+            "title": "Tipologia",
+            "type": "string"
+          },
+          "valor_declarado": {
+            "title": "Valor Declarado",
+            "type": "number"
+          },
+          "valor_m2": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor M2"
+          }
+        },
+        "required": [
+          "competencia",
+          "tipologia",
+          "area",
+          "valor_declarado",
+          "parcial"
+        ],
+        "title": "RadarTransacao",
+        "type": "object"
+      },
       "ReajusteCreate": {
         "properties": {
           "data_aplicacao": {
@@ -13678,6 +14309,311 @@
         "tags": [
           "Analytics",
           "Analytics"
+        ]
+      }
+    },
+    "/radar/publico/busca": {
+      "get": {
+        "description": "Busca de vendas (ITBI) por prédio, rua ou bairro. Sempre medianas.",
+        "operationId": "buscar_radar_publico_busca_get",
+        "parameters": [
+          {
+            "description": "Prédio, rua ou bairro (\"Vieira Souto 510\", \"Ipanema\")",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 120,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Prédio, rua ou bairro (\"Vieira Souto 510\", \"Ipanema\")",
+              "title": "Q"
+            }
+          },
+          {
+            "description": "Código do logradouro (escolha feita na página)",
+            "in": "query",
+            "name": "cl",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Código do logradouro (escolha feita na página)",
+              "title": "Cl"
+            }
+          },
+          {
+            "description": "Número do prédio, junto com cl",
+            "in": "query",
+            "name": "numero",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 999999,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Número do prédio, junto com cl",
+              "title": "Numero"
+            }
+          },
+          {
+            "description": "Bairro (chave ou nome)",
+            "in": "query",
+            "name": "bairro",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 80,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Bairro (chave ou nome)",
+              "title": "Bairro"
+            }
+          },
+          {
+            "description": "Filtro, ex.: \"APARTAMENTO\"",
+            "in": "query",
+            "name": "tipologia",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 60,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtro, ex.: \"APARTAMENTO\"",
+              "title": "Tipologia"
+            }
+          },
+          {
+            "description": "Ano inicial",
+            "in": "query",
+            "name": "desde",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 2100,
+                  "minimum": 2000,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Ano inicial",
+              "title": "Desde"
+            }
+          },
+          {
+            "description": "Ano final",
+            "in": "query",
+            "name": "ate",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 2100,
+                  "minimum": 2000,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Ano final",
+              "title": "Ate"
+            }
+          },
+          {
+            "description": "Ignora o padrão de 5 anos",
+            "in": "query",
+            "name": "todo_periodo",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "Ignora o padrão de 5 anos",
+              "title": "Todo Periodo",
+              "type": "boolean"
+            }
+          },
+          {
+            "description": "Ordem dos prédios de uma rua",
+            "in": "query",
+            "name": "ordem",
+            "required": false,
+            "schema": {
+              "default": "numero",
+              "description": "Ordem dos prédios de uma rua",
+              "enum": [
+                "numero",
+                "transacoes"
+              ],
+              "title": "Ordem",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "pagina",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Pagina",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "por_pagina",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Por Pagina",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RadarBuscaOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Buscar",
+        "tags": [
+          "Site Público"
+        ]
+      }
+    },
+    "/radar/publico/info": {
+      "get": {
+        "description": "Até quando vão os dados (rodapé da página).",
+        "operationId": "info_radar_publico_info_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RadarInfo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Info",
+        "tags": [
+          "Site Público"
+        ]
+      }
+    },
+    "/radar/publico/sugestoes": {
+      "get": {
+        "description": "Autocomplete de logradouros e bairros.",
+        "operationId": "sugerir_radar_publico_sugestoes_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "maxLength": 120,
+              "minLength": 2,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limite",
+            "required": false,
+            "schema": {
+              "default": 8,
+              "maximum": 15,
+              "minimum": 1,
+              "title": "Limite",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RadarSugestao"
+                  },
+                  "title": "Response Sugerir Radar Publico Sugestoes Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Sugerir",
+        "tags": [
+          "Site Público"
         ]
       }
     },

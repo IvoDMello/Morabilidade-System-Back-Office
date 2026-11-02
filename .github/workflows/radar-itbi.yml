@@ -1,0 +1,78 @@
+name: Radar — importação do ITBI
+
+# Baixa as planilhas de ITBI da Prefeitura do Rio e atualiza radar_transacoes
+# no Supabase (api/scripts/radar_importar.py).
+#
+# Roda toda segunda. A Prefeitura publica cerca de uma vez por mês, sem data
+# fixa; nas outras semanas o script vê que nenhum arquivo mudou (sha256), grava
+# "sem_mudancas" em radar_importacoes e sai em menos de um minuto.
+#
+# Configuração (Settings → Secrets and variables → Actions):
+#   - Secrets   SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY (os mesmos do CI)
+#   - Variable  RADAR_IMPORTACAO_ATIVA = true
+# Sem a variável, o agendamento só registra um aviso e sai (não falha), para
+# não quebrar antes de a migration 055 estar aplicada. O disparo manual roda
+# sempre.
+#
+# Saída 2 do script = trava de segurança (ia apagar mais de 5% da base). Confira
+# os arquivos e, se a Prefeitura realmente revisou a base, rode manualmente com
+# "forcar" marcado.
+
+on:
+  schedule:
+    - cron: "0 9 * * 1" # segunda, 09:00 UTC (06:00 em Brasília)
+  workflow_dispatch:
+    inputs:
+      forcar:
+        description: "Importar mesmo sem arquivo novo e passar da trava de remoção"
+        type: boolean
+        default: false
+
+concurrency:
+  group: radar-itbi
+  cancel-in-progress: false
+
+jobs:
+  importar:
+    name: Importar planilhas
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: api
+
+    steps:
+      - name: Verifica configuração
+        id: cfg
+        env:
+          ATIVA: ${{ vars.RADAR_IMPORTACAO_ATIVA }}
+          EVENTO: ${{ github.event_name }}
+        working-directory: .
+        run: |
+          if [ "$EVENTO" = "schedule" ] && [ "$ATIVA" != "true" ]; then
+            echo "::notice::RADAR_IMPORTACAO_ATIVA (variable) não está como true — pulando. Ative depois de aplicar a migration 055."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.cfg.outputs.skip != 'true'
+
+      - name: Set up Python
+        if: steps.cfg.outputs.skip != 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: api/requirements.txt
+
+      - name: Install dependencies
+        if: steps.cfg.outputs.skip != 'true'
+        run: pip install -r requirements.txt
+
+      - name: Importar
+        if: steps.cfg.outputs.skip != 'true'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          FORCAR: ${{ inputs.forcar && '--forcar' || '' }}
+        run: python scripts/radar_importar.py $FORCAR
