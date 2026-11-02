@@ -26,6 +26,7 @@ describe("sitemap()", () => {
 
     expect(urls).toContain("https://morabilidade.com");
     expect(urls).toContain("https://morabilidade.com/imoveis");
+    expect(urls).toContain("https://morabilidade.com/morametrica");
     expect(urls).toContain("https://morabilidade.com/sobre");
     expect(urls).toContain("https://morabilidade.com/contato");
     expect(urls).toContain("https://morabilidade.com/politica-de-privacidade");
@@ -91,7 +92,7 @@ describe("sitemap()", () => {
     const { default: sitemap } = await import("@/app/sitemap");
     const entries = await sitemap();
 
-    expect(entries).toHaveLength(5); // apenas as páginas estáticas
+    expect(entries).toHaveLength(6); // apenas as páginas estáticas
   });
 
   it("consome o endpoint correto de imóveis disponíveis", async () => {

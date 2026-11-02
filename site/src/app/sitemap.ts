@@ -9,6 +9,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const staticPages: MetadataRoute.Sitemap = [
   { url: SITE_URL,                    changeFrequency: "daily",   priority: 1.0 },
   { url: `${SITE_URL}/imoveis`,       changeFrequency: "daily",   priority: 0.9 },
+  { url: `${SITE_URL}/morametrica`,   changeFrequency: "monthly", priority: 0.7 },
   { url: `${SITE_URL}/sobre`,         changeFrequency: "monthly", priority: 0.5 },
   { url: `${SITE_URL}/contato`,       changeFrequency: "monthly", priority: 0.4 },
   { url: `${SITE_URL}/politica-de-privacidade`, changeFrequency: "yearly", priority: 0.2 },

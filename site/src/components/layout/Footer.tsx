@@ -22,6 +22,7 @@ export function Footer() {
               {[
                 { href: "/", label: "Início" },
                 { href: "/imoveis", label: "Imóveis" },
+                { href: "/morametrica", label: "MoraMétrica" },
                 { href: "/sobre", label: "Sobre nós" },
                 { href: "/contato", label: "Contato" },
               ].map((link) => (

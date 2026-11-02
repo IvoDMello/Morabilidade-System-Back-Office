@@ -9,6 +9,7 @@ import { Instagram, ArrowRight } from "lucide-react";
 const links = [
   { href: "/", label: "Início" },
   { href: "/imoveis", label: "Imóveis" },
+  { href: "/morametrica", label: "MoraMétrica" },
   { href: "/sobre", label: "Sobre" },
   { href: "/contato", label: "Contato" },
 ];

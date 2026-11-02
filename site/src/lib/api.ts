@@ -1,4 +1,5 @@
 import type { ImovelCard, Imovel, Tag, FiltrosParams } from "@/types";
+import type { Schemas } from "./api-types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -256,4 +257,48 @@ export async function enviarContato(body: {
     const data = await res.json().catch(() => ({}));
     throw new Error((data as { detail?: string }).detail ?? "Erro ao enviar mensagem");
   }
+}
+
+// ── MoraMétrica (vendas por endereço, dados do ITBI) ─────────────────────────
+
+export type RadarBusca = Schemas["RadarBuscaOut"];
+export type RadarSugestao = Schemas["RadarSugestao"];
+export type RadarInfo = Schemas["RadarInfo"];
+
+// Os dados só mudam quando a importação roda (no máximo 1x por semana), então
+// 1 h de cache no fetch do Next segura picos sem atrasar nada relevante.
+const REVALIDATE_MORAMETRICA = 3600;
+
+/** Busca por prédio, rua ou bairro. Lança erro se a API falhar (a página mostra
+ *  o estado de erro em vez de um resultado vazio enganoso). */
+export async function buscarMoraMetrica(params: Record<string, string>): Promise<RadarBusca> {
+  const url = new URL(`${API_URL}/radar/publico/busca`);
+  for (const [chave, valor] of Object.entries(params)) {
+    if (valor) url.searchParams.set(chave, valor);
+  }
+  const res = await fetchGetWithRetry(url.toString(), {
+    next: { revalidate: REVALIDATE_MORAMETRICA },
+  });
+  if (!res.ok) throw new Error(`MoraMétrica: HTTP ${res.status}`);
+  return res.json();
+}
+
+export async function getMoraMetricaInfo(): Promise<RadarInfo | null> {
+  try {
+    const res = await fetchGetWithRetry(`${API_URL}/radar/publico/info`, {
+      next: { revalidate: REVALIDATE_MORAMETRICA },
+    });
+    return res.ok ? await res.json() : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Autocomplete, chamado do navegador enquanto o visitante digita. */
+export async function sugerirMoraMetrica(q: string, signal?: AbortSignal): Promise<RadarSugestao[]> {
+  const res = await fetch(
+    `${API_URL}/radar/publico/sugestoes?q=${encodeURIComponent(q)}`,
+    { signal },
+  );
+  return res.ok ? res.json() : [];
 }
