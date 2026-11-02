@@ -2,7 +2,7 @@ Estou trabalhando no projeto Morabilidade-System-Back-Office (monorepo com api/,
 
 Contexto da empresa:
 - Imobiliária 100% digital, sem sede física
-- Opera via Instagram (@morabilidade, 90k+ seguidores) e WhatsApp
+- Opera via Instagram (@morabilidade, 125k+ seguidores) e WhatsApp
 - Equipe reduzida, não exibir quantidade de corretores
 - Stack: FastAPI + Supabase + Firebase Storage (API), Next.js 15 + shadcn/ui (web/), Next.js 15 + Tailwind puro (site/)
 - Documento de referência: Pendencias_Sistema_imobiliario.docx na raiz do projeto
