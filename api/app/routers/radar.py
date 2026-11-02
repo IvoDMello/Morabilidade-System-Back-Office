@@ -3,7 +3,7 @@
 Valores declarados à Prefeitura do Rio no ITBI, importados por
 scripts/radar_importar.py. O visitante digita um prédio ("Vieira Souto 510"),
 uma rua ("Av. Vieira Souto") ou um bairro ("Ipanema") e a busca decide qual dos
-três é. As medianas vêm prontas das funções da migration 056.
+três é. As médias vêm prontas das funções do banco (migrations 056 e 058).
 
 Os dados só mudam na importação (no máximo uma vez por semana), então as
 respostas ficam em cache no processo por 1 hora e no navegador por 5 minutos.
@@ -163,9 +163,9 @@ def _resumo(bruto: Optional[dict]) -> RadarResumo:
     bruto = bruto or {}
     return RadarResumo(
         transacoes=bruto.get("transacoes") or 0,
-        mediana_m2=_arredondar(bruto.get("mediana_m2")),
-        mediana_valor=_arredondar(bruto.get("mediana_valor")),
-        mediana_area=_arredondar(bruto.get("mediana_area")),
+        media_m2=_arredondar(bruto.get("media_m2")),
+        media_valor=_arredondar(bruto.get("media_valor")),
+        media_area=_arredondar(bruto.get("media_area")),
     )
 
 
@@ -293,7 +293,7 @@ def _rua(ctx: _Contexto, logradouro: dict) -> RadarBuscaOut:
             RadarPredio(
                 numero=p["numero"],
                 transacoes=p["transacoes"],
-                mediana_m2=_arredondar(p.get("mediana_m2")),
+                media_m2=_arredondar(p.get("media_m2")),
                 ultima=p["ultima"],
                 tipologia=formatar_tipologia(p["tipologia"]),
             )
@@ -321,14 +321,14 @@ def _bairro(ctx: _Contexto, chave: str, nome: str) -> RadarBuscaOut:
                 valor=t["valor"],
                 rotulo=formatar_tipologia(t["valor"]),
                 transacoes=t["transacoes"],
-                mediana_m2=_arredondar(t.get("mediana_m2")),
-                mediana_valor=_arredondar(t.get("mediana_valor")),
-                mediana_area=_arredondar(t.get("mediana_area")),
+                media_m2=_arredondar(t.get("media_m2")),
+                media_valor=_arredondar(t.get("media_valor")),
+                media_area=_arredondar(t.get("media_area")),
             )
             for t in dados.get("por_tipologia") or []
         ],
         ruas=[
-            RadarRua(cl=r["cl"], nome=r["nome"], transacoes=r["transacoes"], mediana_m2=_arredondar(r.get("mediana_m2")))
+            RadarRua(cl=r["cl"], nome=r["nome"], transacoes=r["transacoes"], media_m2=_arredondar(r.get("media_m2")))
             for r in dados.get("ruas") or []
         ],
     )
@@ -449,7 +449,7 @@ def buscar(
     pagina: int = Query(1, ge=1, le=1000),
     por_pagina: int = Query(20, ge=1, le=100),
 ):
-    """Busca de vendas (ITBI) por prédio, rua ou bairro. Sempre medianas."""
+    """Busca de vendas (ITBI) por prédio, rua ou bairro, com a média do período."""
     if not (q and q.strip()) and cl is None and not (bairro and bairro.strip()):
         raise HTTPException(status_code=422, detail="Informe um endereço, rua ou bairro.")
     if desde and ate and desde > ate:

@@ -121,13 +121,13 @@ function Cabecalho({ dados }: { dados: RadarBusca }) {
           valor={formatarInteiro(resumo?.transacoes ?? 0)}
         />
         <Indicador
-          rotulo="Mediana do m²"
-          valor={formatarValor(resumo?.mediana_m2)}
-          sufixo={resumo?.mediana_m2 != null ? "/m²" : undefined}
+          rotulo="Média do m²"
+          valor={formatarValor(resumo?.media_m2)}
+          sufixo={resumo?.media_m2 != null ? "/m²" : undefined}
           destaque
         />
-        <Indicador rotulo="Mediana do valor" valor={formatarValor(resumo?.mediana_valor)} />
-        <Indicador rotulo="Mediana da área" valor={formatarArea(resumo?.mediana_area)} />
+        <Indicador rotulo="Média do valor" valor={formatarValor(resumo?.media_valor)} />
+        <Indicador rotulo="Média da área" valor={formatarArea(resumo?.media_area)} />
       </dl>
 
       <p className="text-xs text-[#7a7c72] mt-5 pt-4 border-t border-[#efede5]">
@@ -363,7 +363,7 @@ function ListaTransacoes({ dados, params }: Props) {
       {temFracao && (
         <p className="text-xs text-[#7a7c72]">
           Fração: venda de parte do imóvel ou de fração de terreno em lançamento. O valor por m² não
-          se aplica e essas vendas ficam fora das medianas.
+          se aplica e essas vendas ficam fora da média do m².
         </p>
       )}
       <Paginacao dados={dados} params={params} />
@@ -402,7 +402,7 @@ function ListaPredios({ dados, params }: Props) {
               <span className="font-serif text-2xl text-[#3e4037] w-16 shrink-0 tabular-nums">{p.numero}</span>
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-semibold text-[#2d2f28] tabular-nums">
-                  {formatarM2(p.mediana_m2)}
+                  {formatarM2(p.media_m2)}
                 </span>
                 <span className="block text-xs text-[#7a7c72] mt-0.5">
                   {plural(p.transacoes, "venda", "vendas")} · última em {formatarMes(p.ultima)}
@@ -421,7 +421,7 @@ function ListaPredios({ dados, params }: Props) {
             <tr>
               <th scope="col" className={TH}>Número</th>
               <th scope="col" className={cn(TH, "text-right")}>Vendas</th>
-              <th scope="col" className={cn(TH, "text-right")}>Mediana {M2}</th>
+              <th scope="col" className={cn(TH, "text-right")}>Média {M2}</th>
               <th scope="col" className={TH}>Última venda</th>
               <th scope="col" className={TH}>Tipologia mais comum</th>
               <th scope="col" className={TH}><span className="sr-only">Abrir</span></th>
@@ -436,7 +436,7 @@ function ListaPredios({ dados, params }: Props) {
                   </LinkBusca>
                 </td>
                 <td className={cn(TD, "text-right")}>{formatarInteiro(p.transacoes)}</td>
-                <td className={cn(TD, "text-right")}>{formatarM2(p.mediana_m2)}</td>
+                <td className={cn(TD, "text-right")}>{formatarM2(p.media_m2)}</td>
                 <td className={TD}>{formatarMes(p.ultima)}</td>
                 <td className="px-4 py-3.5">{p.tipologia}</td>
                 <td className="px-4 py-3.5 text-right">
@@ -479,7 +479,7 @@ function ResumoBairro({ dados, params }: Props) {
       <div className="space-y-3 min-w-0">
         <div>
           <h3 className="font-serif text-xl text-[#2d2f28]">Por tipologia</h3>
-          <p className="text-xs text-[#7a7c72] mt-0.5">Medianas do período, de cada tipologia.</p>
+          <p className="text-xs text-[#7a7c72] mt-0.5">Médias do período, de cada tipologia.</p>
         </div>
         <ul className="md:hidden space-y-3">
           {tipologias.map((t) => (
@@ -495,9 +495,9 @@ function ResumoBairro({ dados, params }: Props) {
                   </span>
                 </span>
                 <span className="mt-2 grid grid-cols-3 gap-2 text-xs text-[#7a7c72]">
-                  <span>Por m²<br /><b className="text-sm text-[#2d2f28] tabular-nums">{formatarM2(t.mediana_m2)}</b></span>
-                  <span>Valor<br /><b className="text-sm text-[#2d2f28] tabular-nums">{formatarValor(t.mediana_valor)}</b></span>
-                  <span>Área<br /><b className="text-sm text-[#2d2f28] tabular-nums">{formatarArea(t.mediana_area)}</b></span>
+                  <span>Por m²<br /><b className="text-sm text-[#2d2f28] tabular-nums">{formatarM2(t.media_m2)}</b></span>
+                  <span>Valor<br /><b className="text-sm text-[#2d2f28] tabular-nums">{formatarValor(t.media_valor)}</b></span>
+                  <span>Área<br /><b className="text-sm text-[#2d2f28] tabular-nums">{formatarArea(t.media_area)}</b></span>
                 </span>
               </LinkBusca>
             </li>
@@ -523,9 +523,9 @@ function ResumoBairro({ dados, params }: Props) {
                     </LinkBusca>
                   </td>
                   <td className={cn(TD, "text-right")}>{formatarInteiro(t.transacoes)}</td>
-                  <td className={cn(TD, "text-right")}>{formatarM2(t.mediana_m2)}</td>
-                  <td className={cn(TD, "text-right")}>{formatarValor(t.mediana_valor)}</td>
-                  <td className={cn(TD, "text-right")}>{formatarArea(t.mediana_area)}</td>
+                  <td className={cn(TD, "text-right")}>{formatarM2(t.media_m2)}</td>
+                  <td className={cn(TD, "text-right")}>{formatarValor(t.media_valor)}</td>
+                  <td className={cn(TD, "text-right")}>{formatarArea(t.media_area)}</td>
                 </tr>
               ))}
             </tbody>
@@ -556,7 +556,7 @@ function ResumoBairro({ dados, params }: Props) {
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-semibold text-[#2d2f28] truncate">{r.nome}</span>
                   <span className="block text-xs text-[#7a7c72] tabular-nums">
-                    {plural(r.transacoes, "venda", "vendas")} · {formatarM2(r.mediana_m2)}
+                    {plural(r.transacoes, "venda", "vendas")} · {formatarM2(r.media_m2)}
                   </span>
                 </span>
                 <ChevronRight className="w-4 h-4 text-[#b0b2a8] shrink-0" aria-hidden />

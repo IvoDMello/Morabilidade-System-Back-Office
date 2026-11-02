@@ -27,7 +27,7 @@ interface Props {
 }
 
 const DESCRICAO =
-  "Por quanto os imóveis do Rio foram vendidos, prédio a prédio, rua a rua e bairro a bairro. Valores declarados à Prefeitura no ITBI.";
+  "Valores reais de venda dos imóveis do Rio, unidade a unidade, declarados à Prefeitura para o cálculo do ITBI. Acesso gratuito.";
 
 type Carga = { resultado: RadarBusca | null; erro: boolean };
 
@@ -58,7 +58,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
     return { ...base, robots: { index: false } };
   }
   const local = resultado.tipo === "bairro" ? resultado.titulo : `${resultado.titulo} (${resultado.bairros[0] ?? "Rio"})`;
-  const descricao = `${plural(resultado.total_historico, "venda registrada", "vendas registradas")} desde 2011 em ${local}. Valores declarados à Prefeitura no ITBI, com a mediana do m².`;
+  const descricao = `${plural(resultado.total_historico, "venda registrada", "vendas registradas")} desde 2011 em ${local}. Valores declarados à Prefeitura para o cálculo do ITBI, com a média do m².`;
   const canonical = `${SITE_URL}${novaBusca({ q: params.q, cl: params.cl, numero: params.numero, bairro: params.bairro })}`;
   return {
     title: `${resultado.titulo}: vendas registradas na MoraMétrica`,
@@ -84,8 +84,9 @@ export default async function MoraMetricaPage({ searchParams }: Props) {
             </p>
             <h1 className="font-serif text-white text-[42px] sm:text-6xl leading-none mt-3">MoraMétrica</h1>
             <p className="mt-4 text-[15px] sm:text-lg leading-relaxed text-[rgba(252,252,252,0.75)] max-w-2xl mx-auto">
-              Por quanto os imóveis foram vendidos, prédio a prédio. São os valores declarados à
-              Prefeitura no ITBI, não preços de anúncio.
+              Valores reais de venda, unidade a unidade. Dados efetivamente declarados à Prefeitura
+              para o cálculo do ITBI, com{" "}
+              <em className="text-[#e8dea0]">acesso 100% gratuito para você.</em>
             </p>
             <div className="mt-7 sm:mt-9">
               <BuscaMoraMetrica valorInicial={params.q ?? ""} />

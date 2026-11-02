@@ -37,9 +37,9 @@ class RadarTipologia(BaseModel):
 
 class RadarResumo(BaseModel):
     transacoes: int
-    mediana_m2: Optional[float] = None
-    mediana_valor: Optional[float] = None
-    mediana_area: Optional[float] = None
+    media_m2: Optional[float] = None
+    media_valor: Optional[float] = None
+    media_area: Optional[float] = None
 
 
 class RadarTransacao(BaseModel):
@@ -55,7 +55,7 @@ class RadarTransacao(BaseModel):
 class RadarPredio(BaseModel):
     numero: int
     transacoes: int
-    mediana_m2: Optional[float] = None
+    media_m2: Optional[float] = None
     ultima: date
     tipologia: str
 
@@ -64,16 +64,16 @@ class RadarTipologiaResumo(BaseModel):
     valor: str
     rotulo: str
     transacoes: int
-    mediana_m2: Optional[float] = None
-    mediana_valor: Optional[float] = None
-    mediana_area: Optional[float] = None
+    media_m2: Optional[float] = None
+    media_valor: Optional[float] = None
+    media_area: Optional[float] = None
 
 
 class RadarRua(BaseModel):
     cl: int
     nome: str
     transacoes: int
-    mediana_m2: Optional[float] = None
+    media_m2: Optional[float] = None
 
 
 class RadarOpcao(BaseModel):

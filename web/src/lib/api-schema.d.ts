@@ -1680,7 +1680,7 @@ export interface paths {
         };
         /**
          * Buscar
-         * @description Busca de vendas (ITBI) por prédio, rua ou bairro. Sempre medianas.
+         * @description Busca de vendas (ITBI) por prédio, rua ou bairro, com a média do período.
          */
         get: operations["buscar_radar_publico_busca_get"];
         put?: never;
@@ -3841,8 +3841,8 @@ export interface components {
         };
         /** RadarPredio */
         RadarPredio: {
-            /** Mediana M2 */
-            mediana_m2?: number | null;
+            /** Media M2 */
+            media_m2?: number | null;
             /** Numero */
             numero: number;
             /** Tipologia */
@@ -3857,12 +3857,12 @@ export interface components {
         };
         /** RadarResumo */
         RadarResumo: {
-            /** Mediana Area */
-            mediana_area?: number | null;
-            /** Mediana M2 */
-            mediana_m2?: number | null;
-            /** Mediana Valor */
-            mediana_valor?: number | null;
+            /** Media Area */
+            media_area?: number | null;
+            /** Media M2 */
+            media_m2?: number | null;
+            /** Media Valor */
+            media_valor?: number | null;
             /** Transacoes */
             transacoes: number;
         };
@@ -3870,8 +3870,8 @@ export interface components {
         RadarRua: {
             /** Cl */
             cl: number;
-            /** Mediana M2 */
-            mediana_m2?: number | null;
+            /** Media M2 */
+            media_m2?: number | null;
             /** Nome */
             nome: string;
             /** Transacoes */
@@ -3911,12 +3911,12 @@ export interface components {
         };
         /** RadarTipologiaResumo */
         RadarTipologiaResumo: {
-            /** Mediana Area */
-            mediana_area?: number | null;
-            /** Mediana M2 */
-            mediana_m2?: number | null;
-            /** Mediana Valor */
-            mediana_valor?: number | null;
+            /** Media Area */
+            media_area?: number | null;
+            /** Media M2 */
+            media_m2?: number | null;
+            /** Media Valor */
+            media_valor?: number | null;
             /** Rotulo */
             rotulo: string;
             /** Transacoes */

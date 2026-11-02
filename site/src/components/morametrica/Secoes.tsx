@@ -24,13 +24,13 @@ export function Apresentacao() {
     {
       Icone: MapPin,
       titulo: "Uma rua",
-      texto: "Sem o número, a rua aparece agrupada por prédio, com a mediana do m² de cada um.",
-      exemplo: "Rua Barata Ribeiro",
+      texto: "Sem o número, a rua aparece agrupada por prédio, com a média do m² de cada um.",
+      exemplo: "Rua Farme de Amoedo",
     },
     {
       Icone: MapaIcon,
       titulo: "Um bairro",
-      texto: "O resumo traz a mediana do m² por tipologia e as ruas mais negociadas.",
+      texto: "O resumo traz a média do m² por tipologia e as ruas mais negociadas.",
       exemplo: "Ipanema",
     },
   ];
@@ -116,11 +116,12 @@ export function FonteLimitacoes({ info }: { info: RadarInfo | null }) {
         <li>A Prefeitura informa só o mês e o ano de cada venda.</li>
         <li>
           Entram só transmissões pagas, como compra e venda e permuta. Doações e heranças pagam outro
-          imposto (ITCMD, estadual) e não aparecem aqui.
+          imposto (ITCMD, estadual) e não aparecem na MoraMétrica: como não há negociação de preço
+          entre as partes, não servem de referência de valor para o imóvel.
         </li>
         <li>
-          Os resumos usam a mediana, que não se deixa puxar por vendas muito acima ou abaixo do
-          padrão. Vendas de parte do imóvel e frações de terreno em lançamentos ficam fora dela.
+          Os resumos usam a média simples das vendas do período. Vendas de parte do imóvel e
+          frações de terreno em lançamentos ficam fora da média do m².
         </li>
         <li>Unidades, áreas e valores aparecem como constam na base pública da Prefeitura.</li>
       </ul>

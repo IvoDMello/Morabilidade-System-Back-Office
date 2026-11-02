@@ -6643,7 +6643,7 @@
       },
       "RadarPredio": {
         "properties": {
-          "mediana_m2": {
+          "media_m2": {
             "anyOf": [
               {
                 "type": "number"
@@ -6652,7 +6652,7 @@
                 "type": "null"
               }
             ],
-            "title": "Mediana M2"
+            "title": "Media M2"
           },
           "numero": {
             "title": "Numero",
@@ -6683,7 +6683,7 @@
       },
       "RadarResumo": {
         "properties": {
-          "mediana_area": {
+          "media_area": {
             "anyOf": [
               {
                 "type": "number"
@@ -6692,9 +6692,9 @@
                 "type": "null"
               }
             ],
-            "title": "Mediana Area"
+            "title": "Media Area"
           },
-          "mediana_m2": {
+          "media_m2": {
             "anyOf": [
               {
                 "type": "number"
@@ -6703,9 +6703,9 @@
                 "type": "null"
               }
             ],
-            "title": "Mediana M2"
+            "title": "Media M2"
           },
-          "mediana_valor": {
+          "media_valor": {
             "anyOf": [
               {
                 "type": "number"
@@ -6714,7 +6714,7 @@
                 "type": "null"
               }
             ],
-            "title": "Mediana Valor"
+            "title": "Media Valor"
           },
           "transacoes": {
             "title": "Transacoes",
@@ -6733,7 +6733,7 @@
             "title": "Cl",
             "type": "integer"
           },
-          "mediana_m2": {
+          "media_m2": {
             "anyOf": [
               {
                 "type": "number"
@@ -6742,7 +6742,7 @@
                 "type": "null"
               }
             ],
-            "title": "Mediana M2"
+            "title": "Media M2"
           },
           "nome": {
             "title": "Nome",
@@ -6852,7 +6852,7 @@
       },
       "RadarTipologiaResumo": {
         "properties": {
-          "mediana_area": {
+          "media_area": {
             "anyOf": [
               {
                 "type": "number"
@@ -6861,9 +6861,9 @@
                 "type": "null"
               }
             ],
-            "title": "Mediana Area"
+            "title": "Media Area"
           },
-          "mediana_m2": {
+          "media_m2": {
             "anyOf": [
               {
                 "type": "number"
@@ -6872,9 +6872,9 @@
                 "type": "null"
               }
             ],
-            "title": "Mediana M2"
+            "title": "Media M2"
           },
-          "mediana_valor": {
+          "media_valor": {
             "anyOf": [
               {
                 "type": "number"
@@ -6883,7 +6883,7 @@
                 "type": "null"
               }
             ],
-            "title": "Mediana Valor"
+            "title": "Media Valor"
           },
           "rotulo": {
             "title": "Rotulo",
@@ -14314,7 +14314,7 @@
     },
     "/radar/publico/busca": {
       "get": {
-        "description": "Busca de vendas (ITBI) por prédio, rua ou bairro. Sempre medianas.",
+        "description": "Busca de vendas (ITBI) por prédio, rua ou bairro, com a média do período.",
         "operationId": "buscar_radar_publico_busca_get",
         "parameters": [
           {

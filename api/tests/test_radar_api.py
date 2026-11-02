@@ -19,7 +19,7 @@ PREDIO_510 = {
     "primeira": "2011-07-01",
     "ultima": "2024-03-01",
     "bairro": "Ipanema",
-    "resumo": {"transacoes": 2, "mediana_m2": 41234.56789, "mediana_valor": 3500000.0, "mediana_area": 86.0},
+    "resumo": {"transacoes": 2, "media_m2": 41234.56789, "media_valor": 3500000.0, "media_area": 86.0},
     "tipologias": [{"valor": "APART HOTEL FRENTE", "transacoes": 1}, {"valor": "APART HOTEL FUNDOS", "transacoes": 1}],
     "transacoes": [
         {"competencia": "2024-03-01", "tipologia": "APART HOTEL FRENTE", "complemento": "APT 402",
@@ -31,25 +31,25 @@ PREDIO_510 = {
 
 RUA_VIEIRA_SOUTO = {
     "total_historico": 437,
-    "resumo": {"transacoes": 120, "mediana_m2": 38000.0, "mediana_valor": 4000000.0, "mediana_area": 110.0},
+    "resumo": {"transacoes": 120, "media_m2": 38000.0, "media_valor": 4000000.0, "media_area": 110.0},
     "sem_numero": 3,
     "tipologias": [{"valor": "APARTAMENTO", "transacoes": 110}],
     "total_predios": 2,
     "predios": [
-        {"numero": 510, "transacoes": 4, "mediana_m2": 45000.123, "ultima": "2024-03-01", "tipologia": "APART HOTEL FRENTE"},
-        {"numero": 620, "transacoes": 9, "mediana_m2": 37000.0, "ultima": "2025-11-01", "tipologia": "APARTAMENTO"},
+        {"numero": 510, "transacoes": 4, "media_m2": 45000.123, "ultima": "2024-03-01", "tipologia": "APART HOTEL FRENTE"},
+        {"numero": 620, "transacoes": 9, "media_m2": 37000.0, "ultima": "2025-11-01", "tipologia": "APARTAMENTO"},
     ],
 }
 
 BAIRRO_IPANEMA = {
     "total_historico": 9000,
-    "resumo": {"transacoes": 4000, "mediana_m2": 25000.0, "mediana_valor": 2000000.0, "mediana_area": 80.0},
+    "resumo": {"transacoes": 4000, "media_m2": 25000.0, "media_valor": 2000000.0, "media_area": 80.0},
     "tipologias": [{"valor": "APARTAMENTO", "transacoes": 3500}, {"valor": "SALA", "transacoes": 500}],
     "por_tipologia": [
-        {"valor": "APARTAMENTO", "transacoes": 3500, "mediana_m2": 26000.0, "mediana_valor": 2100000.0, "mediana_area": 82.0},
-        {"valor": "SALA", "transacoes": 500, "mediana_m2": 15000.0, "mediana_valor": 600000.0, "mediana_area": 35.0},
+        {"valor": "APARTAMENTO", "transacoes": 3500, "media_m2": 26000.0, "media_valor": 2100000.0, "media_area": 82.0},
+        {"valor": "SALA", "transacoes": 500, "media_m2": 15000.0, "media_valor": 600000.0, "media_area": 35.0},
     ],
-    "ruas": [{"cl": 83683, "nome": "Rua Visconde de Pirajá", "transacoes": 900, "mediana_m2": 22000.0}],
+    "ruas": [{"cl": 83683, "nome": "Rua Visconde de Pirajá", "transacoes": 900, "media_m2": 22000.0}],
 }
 
 BAIRROS = [
@@ -122,7 +122,7 @@ def test_predio_formata_e_pagina(anon_client):
         "radar_predio": PREDIO_510,
     })
     corpo = _get(anon_client, banco, "/radar/publico/busca?q=Vieira Souto 510&pagina=2&por_pagina=10").json()
-    assert corpo["resumo"] == {"transacoes": 2, "mediana_m2": 41234.57, "mediana_valor": 3500000.0, "mediana_area": 86.0}
+    assert corpo["resumo"] == {"transacoes": 2, "media_m2": 41234.57, "media_valor": 3500000.0, "media_area": 86.0}
     assert corpo["total_historico"] == 19
     assert corpo["total"] == 2
     assert corpo["tipologias"][0] == {"valor": "APART HOTEL FRENTE", "rotulo": "Apart-hotel (frente)", "transacoes": 1}
@@ -160,7 +160,7 @@ def test_rua_sem_numero_agrupa_por_predio(anon_client):
     assert corpo["total"] == 2
     assert corpo["sem_numero"] == 3
     assert corpo["predios"][0] == {
-        "numero": 510, "transacoes": 4, "mediana_m2": 45000.12,
+        "numero": 510, "transacoes": 4, "media_m2": 45000.12,
         "ultima": "2024-03-01", "tipologia": "Apart-hotel (frente)",
     }
     assert banco.params("radar_rua")[0]["p_ordem"] == "numero"
@@ -188,8 +188,8 @@ def test_bairro_tem_prioridade_sobre_rua_de_mesmo_nome(anon_client):
     assert corpo["tipo"] == "bairro"
     assert (corpo["titulo"], corpo["bairro"]) == ("Ipanema", "IPANEMA")
     assert corpo["por_tipologia"][0]["rotulo"] == "Apartamento"
-    assert corpo["por_tipologia"][0]["mediana_m2"] == 26000.0
-    assert corpo["ruas"] == [{"cl": 83683, "nome": "Rua Visconde de Pirajá", "transacoes": 900, "mediana_m2": 22000.0}]
+    assert corpo["por_tipologia"][0]["media_m2"] == 26000.0
+    assert corpo["ruas"] == [{"cl": 83683, "nome": "Rua Visconde de Pirajá", "transacoes": 900, "media_m2": 22000.0}]
     assert banco.params("radar_resolver") == []
     assert banco.params("radar_bairro")[0]["p_bairro"] == "IPANEMA"
 
