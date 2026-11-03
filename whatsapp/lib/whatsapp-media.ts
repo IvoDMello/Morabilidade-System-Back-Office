@@ -78,6 +78,42 @@ export function mimeFromPath(path: string): string {
   return MIME_BY_EXT[ext] ?? "application/octet-stream";
 }
 
+/** O que pode abrir dentro do navegador: nada disso executa script. */
+function abreNoNavegador(mime: string): boolean {
+  return (
+    ["image/jpeg", "image/png", "image/webp", "image/gif", "application/pdf"].includes(mime) ||
+    mime.startsWith("audio/") ||
+    mime.startsWith("video/")
+  );
+}
+
+/** Cabeçalhos do proxy de mídia.
+ *
+ * O mime-type vem de quem mandou a mensagem: um contato pode enviar um
+ * documento `text/html` ou uma imagem `image/svg+xml`. Servido como veio, o
+ * arquivo abriria no domínio do atendimento com a sessão do atendente e o
+ * script dele rodaria ali. Então só imagem comum, áudio, vídeo e PDF abrem
+ * no navegador; o resto vai como download, com `nosniff` para o navegador
+ * não adivinhar outro tipo. */
+export function mediaResponseHeaders(path: string, storedMime: string | null | undefined): Record<string, string> {
+  const declarado = storedMime?.split(";")[0].trim().toLowerCase();
+  const mime =
+    declarado && declarado !== "application/octet-stream" ? declarado : mimeFromPath(path);
+  const headers: Record<string, string> = {
+    "X-Content-Type-Options": "nosniff",
+    // Privado: só o navegador do atendente logado cacheia, nunca um CDN.
+    "Cache-Control": "private, max-age=86400",
+  };
+  if (abreNoNavegador(mime)) {
+    headers["Content-Type"] = mime;
+  } else {
+    const nome = (path.split("/").pop() ?? "").replace(/[^\w.-]+/g, "_") || "arquivo";
+    headers["Content-Type"] = "application/octet-stream";
+    headers["Content-Disposition"] = `attachment; filename="${nome}"`;
+  }
+  return headers;
+}
+
 /** Fonte (`src`) de exibição de uma mídia recebida.
  * - URL absoluta (modo mock / mídia já hospedada) → usada direto.
  * - Caminho no bucket (modo cloud-api) → servido pelo proxy autenticado. */

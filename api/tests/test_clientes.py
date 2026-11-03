@@ -66,6 +66,21 @@ def test_listar_clientes_com_filtro_status(client):
     assert res.json() == []
 
 
+def test_busca_por_nome_neutraliza_sintaxe_do_filtro_or(client):
+    """Vírgula abriria uma condição nova no `or` do PostgREST; parênteses e
+    aspas quebram o parse. O termo chega ao filtro sem esses caracteres."""
+    db = make_db_mock(MagicMock(count=0, data=[]), MagicMock(count=0, data=[]))
+
+    with patch("app.routers.clientes.supabase_admin", db):
+        res = client.get("/clientes/", params={"nome": 'Apto (101),id.neq.0 "x"\\'})
+
+    assert res.status_code == 200
+    filtro = db.or_.call_args_list[0].args[0]
+    assert filtro == (
+        "nome_completo.ilike.%Apto  101  id.neq.0  x%,codigo.ilike.%Apto  101  id.neq.0  x%"
+    )
+
+
 def test_listar_clientes_exige_autenticacao(anon_client):
     res = anon_client.get("/clientes/")
     assert res.status_code == 401
@@ -346,6 +361,56 @@ def test_importar_csv_arquivo_invalido(client):
     )
     assert res.status_code == 400
     assert ".csv" in res.json()["detail"]
+
+
+def test_importar_explica_cada_duplicado_e_erro_do_banco(client):
+    """O motivo diz qual campo bateu, para a pessoa achar a linha na planilha."""
+    csv_content = (
+        "Nome,Email,Telefone,CPF\n"
+        "Ana,ana@email.com,11999990001,\n"
+        "Bia,bia@email.com,11999990002,\n"
+        "Cris,cris@email.com,11999990003,123.456.789-00\n"
+        "Duda,duda@email.com,11999990004,\n"
+        "Edu,edu@email.com,11999990005,\n"
+        "Fê,fe@email.com,11999990006,\n"
+    )
+    db = make_db_mock(
+        Exception('duplicate key value violates unique constraint "clientes_email_key"'),
+        Exception('duplicate key value violates unique constraint "clientes_telefone_key"'),
+        Exception('duplicate key value violates unique constraint "clientes_cpf_cnpj_key"'),
+        Exception("duplicate key value violates unique constraint \"outra\""),
+        Exception("connection reset by peer"),
+        MagicMock(data=[{"id": "novo"}]),
+    )
+
+    with patch("app.routers.clientes.supabase_admin", db):
+        res = client.post("/clientes/importar", files=_csv_para_upload(csv_content))
+
+    body = res.json()
+    assert body["criadas"] == 1
+    assert [e["motivo"] for e in body["detalhes_erros"]] == [
+        "E-mail já cadastrado: ana@email.com",
+        "Telefone já cadastrado: 11999990002",
+        "CPF/CNPJ já cadastrado: 123.456.789-00",
+        "Registro duplicado, cliente já existe no sistema",
+        "Erro do banco: connection reset by peer",
+    ]
+    assert [e["linha"] for e in body["detalhes_erros"]] == [2, 3, 4, 5, 6]
+
+
+def test_importar_avisa_quando_a_preferencia_falha(client):
+    csv_content = "Nome,Telefone,Cidade busca\nAna,11999990001,Rio de Janeiro\n"
+    db = make_db_mock(MagicMock(data=[{"id": "novo"}]), Exception("check constraint"))
+
+    with patch("app.routers.clientes.supabase_admin", db):
+        res = client.post("/clientes/importar", files=_csv_para_upload(csv_content))
+
+    body = res.json()
+    assert body["criadas"] == 1
+    assert body["preferencias_criadas"] == 0
+    assert body["detalhes_erros"] == [
+        {"linha": 2, "motivo": "Cliente criado, mas preferência falhou: check constraint"}
+    ]
 
 
 def test_importar_exige_autenticacao(anon_client):

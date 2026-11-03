@@ -46,3 +46,85 @@ def test_arquivo_que_nao_e_xlsx(tmp_path):
 def test_planilha_sem_linhas(tmp_path):
     caminho = criar_xlsx(tmp_path / "p.xlsx", [])
     assert list(ler_planilha(caminho)) == []
+
+
+# ── Variações de formato que outros geradores produzem ──────────────────────
+
+import zipfile as _zipfile  # noqa: E402
+
+_NS_MAIN = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+
+
+def _xlsx_manual(caminho, arquivos: dict[str, str]):
+    with _zipfile.ZipFile(caminho, "w") as z:
+        for nome, conteudo in arquivos.items():
+            z.writestr(nome, conteudo)
+    return caminho
+
+
+def _aba(linhas_xml: str) -> str:
+    return f'<worksheet xmlns="{_NS_MAIN}"><sheetData>{linhas_xml}</sheetData></worksheet>'
+
+
+def test_sem_workbook_nem_strings_compartilhadas_le_sheet1_com_inline(tmp_path):
+    from app.services.radar.xlsx import ler_linhas
+
+    caminho = _xlsx_manual(tmp_path / "minima.xlsx", {
+        "xl/worksheets/sheet1.xml": _aba(
+            '<row><c t="inlineStr"><is><t>a</t></is></c><c t="inlineStr"/><c><v>3</v></c></row>'
+        ),
+    })
+    assert list(ler_linhas(caminho)) == [["a", "", "3"]]
+
+
+def test_texto_rico_e_celulas_sem_referencia(tmp_path):
+    from app.services.radar.xlsx import ler_linhas
+
+    strings = (
+        f'<sst xmlns="{_NS_MAIN}">'
+        "<si><r><t>Rua </t></r><r><t>Bom Pastor</t></r><r/></si>"
+        "<si><t>X</t><rPh><t>fonetica</t></rPh></si>"
+        "</sst>"
+    )
+    caminho = _xlsx_manual(tmp_path / "rica.xlsx", {
+        "xl/sharedStrings.xml": strings,
+        "xl/worksheets/sheet1.xml": _aba(
+            '<row><c t="s"><v>0</v></c><c r="?"><v>9</v></c><c t="s"><v>1</v></c></row><row/>'
+        ),
+    })
+    assert list(ler_linhas(caminho)) == [["Rua Bom Pastor", "9", "X"], []]
+
+
+def test_aba_com_caminho_absoluto_no_rels(tmp_path):
+    from app.services.radar.xlsx import ler_linhas
+
+    rel = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+    caminho = _xlsx_manual(tmp_path / "absoluto.xlsx", {
+        "xl/workbook.xml": (
+            f'<workbook xmlns="{_NS_MAIN}" xmlns:r="{rel}"><sheets>'
+            '<sheet name="Dados" sheetId="1" r:id="rId9"/></sheets></workbook>'
+        ),
+        "xl/_rels/workbook.xml.rels": (
+            '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            '<Relationship Id="rId9" Target="/xl/worksheets/dados.xml"/></Relationships>'
+        ),
+        "xl/worksheets/dados.xml": _aba('<row><c r="B1"><v>1</v></c></row>'),
+    })
+    assert list(ler_linhas(caminho)) == [["", "1"]]
+
+
+def test_rels_sem_a_aba_cai_no_sheet1(tmp_path):
+    from app.services.radar.xlsx import ler_linhas
+
+    rel = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+    caminho = _xlsx_manual(tmp_path / "sem_rel.xlsx", {
+        "xl/workbook.xml": (
+            f'<workbook xmlns="{_NS_MAIN}" xmlns:r="{rel}"><sheets>'
+            '<sheet name="Dados" sheetId="1" r:id="rId1"/></sheets></workbook>'
+        ),
+        "xl/_rels/workbook.xml.rels": (
+            '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"/>'
+        ),
+        "xl/worksheets/sheet1.xml": _aba('<row><c r="A1"><v>ok</v></c></row>'),
+    })
+    assert list(ler_linhas(caminho)) == [["ok"]]

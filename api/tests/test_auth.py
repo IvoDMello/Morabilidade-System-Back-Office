@@ -1,6 +1,8 @@
 """Testes da camada de autenticação e RBAC."""
 from unittest.mock import patch, MagicMock
 
+import pytest
+
 from tests.conftest import ADMIN_USER, REGULAR_USER, make_db_mock
 
 
@@ -299,6 +301,62 @@ def test_recuperar_senha_email_valido_retorna_204(anon_client):
     assert res.status_code == 204
 
 
+def _gerar_link_com(monkeypatch, redirect_to):
+    """Roda o processamento em background e devolve os params do generate_link."""
+    from app.auth import router as auth_router
+
+    monkeypatch.setattr(auth_router.settings, "site_url", "https://morabilidade.com")
+    monkeypatch.setattr(auth_router.settings, "cors_origins", "http://localhost:3000")
+    db = MagicMock()
+    db.auth.admin.generate_link.return_value = MagicMock(properties=MagicMock(action_link="https://x/reset"))
+    with patch("app.auth.router.supabase_admin", db), patch("app.auth.router.enviar_recuperacao_senha"):
+        auth_router._processar_recuperacao_senha("ana@teste.com", redirect_to)
+    return db.auth.admin.generate_link.call_args.args[0]
+
+
+@pytest.mark.parametrize("redirect_to", [
+    "https://painel.morabilidade.com/redefinir-senha",
+    "https://morabilidade.com/redefinir-senha",
+    "http://localhost:3000/redefinir-senha",
+])
+def test_recuperar_senha_aceita_redirect_para_endereco_nosso(monkeypatch, redirect_to):
+    params = _gerar_link_com(monkeypatch, redirect_to)
+    assert params["options"] == {"redirect_to": redirect_to}
+
+
+@pytest.mark.parametrize("redirect_to", [
+    "https://evil.example/redefinir-senha",
+    "https://morabilidade.com.evil.example/x",
+    "https://evilmorabilidade.com/x",
+    "http://painel.morabilidade.com/redefinir-senha",
+    "javascript:alert(1)",
+    "https://[::1/",
+])
+def test_recuperar_senha_ignora_redirect_para_fora(monkeypatch, redirect_to):
+    """Link de redefinição apontando para outro site levaria o token da vítima."""
+    params = _gerar_link_com(monkeypatch, redirect_to)
+    assert params == {"type": "recovery", "email": "ana@teste.com"}
+
+
+def test_recuperar_senha_falha_no_envio_e_so_logada(caplog):
+    from app.auth import router as auth_router
+
+    db = MagicMock()
+    db.auth.admin.generate_link.return_value = MagicMock(properties=MagicMock(action_link="https://x/reset"))
+    with patch("app.auth.router.supabase_admin", db), patch(
+        "app.auth.router.enviar_recuperacao_senha", side_effect=RuntimeError("resend fora")
+    ):
+        auth_router._processar_recuperacao_senha("ana@teste.com", None)
+    assert "falha ao enviar e-mail (email=a***@teste.com)" in caplog.text
+
+
+@pytest.mark.parametrize("email,mascarado", [("", "***"), ("sem-arroba", "***"), ("a@x.com", "*@x.com")])
+def test_mascara_de_email_nos_logs(email, mascarado):
+    from app.auth.router import _mask_email
+
+    assert _mask_email(email) == mascarado
+
+
 def test_recuperar_senha_email_inexistente_ainda_retorna_204(anon_client):
     """Não deve revelar se o e-mail existe ou não."""
     supabase_admin_mock = MagicMock()
@@ -317,3 +375,41 @@ def test_recuperar_senha_email_inexistente_ainda_retorna_204(anon_client):
 def test_recuperar_senha_email_invalido_retorna_422(anon_client):
     res = anon_client.post("/auth/recuperar-senha", json={"email": "nao-e-email"})
     assert res.status_code == 422
+
+
+# ── _usuario_do_token e require_admin, direto ────────────────────────────────
+
+def _db_com_usuario(supabase_user, linha):
+    db = MagicMock()
+    db.auth.get_user.return_value = MagicMock(user=supabase_user)
+    db.table.return_value = db
+    for metodo in ("select", "eq", "single"):
+        getattr(db, metodo).return_value = db
+    db.execute.return_value = MagicMock(data=linha)
+    return db
+
+
+@pytest.mark.parametrize("supabase_user,linha,status,detalhe", [
+    (None, None, 401, "Token inválido."),
+    (MagicMock(id="u1"), None, 401, "Usuário não encontrado."),
+    (MagicMock(id="u1"), {"id": "u1", "ativo": False}, 403, "Conta desativada."),
+])
+def test_usuario_do_token_recusa(supabase_user, linha, status, detalhe):
+    from fastapi import HTTPException
+
+    from app.auth.dependencies import _usuario_do_token
+
+    with patch("app.auth.dependencies.supabase_admin", _db_com_usuario(supabase_user, linha)):
+        with pytest.raises(HTTPException) as erro:
+            _usuario_do_token("tok")
+    assert (erro.value.status_code, erro.value.detail) == (status, detalhe)
+
+
+def test_require_admin_barra_perfil_sem_escrita():
+    from fastapi import HTTPException
+
+    from app.auth.dependencies import require_admin
+
+    with pytest.raises(HTTPException) as erro:
+        require_admin(MagicMock(), current_user={"id": "u1", "perfil": "visitante"})
+    assert erro.value.status_code == 403

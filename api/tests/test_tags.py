@@ -83,3 +83,14 @@ def test_deletar_tag_como_admin(admin_client):
         res = admin_client.delete("/tags/tag-uuid-1")
 
     assert res.status_code == 204
+
+
+def test_listar_tags_publico_sem_login(anon_client):
+    db = make_db_mock(MagicMock(data=[TAG_DB]))
+
+    with patch("app.routers.tags.supabase_admin", db):
+        res = anon_client.get("/tags/publico")
+
+    assert res.status_code == 200
+    assert res.json()[0]["nome"] == "Destaque"
+    db.order.assert_called_with("nome")

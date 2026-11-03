@@ -85,8 +85,11 @@ export async function getImoveisDestaques(): Promise<ImovelCard[]> {
 }
 
 export async function getImovel(codigo: string): Promise<Imovel | null> {
+  // encodeURIComponent: o Next entrega o parâmetro da rota já decodificado,
+  // então "..%2F..%2Fusuarios" chegaria aqui como "../../usuarios" e levaria a
+  // chamada para outra rota da API.
   const res = await fetchGetWithRetry(
-    `${API_URL}/imoveis/publico/${codigo}`,
+    `${API_URL}/imoveis/publico/${encodeURIComponent(codigo)}`,
     // 60s é só rede de segurança: o caminho normal é a revalidação on-demand
     // disparada pelo back-office (POST /api/revalidate) ao salvar o imóvel.
     { next: { revalidate: 60 } },

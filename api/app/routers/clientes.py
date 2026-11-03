@@ -317,7 +317,10 @@ def listar_clientes(
     def _aplicar(q):
         if nome:
             # O campo de busca aceita nome ou código do cliente (CLI-0001).
-            termo = nome.replace(",", " ").strip()
+            # Vírgula, parênteses, aspas e barra invertida são sintaxe do
+            # filtro `or` do PostgREST: vírgula abriria uma condição nova e os
+            # outros quebram o parse (500 ao buscar "Apto (101)").
+            termo = re.sub(r'[,()"\\]', " ", nome).strip()
             q = q.or_(f"nome_completo.ilike.%{termo}%,codigo.ilike.%{termo}%")
         if email:
             q = q.ilike("email", f"%{email}%")

@@ -1,5 +1,8 @@
 import logging
+from urllib.parse import urlsplit
+
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
+from app.config import settings
 from app.limiter import limiter
 from app.auth.schemas import (
     ForgotPasswordRequest,
@@ -102,6 +105,34 @@ def logout(current_user: dict = Depends(get_current_user)):
         pass
 
 
+def _redirect_confiavel(redirect_to: str | None) -> str | None:
+    """Só aceita voltar para um endereço nosso.
+
+    A rota é pública: sem isto, qualquer um pediria a redefinição da senha de
+    outra pessoa com `redirect_to` no próprio site, e o e-mail legítimo levaria
+    o token da vítima para fora. O Supabase também filtra pela lista dele, mas
+    essa lista aceita curingas e é configurada em outro lugar.
+
+    Vale HTTPS no domínio do site_url ou num subdomínio dele (o painel) e as
+    origens do CORS (localhost em desenvolvimento). O painel não entra no CORS
+    de produção porque fala com a API pelo proxy do próprio servidor. Fora
+    disso, o Supabase usa a Site URL dele.
+    """
+    if not redirect_to:
+        return None
+    try:
+        url = urlsplit(redirect_to)
+        host = (url.hostname or "").lower()
+    except ValueError:
+        return None
+    if f"{url.scheme}://{url.netloc}" in settings.cors_origins_list:
+        return redirect_to
+    dominio = (urlsplit(settings.site_url).hostname or "").lower().removeprefix("www.")
+    if url.scheme == "https" and dominio and (host == dominio or host.endswith("." + dominio)):
+        return redirect_to
+    return None
+
+
 def _processar_recuperacao_senha(email: str, redirect_to: str | None) -> None:
     """Roda em background, gera o link via Supabase Admin e envia via Resend.
 
@@ -111,6 +142,7 @@ def _processar_recuperacao_senha(email: str, redirect_to: str | None) -> None:
     masked = _mask_email(email)
     try:
         params: dict = {"type": "recovery", "email": email}
+        redirect_to = _redirect_confiavel(redirect_to)
         if redirect_to:
             params["options"] = {"redirect_to": redirect_to}
 

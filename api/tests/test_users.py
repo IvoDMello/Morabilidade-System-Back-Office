@@ -264,3 +264,38 @@ def test_alterar_senha_falha_no_update_retorna_400(corretor_client):
         )
     assert res.status_code == 400
     assert "alterar senha" in res.json()["detail"].lower()
+
+
+# ── POST /usuarios/me/foto ────────────────────────────────────────────────────
+
+def test_upload_foto_perfil_grava_url(client):
+    db = make_db_mock(MagicMock(data=[{**USER_DB, "foto_url": "https://cdn/foto.jpg"}]))
+
+    with patch("app.routers.users.supabase_admin", db), patch(
+        "app.routers.users.upload_foto", return_value="https://cdn/foto.jpg"
+    ) as upload:
+        res = client.post("/usuarios/me/foto", files={"foto": ("f.jpg", b"jpeg", "image/jpeg")})
+
+    assert res.status_code == 200
+    assert res.json()["foto_url"] == "https://cdn/foto.jpg"
+    assert upload.call_args.kwargs["path"].endswith("/foto_perfil")
+    db.update.assert_called_once_with({"foto_url": "https://cdn/foto.jpg"})
+
+
+def test_criar_usuario_rollback_ignora_falha_ao_apagar_do_auth(admin_client):
+    """Se nem o rollback funciona, a resposta continua 500 e não vaza a exceção."""
+    auth_mock = MagicMock()
+    auth_mock.user.id = USER_DB["id"]
+
+    db = MagicMock()
+    db.auth.admin.create_user.return_value = auth_mock
+    db.auth.admin.delete_user.side_effect = Exception("auth fora")
+    db.table.return_value = db
+    db.insert.return_value = db
+    db.execute.side_effect = Exception("insert falhou")
+
+    with patch("app.routers.users.supabase_admin", db):
+        res = admin_client.post("/usuarios/", json=USER_PAYLOAD)
+
+    assert res.status_code == 500
+    assert res.json()["detail"] == "Erro ao criar perfil do usuário."

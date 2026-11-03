@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from typing import List
 from app.auth.dependencies import get_current_user, require_admin
+from app.limiter import limiter
 from app.schemas.tag import TagCreate, TagUpdate, TagOut
 from app.database import supabase_admin
 
@@ -8,7 +9,8 @@ router = APIRouter()
 
 
 @router.get("/publico", response_model=List[TagOut], tags=["Site Público"])
-def listar_tags_publico():
+@limiter.limit("60/minute")
+def listar_tags_publico(request: Request):
     """Lista todas as tags sem autenticação, para uso no site público."""
     result = supabase_admin.table("tags").select("*").order("nome").execute()
     return result.data

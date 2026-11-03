@@ -99,3 +99,52 @@ def test_imovel_sem_autorizacao_fica_explicitamente_nulo():
     imovel = montar_dossie(CLIENTE, [], imoveis, [], [])["imoveis_proprietario"][0]
 
     assert imovel["autorizacao"] is None
+
+
+# ── Rota: o que ela busca no banco ───────────────────────────────────────────
+
+from unittest.mock import MagicMock, patch  # noqa: E402
+
+from tests.conftest import make_db_mock  # noqa: E402
+
+
+def test_rota_dossie_404_quando_cliente_nao_existe(client):
+    db = make_db_mock(MagicMock(data=None))
+    with patch("app.routers.clientes.supabase_admin", db):
+        res = client.get("/clientes/interno/cl-x/dossie")
+    assert res.status_code == 404
+
+
+def test_rota_dossie_sem_imoveis_nao_busca_documentos(client):
+    db = make_db_mock(
+        MagicMock(data=CLIENTE),
+        MagicMock(data=[{"id": "f1", "imovel_codigo": "MB-00042", "imovel_endereco": "Rua A",
+                         "imovel_bairro": "Leblon", "status": "assinada",
+                         "assinada_em": "2026-10-01T10:00:00+00:00", "created_at": "2026-10-01T09:00:00+00:00"}]),
+        MagicMock(data=[]),
+    )
+    with patch("app.routers.clientes.supabase_admin", db):
+        res = client.get("/clientes/interno/cl-1/dossie")
+    assert res.status_code == 200
+    assert db.execute.call_count == 3
+    assert [v["imovel_codigo"] for v in res.json()["visitas"]] == ["MB-00042"]
+    assert res.json()["imoveis_proprietario"] == []
+
+
+def test_rota_dossie_com_imoveis_busca_documentos_e_autorizacoes(client):
+    imovel = {"id": "im-1", "codigo": "MB-00043", "titulo": "Cobertura", "bairro": "Ipanema",
+              "disponibilidade": "disponivel"}
+    db = make_db_mock(
+        MagicMock(data=CLIENTE),
+        MagicMock(data=[]),
+        MagicMock(data=[imovel]),
+        MagicMock(data=[{"imovel_id": "im-1", "tipo": "matricula", "nome_arquivo": "m.pdf",
+                         "created_at": "2026-09-01T00:00:00+00:00"}]),
+        MagicMock(data=[]),
+    )
+    with patch("app.routers.clientes.supabase_admin", db):
+        res = client.get("/clientes/interno/cl-1/dossie")
+    assert res.status_code == 200
+    assert db.execute.call_count == 5
+    db.in_.assert_any_call("imovel_id", ["im-1"])
+    assert [i["codigo"] for i in res.json()["imoveis_proprietario"]] == ["MB-00043"]

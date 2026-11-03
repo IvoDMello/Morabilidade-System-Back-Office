@@ -100,6 +100,27 @@ def test_todo_endpoint_nao_publico_exige_autenticacao():
     )
 
 
+# Rotas sem login que não precisam de rate limit: o healthcheck do Railway
+# (limitar derrubaria o deploy), a raiz, que só responde um JSON fixo, e os
+# crons, que exigem um token longo demais para adivinhar.
+SEM_RATE_LIMIT = {"/", "/health"} | CRON_TOKEN_PATHS
+
+
+def test_toda_rota_publica_tem_rate_limit():
+    """Rota sem login e sem limite vira alvo barato de abuso (scraping, carga
+    no Supabase). Cada endpoint público precisa de @limiter.limit."""
+    from app.limiter import limiter
+
+    sem_limite = []
+    for route in _rotas_api():
+        if _calls_da_dependant(route.dependant) & AUTH_DEPS or route.path in SEM_RATE_LIMIT:
+            continue
+        nome = f"{route.endpoint.__module__}.{route.endpoint.__name__}"
+        if not limiter._route_limits.get(nome):
+            sem_limite.append(f"{','.join(sorted(route.methods - {'HEAD'}))} {route.path}")
+    assert not sem_limite, "Rotas públicas sem rate limit:\n  " + "\n  ".join(sorted(sem_limite))
+
+
 def test_endpoints_de_cron_exigem_token():
     """Garante que cada path em CRON_TOKEN_PATHS realmente exige o X-Cron-Token
     senão o allowlist estaria liberando um endpoint sem nenhuma proteção."""

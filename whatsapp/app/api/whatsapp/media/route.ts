@@ -1,5 +1,5 @@
 import { dataSource } from "@/services/data";
-import { mimeFromPath } from "@/lib/whatsapp-media";
+import { mediaResponseHeaders } from "@/lib/whatsapp-media";
 
 /**
  * Proxy autenticado das mídias recebidas do WhatsApp. As mídias vivem num
@@ -23,16 +23,5 @@ export async function GET(request: Request) {
   const object = await dataSource.whatsapp.getMediaObject(path);
   if (!object) return new Response("Not Found", { status: 404 });
 
-  const contentType =
-    object.mimeType && object.mimeType !== "application/octet-stream"
-      ? object.mimeType
-      : mimeFromPath(path);
-
-  return new Response(object.data, {
-    headers: {
-      "Content-Type": contentType,
-      // Privado: só o navegador do atendente logado cacheia, nunca um CDN.
-      "Cache-Control": "private, max-age=86400",
-    },
-  });
+  return new Response(object.data, { headers: mediaResponseHeaders(path, object.mimeType) });
 }

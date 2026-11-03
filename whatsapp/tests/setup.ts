@@ -46,7 +46,21 @@ function criarMediaQueryList(query: string): MediaQueryList {
   return lista;
 }
 
+/** O jsdom também não tem ResizeObserver, e a barra de rolagem de cima do
+ * funil (top-scrollbar) observa a largura das colunas: sem isto, qualquer
+ * teste que monte o pipeline estoura. Nunca dispara, como uma tela que não
+ * muda de tamanho; o componente já mede uma vez ao montar. */
+class ResizeObserverParado implements ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
 // O ambiente padrão da suíte é node (testes de lógica); só instala onde há DOM.
 if (typeof window !== "undefined" && typeof window.matchMedia !== "function") {
   window.matchMedia = criarMediaQueryList as unknown as typeof window.matchMedia;
+}
+if (typeof window !== "undefined" && typeof window.ResizeObserver !== "function") {
+  window.ResizeObserver = ResizeObserverParado;
+  globalThis.ResizeObserver = ResizeObserverParado;
 }

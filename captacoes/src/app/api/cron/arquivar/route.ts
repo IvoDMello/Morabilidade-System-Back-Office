@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cronAutorizado } from "@/lib/cron-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -12,8 +13,7 @@ export const dynamic = "force-dynamic";
  * aqui marcamos `arquivado_em` para que esses cartões entrem na fila.
  */
 export async function GET(req: Request) {
-  const auth = req.headers.get("authorization");
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!cronAutorizado(req)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
