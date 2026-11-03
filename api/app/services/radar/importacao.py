@@ -22,6 +22,7 @@ import hashlib
 import logging
 import re
 import sys
+import time
 from collections import Counter, defaultdict
 from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
@@ -58,6 +59,12 @@ PAGINA_FONTE = (
 _LINK_PLANILHA = re.compile(
     r"""href\s*=\s*["']([^"']*ITBI_TRANSACOES[^"']*\.xlsx)["']""", re.IGNORECASE
 )
+
+# Para os servidores do GitHub, a Prefeitura às vezes devolve outra coisa no
+# lugar da página ou da planilha (daqui do Brasil vem sempre certo). Tenta de
+# novo antes de desistir.
+TENTATIVAS = 3
+PAUSA = 30.0
 
 # Acima disso a importação desconfia do arquivo e não apaga nada sem --forcar.
 LIMITE_REMOCAO = 0.05
@@ -118,6 +125,44 @@ def descobrir_links(html: str, base: str = PAGINA_FONTE) -> list[str]:
     return links
 
 
+def _descrever_resposta(resposta: httpx.Response, corpo: bytes, tamanho: int | None = None) -> str:
+    """Resumo do que o servidor devolveu, para o log dizer o que veio no lugar."""
+    html = corpo.decode(resposta.encoding or "utf-8", errors="replace")
+    titulo = re.search(r"<title[^>]*>(.*?)</title>", html, re.IGNORECASE | re.DOTALL)
+    texto = re.sub(r"<(script|style)\b.*?</\1>", " ", html, flags=re.IGNORECASE | re.DOTALL)
+    texto = " ".join(re.sub(r"<[^>]+>", " ", texto).split())
+    return (
+        f"HTTP {resposta.status_code} de {resposta.url}, "
+        f"{resposta.headers.get('content-type', 'sem content-type')}, "
+        f"{len(corpo) if tamanho is None else tamanho} bytes, "
+        f"título {limpar_espacos(titulo.group(1)) if titulo else None!r}, "
+        f"início do texto {texto[:300]!r}"
+    )
+
+
+def buscar_links(http: httpx.Client, tentativas: int = TENTATIVAS) -> list[str]:
+    """Lê a página da Prefeitura e devolve os links das planilhas de transações.
+
+    Repete quando a página vem sem links: para os servidores do GitHub, a
+    Prefeitura às vezes responde 200 com outra coisa. Na última tentativa, o
+    erro descreve a resposta recebida.
+    """
+    for tentativa in range(1, tentativas + 1):
+        pagina = http.get(PAGINA_FONTE)
+        pagina.raise_for_status()
+        links = descobrir_links(pagina.text)
+        if links:
+            return links
+        descricao = _descrever_resposta(pagina, pagina.content)
+        if tentativa < tentativas:
+            logger.warning("Página sem planilhas (tentativa %d): %s", tentativa, descricao)
+            time.sleep(PAUSA)
+    raise ErroImportacao(
+        f"Nenhuma planilha ITBI_TRANSACOES encontrada em {PAGINA_FONTE} "
+        f"após {tentativas} tentativas. Resposta: {descricao}"
+    )
+
+
 @dataclass(frozen=True)
 class Arquivo:
     url: str
@@ -137,23 +182,32 @@ def sha256_arquivo(caminho: Path) -> str:
     return h.hexdigest()
 
 
-def baixar(url: str, pasta: Path, http: httpx.Client) -> Arquivo:
+def baixar(url: str, pasta: Path, http: httpx.Client, tentativas: int = TENTATIVAS) -> Arquivo:
+    """Baixa a planilha, repetindo quando vem outra coisa no lugar do .xlsx."""
     nome = Path(url.split("?", 1)[0]).name or "planilha.xlsx"
     destino = pasta / nome
-    h = hashlib.sha256()
-    tamanho = 0
-    with http.stream("GET", url) as resposta:
-        resposta.raise_for_status()
-        with open(destino, "wb") as f:
-            for bloco in resposta.iter_bytes(1 << 20):
-                f.write(bloco)
-                h.update(bloco)
-                tamanho += len(bloco)
-    with open(destino, "rb") as f:
-        if f.read(2) != b"PK":
-            raise ErroImportacao(f"{url} não devolveu um .xlsx (página de erro?)")
-    logger.info("Baixado %s (%.1f MB)", nome, tamanho / 1e6)
-    return Arquivo(url=url, caminho=destino, sha256=h.hexdigest(), bytes=tamanho)
+    for tentativa in range(1, tentativas + 1):
+        h = hashlib.sha256()
+        tamanho = 0
+        with http.stream("GET", url) as resposta:
+            resposta.raise_for_status()
+            with open(destino, "wb") as f:
+                for bloco in resposta.iter_bytes(1 << 20):
+                    f.write(bloco)
+                    h.update(bloco)
+                    tamanho += len(bloco)
+        with open(destino, "rb") as f:
+            inicio = f.read(64 * 1024)
+        if inicio[:2] == b"PK":
+            logger.info("Baixado %s (%.1f MB)", nome, tamanho / 1e6)
+            return Arquivo(url=url, caminho=destino, sha256=h.hexdigest(), bytes=tamanho)
+        descricao = _descrever_resposta(resposta, inicio, tamanho)
+        if tentativa < tentativas:
+            logger.warning("Download sem .xlsx (tentativa %d): %s", tentativa, descricao)
+            time.sleep(PAUSA)
+    raise ErroImportacao(
+        f"{url} não devolveu um .xlsx após {tentativas} tentativas. Resposta: {descricao}"
+    )
 
 
 # ── Leitura ─────────────────────────────────────────────────────────────────
@@ -521,14 +575,7 @@ def importar(
             for p in arquivos_locais
         ]
     else:
-        pagina = http.get(PAGINA_FONTE)
-        pagina.raise_for_status()
-        links = descobrir_links(pagina.text)
-        if not links:
-            raise ErroImportacao(
-                f"Nenhuma planilha ITBI_TRANSACOES encontrada em {PAGINA_FONTE}. "
-                "A página mudou de formato?"
-            )
+        links = buscar_links(http)
         logger.info("Planilhas encontradas: %s", ", ".join(links))
         arquivos = [baixar(url, pasta, http) for url in links]
     resumo_arquivos = [a.resumo() for a in arquivos]

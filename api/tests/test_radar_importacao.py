@@ -1,5 +1,6 @@
 """Importação do Radar: descoberta dos links, interpretação das linhas, hash
 idempotente, nomes de logradouro e sincronização com um banco em memória."""
+import hashlib
 from collections import Counter
 from unittest.mock import MagicMock
 
@@ -437,20 +438,69 @@ def test_importar_descobre_links_e_baixa(tmp_path):
     ]
 
 
-def test_importar_falha_se_a_pagina_nao_tem_planilhas(tmp_path):
-    transporte = httpx.MockTransport(lambda r: httpx.Response(200, text="<html>nova página</html>"))
-    with httpx.Client(transport=transporte) as http, pytest.raises(ErroImportacao, match="Nenhuma planilha"):
+def test_importar_falha_se_a_pagina_nao_tem_planilhas(tmp_path, monkeypatch):
+    monkeypatch.setattr(imp.time, "sleep", lambda _: None)
+    pedidos = []
+
+    def responder(request):
+        pedidos.append(request)
+        return httpx.Response(
+            200,
+            headers={"content-type": "text/html"},
+            text="<html><title>Acesso negado</title><script>x()</script><p>Seu IP foi bloqueado.</p></html>",
+        )
+
+    with httpx.Client(transport=httpx.MockTransport(responder)) as http, pytest.raises(ErroImportacao) as erro:
         importar(RepositorioMemoria(), http, tmp_path)
+    assert len(pedidos) == imp.TENTATIVAS
+    mensagem = str(erro.value)
+    assert "Nenhuma planilha" in mensagem
+    assert "HTTP 200" in mensagem
+    assert "'Acesso negado'" in mensagem
+    assert "Seu IP foi bloqueado." in mensagem
+    assert "x()" not in mensagem
 
 
-def test_importar_falha_se_o_download_nao_e_xlsx(tmp_path):
+def test_buscar_links_tenta_de_novo_quando_a_pagina_vem_sem_links(monkeypatch):
+    pausas = []
+    monkeypatch.setattr(imp.time, "sleep", pausas.append)
+    respostas = iter(["<html>instável</html>", '<a href="/x/ITBI_TRANSACOES_2025.xlsx">a</a>'])
+    transporte = httpx.MockTransport(lambda r: httpx.Response(200, text=next(respostas)))
+    with httpx.Client(transport=transporte) as http:
+        assert imp.buscar_links(http) == ["https://fazenda.prefeitura.rio/x/ITBI_TRANSACOES_2025.xlsx"]
+    assert pausas == [imp.PAUSA]
+
+
+def test_importar_falha_se_o_download_nao_e_xlsx(tmp_path, monkeypatch):
+    monkeypatch.setattr(imp.time, "sleep", lambda _: None)
+    downloads = []
+
     def responder(request):
         if str(request.url) == imp.PAGINA_FONTE:
             return httpx.Response(200, text='<a href="/x/ITBI_TRANSACOES_2025.xlsx">a</a>')
-        return httpx.Response(200, text="<html>erro</html>")
+        downloads.append(request)
+        return httpx.Response(200, text="<html><title>Request Rejected</title>Support ID 123</html>")
 
-    with httpx.Client(transport=httpx.MockTransport(responder)) as http, pytest.raises(ErroImportacao, match="xlsx"):
+    with httpx.Client(transport=httpx.MockTransport(responder)) as http, pytest.raises(ErroImportacao) as erro:
         importar(RepositorioMemoria(), http, tmp_path)
+    assert len(downloads) == imp.TENTATIVAS
+    mensagem = str(erro.value)
+    assert "não devolveu um .xlsx" in mensagem
+    assert "'Request Rejected'" in mensagem
+    assert "Support ID 123" in mensagem
+
+
+def test_baixar_tenta_de_novo_quando_vem_outra_coisa(tmp_path, monkeypatch):
+    pausas = []
+    monkeypatch.setattr(imp.time, "sleep", pausas.append)
+    respostas = iter([b"<html>erro</html>", b"PK\x03\x04conteudo"])
+    transporte = httpx.MockTransport(lambda r: httpx.Response(200, content=next(respostas)))
+    with httpx.Client(transport=transporte) as http:
+        arquivo = imp.baixar("https://fazenda.prefeitura.rio/x/ITBI_TRANSACOES_2025.xlsx", tmp_path, http)
+    assert arquivo.bytes == len(b"PK\x03\x04conteudo")
+    assert arquivo.sha256 == hashlib.sha256(b"PK\x03\x04conteudo").hexdigest()
+    assert arquivo.caminho.read_bytes() == b"PK\x03\x04conteudo"
+    assert pausas == [imp.PAUSA]
 
 
 def test_ler_planilhas_vazia(tmp_path):
