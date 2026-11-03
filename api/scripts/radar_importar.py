@@ -10,8 +10,13 @@ Uso (de dentro de api/):
                                                       # de mudar a normalização)
 
 Credenciais: SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY do ambiente ou de api/.env.
-Não precisa do resto das variáveis da API, então roda no GitHub Actions só com
-essas duas. Detalhes do fluxo em app/services/radar/importacao.py.
+Não precisa do resto das variáveis da API. Detalhes do fluxo em
+app/services/radar/importacao.py.
+
+Agendamento: roda toda semana pelo Agendador de Tarefas do Windows num PC no
+Brasil (scripts/radar_agendar_windows.ps1), com pythonw e --log. Não roda no
+GitHub Actions: o firewall da Prefeitura responde "Requisição Negada" aos
+servidores do GitHub (testado em 2026-11-02).
 
 Saída: 0 importou ou não havia novidade; 2 a trava de segurança barrou; 1 erro.
 """
@@ -39,8 +44,26 @@ def _credenciais() -> tuple[str, str]:
     url = os.environ.get("SUPABASE_URL") or arquivo_env.get("SUPABASE_URL")
     chave = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or arquivo_env.get("SUPABASE_SERVICE_ROLE_KEY")
     if not url or not chave:
-        sys.exit("Defina SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY (ambiente ou api/.env).")
+        raise RuntimeError("Defina SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY (ambiente ou api/.env).")
     return url, chave
+
+
+def _configurar_log(arquivo: Path | None) -> None:
+    """Terminal e, com --log, também um arquivo. Pelo pythonw (Agendador do
+    Windows) não existe terminal, então o arquivo é o único registro."""
+    saidas: list[logging.Handler] = []
+    if sys.stderr is not None:
+        saidas.append(logging.StreamHandler())
+    if arquivo:
+        arquivo.parent.mkdir(parents=True, exist_ok=True)
+        saidas.append(logging.FileHandler(arquivo, encoding="utf-8"))
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        handlers=saidas,
+    )
+    logging.getLogger("httpx").setLevel(logging.WARNING)
 
 
 def main() -> int:
@@ -50,11 +73,18 @@ def main() -> int:
     parser.add_argument("--reprocessar", action="store_true", help="regrava todas as linhas existentes")
     parser.add_argument("--arquivos", nargs="+", type=Path, help="usa planilhas locais em vez de baixar")
     parser.add_argument("--pasta", type=Path, help="onde salvar os downloads (padrão: pasta temporária)")
+    parser.add_argument("--log", type=Path, help="também grava o log neste arquivo")
     args = parser.parse_args()
 
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s", datefmt="%H:%M:%S")
-    logging.getLogger("httpx").setLevel(logging.WARNING)
+    _configurar_log(args.log)
+    try:
+        return _executar(args)
+    except Exception:
+        logging.exception("Importação falhou")
+        return 1
 
+
+def _executar(args: argparse.Namespace) -> int:
     repo = None
     if not args.simular:
         from supabase import create_client
