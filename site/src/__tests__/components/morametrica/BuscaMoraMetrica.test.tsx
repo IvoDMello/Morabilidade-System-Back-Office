@@ -24,8 +24,8 @@ describe("BuscaMoraMetrica", () => {
     vi.mocked(useRouter).mockReturnValue({ push, replace: vi.fn() } as never);
     vi.mocked(sugerirMoraMetrica).mockReset();
     vi.mocked(sugerirMoraMetrica).mockResolvedValue([
-      { tipo: "bairro", rotulo: "Ipanema", detalhe: "Bairro", consulta: "Ipanema", bairro: "IPANEMA", cl: null, transacoes: 10128 },
-      { tipo: "logradouro", rotulo: "Avenida Vieira Souto", detalhe: "Ipanema", consulta: "Avenida Vieira Souto, 510", cl: 83360, bairro: null, transacoes: 437 },
+      { tipo: "bairro", rotulo: "Ipanema", detalhe: "Bairro", consulta: "Ipanema", bairro: "IPANEMA", cl: null, numero: null, unidade: null, transacoes: 10128 },
+      { tipo: "logradouro", rotulo: "Avenida Vieira Souto", detalhe: "Ipanema", consulta: "Avenida Vieira Souto, 510", cl: 83360, numero: 510, unidade: null, bairro: null, transacoes: 437 },
     ]);
   });
 

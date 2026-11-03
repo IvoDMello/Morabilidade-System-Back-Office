@@ -262,9 +262,75 @@ def test_nada_encontrado_sugere_grafias_parecidas(anon_client):
     assert corpo["tipo"] == "nenhum"
     assert corpo["sugestoes"] == [{
         "tipo": "logradouro", "rotulo": "Avenida Vieira Souto", "detalhe": "Ipanema",
-        "consulta": "Avenida Vieira Souto, 510", "cl": 83360, "bairro": None, "transacoes": 437,
+        "consulta": "Avenida Vieira Souto, 510", "cl": 83360, "numero": 510, "unidade": None,
+        "bairro": None, "transacoes": 437,
     }]
     assert banco.params("radar_sugestoes")[0]["p_chave"] == "VIERA SOUTO"
+
+
+# ── Unidade ──────────────────────────────────────────────────────────────────
+
+BOM_PASTOR = {
+    "cl": 71000, "nome": "Rua Bom Pastor", "tipo": "RUA", "grafia": "Rua Bom Pastor",
+    "bairros": ["Tijuca"], "transacoes": 400, "predios": 30, "tem_numero": True,
+}
+
+
+def test_unidade_filtra_e_mostra_desde_2011(anon_client):
+    banco = BancoFalso(rpcs={
+        "radar_resolver": [BOM_PASTOR],
+        "radar_predio": {**PREDIO_510, "total_predio": 221, "total_historico": 2},
+    })
+    corpo = _get(anon_client, banco, "/radar/publico/busca?q=Rua bom pastor, 521, BL-001 Apto 0801").json()
+    chamada = banco.params("radar_predio")[0]
+    assert chamada["p_unidade"] == ["1", "801"]
+    # uma unidade vende pouco: sem período escolhido, vale o histórico todo
+    assert (chamada["p_desde"], chamada["p_ate"]) == (None, None)
+    assert corpo["periodo"]["padrao"] is False
+    assert (corpo["tipo"], corpo["titulo"], corpo["unidade"]) == ("predio", "Rua Bom Pastor, 521", "BL 001 Apto 0801")
+    assert (corpo["total_predio"], corpo["total_historico"]) == (221, 2)
+
+
+def test_unidade_sem_venda_continua_no_predio(anon_client):
+    vazio = {**PREDIO_510, "total_predio": 221, "total_historico": 0, "transacoes": [],
+             "resumo": {"transacoes": 0, "media_m2": None, "media_valor": None, "media_area": None}}
+    banco = BancoFalso(rpcs={"radar_resolver": [BOM_PASTOR], "radar_predio": vazio})
+    corpo = _get(anon_client, banco, "/radar/publico/busca?q=Bom Pastor 521 apto 9999").json()
+    assert corpo["tipo"] == "predio"
+    assert corpo["resumo"]["transacoes"] == 0
+    assert banco.params("radar_numeros_proximos") == []
+
+
+def test_unidade_respeita_periodo_escolhido(anon_client):
+    banco = BancoFalso(rpcs={"radar_resolver": [BOM_PASTOR], "radar_predio": PREDIO_510})
+    _get(anon_client, banco, "/radar/publico/busca?q=Bom Pastor 521/801&desde=2020")
+    assert banco.params("radar_predio")[0]["p_desde"] == "2020-01-01"
+
+
+def test_unidade_na_escolha_direta(anon_client):
+    banco = BancoFalso(rpcs={"radar_predio": PREDIO_510}, tabelas={"radar_logradouros": [BOM_PASTOR]})
+    corpo = _get(anon_client, banco, "/radar/publico/busca?cl=71000&numero=521&unidade=BL-001 Apto 0801").json()
+    assert banco.params("radar_predio")[0]["p_unidade"] == ["1", "801"]
+    assert corpo["unidade"] == "BL-001 Apto 0801"
+
+
+def test_predio_sem_unidade_nao_manda_o_filtro(anon_client):
+    # a API publicada antes da 059 chamava radar_predio sem p_unidade
+    banco = BancoFalso(rpcs={"radar_resolver": [{**VIEIRA_SOUTO, "tem_numero": True}], "radar_predio": PREDIO_510})
+    corpo = _get(anon_client, banco, "/radar/publico/busca?q=Vieira Souto 510").json()
+    assert "p_unidade" not in banco.params("radar_predio")[0]
+    assert corpo["unidade"] is None
+    # sem total_predio na resposta (função antiga), vale o total do prédio
+    assert corpo["total_predio"] == 19
+
+
+def test_sugestao_leva_numero_e_unidade(anon_client):
+    banco = BancoFalso(rpcs={"radar_sugestoes": [
+        {"cl": 71000, "nome": "Rua Bom Pastor", "grafia": "Rua Bom Pastor", "bairros": ["Tijuca"],
+         "transacoes": 400, "semelhanca": 0.9},
+    ]})
+    [s] = _get(anon_client, banco, "/radar/publico/sugestoes?q=bom pastor 521 apto 801 bl 1").json()
+    assert (s["consulta"], s["numero"], s["unidade"]) == ("Rua Bom Pastor, 521, Apto 801 BL 1", 521, "Apto 801 BL 1")
 
 
 # ── Filtros, validação e cache ───────────────────────────────────────────────
@@ -322,7 +388,7 @@ def test_sugestoes_trazem_bairros_e_logradouros(anon_client):
     assert [s["rotulo"] for s in corpo] == ["Botafogo", "Jardim Botânico", "Rua Paulo Franchini"]
     assert corpo[0] == {
         "tipo": "bairro", "rotulo": "Botafogo", "detalhe": "Bairro", "consulta": "Botafogo",
-        "cl": None, "bairro": "BOTAFOGO", "transacoes": 16955,
+        "cl": None, "numero": None, "unidade": None, "bairro": "BOTAFOGO", "transacoes": 16955,
     }
     assert corpo[2]["detalhe"] == "Campo Grande, Cosmos · antiga Rua Sobreiro"
     assert corpo[2]["cl"] == 101998

@@ -6,6 +6,7 @@ import {
   ArrowRight,
   Building2,
   ChevronRight,
+  DoorOpen,
   Map as MapaIcon,
   MapPin,
   SearchX,
@@ -23,6 +24,7 @@ import {
   novaBusca,
   plural,
   urlMoraMetrica,
+  urlSugestao,
   type ParametrosBusca,
 } from "@/lib/morametrica";
 import { LinkBusca, useNavegacao } from "./Navegacao";
@@ -68,9 +70,14 @@ export function ResultadoMoraMetrica({ dados, params }: Props) {
       {(dados.tipo === "predio" || dados.tipo === "rua" || dados.tipo === "bairro") && (
         <>
           <Cabecalho dados={dados} />
-          <Filtros dados={dados} params={params} />
+          {/* Unidade: o histórico todo, sem filtros (vende poucas vezes) */}
+          {!dados.unidade && <Filtros dados={dados} params={params} />}
           {(dados.resumo?.transacoes ?? 0) === 0 ? (
-            <SemVendasNoPeriodo dados={dados} params={params} />
+            dados.unidade ? (
+              <UnidadeSemVenda dados={dados} />
+            ) : (
+              <SemVendasNoPeriodo dados={dados} params={params} />
+            )
           ) : (
             <>
               {dados.tipo === "predio" && <ListaTransacoes dados={dados} params={params} />}
@@ -90,16 +97,20 @@ const CARTAO = "bg-white rounded-2xl border border-[#e4e1d6] shadow-card";
 const ROTULO = "text-[11px] font-bold uppercase tracking-[0.16em] text-[#9a8d3a]";
 
 function Cabecalho({ dados }: { dados: RadarBusca }) {
-  const tipo = {
-    predio: { rotulo: "Prédio", Icone: Building2 },
-    rua: { rotulo: "Logradouro", Icone: MapPin },
-    bairro: { rotulo: "Bairro", Icone: MapaIcon },
-  }[dados.tipo as "predio" | "rua" | "bairro"];
+  const tipo = dados.unidade
+    ? { rotulo: "Unidade", Icone: DoorOpen }
+    : {
+        predio: { rotulo: "Prédio", Icone: Building2 },
+        rua: { rotulo: "Logradouro", Icone: MapPin },
+        bairro: { rotulo: "Bairro", Icone: MapaIcon },
+      }[dados.tipo as "predio" | "rua" | "bairro"];
   const resumo = dados.resumo;
   const detalhes = [
+    dados.unidade,
     dados.tipo !== "bairro" ? dados.bairros.slice(0, 3).join(", ") : null,
     dados.apelido,
   ].filter(Boolean);
+  const rotuloVendas = dados.unidade ? "Vendas da unidade" : dados.tipo === "rua" ? "Vendas na rua" : "Vendas no período";
   const historicoMaior = dados.total_historico > (resumo?.transacoes ?? 0);
 
   return (
@@ -117,7 +128,7 @@ function Cabecalho({ dados }: { dados: RadarBusca }) {
 
       <dl className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-5 mt-6">
         <Indicador
-          rotulo={dados.tipo === "rua" ? "Vendas na rua" : "Vendas no período"}
+          rotulo={rotuloVendas}
           valor={formatarInteiro(resumo?.transacoes ?? 0)}
         />
         <Indicador
@@ -240,6 +251,34 @@ function Filtros({ dados, params }: Props) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function LinkPredioInteiro({ dados }: { dados: RadarBusca }) {
+  return (
+    <LinkBusca
+      href={novaBusca({ cl: String(dados.cl), numero: String(dados.numero), q: dados.titulo ?? undefined })}
+      className="inline-flex items-center gap-1 text-sm font-semibold text-[#585a4f] hover:underline"
+    >
+      Ver todas as vendas do prédio ({formatarInteiro(dados.total_predio)})
+      <ChevronRight className="w-4 h-4" aria-hidden />
+    </LinkBusca>
+  );
+}
+
+function UnidadeSemVenda({ dados }: { dados: RadarBusca }) {
+  return (
+    <div className={cn(CARTAO, "p-6 text-center")}>
+      <p className="text-[#2d2f28] font-semibold">
+        Nenhuma venda registrada para a unidade {dados.unidade} desde 2011.
+      </p>
+      <p className="text-sm text-[#7a7c72] mt-1">
+        Confira o bloco e o número da unidade, ou veja as outras vendas do prédio.
+      </p>
+      <div className="mt-4">
+        <LinkPredioInteiro dados={dados} />
+      </div>
     </div>
   );
 }
@@ -367,6 +406,7 @@ function ListaTransacoes({ dados, params }: Props) {
         </p>
       )}
       <Paginacao dados={dados} params={params} />
+      {dados.unidade && <LinkPredioInteiro dados={dados} />}
     </div>
   );
 }
@@ -587,7 +627,8 @@ function Opcoes({ dados }: { dados: RadarBusca }) {
               href={novaBusca({
                 cl: String(o.cl),
                 numero: numero ? String(numero) : undefined,
-                q: numero ? `${o.nome}, ${numero}` : o.nome,
+                unidade: dados.unidade ?? undefined,
+                q: [o.nome, numero, dados.unidade].filter(Boolean).join(", "),
               })}
               className="flex items-center gap-3 py-3.5 group"
             >
@@ -654,11 +695,7 @@ function Nenhum({ dados }: { dados: RadarBusca }) {
           <p className="text-sm font-semibold text-[#2d2f28] mt-5">Você quis dizer:</p>
           <ul className="mt-2 divide-y divide-[#efede5]">
             {dados.sugestoes.map((s) => {
-              const numero = s.consulta.match(/,\s*(\d+)$/)?.[1];
-              const href =
-                s.tipo === "bairro"
-                  ? novaBusca({ bairro: s.bairro ?? undefined, q: s.consulta })
-                  : novaBusca({ cl: String(s.cl), numero, q: s.consulta });
+              const href = urlSugestao(s);
               return (
                 <li key={`${s.tipo}-${s.cl ?? s.bairro}`}>
                   <LinkBusca href={href} className="flex items-center gap-3 py-3 group">

@@ -1680,7 +1680,7 @@ export interface paths {
         };
         /**
          * Buscar
-         * @description Busca de vendas (ITBI) por prédio, rua ou bairro, com a média do período.
+         * @description Busca de vendas (ITBI) por prédio, unidade, rua ou bairro, com a média do período.
          */
         get: operations["buscar_radar_publico_busca_get"];
         put?: never;
@@ -3705,7 +3705,8 @@ export interface components {
          * RadarBuscaOut
          * @description Resultado da busca. `tipo` diz quais campos vêm preenchidos:
          *
-         *     - predio: titulo, bairros, resumo, tipologias, transacoes (paginadas)
+         *     - predio: titulo, bairros, resumo, tipologias, transacoes (paginadas); com
+         *       `unidade`, tudo se refere só àquela unidade (total_predio é o prédio)
          *     - rua: titulo, bairros, resumo, tipologias, predios (paginados), sem_numero
          *     - bairro: titulo, resumo, tipologias, por_tipologia, ruas
          *     - ambiguo: opcoes (o visitante escolhe e a página busca por `cl`)
@@ -3799,10 +3800,17 @@ export interface components {
              */
             total_historico: number;
             /**
+             * Total Predio
+             * @default 0
+             */
+            total_predio: number;
+            /**
              * Transacoes
              * @default []
              */
             transacoes: components["schemas"]["RadarTransacao"][];
+            /** Unidade */
+            unidade?: string | null;
         };
         /**
          * RadarInfo
@@ -3890,6 +3898,8 @@ export interface components {
             consulta: string;
             /** Detalhe */
             detalhe?: string | null;
+            /** Numero */
+            numero?: number | null;
             /** Rotulo */
             rotulo: string;
             /**
@@ -3899,6 +3909,8 @@ export interface components {
             tipo: "logradouro" | "bairro";
             /** Transacoes */
             transacoes: number;
+            /** Unidade */
+            unidade?: string | null;
         };
         /** RadarTipologia */
         RadarTipologia: {
@@ -7722,6 +7734,8 @@ export interface operations {
                 ordem?: "numero" | "transacoes";
                 pagina?: number;
                 por_pagina?: number;
+                /** @description Unidade, junto com cl e numero ("BL-001 Apto 0801") */
+                unidade?: string | null;
             };
             header?: never;
             path?: never;

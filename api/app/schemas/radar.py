@@ -13,6 +13,8 @@ class RadarSugestao(BaseModel):
     detalhe: Optional[str] = None     # "Ipanema" / "antiga Rua Sobreiro"
     consulta: str
     cl: Optional[int] = None          # logradouro: busca direta, sem reinterpretar
+    numero: Optional[int] = None      # número já digitado, vai junto na busca direta
+    unidade: Optional[str] = None     # unidade já digitada ("BL 001 Apto 0801")
     bairro: Optional[str] = None      # bairro: chave para busca direta
     transacoes: int
 
@@ -88,7 +90,8 @@ class RadarOpcao(BaseModel):
 class RadarBuscaOut(BaseModel):
     """Resultado da busca. `tipo` diz quais campos vêm preenchidos:
 
-    - predio: titulo, bairros, resumo, tipologias, transacoes (paginadas)
+    - predio: titulo, bairros, resumo, tipologias, transacoes (paginadas); com
+      `unidade`, tudo se refere só àquela unidade (total_predio é o prédio)
     - rua: titulo, bairros, resumo, tipologias, predios (paginados), sem_numero
     - bairro: titulo, resumo, tipologias, por_tipologia, ruas
     - ambiguo: opcoes (o visitante escolhe e a página busca por `cl`)
@@ -100,11 +103,13 @@ class RadarBuscaOut(BaseModel):
     apelido: Optional[str] = None     # "antiga Rua Sobreiro"
     cl: Optional[int] = None
     numero: Optional[int] = None
+    unidade: Optional[str] = None     # unidade buscada ("BL 001 Apto 0801")
     bairro: Optional[str] = None      # chave do bairro (tipo bairro)
     bairros: List[str] = []
     periodo: RadarPeriodo
     dados_ate: Optional[date] = None
     total_historico: int = 0          # transações sem filtro de período/tipologia
+    total_predio: int = 0             # todas as vendas do prédio (busca por unidade)
     resumo: Optional[RadarResumo] = None
     tipologias: List[RadarTipologia] = []
     transacoes: List[RadarTransacao] = []

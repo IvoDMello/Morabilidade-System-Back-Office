@@ -13,6 +13,7 @@ import {
   plural,
   temBusca,
   urlMoraMetrica,
+  urlSugestao,
 } from "@/lib/morametrica";
 
 describe("lerParametros", () => {
@@ -54,6 +55,25 @@ describe("URLs", () => {
     );
     expect(comFiltros(params, { desde: undefined, todo_periodo: "true" })).toBe(
       "/morametrica?q=Ipanema&todo_periodo=true",
+    );
+  });
+
+  it("unidade faz parte da identidade da busca", () => {
+    expect(novaBusca({ cl: "71000", numero: "521", unidade: "BL-001 Apto 0801", q: "Rua Bom Pastor, 521" })).toBe(
+      "/morametrica?q=Rua+Bom+Pastor%2C+521&cl=71000&numero=521&unidade=BL-001+Apto+0801",
+    );
+  });
+
+  it("sugestão leva número e unidade digitados", () => {
+    const base = { rotulo: "Rua Bom Pastor", detalhe: "Tijuca", transacoes: 400, bairro: null };
+    expect(
+      urlSugestao({ ...base, tipo: "logradouro", cl: 71000, numero: 521, unidade: "Apto 801 BL 1", consulta: "Rua Bom Pastor, 521, Apto 801 BL 1" }),
+    ).toBe("/morametrica?q=Rua+Bom+Pastor%2C+521%2C+Apto+801+BL+1&cl=71000&numero=521&unidade=Apto+801+BL+1");
+    expect(urlSugestao({ ...base, tipo: "logradouro", cl: 71000, numero: null, unidade: null, consulta: "Rua Bom Pastor" })).toBe(
+      "/morametrica?q=Rua+Bom+Pastor&cl=71000",
+    );
+    expect(urlSugestao({ ...base, tipo: "bairro", cl: null, numero: null, unidade: null, bairro: "TIJUCA", consulta: "Tijuca" })).toBe(
+      "/morametrica?q=Tijuca&bairro=TIJUCA",
     );
   });
 

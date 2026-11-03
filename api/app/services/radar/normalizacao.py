@@ -77,6 +77,31 @@ def numero_imovel(texto: str | None) -> int | None:
     return numero or None
 
 
+_NUMERO_DA_UNIDADE = re.compile(r"([0-9]+)([A-Z]?)")
+
+
+def tokens_unidade(texto: str | None) -> tuple[str, ...]:
+    """Identificadores de uma unidade: os números do complemento, sem zeros à
+    esquerda e sem ordem. "BL-001 APTO 0801", "bloco 1 apto 801" e "apto 801
+    bl 1" dão ("1", "801"). Número com letra ("1201B") vale também sem ela, e
+    cobertura vira "COB".
+
+    Espelha radar_tokens_unidade (migration 059), que faz o mesmo com o
+    complemento gravado; a busca exige que a unidade tenha todos os tokens
+    digitados.
+    """
+    normal = texto_busca(texto)
+    tokens: set[str] = set()
+    for digitos, letra in _NUMERO_DA_UNIDADE.findall(normal):
+        numero = str(int(digitos))
+        tokens.add(numero)
+        if letra:
+            tokens.add(numero + letra)
+    if any(p.startswith("COB") for p in normal.split()):
+        tokens.add("COB")
+    return tuple(sorted(tokens))
+
+
 def codigo(texto: str | None) -> str:
     """Código numérico da fonte ("02" e "2" são o mesmo); texto se não for número."""
     s = decodificar_excel(texto).strip()

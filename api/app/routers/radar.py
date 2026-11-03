@@ -36,6 +36,7 @@ from app.services.radar.normalizacao import (
     formatar_complemento,
     formatar_tipologia,
     texto_busca,
+    tokens_unidade,
 )
 
 router = APIRouter()
@@ -205,6 +206,8 @@ class _Contexto:
     ordem: str
     pagina: int
     por_pagina: int
+    unidade: Optional[str] = None           # como foi digitada ("BL 001 APTO 0801")
+    tokens_unidade: tuple[str, ...] = ()    # ("1", "801"); vazio = prédio inteiro
 
     @property
     def offset(self) -> int:
@@ -225,19 +228,25 @@ class _Contexto:
             dados_ate=self.dados_ate,
             pagina=self.pagina,
             por_pagina=self.por_pagina,
+            unidade=formatar_complemento(self.unidade) if self.tokens_unidade else None,
             **campos,
         )
 
 
 def _predio(ctx: _Contexto, logradouro: dict, numero: int) -> RadarBuscaOut:
-    dados = _rpc("radar_predio", {
+    params = {
         "p_cl": logradouro["cl"],
         "p_numero": numero,
         **ctx.filtros(),
         "p_limite": ctx.por_pagina,
         "p_offset": ctx.offset,
-    }) or {}
-    if not dados.get("total_historico"):
+    }
+    if ctx.tokens_unidade:
+        params["p_unidade"] = list(ctx.tokens_unidade)
+    dados = _rpc("radar_predio", params) or {}
+    # Unidade sem venda não é número sem venda: o prédio pode ter outras
+    total_predio = dados.get("total_predio", dados.get("total_historico")) or 0
+    if not total_predio:
         return _numero_sem_venda(ctx, logradouro, numero)
     resumo = _resumo(dados.get("resumo"))
     bairro = dados.get("bairro")
@@ -248,7 +257,8 @@ def _predio(ctx: _Contexto, logradouro: dict, numero: int) -> RadarBuscaOut:
         cl=logradouro["cl"],
         numero=numero,
         bairros=[bairro] if bairro else list(logradouro.get("bairros") or [])[:1],
-        total_historico=dados["total_historico"],
+        total_historico=dados.get("total_historico") or 0,
+        total_predio=total_predio,
         resumo=resumo,
         tipologias=_tipologias(dados.get("tipologias")),
         transacoes=[_transacao(t) for t in dados.get("transacoes") or []],
@@ -374,12 +384,16 @@ def _sugestoes(consulta: ConsultaEndereco, limite: int) -> List[RadarSugestao]:
                 detalhes.append(", ".join(item["bairros"][:2]))
             if item.get("grafia") and item["grafia"] != item["nome"]:
                 detalhes.append(f"antiga {item['grafia']}")
+            unidade = formatar_complemento(consulta.unidade) if consulta.tokens_unidade else None
+            partes = [item["nome"], str(consulta.numero) if consulta.numero else None, unidade]
             sugestoes.append(RadarSugestao(
                 tipo="logradouro",
                 rotulo=item["nome"],
                 detalhe=" · ".join(detalhes) or None,
-                consulta=f"{item['nome']}, {consulta.numero}" if consulta.numero else item["nome"],
+                consulta=", ".join(p for p in partes if p),
                 cl=item["cl"],
+                numero=consulta.numero,
+                unidade=unidade,
                 transacoes=item["transacoes"],
             ))
     return sugestoes[:limite]
@@ -448,30 +462,44 @@ def buscar(
     ordem: Literal["numero", "transacoes"] = Query("numero", description="Ordem dos prédios de uma rua"),
     pagina: int = Query(1, ge=1, le=1000),
     por_pagina: int = Query(20, ge=1, le=100),
+    unidade: Optional[str] = Query(None, max_length=60, description='Unidade, junto com cl e numero ("BL-001 Apto 0801")'),
 ):
-    """Busca de vendas (ITBI) por prédio, rua ou bairro, com a média do período."""
+    """Busca de vendas (ITBI) por prédio, unidade, rua ou bairro, com a média do período."""
     if not (q and q.strip()) and cl is None and not (bairro and bairro.strip()):
         raise HTTPException(status_code=422, detail="Informe um endereço, rua ou bairro.")
     if desde and ate and desde > ate:
         raise HTTPException(status_code=422, detail="O ano inicial é maior que o final.")
 
+    # A unidade vem no texto ("Bom Pastor 521, BL-001 Apto 0801") ou, na escolha
+    # feita na página, no parâmetro próprio, junto com cl e numero.
+    if cl is not None:
+        tokens = tokens_unidade(unidade) if unidade and numero else ()
+        texto_unidade = unidade if tokens else None
+    else:
+        consulta = interpretar_busca(q or "")
+        tokens, texto_unidade = consulta.tokens_unidade, consulta.unidade
+
     response.headers["Cache-Control"] = _CACHE_HTTP
     tipologia_chave = texto_busca(tipologia) or None
     chave = (
         "busca", texto_busca(q), cl, numero, texto_busca(bairro), tipologia_chave,
-        desde, ate, todo_periodo, ordem, pagina, por_pagina,
+        desde, ate, todo_periodo, ordem, pagina, por_pagina, tokens,
     )
     achou, resultado = _respostas.obter(chave)
     if not achou:
         dados_ate = _dados_ate()
+        # Uma unidade vende poucas vezes: sem período escolhido, mostra desde 2011
+        tudo = todo_periodo or (bool(tokens) and not (desde or ate))
         ctx = _Contexto(
             consulta=q or "",
             tipologia=tipologia_chave,
-            periodo=calcular_periodo(dados_ate, desde, ate, todo_periodo),
+            periodo=calcular_periodo(dados_ate, desde, ate, tudo),
             dados_ate=dados_ate,
             ordem=ordem,
             pagina=pagina,
             por_pagina=por_pagina,
+            unidade=texto_unidade,
+            tokens_unidade=tokens,
         )
         resultado = _executar(ctx, q or "", cl, numero, bairro)
         _respostas.guardar(chave, resultado)

@@ -3,12 +3,15 @@
 // A busca e os filtros vivem nos parâmetros da URL (/morametrica?q=...), então
 // todo resultado tem um link compartilhável e é montado no servidor.
 
+import type { RadarSugestao } from "./api";
+
 export const CAMINHO_MORAMETRICA = "/morametrica";
 
 export const PARAMETROS_BUSCA = [
   "q",
   "cl",
   "numero",
+  "unidade",
   "bairro",
   "tipologia",
   "desde",
@@ -56,11 +59,25 @@ export function comFiltros(params: ParametrosBusca, mudancas: ParametrosBusca): 
   return urlMoraMetrica(novos);
 }
 
-/** Nova busca: só a identidade (texto, rua, número ou bairro), sem filtros. */
-export function novaBusca(identidade: Pick<ParametrosBusca, "q" | "cl" | "numero" | "bairro">): string {
+/** Nova busca: só a identidade (texto, rua, número, unidade ou bairro), sem filtros. */
+export function novaBusca(
+  identidade: Pick<ParametrosBusca, "q" | "cl" | "numero" | "unidade" | "bairro">,
+): string {
   const params: ParametrosBusca = { ...identidade };
   for (const filtro of FILTROS) delete params[filtro];
   return urlMoraMetrica(params);
+}
+
+/** Busca direta a partir de um item do autocomplete ou do "Você quis dizer". */
+export function urlSugestao(s: RadarSugestao): string {
+  if (s.tipo === "bairro") return novaBusca({ bairro: s.bairro ?? undefined, q: s.consulta });
+  // Número e unidade já digitados seguem junto ("Rua Bom Pastor, 521, BL 001 Apto 0801")
+  return novaBusca({
+    cl: String(s.cl),
+    numero: s.numero ? String(s.numero) : undefined,
+    unidade: s.unidade ?? undefined,
+    q: s.consulta,
+  });
 }
 
 // ── Formatação ───────────────────────────────────────────────────────────────

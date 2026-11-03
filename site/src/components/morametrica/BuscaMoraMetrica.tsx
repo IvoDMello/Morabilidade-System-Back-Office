@@ -3,16 +3,9 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Loader2, Map as MapaIcon, MapPin, Search } from "lucide-react";
 import { sugerirMoraMetrica, type RadarSugestao } from "@/lib/api";
-import { EXEMPLOS_BUSCA, novaBusca } from "@/lib/morametrica";
+import { EXEMPLOS_BUSCA, novaBusca, urlSugestao } from "@/lib/morametrica";
 import { cn } from "@/lib/utils";
 import { LinkBusca, useNavegacao } from "./Navegacao";
-
-function urlSugestao(s: RadarSugestao): string {
-  if (s.tipo === "bairro") return novaBusca({ bairro: s.bairro ?? undefined, q: s.consulta });
-  // Com número digitado, a sugestão vem como "Avenida Vieira Souto, 510"
-  const numero = s.consulta.match(/,\s*(\d+)$/)?.[1];
-  return novaBusca({ cl: String(s.cl), numero, q: s.consulta });
-}
 
 /** Campo de busca com autocomplete de ruas e bairros (combobox ARIA). */
 export function BuscaMoraMetrica({ valorInicial = "" }: { valorInicial?: string }) {

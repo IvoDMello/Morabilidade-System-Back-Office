@@ -87,3 +87,36 @@ def test_entradas_limite():
     assert (vazio.chave, vazio.numero) == ("", None)
     assert interpretar_busca("Vieira Souto 99999999").numero is None
     assert interpretar_busca("   ,,, ").chave == ""
+
+
+# ── Unidade ──────────────────────────────────────────────────────────────────
+
+@pytest.mark.parametrize("digitado", [
+    "Rua bom pastor, 521, BL-001 Apto 0801",
+    "Bom Pastor 521 bloco 1 apto 801",
+    "rua bom pastor 521 apto 801 bl 1",
+])
+def test_unidade_depois_do_numero(digitado):
+    consulta = interpretar_busca(digitado)
+    assert (consulta.chave, consulta.numero) == ("BOM PASTOR", 521)
+    assert consulta.tokens_unidade == ("1", "801")
+
+
+def test_unidade_so_com_numeros_apos_o_predio():
+    # "510 302" e "510/302": prédio 510, apartamento 302
+    for digitado in ("Vieira Souto 510 302", "Vieira Souto 510/302"):
+        consulta = interpretar_busca(digitado)
+        assert (consulta.numero, consulta.unidade, consulta.tokens_unidade) == (510, "302", ("302",))
+
+
+def test_sem_unidade():
+    consulta = interpretar_busca("Vieira Souto 510")
+    assert (consulta.unidade, consulta.tokens_unidade) == (None, ())
+    # complemento sem número não identifica unidade
+    assert interpretar_busca("Vieira Souto 510 apto").tokens_unidade == ()
+
+
+def test_unidade_exige_numero_do_predio():
+    consulta = interpretar_busca("Rua 19 de Fevereiro apto 302")
+    assert consulta.numero is None
+    assert consulta.tokens_unidade == ()

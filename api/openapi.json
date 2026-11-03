@@ -6332,7 +6332,7 @@
         "type": "object"
       },
       "RadarBuscaOut": {
-        "description": "Resultado da busca. `tipo` diz quais campos vêm preenchidos:\n\n- predio: titulo, bairros, resumo, tipologias, transacoes (paginadas)\n- rua: titulo, bairros, resumo, tipologias, predios (paginados), sem_numero\n- bairro: titulo, resumo, tipologias, por_tipologia, ruas\n- ambiguo: opcoes (o visitante escolhe e a página busca por `cl`)\n- nenhum: sugestoes; se a rua existe mas o número não, cl e numeros_proximos",
+        "description": "Resultado da busca. `tipo` diz quais campos vêm preenchidos:\n\n- predio: titulo, bairros, resumo, tipologias, transacoes (paginadas); com\n  `unidade`, tudo se refere só àquela unidade (total_predio é o prédio)\n- rua: titulo, bairros, resumo, tipologias, predios (paginados), sem_numero\n- bairro: titulo, resumo, tipologias, por_tipologia, ruas\n- ambiguo: opcoes (o visitante escolhe e a página busca por `cl`)\n- nenhum: sugestoes; se a rua existe mas o número não, cl e numeros_proximos",
         "properties": {
           "apelido": {
             "anyOf": [
@@ -6518,6 +6518,11 @@
             "title": "Total Historico",
             "type": "integer"
           },
+          "total_predio": {
+            "default": 0,
+            "title": "Total Predio",
+            "type": "integer"
+          },
           "transacoes": {
             "default": [],
             "items": {
@@ -6525,6 +6530,17 @@
             },
             "title": "Transacoes",
             "type": "array"
+          },
+          "unidade": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unidade"
           }
         },
         "required": [
@@ -6801,6 +6817,17 @@
             ],
             "title": "Detalhe"
           },
+          "numero": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numero"
+          },
           "rotulo": {
             "title": "Rotulo",
             "type": "string"
@@ -6816,6 +6843,17 @@
           "transacoes": {
             "title": "Transacoes",
             "type": "integer"
+          },
+          "unidade": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unidade"
           }
         },
         "required": [
@@ -14314,7 +14352,7 @@
     },
     "/radar/publico/busca": {
       "get": {
-        "description": "Busca de vendas (ITBI) por prédio, rua ou bairro, com a média do período.",
+        "description": "Busca de vendas (ITBI) por prédio, unidade, rua ou bairro, com a média do período.",
         "operationId": "buscar_radar_publico_busca_get",
         "parameters": [
           {
@@ -14503,6 +14541,25 @@
               "minimum": 1,
               "title": "Por Pagina",
               "type": "integer"
+            }
+          },
+          {
+            "description": "Unidade, junto com cl e numero (\"BL-001 Apto 0801\")",
+            "in": "query",
+            "name": "unidade",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 60,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Unidade, junto com cl e numero (\"BL-001 Apto 0801\")",
+              "title": "Unidade"
             }
           }
         ],

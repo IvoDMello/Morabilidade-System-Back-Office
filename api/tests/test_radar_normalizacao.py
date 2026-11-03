@@ -18,6 +18,7 @@ from app.services.radar.normalizacao import (
     sem_qualificador,
     separar_tipo,
     texto_busca,
+    tokens_unidade,
 )
 
 
@@ -201,3 +202,20 @@ def test_formatar_tipologia():
 ])
 def test_formatar_complemento(bruto, esperado):
     assert formatar_complemento(bruto) == esperado
+
+
+# ── Unidade ──────────────────────────────────────────────────────────────────
+
+@pytest.mark.parametrize("texto, esperado", [
+    ("BL-001 APTO 0801", ("1", "801")),
+    ("bloco 1 apto 801", ("1", "801")),
+    ("Apto 801 Bl 1", ("1", "801")),
+    ("APT 302 FTE", ("302",)),
+    ("APTO 1201B", ("1201", "1201B")),
+    ("COB 01", ("1", "COB")),
+    ("cobertura", ("COB",)),
+    ("", ()),
+    (None, ()),
+])
+def test_tokens_unidade(texto, esperado):
+    assert tokens_unidade(texto) == esperado

@@ -42,6 +42,11 @@ async function carregar(params: ParametrosBusca): Promise<Carga> {
 
 const TEM_RESUMO = ["predio", "rua", "bairro"];
 
+/** "Rua Bom Pastor, 521" ou, na busca por unidade, "Rua Bom Pastor, 521, BL 001 Apto 0801". */
+function enderecoCompleto(resultado: RadarBusca): string {
+  return [resultado.titulo, resultado.unidade].filter(Boolean).join(", ");
+}
+
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
   const params = lerParametros(await searchParams);
   const base: Metadata = {
@@ -57,21 +62,22 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   if (!resultado?.titulo || !TEM_RESUMO.includes(resultado.tipo)) {
     return { ...base, robots: { index: false } };
   }
-  const local = resultado.tipo === "bairro" ? resultado.titulo : `${resultado.titulo} (${resultado.bairros[0] ?? "Rio"})`;
+  const nome = enderecoCompleto(resultado);
+  const local = resultado.tipo === "bairro" ? nome : `${nome} (${resultado.bairros[0] ?? "Rio"})`;
   const descricao = `${plural(resultado.total_historico, "venda registrada", "vendas registradas")} desde 2011 em ${local}. Valores declarados à Prefeitura para o cálculo do ITBI, com a média do m².`;
-  const canonical = `${SITE_URL}${novaBusca({ q: params.q, cl: params.cl, numero: params.numero, bairro: params.bairro })}`;
+  const canonical = `${SITE_URL}${novaBusca({ q: params.q, cl: params.cl, numero: params.numero, unidade: params.unidade, bairro: params.bairro })}`;
   return {
-    title: `${resultado.titulo}: vendas registradas na MoraMétrica`,
+    title: `${nome}: vendas registradas na MoraMétrica`,
     description: descricao,
     alternates: { canonical },
-    openGraph: { title: `${resultado.titulo} na MoraMétrica`, description: descricao, url: canonical },
+    openGraph: { title: `${nome} na MoraMétrica`, description: descricao, url: canonical },
   };
 }
 
 export default async function MoraMetricaPage({ searchParams }: Props) {
   const params = lerParametros(await searchParams);
   const [info, { resultado, erro }] = await Promise.all([getMoraMetricaInfo(), carregar(params)]);
-  const endereco = resultado && TEM_RESUMO.includes(resultado.tipo) ? resultado.titulo : null;
+  const endereco = resultado && TEM_RESUMO.includes(resultado.tipo) ? enderecoCompleto(resultado) : null;
 
   return (
     <>
