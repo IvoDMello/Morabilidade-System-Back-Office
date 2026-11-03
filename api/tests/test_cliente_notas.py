@@ -53,7 +53,7 @@ def test_listar_notas_ordena_por_created_at_decrescente(client):
 
 def test_listar_notas_exige_autenticacao(anon_client):
     res = anon_client.get(f"/clientes/{CLIENTE_ID}/notas")
-    assert res.status_code == 403
+    assert res.status_code == 401
 
 
 def test_corretor_pode_listar_notas(corretor_client):
@@ -177,7 +177,7 @@ def test_criar_nota_exige_autenticacao(anon_client):
         f"/clientes/{CLIENTE_ID}/notas",
         json={"conteudo": "teste"},
     )
-    assert res.status_code == 403
+    assert res.status_code == 401
 
 
 # ── DELETE /{cliente_id}/notas/{nota_id} ─────────────────────────────────────
@@ -218,7 +218,7 @@ def test_deletar_nota_inexistente_retorna_404(client):
 
 def test_deletar_nota_exige_autenticacao(anon_client):
     res = anon_client.delete(f"/clientes/{CLIENTE_ID}/notas/{NOTA_ID}")
-    assert res.status_code == 403
+    assert res.status_code == 401
 
 
 def test_deletar_nota_filtra_por_cliente_id(client):

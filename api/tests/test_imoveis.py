@@ -85,7 +85,7 @@ def test_listar_imoveis_vazio(client):
 
 def test_listar_imoveis_exige_autenticacao(anon_client):
     res = anon_client.get("/imoveis/")
-    assert res.status_code == 403
+    assert res.status_code == 401
 
 
 # ── Busca livre (q), cobre código, logradouro e bairro ──────────────────────
@@ -354,7 +354,7 @@ def test_exportar_imoveis_csv(client):
 
 def test_exportar_imoveis_exige_autenticacao(anon_client):
     res = anon_client.get("/imoveis/exportar")
-    assert res.status_code == 403
+    assert res.status_code == 401
 
 
 # ── RBAC: corretor é read-only ───────────────────────────────────────────────

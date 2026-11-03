@@ -9,7 +9,7 @@ Ao adicionar um endpoint público de propósito, inclua-o em PUBLIC_PATTERNS com
 comentário do porquê, assim a decisão fica explícita e revisável.
 """
 from fastapi.dependencies.models import Dependant
-from fastapi.routing import APIRoute
+from fastapi.routing import APIRoute, RouteContext, iter_route_contexts
 
 from app.main import app
 from app.auth.dependencies import get_current_user, require_admin, require_admin_or_internal
@@ -40,6 +40,26 @@ CRON_TOKEN_PATHS = {
 }
 
 
+def _rotas_api() -> list[RouteContext]:
+    """Todas as rotas da API, inclusive as dos routers incluídos.
+
+    Desde o FastAPI 0.16x, `app.routes` guarda cada include_router como um
+    bloco só (_IncludedRouter), sem as rotas dentro. Percorrer `app.routes`
+    direto passou a enxergar 4 rotas em vez de 125, e o teste de autenticação
+    continuava verde sem checar nada. iter_route_contexts devolve as rotas
+    efetivas, com o prefixo e as dependências do router.
+    """
+    return [r for r in iter_route_contexts(app.routes) if isinstance(r.original_route, APIRoute)]
+
+
+def test_lista_de_rotas_inclui_os_routers():
+    """Sem isto, uma mudança no FastAPI que esconda as rotas dos routers
+    deixa os testes abaixo passando sem verificar nada."""
+    paths = {r.path for r in _rotas_api()}
+    assert len(paths) > 50
+    assert {"/imoveis/", "/clientes/", "/usuarios/", "/radar/publico/busca"} <= paths
+
+
 def _calls_da_dependant(dep: Dependant) -> set:
     """Coleta recursivamente todos os callables de dependência de uma rota."""
     calls = set()
@@ -64,9 +84,7 @@ def _header_aliases(dep: Dependant) -> set:
 
 def test_todo_endpoint_nao_publico_exige_autenticacao():
     desprotegidas = []
-    for route in app.routes:
-        if not isinstance(route, APIRoute):
-            continue
+    for route in _rotas_api():
         if _eh_publica(route.path):
             continue
         calls = _calls_da_dependant(route.dependant)
@@ -85,10 +103,7 @@ def test_todo_endpoint_nao_publico_exige_autenticacao():
 def test_endpoints_de_cron_exigem_token():
     """Garante que cada path em CRON_TOKEN_PATHS realmente exige o X-Cron-Token
     senão o allowlist estaria liberando um endpoint sem nenhuma proteção."""
-    por_path = {
-        r.path: r for r in app.routes
-        if isinstance(r, APIRoute) and r.path in CRON_TOKEN_PATHS
-    }
+    por_path = {r.path: r for r in _rotas_api() if r.path in CRON_TOKEN_PATHS}
     faltando = CRON_TOKEN_PATHS - set(por_path)
     assert not faltando, f"CRON_TOKEN_PATHS aponta para rotas inexistentes: {faltando}"
     for path, route in por_path.items():
@@ -100,7 +115,7 @@ def test_endpoints_de_cron_exigem_token():
 def test_allowlist_publica_nao_tem_padrao_morto():
     """Cada padrão público deve casar com ao menos uma rota real, senão o
     allowlist acumula entradas obsoletas que mascaram regressões."""
-    paths = [r.path for r in app.routes if isinstance(r, APIRoute)]
+    paths = [r.path for r in _rotas_api()]
     for pattern in PUBLIC_PATTERNS:
         assert any(pattern in p for p in paths), (
             f"Padrão público '{pattern}' não casa com nenhuma rota, remova-o."

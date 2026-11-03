@@ -879,7 +879,7 @@
       "Body_importar_clientes_csv_clientes_importar_post": {
         "properties": {
           "file": {
-            "format": "binary",
+            "contentMediaType": "application/octet-stream",
             "title": "File",
             "type": "string"
           }
@@ -893,7 +893,7 @@
       "Body_importar_visitas_csv_imoveis__imovel_id__visitas_import_csv_post": {
         "properties": {
           "arquivo": {
-            "format": "binary",
+            "contentMediaType": "application/octet-stream",
             "title": "Arquivo",
             "type": "string"
           }
@@ -907,7 +907,7 @@
       "Body_upload_anexo_locacoes__contrato_id__anexos_post": {
         "properties": {
           "file": {
-            "format": "binary",
+            "contentMediaType": "application/octet-stream",
             "title": "File",
             "type": "string"
           },
@@ -925,7 +925,7 @@
       "Body_upload_documento_imovel_imoveis__imovel_id__documentos_post": {
         "properties": {
           "file": {
-            "format": "binary",
+            "contentMediaType": "application/octet-stream",
             "title": "File",
             "type": "string"
           },
@@ -943,7 +943,7 @@
       "Body_upload_foto_perfil_usuarios_me_foto_post": {
         "properties": {
           "foto": {
-            "format": "binary",
+            "contentMediaType": "application/octet-stream",
             "title": "Foto",
             "type": "string"
           }
@@ -958,7 +958,7 @@
         "properties": {
           "fotos": {
             "items": {
-              "format": "binary",
+              "contentMediaType": "application/octet-stream",
               "type": "string"
             },
             "title": "Fotos",
@@ -7996,6 +7996,13 @@
       },
       "ValidationError": {
         "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
           "loc": {
             "items": {
               "anyOf": [

@@ -72,7 +72,7 @@ def test_stats_rpc_vazia_vira_objeto_vazio(client):
 
 def test_stats_exige_autenticacao(anon_client):
     res = anon_client.get("/stats")
-    assert res.status_code == 403
+    assert res.status_code == 401
 
 
 def test_stats_acessivel_por_corretor(corretor_client):
@@ -146,7 +146,7 @@ def test_relatorios_rpc_vazia_vira_objeto_vazio(client):
 
 def test_relatorios_exige_autenticacao(anon_client):
     res = anon_client.get("/relatorios")
-    assert res.status_code == 403
+    assert res.status_code == 401
 
 
 def test_relatorios_acessivel_por_corretor(corretor_client):

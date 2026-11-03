@@ -23,10 +23,10 @@ def test_health_check(anon_client):
 
 # ── Proteção de rotas ─────────────────────────────────────────────────────────
 
-def test_rota_protegida_sem_token_retorna_403(anon_client):
-    """HTTPBearer retorna 403 quando o header Authorization está ausente."""
+def test_rota_protegida_sem_token_retorna_401(anon_client):
+    """HTTPBearer retorna 401 quando o header Authorization está ausente."""
     res = anon_client.get("/imoveis/")
-    assert res.status_code == 403
+    assert res.status_code == 401
 
 
 def test_rota_protegida_token_invalido_retorna_401():
@@ -267,9 +267,9 @@ def test_logout_usuario_autenticado_retorna_204(client):
     assert res.status_code == 204
 
 
-def test_logout_sem_autenticacao_retorna_403(anon_client):
+def test_logout_sem_autenticacao_retorna_401(anon_client):
     res = anon_client.post("/auth/logout")
-    assert res.status_code == 403
+    assert res.status_code == 401
 
 
 def test_logout_falha_no_supabase_ainda_retorna_204(client):

@@ -139,7 +139,7 @@ def test_listar_contratos_filtro_status(client):
 
 def test_listar_contratos_exige_autenticacao(anon_client):
     res = anon_client.get("/locacoes/")
-    assert res.status_code == 403
+    assert res.status_code == 401
 
 
 # ── GET /locacoes/{id} ───────────────────────────────────────────────────────
@@ -541,4 +541,4 @@ def test_analises_com_pagamentos(client):
 
 def test_analises_exige_autenticacao(anon_client):
     res = anon_client.get("/locacoes/analises")
-    assert res.status_code == 403
+    assert res.status_code == 401

@@ -33,9 +33,9 @@ def test_listar_usuarios_como_admin(admin_client):
     assert len(res.json()) == 2
 
 
-def test_listar_usuarios_sem_autenticacao_retorna_403(anon_client):
+def test_listar_usuarios_sem_autenticacao_retorna_401(anon_client):
     res = anon_client.get("/usuarios/")
-    assert res.status_code == 403
+    assert res.status_code == 401
 
 
 # ── GET /usuarios/me ──────────────────────────────────────────────────────────

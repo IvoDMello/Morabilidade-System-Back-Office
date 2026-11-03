@@ -68,7 +68,7 @@ def test_listar_clientes_com_filtro_status(client):
 
 def test_listar_clientes_exige_autenticacao(anon_client):
     res = anon_client.get("/clientes/")
-    assert res.status_code == 403
+    assert res.status_code == 401
 
 
 # ── GET /clientes/{id} ────────────────────────────────────────────────────────
@@ -243,7 +243,7 @@ def test_exportar_clientes_csv(client):
 
 def test_exportar_clientes_exige_autenticacao(anon_client):
     res = anon_client.get("/clientes/exportar")
-    assert res.status_code == 403
+    assert res.status_code == 401
 
 
 # ── POST /clientes/importar ───────────────────────────────────────────────────
@@ -353,7 +353,7 @@ def test_importar_exige_autenticacao(anon_client):
         "/clientes/importar",
         files={"file": ("c.csv", b"Nome,Telefone\nA,1\n", "text/csv")},
     )
-    assert res.status_code == 403
+    assert res.status_code == 401
 
 
 # ── RBAC: corretor é read-only ───────────────────────────────────────────────

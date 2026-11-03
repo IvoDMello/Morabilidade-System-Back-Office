@@ -270,4 +270,4 @@ def test_repasses_mes_invalido(client):
 
 def test_repasses_exige_autenticacao(anon_client):
     res = anon_client.get("/locacoes/repasses?mes=2026-05")
-    assert res.status_code == 403
+    assert res.status_code == 401

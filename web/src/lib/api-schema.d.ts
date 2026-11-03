@@ -2232,46 +2232,31 @@ export interface components {
         };
         /** Body_importar_clientes_csv_clientes_importar_post */
         Body_importar_clientes_csv_clientes_importar_post: {
-            /**
-             * File
-             * Format: binary
-             */
+            /** File */
             file: string;
         };
         /** Body_importar_visitas_csv_imoveis__imovel_id__visitas_import_csv_post */
         Body_importar_visitas_csv_imoveis__imovel_id__visitas_import_csv_post: {
-            /**
-             * Arquivo
-             * Format: binary
-             */
+            /** Arquivo */
             arquivo: string;
         };
         /** Body_upload_anexo_locacoes__contrato_id__anexos_post */
         Body_upload_anexo_locacoes__contrato_id__anexos_post: {
-            /**
-             * File
-             * Format: binary
-             */
+            /** File */
             file: string;
             /** @default contrato */
             tipo: components["schemas"]["TipoAnexo"];
         };
         /** Body_upload_documento_imovel_imoveis__imovel_id__documentos_post */
         Body_upload_documento_imovel_imoveis__imovel_id__documentos_post: {
-            /**
-             * File
-             * Format: binary
-             */
+            /** File */
             file: string;
             /** @default outro */
             tipo: components["schemas"]["TipoDocumentoImovel"];
         };
         /** Body_upload_foto_perfil_usuarios_me_foto_post */
         Body_upload_foto_perfil_usuarios_me_foto_post: {
-            /**
-             * Foto
-             * Format: binary
-             */
+            /** Foto */
             foto: string;
         };
         /** Body_upload_fotos_imoveis__imovel_id__fotos_post */
@@ -4330,6 +4315,10 @@ export interface components {
         };
         /** ValidationError */
         ValidationError: {
+            /** Context */
+            ctx?: Record<string, never>;
+            /** Input */
+            input?: unknown;
             /** Location */
             loc: (string | number)[];
             /** Message */

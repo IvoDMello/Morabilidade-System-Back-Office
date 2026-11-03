@@ -1,10 +1,10 @@
-fastapi==0.115.5
-uvicorn[standard]==0.32.1
+fastapi==0.162.0
+uvicorn[standard]==0.54.0
 pydantic==2.10.3
 pydantic-settings==2.7.0
 pydantic[email]
-python-dotenv==1.0.1
-python-multipart==0.0.20
+python-dotenv==1.2.4
+python-multipart==0.0.33
 
 # Supabase (banco + auth)
 supabase==2.10.0
@@ -16,7 +16,7 @@ resend==2.5.1
 httpx>=0.26,<0.28
 
 # Utilidades
-pillow==11.0.0
+pillow==13.0.0
 python-slugify==8.0.4
 
 # Geração de PDF (demonstrativos mensais de locação), pure-Python, sem deps nativas.
@@ -32,7 +32,7 @@ APScheduler==3.10.4
 tzdata==2024.2
 
 # Rate limiting
-slowapi==0.1.9
+slowapi==0.1.10
 
 # Monitoramento de erros
-sentry-sdk[fastapi]==2.20.0
+sentry-sdk[fastapi]==2.73.0

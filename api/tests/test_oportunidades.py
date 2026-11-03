@@ -336,7 +336,7 @@ def test_obter_preferencia_nao_encontrada_retorna_404(client):
 
 def test_obter_preferencia_exige_autenticacao(anon_client):
     res = anon_client.get("/clientes/cliente-uuid-1/preferencia")
-    assert res.status_code == 403
+    assert res.status_code == 401
 
 
 # ── PUT /clientes/{id}/preferencia ───────────────────────────────────────────
@@ -541,7 +541,7 @@ def test_matches_sem_visita_marca_nao_visitado(client):
 
 def test_matches_exige_autenticacao(anon_client):
     res = anon_client.get("/clientes/cliente-uuid-1/matches")
-    assert res.status_code == 403
+    assert res.status_code == 401
 
 
 # ── GET /imoveis/{id}/interessados ────────────────────────────────────────────
@@ -615,7 +615,7 @@ def test_interessados_sem_preferencias_compatíveis_retorna_vazio(client):
 
 def test_interessados_exige_autenticacao(anon_client):
     res = anon_client.get("/imoveis/imovel-uuid-1/interessados")
-    assert res.status_code == 403
+    assert res.status_code == 401
 
 
 # ── GET /oportunidades/resumo ─────────────────────────────────────────────────
@@ -643,4 +643,4 @@ def test_resumo_conta_pares_validos(client):
 
 def test_resumo_exige_autenticacao(anon_client):
     res = anon_client.get("/oportunidades/resumo")
-    assert res.status_code == 403
+    assert res.status_code == 401
