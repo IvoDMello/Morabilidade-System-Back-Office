@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
-  Users, Building2, Search as SearchIcon, Heart,
+  Users, Building2, Search as SearchIcon, Heart, Eye,
   TrendingUp, TrendingDown, SlidersHorizontal, X, Smartphone, Monitor, Tablet,
   Clock, ArrowRight,
 } from "lucide-react";
@@ -19,15 +19,44 @@ type Periodo = 7 | 30 | 90 | 365;
 
 interface KpiValue { valor: number; delta: number | null }
 
+interface PontoSerie {
+  dia: string;
+  visitas: number;
+  acessos: number;
+  mm_visitas: number;
+  mm_acessos: number;
+  mm_buscas: number;
+}
+
 interface DashboardData {
   periodo: number;
+  /** Dias completos do período, terminando ontem (YYYY-MM-DD). */
+  inicio: string;
+  fim: string;
+  /** Primeiro dia com dado dentro da janela consultada (período + anterior). */
+  historico_desde: string | null;
+  /** Janela dos painéis de detalhe: os eventos brutos só ficam 90 dias. */
+  detalhe_dias: number;
   kpis: {
-    visitantes_unicos: KpiValue;
+    visitas: KpiValue;
+    acessos: KpiValue;
     vistas_imovel: KpiValue;
     buscas: KpiValue;
     favoritos: KpiValue;
   };
-  serie: { dia: string; visitantes: number; views: number }[];
+  morametrica: {
+    visitas: KpiValue;
+    acessos: KpiValue;
+    buscas: KpiValue;
+    sem_resultado: KpiValue;
+  };
+  /** Dia corrente, até agora; fica fora dos totais do período. */
+  hoje: {
+    visitas: number;
+    acessos: number;
+    mm_buscas: number;
+  } | null;
+  serie: PontoSerie[];
   funil: { visitaram: number; buscaram: number; abriram: number; favoritaram: number };
   origem: { origem: string; total: number }[];
   top_imoveis: {
@@ -51,12 +80,48 @@ function formatDia(iso: string): string {
   const [, m, d] = iso.split("-");
   return `${d}/${m}`;
 }
+function formatData(iso: string): string {
+  const [a, m, d] = iso.split("-");
+  return `${d}/${m}/${a}`;
+}
 function fmt(n: number): string {
   return n.toLocaleString("pt-BR");
 }
-function labelPeriodo(p: Periodo): string {
-  if (p === 365) return "12 meses";
-  return `${p} dias`;
+
+const CAMPOS_SERIE = ["visitas", "acessos", "mm_visitas", "mm_acessos", "mm_buscas"] as const;
+
+/**
+ * 12 meses dia a dia viram 365 picos ilegíveis: agrupa em semanas, de trás
+ * para frente para a última ficar completa. Cada ponto é a média por dia da
+ * semana, na mesma unidade do gráfico diário, e a semana incompleta do começo
+ * não aparece como uma queda.
+ */
+function mediaSemanal(serie: PontoSerie[]): PontoSerie[] {
+  const semanas: PontoSerie[] = [];
+  for (let fim = serie.length; fim > 0; fim -= 7) {
+    const bloco = serie.slice(Math.max(0, fim - 7), fim);
+    const ponto = { dia: bloco[0].dia } as PontoSerie;
+    for (const campo of CAMPOS_SERIE) {
+      ponto[campo] = Math.round(bloco.reduce((s, p) => s + p[campo], 0) / bloco.length);
+    }
+    semanas.unshift(ponto);
+  }
+  return semanas;
+}
+
+function Delta({ delta, className = "" }: { delta: number | null; className?: string }) {
+  if (delta == null) return null;
+  const positivo = delta >= 0;
+  return (
+    <span
+      className={`inline-flex items-center gap-0.5 text-xs font-semibold ${
+        positivo ? "text-emerald-600" : "text-rose-500"
+      } ${className}`}
+    >
+      {positivo ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+      {positivo ? "+" : ""}{delta.toFixed(1)}%
+    </span>
+  );
 }
 
 // ── Toolbar (período + filtros) ──────────────────────────────────────────────
@@ -234,17 +299,17 @@ function ModalFiltros({
 
 // ── KPI Card ─────────────────────────────────────────────────────────────────
 function KpiCard({
-  titulo, valor, delta, sufixo, icon: Icon,
+  titulo, valor, delta, sufixo, icon: Icon, className = "",
 }: {
   titulo: string;
   valor: number;
   delta: number | null;
   sufixo?: string;
   icon: React.ElementType;
+  className?: string;
 }) {
-  const positivo = delta != null && delta >= 0;
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-5">
+    <div className={`bg-white rounded-2xl border border-slate-200 p-5 ${className}`}>
       <div className="flex items-center justify-between mb-3">
         <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
           {titulo}
@@ -257,14 +322,7 @@ function KpiCard({
       <div className="flex items-center justify-between mt-3">
         {sufixo && <span className="text-xs text-slate-400">{sufixo}</span>}
         {delta != null ? (
-          <span
-            className={`inline-flex items-center gap-0.5 text-xs font-semibold ml-auto ${
-              positivo ? "text-emerald-600" : "text-rose-500"
-            }`}
-          >
-            {positivo ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-            {positivo ? "+" : ""}{delta.toFixed(1)}%
-          </span>
+          <Delta delta={delta} className="ml-auto" />
         ) : (
           <span className="text-xs text-slate-300 ml-auto">-</span>
         )}
@@ -284,57 +342,169 @@ function KpiSkeleton() {
 }
 
 // ── Tendência ────────────────────────────────────────────────────────────────
-function TendenciaChart({ data, totalVisitantes, delta }: {
-  data: DashboardData["serie"]; totalVisitantes: number; delta: number | null;
+function Legenda({ itens }: { itens: { cor: string; rotulo: string }[] }) {
+  return (
+    <div className="flex items-center gap-3 text-[10px] text-slate-400">
+      {itens.map((i) => (
+        <span key={i.rotulo} className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: i.cor }} /> {i.rotulo}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/** Duas séries em área: a de baixo, mais escura e discreta; a de cima, dourada. */
+function GraficoDuplo({ dados, fundo, frente, idGradiente }: {
+  dados: PontoSerie[];
+  fundo: { chave: keyof PontoSerie; nome: string };
+  frente: { chave: keyof PontoSerie; nome: string };
+  idGradiente: string;
 }) {
-  const dados = data.map((d) => ({
-    dia: formatDia(d.dia), visitantes: d.visitantes, views: d.views,
-  }));
-  const positivo = delta != null && delta >= 0;
+  return (
+    <ResponsiveContainer width="100%" height="100%">
+      <AreaChart
+        data={dados.map((d) => ({ ...d, rotulo: formatDia(d.dia) }))}
+        margin={{ top: 4, right: 12, bottom: 0, left: -20 }}
+      >
+        <defs>
+          <linearGradient id={idGradiente} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={GOLD} stopOpacity={0.45} />
+            <stop offset="100%" stopColor={GOLD} stopOpacity={0} />
+          </linearGradient>
+        </defs>
+        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0e8" vertical={false} />
+        <XAxis dataKey="rotulo" tick={{ fontSize: 11, fill: "#888" }} axisLine={false} tickLine={false} />
+        <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#888" }} axisLine={false} tickLine={false} />
+        <Tooltip contentStyle={{ borderRadius: 8, border: "1px solid #e6e6dd", fontSize: 12 }} />
+        <Area type="monotone" dataKey={fundo.chave} stroke={OLIVE} strokeWidth={1.5} fill={OLIVE} fillOpacity={0.08} name={fundo.nome} />
+        <Area type="monotone" dataKey={frente.chave} stroke={GOLD} strokeWidth={2} fill={`url(#${idGradiente})`} name={frente.nome} />
+      </AreaChart>
+    </ResponsiveContainer>
+  );
+}
+
+function TendenciaChart({ serie, semanal, visitas, acessos, hoje }: {
+  serie: PontoSerie[];
+  semanal: boolean;
+  visitas: KpiValue;
+  acessos: KpiValue;
+  hoje: DashboardData["hoje"];
+}) {
   return (
     <section className="bg-white rounded-2xl border border-slate-200 p-5">
-      <div className="flex items-start justify-between mb-4 gap-4">
+      <div className="flex flex-wrap items-start justify-between mb-4 gap-4">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
             Tendência
           </p>
-          <h3 className="font-semibold text-slate-800 mt-0.5">Visitantes por dia</h3>
-        </div>
-        <div className="text-right">
-          <p className="text-2xl font-bold text-slate-900 leading-none">{fmt(totalVisitantes)}</p>
-          {delta != null && (
-            <span
-              className={`inline-flex items-center gap-0.5 text-xs font-semibold mt-1 ${
-                positivo ? "text-emerald-600" : "text-rose-500"
-              }`}
-            >
-              {positivo ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-              {positivo ? "+" : ""}{delta.toFixed(1)}%
-            </span>
+          <h3 className="font-semibold text-slate-800 mt-0.5">
+            Visitas e acessos por dia{semanal && " (média de cada semana)"}
+          </h3>
+          {hoje && (
+            <p className="text-xs text-slate-400 mt-1">
+              Hoje, até agora: {fmt(hoje.visitas)} visitas e {fmt(hoje.acessos)} acessos
+            </p>
           )}
         </div>
+        <div className="flex gap-5 text-right">
+          <div>
+            <p className="text-2xl font-bold text-slate-900 leading-none">{fmt(visitas.valor)}</p>
+            <p className="text-[11px] text-slate-400 mt-1">visitas</p>
+            <Delta delta={visitas.delta} />
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-slate-900 leading-none">{fmt(acessos.valor)}</p>
+            <p className="text-[11px] text-slate-400 mt-1">acessos</p>
+            <Delta delta={acessos.delta} />
+          </div>
+        </div>
+      </div>
+      <div className="flex justify-end mb-2">
+        <Legenda itens={[{ cor: GOLD, rotulo: "Visitas" }, { cor: OLIVE, rotulo: "Acessos" }]} />
       </div>
       <div className="h-56">
-        {dados.length === 0 ? (
+        {serie.length === 0 ? (
           <div className="h-full flex items-center justify-center text-sm text-slate-400">
             Sem dados ainda, comece a divulgar o site para gerar histórico.
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={dados} margin={{ top: 4, right: 12, bottom: 0, left: -20 }}>
-              <defs>
-                <linearGradient id="gradVisit" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={GOLD} stopOpacity={0.45} />
-                  <stop offset="100%" stopColor={GOLD} stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0e8" vertical={false} />
-              <XAxis dataKey="dia" tick={{ fontSize: 11, fill: "#888" }} axisLine={false} tickLine={false} />
-              <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#888" }} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={{ borderRadius: 8, border: "1px solid #e6e6dd", fontSize: 12 }} />
-              <Area type="monotone" dataKey="visitantes" stroke={GOLD} strokeWidth={2} fill="url(#gradVisit)" name="Visitantes" />
-            </AreaChart>
-          </ResponsiveContainer>
+          <GraficoDuplo
+            dados={semanal ? mediaSemanal(serie) : serie}
+            fundo={{ chave: "acessos", nome: "Acessos" }}
+            frente={{ chave: "visitas", nome: "Visitas" }}
+            idGradiente="gradVisit"
+          />
+        )}
+      </div>
+    </section>
+  );
+}
+
+// ── MoraMétrica ──────────────────────────────────────────────────────────────
+function NumeroMoraMetrica({ titulo, sufixo, kpi }: { titulo: string; sufixo: string; kpi: KpiValue }) {
+  return (
+    <div className="rounded-xl bg-slate-50 px-4 py-3">
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">{titulo}</p>
+      <p className="text-2xl font-bold text-slate-900 leading-none mt-2">{fmt(kpi.valor)}</p>
+      <div className="flex items-center justify-between gap-2 mt-2">
+        <span className="text-xs text-slate-400">{sufixo}</span>
+        <Delta delta={kpi.delta} />
+      </div>
+    </div>
+  );
+}
+
+function MoraMetricaSecao({ dados, serie, semanal, hoje }: {
+  dados: DashboardData["morametrica"];
+  serie: PontoSerie[];
+  semanal: boolean;
+  hoje: DashboardData["hoje"];
+}) {
+  // O gráfico começa no primeiro dia com uso: antes disso a MoraMétrica não existia
+  const primeiro = serie.findIndex((p) => p.mm_acessos > 0 || p.mm_buscas > 0);
+  const comUso = primeiro === -1 ? [] : serie.slice(primeiro);
+  const buscas = dados.buscas.valor;
+  const pctSemResultado = buscas ? Math.round((dados.sem_resultado.valor / buscas) * 100) : 0;
+
+  return (
+    <section className="bg-white rounded-2xl border border-slate-200 p-5">
+      <div className="flex items-start justify-between gap-4 mb-4">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+            Vendas registradas no Rio
+          </p>
+          <h3 className="font-semibold text-slate-800 mt-0.5">Uso da MoraMétrica</h3>
+          {hoje && (
+            <p className="text-xs text-slate-400 mt-1">
+              Hoje, até agora: {fmt(hoje.mm_buscas)} {hoje.mm_buscas === 1 ? "busca" : "buscas"}
+            </p>
+          )}
+        </div>
+        <Legenda itens={[{ cor: GOLD, rotulo: "Buscas" }, { cor: OLIVE, rotulo: "Visitas" }]} />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+        <NumeroMoraMetrica
+          titulo="Buscas" kpi={dados.buscas}
+          sufixo={buscas ? `${pctSemResultado}% sem resultado` : "endereços consultados"}
+        />
+        <NumeroMoraMetrica titulo="Visitas" kpi={dados.visitas} sufixo="sessões que abriram" />
+        <NumeroMoraMetrica titulo="Acessos" kpi={dados.acessos} sufixo="aberturas da página" />
+      </div>
+
+      <div className="h-48">
+        {comUso.length === 0 ? (
+          <div className="h-full flex items-center justify-center text-sm text-slate-400">
+            Nenhum uso da MoraMétrica no período.
+          </div>
+        ) : (
+          <GraficoDuplo
+            dados={semanal ? mediaSemanal(comUso) : comUso}
+            fundo={{ chave: "mm_visitas", nome: "Visitas" }}
+            frente={{ chave: "mm_buscas", nome: "Buscas" }}
+            idGradiente="gradMoraMetrica"
+          />
         )}
       </div>
     </section>
@@ -413,7 +583,7 @@ function OrigemDonut({ origem }: { origem: DashboardData["origem"] }) {
       <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
         De onde vêm
       </p>
-      <h3 className="font-semibold text-slate-800 mt-0.5 mb-4">Origem do tráfego</h3>
+      <h3 className="font-semibold text-slate-800 mt-0.5 mb-4">Origem das visitas</h3>
 
       {origem.length === 0 ? (
         <p className="text-sm text-slate-400 text-center py-10">Sem dados ainda.</p>
@@ -433,7 +603,7 @@ function OrigemDonut({ origem }: { origem: DashboardData["origem"] }) {
               </PieChart>
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Total</span>
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Visitas</span>
               <span className="text-xl font-bold text-slate-900">{fmt(total)}</span>
             </div>
           </div>
@@ -843,17 +1013,31 @@ export default function AudienciaPage() {
         onFiltros={setFiltros}
       />
 
+      {dados?.historico_desde && dados.historico_desde > dados.inicio && (
+        <p className="text-xs text-slate-500 bg-amber-50/70 border border-amber-100 rounded-xl px-4 py-2.5">
+          O histórico começa em {formatData(dados.historico_desde)}: o período mostra os dias a
+          partir daí, e não há período anterior completo para comparar.
+        </p>
+      )}
+
       {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         {carregando || !dadosFiltrados ? (
-          <><KpiSkeleton /><KpiSkeleton /><KpiSkeleton /><KpiSkeleton /></>
+          <><KpiSkeleton /><KpiSkeleton /><KpiSkeleton /><KpiSkeleton /><KpiSkeleton /></>
         ) : (
           <>
             <KpiCard
-              titulo="Visitantes únicos" icon={Users}
-              valor={dadosFiltrados.kpis.visitantes_unicos.valor}
-              delta={dadosFiltrados.kpis.visitantes_unicos.delta}
-              sufixo="pessoas distintas"
+              titulo="Visitas" icon={Users}
+              valor={dadosFiltrados.kpis.visitas.valor}
+              delta={dadosFiltrados.kpis.visitas.delta}
+              sufixo="sessões no site"
+              className="col-span-2 lg:col-span-1"
+            />
+            <KpiCard
+              titulo="Acessos" icon={Eye}
+              valor={dadosFiltrados.kpis.acessos.valor}
+              delta={dadosFiltrados.kpis.acessos.delta}
+              sufixo="páginas vistas"
             />
             <KpiCard
               titulo="Vistas de anúncio" icon={Building2}
@@ -880,9 +1064,21 @@ export default function AudienciaPage() {
       {/* Tendência */}
       {dadosFiltrados && (
         <TendenciaChart
-          data={dadosFiltrados.serie}
-          totalVisitantes={dadosFiltrados.kpis.visitantes_unicos.valor}
-          delta={dadosFiltrados.kpis.visitantes_unicos.delta}
+          serie={dadosFiltrados.serie}
+          semanal={periodo === 365}
+          visitas={dadosFiltrados.kpis.visitas}
+          acessos={dadosFiltrados.kpis.acessos}
+          hoje={dadosFiltrados.hoje}
+        />
+      )}
+
+      {/* MoraMétrica */}
+      {dadosFiltrados && (
+        <MoraMetricaSecao
+          dados={dadosFiltrados.morametrica}
+          serie={dadosFiltrados.serie}
+          semanal={periodo === 365}
+          hoje={dadosFiltrados.hoje}
         />
       )}
 
@@ -918,9 +1114,22 @@ export default function AudienciaPage() {
         />
       )}
 
-      <p className="text-[11px] text-slate-300 text-center pt-2 pb-6">
-        Dados dos últimos {labelPeriodo(periodo)} · atualizado em tempo real
-      </p>
+      {dados && (
+        <div className="text-[11px] text-slate-400 text-center pt-2 pb-6 space-y-1">
+          <p>
+            Números do período: {formatData(dados.inicio)} a {formatData(dados.fim)}, dias
+            completos, comparados aos {dados.periodo} dias anteriores. Hoje aparece à parte.
+          </p>
+          <p>
+            Visita é uma sessão: a mesma pessoa conta de novo em outro dia ou em outra aba.
+            Acesso é cada página vista.
+          </p>
+          <p>
+            Jornada, anúncios, bairros, dispositivo, horários e buscas: últimos {dados.detalhe_dias} dias,
+            que é o quanto o detalhe fica guardado.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
@@ -930,7 +1139,7 @@ function Header() {
     <div>
       <h1 className="text-2xl font-bold text-slate-900">Relatórios</h1>
       <p className="text-slate-500 text-sm mt-1">
-        Quantas pessoas visitaram o site e quais anúncios chamaram mais atenção.
+        Quantas visitas o site recebeu, o uso da MoraMétrica e quais anúncios chamaram mais atenção.
       </p>
     </div>
   );

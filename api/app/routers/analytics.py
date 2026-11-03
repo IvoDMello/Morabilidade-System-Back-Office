@@ -1,5 +1,7 @@
 import re
+from datetime import datetime, timedelta
 from typing import Any, Optional
+from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, Field
@@ -177,7 +179,46 @@ def track_video(request: Request, body: VideoPayload):
     }).execute()
 
 
+class MoraMetricaPayload(BaseModel):
+    session_id: str = Field(..., min_length=8, max_length=128)
+    tipo: str = Field(..., pattern=r"^(predio|unidade|rua|bairro|ambiguo|nenhum|erro)$")
+
+
+@router.post("/publico/morametrica", status_code=status.HTTP_204_NO_CONTENT, tags=["Analytics"])
+@limiter.limit("120/minute")
+def track_morametrica(request: Request, body: MoraMetricaPayload):
+    """Busca feita na MoraMétrica. Guarda só o tipo de resultado, nunca o endereço."""
+    user_agent = (request.headers.get("user-agent") or "")[:500] or None
+    supabase_admin.table("morametrica_buscas").insert({
+        "session_id": body.session_id,
+        "tipo": body.tipo,
+        "is_bot": _is_bot(user_agent),
+    }).execute()
+
+
 # ── Endpoints autenticados (dashboard interno) ────────────────────────────────
+
+_TZ_BR = ZoneInfo("America/Sao_Paulo")
+
+# Os eventos brutos são apagados após 90 dias (purge_old_logs, migration 032):
+# os painéis de detalhe não enxergam além disso.
+_DIAS_DETALHE = 90
+
+# Colunas de analytics_diario somadas nos cards.
+_KPIS_SITE = ("visitas", "acessos", "vistas_imovel", "buscas", "favoritos")
+_KPIS_MORAMETRICA = {
+    "visitas": "mm_visitas",
+    "acessos": "mm_acessos",
+    "buscas": "mm_buscas",
+    "sem_resultado": "mm_sem_resultado",
+}
+
+
+def _delta(atual: int, anterior: int) -> Optional[float]:
+    if not anterior:
+        return None
+    return round(((atual - anterior) / anterior) * 100, 1)
+
 
 @router.get("/analytics/dashboard", tags=["Analytics"])
 def analytics_dashboard(
@@ -185,64 +226,95 @@ def analytics_dashboard(
     current_user: dict = Depends(get_current_user),
 ):
     """
-    Resumo completo da aba /audiencia. Devolve KPIs (com delta vs período
-    anterior), série diária, funil, origem do tráfego, top imóveis, bairros,
-    dispositivos, heatmap, termos e buscas sem resultado em uma única chamada.
+    Resumo completo da aba /audiencia em uma única chamada.
+
+    As contagens (cards do site e da MoraMétrica, série, origem) vêm de
+    analytics_dias, o histórico diário que não é apagado (migration 060). O
+    período são dias fechados terminando ontem, comparados com o mesmo número
+    de dias antes deles; o dia corrente vem à parte em `hoje`, para não
+    comparar um dia pela metade com dias inteiros. Se o histórico não cobre o
+    período anterior inteiro, o delta é None.
+
+    Os painéis de detalhe (funil, imóveis, bairros, dispositivos, horários,
+    termos) leem os eventos brutos, limitados aos últimos 90 dias.
     """
     if periodo not in (7, 30, 90, 365):
         periodo = 30
 
+    hoje = datetime.now(_TZ_BR).date()
+    fim = hoje - timedelta(days=1)
+    inicio = fim - timedelta(days=periodo - 1)
+    inicio_anterior = inicio - timedelta(days=periodo)
+
+    dias = supabase_admin.rpc(
+        "analytics_dias", {"p_desde": inicio_anterior.isoformat(), "p_ate": hoje.isoformat()}
+    ).execute().data or []
+    atual = [d for d in dias if inicio.isoformat() <= d["dia"] <= fim.isoformat()]
+    anterior = [d for d in dias if d["dia"] < inicio.isoformat()]
+    linha_hoje = next((d for d in dias if d["dia"] == hoje.isoformat()), None)
+    # O histórico tem uma linha por dia desde que começou, então a primeira
+    # linha diz onde ele começa dentro da janela pedida.
+    historico_desde = min((d["dia"] for d in dias), default=None)
+    compara = historico_desde is not None and historico_desde <= inicio_anterior.isoformat()
+
+    def _kpi(campo: str) -> dict:
+        valor = sum(d.get(campo, 0) for d in atual)
+        anterior_total = sum(d.get(campo, 0) for d in anterior)
+        return {"valor": valor, "delta": _delta(valor, anterior_total) if compara else None}
+
+    origens: dict[str, int] = {}
+    for d in atual:
+        for origem, n in (d.get("origens") or {}).items():
+            origens[origem] = origens.get(origem, 0) + n
+
     def _first(r) -> dict:
         return (r.data or [{}])[0] if r.data else {}
 
-    kpis_atual = _first(supabase_admin.rpc("analytics_kpis", {"dias": periodo, "prev": False}).execute())
-    kpis_prev = _first(supabase_admin.rpc("analytics_kpis", {"dias": periodo, "prev": True}).execute())
-
-    def _delta(atual: int, anterior: int) -> Optional[float]:
-        if not anterior:
-            return None
-        return round(((atual - anterior) / anterior) * 100, 1)
-
-    kpis = {
-        "visitantes_unicos": {
-            "valor": kpis_atual.get("visitantes_unicos", 0),
-            "delta": _delta(kpis_atual.get("visitantes_unicos", 0), kpis_prev.get("visitantes_unicos", 0)),
-        },
-        "vistas_imovel": {
-            "valor": kpis_atual.get("vistas_imovel", 0),
-            "delta": _delta(kpis_atual.get("vistas_imovel", 0), kpis_prev.get("vistas_imovel", 0)),
-        },
-        "buscas": {
-            "valor": kpis_atual.get("buscas", 0),
-            "delta": _delta(kpis_atual.get("buscas", 0), kpis_prev.get("buscas", 0)),
-        },
-        "favoritos": {
-            "valor": kpis_atual.get("favoritos", 0),
-            "delta": _delta(kpis_atual.get("favoritos", 0), kpis_prev.get("favoritos", 0)),
-        },
-    }
+    detalhe = min(periodo, _DIAS_DETALHE)
 
     return {
         "periodo": periodo,
-        "kpis": kpis,
-        "serie": supabase_admin.rpc("analytics_serie", {"dias": periodo}).execute().data or [],
-        "funil": _first(supabase_admin.rpc("analytics_funil", {"dias": periodo}).execute()),
-        "origem": supabase_admin.rpc("analytics_origem", {"dias": periodo}).execute().data or [],
+        "inicio": inicio.isoformat(),
+        "fim": fim.isoformat(),
+        "historico_desde": historico_desde,
+        "detalhe_dias": detalhe,
+        "kpis": {campo: _kpi(campo) for campo in _KPIS_SITE},
+        "morametrica": {chave: _kpi(campo) for chave, campo in _KPIS_MORAMETRICA.items()},
+        "hoje": (
+            {campo: linha_hoje.get(campo, 0) for campo in (*_KPIS_SITE, *_KPIS_MORAMETRICA.values())}
+            if linha_hoje else None
+        ),
+        "serie": [
+            {
+                "dia": d["dia"],
+                "visitas": d.get("visitas", 0),
+                "acessos": d.get("acessos", 0),
+                "mm_visitas": d.get("mm_visitas", 0),
+                "mm_acessos": d.get("mm_acessos", 0),
+                "mm_buscas": d.get("mm_buscas", 0),
+            }
+            for d in atual
+        ],
+        "origem": sorted(
+            ({"origem": o, "total": n} for o, n in origens.items()),
+            key=lambda o: o["total"], reverse=True,
+        ),
+        "funil": _first(supabase_admin.rpc("analytics_funil", {"dias": detalhe}).execute()),
         "top_imoveis": supabase_admin.rpc(
-            "analytics_top_imoveis_v2", {"dias": periodo, "limite": 7}
+            "analytics_top_imoveis_v2", {"dias": detalhe, "limite": 7}
         ).execute().data or [],
         "bairros": supabase_admin.rpc(
-            "analytics_bairros", {"dias": periodo, "limite": 8}
+            "analytics_bairros", {"dias": detalhe, "limite": 8}
         ).execute().data or [],
         "dispositivos": supabase_admin.rpc(
-            "analytics_dispositivos", {"dias": periodo}
+            "analytics_dispositivos", {"dias": detalhe}
         ).execute().data or [],
-        "heatmap": supabase_admin.rpc("analytics_heatmap", {"dias": periodo}).execute().data or [],
+        "heatmap": supabase_admin.rpc("analytics_heatmap", {"dias": detalhe}).execute().data or [],
         "termos": supabase_admin.rpc(
-            "analytics_termos", {"dias": periodo, "limite": 6}
+            "analytics_termos", {"dias": detalhe, "limite": 6}
         ).execute().data or [],
         "buscas_vazias": supabase_admin.rpc(
-            "analytics_buscas_vazias", {"dias": periodo, "limite": 4}
+            "analytics_buscas_vazias", {"dias": detalhe, "limite": 4}
         ).execute().data or [],
     }
 

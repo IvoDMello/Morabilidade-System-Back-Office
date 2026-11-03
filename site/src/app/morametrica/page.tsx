@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { MoraMetricaTracker, type TipoBuscaMoraMetrica } from "@/components/analytics/MoraMetricaTracker";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { BuscaMoraMetrica } from "@/components/morametrica/BuscaMoraMetrica";
@@ -47,6 +48,12 @@ function enderecoCompleto(resultado: RadarBusca): string {
   return [resultado.titulo, resultado.unidade].filter(Boolean).join(", ");
 }
 
+/** Como a busca entra na audiência: a de unidade é contada à parte da de prédio. */
+function tipoDaBusca({ resultado, erro }: Carga): TipoBuscaMoraMetrica {
+  if (erro || !resultado) return "erro";
+  return resultado.tipo === "predio" && resultado.unidade ? "unidade" : resultado.tipo;
+}
+
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
   const params = lerParametros(await searchParams);
   const base: Metadata = {
@@ -76,11 +83,18 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 
 export default async function MoraMetricaPage({ searchParams }: Props) {
   const params = lerParametros(await searchParams);
-  const [info, { resultado, erro }] = await Promise.all([getMoraMetricaInfo(), carregar(params)]);
+  const [info, carga] = await Promise.all([getMoraMetricaInfo(), carregar(params)]);
+  const { resultado, erro } = carga;
   const endereco = resultado && TEM_RESUMO.includes(resultado.tipo) ? enderecoCompleto(resultado) : null;
 
   return (
     <>
+      {temBusca(params) && (
+        <MoraMetricaTracker
+          busca={novaBusca({ q: params.q, cl: params.cl, numero: params.numero, unidade: params.unidade, bairro: params.bairro })}
+          tipo={tipoDaBusca(carga)}
+        />
+      )}
       <Navbar marcaMobile />
       <ProvedorNavegacao>
         <div className="bg-[#585a4f]">

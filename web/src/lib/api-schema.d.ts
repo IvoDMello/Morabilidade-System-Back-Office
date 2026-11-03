@@ -30,9 +30,17 @@ export interface paths {
         };
         /**
          * Analytics Dashboard
-         * @description Resumo completo da aba /audiencia. Devolve KPIs (com delta vs período
-         *     anterior), série diária, funil, origem do tráfego, top imóveis, bairros,
-         *     dispositivos, heatmap, termos e buscas sem resultado em uma única chamada.
+         * @description Resumo completo da aba /audiencia em uma única chamada.
+         *
+         *     As contagens (cards do site e da MoraMétrica, série, origem) vêm de
+         *     analytics_dias, o histórico diário que não é apagado (migration 060). O
+         *     período são dias fechados terminando ontem, comparados com o mesmo número
+         *     de dias antes deles; o dia corrente vem à parte em `hoje`, para não
+         *     comparar um dia pela metade com dias inteiros. Se o histórico não cobre o
+         *     período anterior inteiro, o delta é None.
+         *
+         *     Os painéis de detalhe (funil, imóveis, bairros, dispositivos, horários,
+         *     termos) leem os eventos brutos, limitados aos últimos 90 dias.
          */
         get: operations["analytics_dashboard_analytics_dashboard_get"];
         put?: never;
@@ -1604,6 +1612,26 @@ export interface paths {
         put?: never;
         /** Track Favorito */
         post: operations["track_favorito_publico_favorito_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/publico/morametrica": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Track Morametrica
+         * @description Busca feita na MoraMétrica. Guarda só o tipo de resultado, nunca o endereço.
+         */
+        post: operations["track_morametrica_publico_morametrica_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3508,6 +3536,13 @@ export interface components {
          * @enum {string}
          */
         Mobiliado: "sim" | "nao" | "semi-mobiliado";
+        /** MoraMetricaPayload */
+        MoraMetricaPayload: {
+            /** Session Id */
+            session_id: string;
+            /** Tipo */
+            tipo: string;
+        };
         /**
          * OrigemLead
          * @enum {string}
@@ -7597,6 +7632,37 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["FavoritoPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    track_morametrica_publico_morametrica_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MoraMetricaPayload"];
             };
         };
         responses: {

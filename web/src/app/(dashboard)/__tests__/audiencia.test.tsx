@@ -14,7 +14,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("lucide-react", () => ({
-  Users: () => null, Building2: () => null, Search: () => null, Heart: () => null,
+  Users: () => null, Building2: () => null, Search: () => null, Heart: () => null, Eye: () => null,
   TrendingUp: () => null, TrendingDown: () => null, SlidersHorizontal: () => null,
   X: () => null, Smartphone: () => null, Monitor: () => null, Tablet: () => null,
   Clock: () => null, ArrowRight: () => null,
@@ -43,13 +43,28 @@ import AudienciaPage from "../audiencia/page";
 
 const DASHBOARD_OK = {
   periodo: 30,
+  inicio: "2026-10-03",
+  fim: "2026-11-01",
+  historico_desde: "2026-09-03",
+  detalhe_dias: 30,
   kpis: {
-    visitantes_unicos: { valor: 1284, delta: 18.2 },
+    visitas: { valor: 1284, delta: 18.2 },
+    acessos: { valor: 4071, delta: 9.3 },
     vistas_imovel: { valor: 2819, delta: 24.0 },
     buscas: { valor: 612, delta: 15.7 },
     favoritos: { valor: 138, delta: -4.8 },
   },
-  serie: [{ dia: "2026-05-30", visitantes: 80, views: 200 }],
+  morametrica: {
+    visitas: { valor: 57, delta: null },
+    acessos: { valor: 66, delta: null },
+    buscas: { valor: 240, delta: null },
+    sem_resultado: { valor: 24, delta: null },
+  },
+  hoje: { visitas: 106, acessos: 365, mm_buscas: 12 },
+  serie: [
+    { dia: "2026-10-31", visitas: 80, acessos: 200, mm_visitas: 0, mm_acessos: 0, mm_buscas: 0 },
+    { dia: "2026-11-01", visitas: 90, acessos: 250, mm_visitas: 20, mm_acessos: 25, mm_buscas: 70 },
+  ],
   funil: { visitaram: 1284, buscaram: 892, abriram: 614, favoritaram: 138 },
   origem: [
     { origem: "Instagram", total: 412 },
@@ -86,12 +101,36 @@ describe("Página /audiencia", () => {
 
   it("renderiza KPIs com valores formatados em pt-BR", async () => {
     render(<AudienciaPage />);
-    // "1.284" aparece no KPI Visitantes Únicos e no card de Tendência, usa findAll.
+    // "1.284" aparece no KPI Visitas e no card de Tendência, usa findAll.
     // Vários KPIs reaparecem em funil/origem; basta confirmar que cada valor existe pelo menos uma vez.
     expect((await screen.findAllByText("1.284")).length).toBeGreaterThan(0);
+    expect(screen.getAllByText("4.071").length).toBeGreaterThan(0);
     expect(screen.getAllByText("2.819").length).toBeGreaterThan(0);
     expect(screen.getAllByText("612").length).toBeGreaterThan(0);
     expect(screen.getAllByText("138").length).toBeGreaterThan(0);
+  });
+
+  it("mostra o uso da MoraMétrica e o dia corrente à parte", async () => {
+    render(<AudienciaPage />);
+    expect(await screen.findByText("Uso da MoraMétrica")).toBeInTheDocument();
+    expect(screen.getByText("240")).toBeInTheDocument();
+    expect(screen.getByText("10% sem resultado")).toBeInTheDocument();
+    expect(screen.getByText(/Hoje, até agora: 12 buscas/)).toBeInTheDocument();
+    expect(screen.getByText(/Hoje, até agora: 106 visitas e 365 acessos/)).toBeInTheDocument();
+  });
+
+  it("avisa quando o histórico começa depois do início do período", async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: { ...DASHBOARD_OK, historico_desde: "2026-10-20" },
+    } as never);
+    render(<AudienciaPage />);
+    expect(await screen.findByText(/O histórico começa em 20\/10\/2026/)).toBeInTheDocument();
+  });
+
+  it("não avisa quando o histórico cobre o período", async () => {
+    render(<AudienciaPage />);
+    await screen.findAllByText("1.284");
+    expect(screen.queryByText(/O histórico começa em/)).not.toBeInTheDocument();
   });
 
   it("mostra delta positivo e negativo com sinal correto", async () => {
