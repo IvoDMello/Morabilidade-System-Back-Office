@@ -139,10 +139,8 @@ export function descreverPeriodo(
 
 // ── WhatsApp ─────────────────────────────────────────────────────────────────
 
-export function linkWhatsAppAvaliacao(numero: string, endereco?: string | null): string {
-  const mensagem = endereco
-    ? `Olá! Vi na MoraMétrica as vendas em ${endereco} e gostaria de saber quanto vale o meu imóvel.`
-    : "Olá! Vi a MoraMétrica e gostaria de saber quanto vale o meu imóvel.";
+export function linkWhatsAppAvaliacao(numero: string): string {
+  const mensagem = "Olá! Vim pela MoraMétrica e gostaria de anunciar meu imóvel com a Morabilidade.";
   return numero
     ? `https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}`
     : "https://wa.link/we06jw";

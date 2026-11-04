@@ -113,13 +113,13 @@ describe("formatação", () => {
 });
 
 describe("linkWhatsAppAvaliacao", () => {
-  it("cita o endereço buscado", () => {
-    const link = linkWhatsAppAvaliacao("5521997729990", "Avenida Vieira Souto, 510");
+  it("leva a mensagem de quem quer anunciar o imóvel", () => {
+    const link = linkWhatsAppAvaliacao("5521997729990");
     expect(link.startsWith("https://wa.me/5521997729990?text=")).toBe(true);
-    expect(decodeURIComponent(link)).toContain("vendas em Avenida Vieira Souto, 510");
+    expect(decodeURIComponent(link)).toContain("gostaria de anunciar meu imóvel");
   });
 
   it("sem número configurado usa o link curto da empresa", () => {
-    expect(linkWhatsAppAvaliacao("", null)).toBe("https://wa.link/we06jw");
+    expect(linkWhatsAppAvaliacao("")).toBe("https://wa.link/we06jw");
   });
 });

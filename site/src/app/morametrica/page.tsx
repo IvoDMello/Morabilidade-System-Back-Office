@@ -85,7 +85,6 @@ export default async function MoraMetricaPage({ searchParams }: Props) {
   const params = lerParametros(await searchParams);
   const [info, carga] = await Promise.all([getMoraMetricaInfo(), carregar(params)]);
   const { resultado, erro } = carga;
-  const endereco = resultado && TEM_RESUMO.includes(resultado.tipo) ? enderecoCompleto(resultado) : null;
 
   return (
     <>
@@ -123,7 +122,7 @@ export default async function MoraMetricaPage({ searchParams }: Props) {
             ) : (
               <Apresentacao />
             )}
-            <ChamadaAvaliacao endereco={endereco} />
+            <ChamadaAvaliacao />
             <FonteLimitacoes info={info} />
           </div>
         </main>

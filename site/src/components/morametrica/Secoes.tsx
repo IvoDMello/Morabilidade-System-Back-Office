@@ -71,21 +71,21 @@ export function Apresentacao() {
   );
 }
 
-export function ChamadaAvaliacao({ endereco }: { endereco?: string | null }) {
+export function ChamadaAvaliacao() {
   const numero = process.env.NEXT_PUBLIC_WHATSAPP ?? "";
   return (
     <div className="rounded-2xl bg-[#3e4037] px-5 py-7 sm:px-10 sm:py-9 flex flex-col md:flex-row md:items-center gap-5 md:gap-10">
       <div className="flex-1">
         <h2 className="font-serif text-2xl sm:text-[28px] leading-tight text-white">
-          Quer saber quanto vale o seu imóvel?
+          Anuncie seu imóvel
         </h2>
         <p className="text-sm sm:text-base text-[rgba(252,252,252,0.7)] mt-2 leading-relaxed max-w-xl">
-          As vendas registradas contam o passado. Para o preço de hoje, a equipe da Morabilidade
-          avalia andar, vista, conservação e o mercado do momento.
+          Precificação adequada é uma das receitas de sucesso para uma venda rápida e justa. Se
+          estiver vendendo seu imóvel, fale com a Morabilidade.
         </p>
       </div>
       <a
-        href={linkWhatsAppAvaliacao(numero, endereco)}
+        href={linkWhatsAppAvaliacao(numero)}
         target="_blank"
         rel="noopener noreferrer"
         className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#d8cb6a] hover:opacity-90 text-[#3e4037] font-bold px-6 py-3.5 text-[15px] transition self-start md:self-auto whitespace-nowrap"
