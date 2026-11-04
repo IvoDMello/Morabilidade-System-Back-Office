@@ -8282,7 +8282,7 @@
     },
     "/analytics/dashboard": {
       "get": {
-        "description": "Resumo completo da aba /audiencia em uma única chamada.\n\nAs contagens (cards do site e da MoraMétrica, série, origem) vêm de\nanalytics_dias, o histórico diário que não é apagado (migration 060). O\nperíodo são dias fechados terminando ontem, comparados com o mesmo número\nde dias antes deles; o dia corrente vem à parte em `hoje`, para não\ncomparar um dia pela metade com dias inteiros. Se o histórico não cobre o\nperíodo anterior inteiro, o delta é None.\n\nOs painéis de detalhe (funil, imóveis, bairros, dispositivos, horários,\ntermos) leem os eventos brutos, limitados aos últimos 90 dias.",
+        "description": "Resumo completo da aba /audiencia em uma única chamada.\n\nAs contagens (cards do site e da MoraMétrica, série, origem) vêm de\nanalytics_dias, o histórico diário que não é apagado (migration 060). O\nperíodo são dias fechados terminando ontem, comparados com o mesmo número\nde dias antes deles; o dia corrente vem à parte em `hoje`, para não\ncomparar um dia pela metade com dias inteiros. Se o histórico não cobre o\nperíodo anterior inteiro, o delta é None.\n\nOs painéis de detalhe (funil, imóveis, bairros, dispositivos, horários,\ntermos) leem os eventos brutos, limitados aos últimos 90 dias.\n\nOs eventos entram na hora em que acontecem, e esta leitura é feita no\nmomento da chamada: `atualizado_em` (hora de Brasília) é até quando o\ndia corrente está contado.",
         "operationId": "analytics_dashboard_analytics_dashboard_get",
         "parameters": [
           {
@@ -8371,6 +8371,56 @@
           }
         ],
         "summary": "Analytics Imovel",
+        "tags": [
+          "Analytics",
+          "Analytics"
+        ]
+      }
+    },
+    "/analytics/morametrica/dia": {
+      "get": {
+        "description": "Uso da MoraMétrica num dia só. Um dia passado vem inteiro, da meia-noite\nà meia-noite de Brasília; o dia de hoje vem até `atualizado_em`.\n`numeros` é None quando o dia é anterior ao histórico.",
+        "operationId": "analytics_morametrica_dia_analytics_morametrica_dia_get",
+        "parameters": [
+          {
+            "description": "Dia no fuso de Brasília (AAAA-MM-DD)",
+            "in": "query",
+            "name": "dia",
+            "required": true,
+            "schema": {
+              "description": "Dia no fuso de Brasília (AAAA-MM-DD)",
+              "format": "date",
+              "title": "Dia",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Analytics Morametrica Dia",
         "tags": [
           "Analytics",
           "Analytics"

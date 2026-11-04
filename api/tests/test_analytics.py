@@ -403,3 +403,60 @@ def test_dashboard_retorna_todas_secoes(client, hoje_fixo):
         "heatmap", "termos", "buscas_vazias",
     ):
         assert secao in body
+
+
+def test_dashboard_informa_ate_quando_leu(client, hoje_fixo):
+    db = _dashboard_db([])
+    with patch("app.routers.analytics.supabase_admin", db):
+        body = client.get("/analytics/dashboard").json()
+    assert body["atualizado_em"] == "2026-11-02T15:00:00"
+
+
+# ── /analytics/morametrica/dia ───────────────────────────────────────────────
+
+def test_morametrica_dia_requer_autenticacao(anon_client):
+    res = anon_client.get("/analytics/morametrica/dia?dia=2026-11-01")
+    assert res.status_code in (401, 403)
+
+
+def test_morametrica_dia_passado_vem_completo(client, hoje_fixo):
+    linha = _dia(date(2026, 11, 1), mm_visitas=21, mm_acessos=44, mm_buscas=7, mm_sem_resultado=1, visitas=999)
+    db = make_db_mock(MagicMock(data=[linha]))
+    with patch("app.routers.analytics.supabase_admin", db):
+        body = client.get("/analytics/morametrica/dia?dia=2026-11-01").json()
+    db.rpc.assert_called_once_with("analytics_dias", {"p_desde": "2026-11-01", "p_ate": "2026-11-01"})
+    assert body == {
+        "dia": "2026-11-01",
+        "completo": True,
+        "atualizado_em": "2026-11-02T15:00:00",
+        "numeros": {"visitas": 21, "acessos": 44, "buscas": 7, "sem_resultado": 1},
+    }
+
+
+def test_morametrica_dia_de_hoje_vem_ate_agora(client, hoje_fixo):
+    db = make_db_mock(MagicMock(data=[_dia(HOJE, mm_buscas=12)]))
+    with patch("app.routers.analytics.supabase_admin", db):
+        body = client.get("/analytics/morametrica/dia?dia=2026-11-02").json()
+    assert body["completo"] is False
+    assert body["numeros"]["buscas"] == 12
+
+
+def test_morametrica_dia_antes_do_historico(client, hoje_fixo):
+    db = make_db_mock(MagicMock(data=[]))
+    with patch("app.routers.analytics.supabase_admin", db):
+        body = client.get("/analytics/morametrica/dia?dia=2026-01-10").json()
+    assert body["numeros"] is None
+
+
+def test_morametrica_dia_futuro_recusado(client, hoje_fixo):
+    db = make_db_mock()
+    with patch("app.routers.analytics.supabase_admin", db):
+        res = client.get("/analytics/morametrica/dia?dia=2026-11-03")
+    assert res.status_code == 422
+    db.rpc.assert_not_called()
+
+
+@pytest.mark.parametrize("dia", ["", "03/11/2026", "2026-13-01"])
+def test_morametrica_dia_invalido(client, dia):
+    res = client.get(f"/analytics/morametrica/dia?dia={dia}")
+    assert res.status_code == 422

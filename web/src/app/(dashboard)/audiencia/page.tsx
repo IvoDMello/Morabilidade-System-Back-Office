@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   Users, Building2, Search as SearchIcon, Heart, Eye,
   TrendingUp, TrendingDown, SlidersHorizontal, X, Smartphone, Monitor, Tablet,
-  Clock, ArrowRight,
+  Clock, ArrowRight, RefreshCw,
 } from "lucide-react";
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid,
@@ -30,6 +30,11 @@ interface PontoSerie {
 
 interface DashboardData {
   periodo: number;
+  /**
+   * Momento da leitura, na hora de Brasília: hoje está contado até aqui.
+   * Ausente na API anterior, que pode responder enquanto o deploy novo sobe.
+   */
+  atualizado_em?: string;
   /** Dias completos do período, terminando ontem (YYYY-MM-DD). */
   inicio: string;
   fim: string;
@@ -71,6 +76,19 @@ interface DashboardData {
   buscas_vazias: { termo: string; pessoas: number }[];
 }
 
+/** Uso da MoraMétrica num dia só (/analytics/morametrica/dia). */
+interface MoraMetricaDia {
+  dia: string;
+  /** false no dia de hoje: os números vão até atualizado_em. */
+  completo: boolean;
+  atualizado_em: string;
+  /** null quando o dia é anterior ao histórico. */
+  numeros: { visitas: number; acessos: number; buscas: number; sem_resultado: number } | null;
+}
+
+/** Lançamento da MoraMétrica: antes disso não há uso para consultar. */
+const INICIO_MORAMETRICA = "2026-11-02";
+
 const OLIVE = "#585a4f";
 const GOLD = "#d8cb6a";
 const PALETTE = [GOLD, OLIVE, "#9a9a82", "#bfb56a", "#3e4037", "#d6d3c4"];
@@ -86,6 +104,25 @@ function formatData(iso: string): string {
 }
 function fmt(n: number): string {
   return n.toLocaleString("pt-BR");
+}
+/** "2026-11-04T14:03:10-03:00" → "14:03". A API já manda na hora de Brasília. */
+function formatHora(iso: string): string {
+  return iso.slice(11, 16);
+}
+/** "até 14:03", ou "até agora" quando a API não informou a hora da leitura. */
+function ateHora(iso: string | null): string {
+  return iso ? `até ${formatHora(iso)}` : "até agora";
+}
+/** Dia seguinte a um "AAAA-MM-DD", sem passar pelo fuso do navegador. */
+function diaSeguinte(iso: string): string {
+  const d = new Date(`${iso}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10);
+}
+/** "2026-11-03" → "Terça-feira". Meio-dia evita o dia virar no fuso do navegador. */
+function diaDaSemana(iso: string): string {
+  const nome = new Date(`${iso}T12:00:00`).toLocaleDateString("pt-BR", { weekday: "long" });
+  return nome.charAt(0).toUpperCase() + nome.slice(1);
 }
 
 const CAMPOS_SERIE = ["visitas", "acessos", "mm_visitas", "mm_acessos", "mm_buscas"] as const;
@@ -140,12 +177,15 @@ interface FiltrosUI {
 const FILTROS_VAZIO: FiltrosUI = { tipo_negocio: "", tipo_imovel: "", bairro: "" };
 
 function Toolbar({
-  periodo, onPeriodo, filtros, onFiltros,
+  periodo, onPeriodo, filtros, onFiltros, atualizadoEm, atualizando, onAtualizar,
 }: {
   periodo: Periodo;
   onPeriodo: (p: Periodo) => void;
   filtros: FiltrosUI;
   onFiltros: (f: FiltrosUI) => void;
+  atualizadoEm: string | null;
+  atualizando: boolean;
+  onAtualizar: () => void;
 }) {
   const [modalAberto, setModalAberto] = useState(false);
   const qtdFiltros = Object.values(filtros).filter(Boolean).length;
@@ -173,7 +213,21 @@ function Toolbar({
       <div className="hidden md:flex items-center gap-1.5 text-xs text-slate-400">
         <Clock className="w-3.5 h-3.5" /> Comparado ao período anterior
       </div>
-      <div className="ml-auto">
+      <div className="ml-auto flex items-center gap-3">
+        {atualizadoEm && (
+          <div className="flex items-center gap-2 text-xs text-slate-400">
+            <span>Atualizado às {formatHora(atualizadoEm)}</span>
+            <button
+              type="button"
+              onClick={onAtualizar}
+              disabled={atualizando}
+              className="inline-flex items-center gap-1 font-semibold text-slate-600 hover:text-slate-900 disabled:opacity-50 transition"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${atualizando ? "animate-spin" : ""}`} />
+              Atualizar
+            </button>
+          </div>
+        )}
         <button
           type="button"
           onClick={() => setModalAberto(true)}
@@ -384,12 +438,13 @@ function GraficoDuplo({ dados, fundo, frente, idGradiente }: {
   );
 }
 
-function TendenciaChart({ serie, semanal, visitas, acessos, hoje }: {
+function TendenciaChart({ serie, semanal, visitas, acessos, hoje, atualizadoEm }: {
   serie: PontoSerie[];
   semanal: boolean;
   visitas: KpiValue;
   acessos: KpiValue;
   hoje: DashboardData["hoje"];
+  atualizadoEm: string | null;
 }) {
   return (
     <section className="bg-white rounded-2xl border border-slate-200 p-5">
@@ -403,7 +458,7 @@ function TendenciaChart({ serie, semanal, visitas, acessos, hoje }: {
           </h3>
           {hoje && (
             <p className="text-xs text-slate-400 mt-1">
-              Hoje, até agora: {fmt(hoje.visitas)} visitas e {fmt(hoje.acessos)} acessos
+              Hoje, {ateHora(atualizadoEm)}: {fmt(hoje.visitas)} visitas e {fmt(hoje.acessos)} acessos
             </p>
           )}
         </div>
@@ -455,58 +510,192 @@ function NumeroMoraMetrica({ titulo, sufixo, kpi }: { titulo: string; sufixo: st
   );
 }
 
-function MoraMetricaSecao({ dados, serie, semanal, hoje }: {
+function CardsMoraMetrica({ buscas, sem_resultado, visitas, acessos }: DashboardData["morametrica"]) {
+  const pctSemResultado = buscas.valor ? Math.round((sem_resultado.valor / buscas.valor) * 100) : 0;
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <NumeroMoraMetrica
+        titulo="Buscas" kpi={buscas}
+        sufixo={buscas.valor ? `${pctSemResultado}% sem resultado` : "endereços consultados"}
+      />
+      <NumeroMoraMetrica titulo="Visitas" kpi={visitas} sufixo="sessões que abriram" />
+      <NumeroMoraMetrica titulo="Acessos" kpi={acessos} sufixo="aberturas da página" />
+    </div>
+  );
+}
+
+function CardsMoraMetricaSkeleton() {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 animate-pulse">
+      {[0, 1, 2].map((i) => (
+        <div key={i} className="rounded-xl bg-slate-50 px-4 py-3">
+          <div className="h-3 w-16 bg-slate-100 rounded" />
+          <div className="h-6 w-20 bg-slate-100 rounded mt-3" />
+          <div className="h-3 w-24 bg-slate-100 rounded mt-3" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+type ModoMoraMetrica = "periodo" | "dia";
+
+const MODOS_MORAMETRICA: { v: ModoMoraMetrica; label: string }[] = [
+  { v: "periodo", label: "Período" },
+  { v: "dia", label: "Por dia" },
+];
+
+/** Os números de um dia escolhido no calendário, de /analytics/morametrica/dia. */
+function MoraMetricaDoDia({ dia, hoje, recarga }: { dia: string; hoje: string; recarga: number }) {
+  const [doDia, setDoDia] = useState<MoraMetricaDia | null>(null);
+  const [erro, setErro] = useState(false);
+  const valido = dia >= INICIO_MORAMETRICA && dia <= hoje;
+
+  useEffect(() => {
+    if (!valido) return;
+    let ativo = true;
+    setDoDia(null);
+    setErro(false);
+    api.get<MoraMetricaDia>("/analytics/morametrica/dia", { params: { dia } })
+      .then((r) => { if (ativo) setDoDia(r.data); })
+      .catch(() => { if (ativo) setErro(true); });
+    return () => { ativo = false; };
+  }, [dia, valido, recarga]);
+
+  const aviso = (texto: string) => (
+    <p className="text-sm text-slate-400 text-center py-8">{texto}</p>
+  );
+
+  if (!valido) {
+    return aviso(`Escolha um dia entre ${formatData(INICIO_MORAMETRICA)}, quando a MoraMétrica entrou no ar, e hoje.`);
+  }
+  if (erro) return aviso("Não foi possível carregar este dia. Tente de novo em instantes.");
+  if (!doDia || doDia.dia !== dia) {
+    return (
+      <>
+        <p className="text-xs text-slate-400 mb-3">Carregando {formatData(dia)}…</p>
+        <CardsMoraMetricaSkeleton />
+      </>
+    );
+  }
+  if (!doDia.numeros) return aviso("Não há registro deste dia.");
+
+  const n = doDia.numeros;
+  const kpi = (valor: number): KpiValue => ({ valor, delta: null });
+  return (
+    <>
+      <p className="text-xs text-slate-400 mb-3">
+        {doDia.completo
+          ? `${diaDaSemana(dia)}, ${formatData(dia)}: dia completo, da 0h à meia-noite.`
+          : `Hoje, até ${formatHora(doDia.atualizado_em)}. O dia ainda não terminou.`}
+      </p>
+      <CardsMoraMetrica
+        buscas={kpi(n.buscas)} sem_resultado={kpi(n.sem_resultado)}
+        visitas={kpi(n.visitas)} acessos={kpi(n.acessos)}
+      />
+    </>
+  );
+}
+
+function MoraMetricaSecao({ dados, serie, semanal, hoje, inicio, fim, atualizadoEm, recarga }: {
   dados: DashboardData["morametrica"];
   serie: PontoSerie[];
   semanal: boolean;
   hoje: DashboardData["hoje"];
+  inicio: string;
+  fim: string;
+  atualizadoEm: string | null;
+  recarga: number;
 }) {
+  const [modo, setModo] = useState<ModoMoraMetrica>("periodo");
+  // Abre no último dia completo
+  const [dia, setDia] = useState(fim);
+  // fim é ontem: sem a hora da leitura, hoje é o dia seguinte a ele
+  const dataHoje = atualizadoEm ? atualizadoEm.slice(0, 10) : diaSeguinte(fim);
+
   // O gráfico começa no primeiro dia com uso: antes disso a MoraMétrica não existia
   const primeiro = serie.findIndex((p) => p.mm_acessos > 0 || p.mm_buscas > 0);
   const comUso = primeiro === -1 ? [] : serie.slice(primeiro);
-  const buscas = dados.buscas.valor;
-  const pctSemResultado = buscas ? Math.round((dados.sem_resultado.valor / buscas) * 100) : 0;
+  const desde = inicio > INICIO_MORAMETRICA ? inicio : INICIO_MORAMETRICA;
 
   return (
     <section className="bg-white rounded-2xl border border-slate-200 p-5">
-      <div className="flex items-start justify-between gap-4 mb-4">
+      <div className="flex items-start justify-between gap-4 mb-3">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
             Vendas registradas no Rio
           </p>
           <h3 className="font-semibold text-slate-800 mt-0.5">Uso da MoraMétrica</h3>
-          {hoje && (
-            <p className="text-xs text-slate-400 mt-1">
-              Hoje, até agora: {fmt(hoje.mm_buscas)} {hoje.mm_buscas === 1 ? "busca" : "buscas"}
-            </p>
-          )}
         </div>
-        <Legenda itens={[{ cor: GOLD, rotulo: "Buscas" }, { cor: OLIVE, rotulo: "Visitas" }]} />
+        {modo === "periodo" && (
+          <Legenda itens={[{ cor: GOLD, rotulo: "Buscas" }, { cor: OLIVE, rotulo: "Visitas" }]} />
+        )}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-        <NumeroMoraMetrica
-          titulo="Buscas" kpi={dados.buscas}
-          sufixo={buscas ? `${pctSemResultado}% sem resultado` : "endereços consultados"}
-        />
-        <NumeroMoraMetrica titulo="Visitas" kpi={dados.visitas} sufixo="sessões que abriram" />
-        <NumeroMoraMetrica titulo="Acessos" kpi={dados.acessos} sufixo="aberturas da página" />
-      </div>
-
-      <div className="h-48">
-        {comUso.length === 0 ? (
-          <div className="h-full flex items-center justify-center text-sm text-slate-400">
-            Nenhum uso da MoraMétrica no período.
-          </div>
-        ) : (
-          <GraficoDuplo
-            dados={semanal ? mediaSemanal(comUso) : comUso}
-            fundo={{ chave: "mm_visitas", nome: "Visitas" }}
-            frente={{ chave: "mm_buscas", nome: "Buscas" }}
-            idGradiente="gradMoraMetrica"
+      <div className="flex flex-wrap items-center gap-2 mb-3">
+        <div className="flex items-center gap-1 bg-slate-50 rounded-full p-1">
+          {MODOS_MORAMETRICA.map((m) => (
+            <button
+              key={m.v}
+              type="button"
+              aria-pressed={modo === m.v}
+              onClick={() => setModo(m.v)}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition ${
+                modo === m.v ? "text-white" : "text-slate-500 hover:text-slate-700"
+              }`}
+              style={modo === m.v ? { backgroundColor: "#1f2120" } : undefined}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+        {modo === "dia" && (
+          <input
+            type="date"
+            aria-label="Dia"
+            value={dia}
+            min={INICIO_MORAMETRICA}
+            max={dataHoje}
+            onChange={(e) => setDia(e.target.value)}
+            className="text-xs border border-slate-200 rounded-full px-3 py-1.5 text-slate-600 focus:outline-none focus:border-[#585a4f]"
           />
         )}
       </div>
+
+      {modo === "dia" ? (
+        <MoraMetricaDoDia dia={dia} hoje={dataHoje} recarga={recarga} />
+      ) : (
+        <>
+          <div className="text-xs text-slate-400 mb-4 space-y-0.5">
+            {desde <= fim && (
+              <p>De {formatData(desde)} a {formatData(fim)}, dias completos.</p>
+            )}
+            {hoje && (
+              <p>
+                Hoje, {ateHora(atualizadoEm)}: {fmt(hoje.mm_buscas)}{" "}
+                {hoje.mm_buscas === 1 ? "busca" : "buscas"}
+              </p>
+            )}
+          </div>
+
+          <CardsMoraMetrica {...dados} />
+
+          <div className="h-48 mt-4">
+            {comUso.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-sm text-slate-400">
+                Nenhum uso da MoraMétrica no período.
+              </div>
+            ) : (
+              <GraficoDuplo
+                dados={semanal ? mediaSemanal(comUso) : comUso}
+                fundo={{ chave: "mm_visitas", nome: "Visitas" }}
+                frente={{ chave: "mm_buscas", nome: "Buscas" }}
+                idGradiente="gradMoraMetrica"
+              />
+            )}
+          </div>
+        </>
+      )}
     </section>
   );
 }
@@ -957,6 +1146,8 @@ export default function AudienciaPage() {
   const [dados, setDados] = useState<DashboardData | null>(null);
   const [erro, setErro] = useState(false);
   const [carregando, setCarregando] = useState(true);
+  // Cada clique em "Atualizar" relê o painel (e o dia aberto na MoraMétrica)
+  const [recarga, setRecarga] = useState(0);
 
   useEffect(() => {
     setCarregando(true);
@@ -965,7 +1156,7 @@ export default function AudienciaPage() {
       .then((r) => setDados(r.data))
       .catch(() => setErro(true))
       .finally(() => setCarregando(false));
-  }, [periodo]);
+  }, [periodo, recarga]);
 
   // Filtros locais aplicados a top_imoveis e bairros.
   const dadosFiltrados = useMemo(() => {
@@ -1011,6 +1202,9 @@ export default function AudienciaPage() {
         onPeriodo={setPeriodo}
         filtros={filtros}
         onFiltros={setFiltros}
+        atualizadoEm={dados?.atualizado_em ?? null}
+        atualizando={carregando}
+        onAtualizar={() => setRecarga((n) => n + 1)}
       />
 
       {dados?.historico_desde && dados.historico_desde > dados.inicio && (
@@ -1069,6 +1263,7 @@ export default function AudienciaPage() {
           visitas={dadosFiltrados.kpis.visitas}
           acessos={dadosFiltrados.kpis.acessos}
           hoje={dadosFiltrados.hoje}
+          atualizadoEm={dadosFiltrados.atualizado_em ?? null}
         />
       )}
 
@@ -1079,6 +1274,10 @@ export default function AudienciaPage() {
           serie={dadosFiltrados.serie}
           semanal={periodo === 365}
           hoje={dadosFiltrados.hoje}
+          inicio={dadosFiltrados.inicio}
+          fim={dadosFiltrados.fim}
+          atualizadoEm={dadosFiltrados.atualizado_em ?? null}
+          recarga={recarga}
         />
       )}
 
@@ -1118,11 +1317,20 @@ export default function AudienciaPage() {
         <div className="text-[11px] text-slate-400 text-center pt-2 pb-6 space-y-1">
           <p>
             Números do período: {formatData(dados.inicio)} a {formatData(dados.fim)}, dias
-            completos, comparados aos {dados.periodo} dias anteriores. Hoje aparece à parte.
+            completos, comparados aos {dados.periodo} dias anteriores. Hoje aparece à parte,
+            contado {ateHora(dados.atualizado_em ?? null)}.
+          </p>
+          <p>
+            Cada visita e busca entra na hora em que acontece. O painel lê tudo quando a página
+            abre: para ver os números mais novos, use Atualizar.
           </p>
           <p>
             Visita é uma sessão: a mesma pessoa conta de novo em outro dia ou em outra aba.
             Acesso é cada página vista.
+          </p>
+          <p>
+            Busca na MoraMétrica é cada endereço consultado, inclusive os abertos a partir de
+            outro resultado (uma rua e depois um prédio dela).
           </p>
           <p>
             Jornada, anúncios, bairros, dispositivo, horários e buscas: últimos {dados.detalhe_dias} dias,

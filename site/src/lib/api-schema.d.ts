@@ -41,6 +41,10 @@ export interface paths {
          *
          *     Os painéis de detalhe (funil, imóveis, bairros, dispositivos, horários,
          *     termos) leem os eventos brutos, limitados aos últimos 90 dias.
+         *
+         *     Os eventos entram na hora em que acontecem, e esta leitura é feita no
+         *     momento da chamada: `atualizado_em` (hora de Brasília) é até quando o
+         *     dia corrente está contado.
          */
         get: operations["analytics_dashboard_analytics_dashboard_get"];
         put?: never;
@@ -63,6 +67,28 @@ export interface paths {
          * @description Contagem de views (total/30d/7d) de um imóvel específico.
          */
         get: operations["analytics_imovel_analytics_imovel__codigo__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/analytics/morametrica/dia": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Analytics Morametrica Dia
+         * @description Uso da MoraMétrica num dia só. Um dia passado vem inteiro, da meia-noite
+         *     à meia-noite de Brasília; o dia de hoje vem até `atualizado_em`.
+         *     `numeros` é None quando o dia é anterior ao histórico.
+         */
+        get: operations["analytics_morametrica_dia_analytics_morametrica_dia_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4461,6 +4487,38 @@ export interface operations {
             path: {
                 codigo: string;
             };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    analytics_morametrica_dia_analytics_morametrica_dia_get: {
+        parameters: {
+            query: {
+                /** @description Dia no fuso de Brasília (AAAA-MM-DD) */
+                dia: string;
+            };
+            header?: never;
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;

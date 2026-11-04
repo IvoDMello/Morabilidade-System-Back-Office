@@ -1,5 +1,5 @@
 import re
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import Any, Optional
 from zoneinfo import ZoneInfo
 
@@ -237,11 +237,16 @@ def analytics_dashboard(
 
     Os painéis de detalhe (funil, imóveis, bairros, dispositivos, horários,
     termos) leem os eventos brutos, limitados aos últimos 90 dias.
+
+    Os eventos entram na hora em que acontecem, e esta leitura é feita no
+    momento da chamada: `atualizado_em` (hora de Brasília) é até quando o
+    dia corrente está contado.
     """
     if periodo not in (7, 30, 90, 365):
         periodo = 30
 
-    hoje = datetime.now(_TZ_BR).date()
+    agora = datetime.now(_TZ_BR)
+    hoje = agora.date()
     fim = hoje - timedelta(days=1)
     inicio = fim - timedelta(days=periodo - 1)
     inicio_anterior = inicio - timedelta(days=periodo)
@@ -274,6 +279,7 @@ def analytics_dashboard(
 
     return {
         "periodo": periodo,
+        "atualizado_em": agora.isoformat(timespec="seconds"),
         "inicio": inicio.isoformat(),
         "fim": fim.isoformat(),
         "historico_desde": historico_desde,
@@ -316,6 +322,36 @@ def analytics_dashboard(
         "buscas_vazias": supabase_admin.rpc(
             "analytics_buscas_vazias", {"dias": detalhe, "limite": 4}
         ).execute().data or [],
+    }
+
+
+@router.get("/analytics/morametrica/dia", tags=["Analytics"])
+def analytics_morametrica_dia(
+    dia: date = Query(..., description="Dia no fuso de Brasília (AAAA-MM-DD)"),
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Uso da MoraMétrica num dia só. Um dia passado vem inteiro, da meia-noite
+    à meia-noite de Brasília; o dia de hoje vem até `atualizado_em`.
+    `numeros` é None quando o dia é anterior ao histórico.
+    """
+    agora = datetime.now(_TZ_BR)
+    hoje = agora.date()
+    if dia > hoje:
+        raise HTTPException(status_code=422, detail="O dia ainda não chegou.")
+
+    linha = next(iter(supabase_admin.rpc(
+        "analytics_dias", {"p_desde": dia.isoformat(), "p_ate": dia.isoformat()}
+    ).execute().data or []), None)
+
+    return {
+        "dia": dia.isoformat(),
+        "completo": dia < hoje,
+        "atualizado_em": agora.isoformat(timespec="seconds"),
+        "numeros": (
+            {chave: linha.get(campo, 0) for chave, campo in _KPIS_MORAMETRICA.items()}
+            if linha else None
+        ),
     }
 
 
