@@ -15,8 +15,8 @@ export function ChamadaMoraMetrica() {
         Por quanto os imóveis do Rio foram vendidos
       </h2>
       <p className="mt-3 text-[15px] sm:text-base leading-relaxed text-[rgba(252,252,252,0.75)] max-w-xl mx-auto">
-        Valores reais de venda, unidade a unidade, declarados à Prefeitura para o cálculo do ITBI.
-        Busque um prédio, uma rua ou um bairro.
+        Valores reais de venda em toda a cidade, unidade por unidade, desde 2011. Busque um prédio,
+        uma rua ou um bairro.
       </p>
       <div className="mt-7">
         <ProvedorNavegacao manterRolagem={false}>

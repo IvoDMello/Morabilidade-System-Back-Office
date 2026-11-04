@@ -28,7 +28,7 @@ interface Props {
 }
 
 const DESCRICAO =
-  "Valores reais de venda dos imóveis do Rio, unidade a unidade, declarados à Prefeitura para o cálculo do ITBI. Acesso gratuito.";
+  "Valores reais de venda de imóveis em todo o Rio de Janeiro, unidade por unidade, desde 2011. Descubra por quanto cada imóvel foi vendido. Acesso gratuito.";
 
 type Carga = { resultado: RadarBusca | null; erro: boolean };
 
@@ -103,9 +103,9 @@ export default async function MoraMetricaPage({ searchParams }: Props) {
             </p>
             <h1 className="font-serif text-white text-[42px] sm:text-6xl leading-none mt-3">MoraMétrica</h1>
             <p className="mt-4 text-[15px] sm:text-lg leading-relaxed text-[rgba(252,252,252,0.75)] max-w-2xl mx-auto">
-              Valores reais de venda, unidade a unidade. Dados efetivamente declarados à Prefeitura
-              para o cálculo do ITBI, com{" "}
-              <em className="text-[#e8dea0]">acesso 100% gratuito para você.</em>
+              Valores reais de venda de imóveis em toda a cidade do Rio de Janeiro, unidade por
+              unidade, desde 2011 até os dias atuais. Descubra por quanto cada imóvel foi vendido em
+              sua última transação registrada.
             </p>
             <div className="mt-7 sm:mt-9">
               <BuscaMoraMetrica valorInicial={params.q ?? ""} />
