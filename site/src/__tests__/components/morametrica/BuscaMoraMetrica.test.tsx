@@ -67,6 +67,17 @@ describe("BuscaMoraMetrica", () => {
     expect(sugerirMoraMetrica).not.toHaveBeenCalled();
   });
 
+  it("no atalho da home, o resultado abre no topo da página", async () => {
+    const user = userEvent.setup();
+    render(
+      <ProvedorNavegacao manterRolagem={false}>
+        <BuscaMoraMetrica />
+      </ProvedorNavegacao>,
+    );
+    await user.type(screen.getByRole("combobox"), "Leblon{Enter}");
+    expect(push).toHaveBeenCalledWith("/morametrica?q=Leblon", { scroll: true });
+  });
+
   it("exemplos levam à busca", async () => {
     const user = userEvent.setup();
     renderizar();

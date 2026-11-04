@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 // Busca e filtros mudam a URL e o servidor monta o novo resultado. A transição
 // mantém o resultado atual na tela (esmaecido) até o próximo chegar, em vez de
 // piscar a página inteira; o campo de busca e o resultado compartilham esse
-// estado por aqui.
+// estado por aqui. Fora da MoraMétrica (o atalho da home), a busca leva a outra
+// página e por isso abre no topo.
 
 interface Navegacao {
   navegar: (url: string) => void;
@@ -15,13 +16,19 @@ interface Navegacao {
 
 const Contexto = createContext<Navegacao | null>(null);
 
-export function ProvedorNavegacao({ children }: { children: React.ReactNode }) {
+export function ProvedorNavegacao({
+  children,
+  manterRolagem = true,
+}: {
+  children: React.ReactNode;
+  manterRolagem?: boolean;
+}) {
   const router = useRouter();
   const [carregando, iniciar] = useTransition();
 
   const navegar = useCallback(
-    (url: string) => iniciar(() => router.push(url, { scroll: false })),
-    [router],
+    (url: string) => iniciar(() => router.push(url, { scroll: !manterRolagem })),
+    [router, manterRolagem],
   );
 
   return <Contexto.Provider value={{ navegar, carregando }}>{children}</Contexto.Provider>;

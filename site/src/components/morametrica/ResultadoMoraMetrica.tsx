@@ -39,16 +39,16 @@ type Transacao = RadarBusca["transacoes"][number];
 export function ResultadoMoraMetrica({ dados, params }: Props) {
   const { carregando } = useNavegacao();
   const secao = useRef<HTMLElement>(null);
-  const primeiraVez = useRef(true);
   const identidade = [dados.tipo, dados.cl, dados.numero, dados.bairro, dados.consulta].join("|");
+  const identidadeAnterior = useRef(identidade);
 
   // Busca nova (não filtro) leva a tela até o resultado, se ele estiver fora de
-  // vista. No primeiro carregamento (link compartilhado) a página fica no topo.
+  // vista. No primeiro carregamento (link compartilhado ou busca vinda da home) a
+  // página fica no topo. Compara com a busca anterior, e não com "primeira vez",
+  // porque o React em desenvolvimento roda o efeito duas vezes ao montar.
   useEffect(() => {
-    if (primeiraVez.current) {
-      primeiraVez.current = false;
-      return;
-    }
+    if (identidadeAnterior.current === identidade) return;
+    identidadeAnterior.current = identidade;
     const topo = secao.current?.getBoundingClientRect().top;
     if (topo != null && (topo < 0 || topo > window.innerHeight * 0.5)) {
       secao.current?.scrollIntoView({ behavior: "smooth", block: "start" });

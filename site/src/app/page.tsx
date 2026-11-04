@@ -6,6 +6,7 @@ import { Footer } from "@/components/layout/Footer";
 import { DestaquesScroll } from "@/components/home/DestaquesScroll";
 import { TestimonialCarousel } from "@/components/home/TestimonialCarousel";
 import { HeroSearch } from "@/components/home/HeroSearch";
+import { ChamadaMoraMetrica } from "@/components/home/ChamadaMoraMetrica";
 import { getImoveisDestaques, getImoveisDisponiveis } from "@/lib/api";
 
 const pilares = [
@@ -217,6 +218,13 @@ export default async function HomePage() {
             </Link>
           </div>
         )}
+      </section>
+
+      {/* ── MoraMétrica (atalho com a busca) ── */}
+      <section style={{ backgroundColor: "#fcfcfc", paddingBottom: "clamp(48px,6vw,72px)" }}>
+        <div style={{ maxWidth: 1176, margin: "0 auto", padding: "0 clamp(20px,5vw,48px)" }}>
+          <ChamadaMoraMetrica />
+        </div>
       </section>
 
       {/* ── Faixa região (azulejo Morabilidade) ── */}
