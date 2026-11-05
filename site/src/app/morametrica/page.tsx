@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
-import { MoraMetricaTracker, type TipoBuscaMoraMetrica } from "@/components/analytics/MoraMetricaTracker";
+import {
+  MoraMetricaTracker,
+  type LocalBuscaMoraMetrica,
+  type TipoBuscaMoraMetrica,
+} from "@/components/analytics/MoraMetricaTracker";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { BuscaMoraMetrica } from "@/components/morametrica/BuscaMoraMetrica";
@@ -54,6 +58,20 @@ function tipoDaBusca({ resultado, erro }: Carga): TipoBuscaMoraMetrica {
   return resultado.tipo === "predio" && resultado.unidade ? "unidade" : resultado.tipo;
 }
 
+/**
+ * Rua e bairro da busca, para o ranking do painel. O primeiro bairro é o do
+ * prédio ou, numa rua que passa por vários, o que tem mais vendas.
+ */
+function localDaBusca({ resultado }: Carga): LocalBuscaMoraMetrica | undefined {
+  const bairro = resultado?.bairros?.[0];
+  if (!resultado || !bairro) return undefined;
+  if (resultado.tipo === "bairro") return { bairro };
+  if (resultado.tipo === "predio" || resultado.tipo === "rua") {
+    return { cl: resultado.cl ?? undefined, bairro };
+  }
+  return undefined;
+}
+
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
   const params = lerParametros(await searchParams);
   const base: Metadata = {
@@ -92,6 +110,7 @@ export default async function MoraMetricaPage({ searchParams }: Props) {
         <MoraMetricaTracker
           busca={novaBusca({ q: params.q, cl: params.cl, numero: params.numero, unidade: params.unidade, bairro: params.bairro })}
           tipo={tipoDaBusca(carga)}
+          local={localDaBusca(carga)}
         />
       )}
       <Navbar marcaMobile />

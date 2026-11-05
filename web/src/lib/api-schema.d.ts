@@ -40,7 +40,8 @@ export interface paths {
          *     período anterior inteiro, o delta é None.
          *
          *     Os painéis de detalhe (funil, imóveis, bairros, dispositivos, horários,
-         *     termos) leem os eventos brutos, limitados aos últimos 90 dias.
+         *     termos, bairros e ruas da MoraMétrica) leem os eventos brutos, limitados
+         *     aos últimos 90 dias.
          *
          *     Os eventos entram na hora em que acontecem, e esta leitura é feita no
          *     momento da chamada: `atualizado_em` (hora de Brasília) é até quando o
@@ -1655,7 +1656,12 @@ export interface paths {
         put?: never;
         /**
          * Track Morametrica
-         * @description Busca feita na MoraMétrica. Guarda só o tipo de resultado, nunca o endereço.
+         * @description Busca feita na MoraMétrica: o tipo de resultado e, quando a busca achou
+         *     algo, a rua (cl) e o bairro. Nunca o número do prédio nem a unidade.
+         *
+         *     O bairro só é gravado se existir na base, com a grafia dela: o endpoint é
+         *     público, e texto inventado não entra no ranking. Sem bairro válido, a rua
+         *     também fica de fora.
          */
         post: operations["track_morametrica_publico_morametrica_post"];
         delete?: never;
@@ -3549,6 +3555,10 @@ export interface components {
         Mobiliado: "sim" | "nao" | "semi-mobiliado";
         /** MoraMetricaPayload */
         MoraMetricaPayload: {
+            /** Bairro */
+            bairro?: string | null;
+            /** Cl */
+            cl?: number | null;
             /** Session Id */
             session_id: string;
             /** Tipo */

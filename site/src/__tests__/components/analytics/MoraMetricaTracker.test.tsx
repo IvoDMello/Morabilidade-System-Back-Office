@@ -20,11 +20,31 @@ describe("MoraMetricaTracker", () => {
     expect(payload.session_id).toBeTruthy();
   });
 
-  it("não manda o endereço buscado", async () => {
+  it("não manda o texto digitado", async () => {
     render(<MoraMetricaTracker busca="/morametrica?q=Rua+Bom+Pastor%2C+521" tipo="predio" />);
     const corpo = await (sendBeacon.mock.calls[0][1] as Blob).text();
     expect(corpo).not.toMatch(/Bom Pastor|Bom\+Pastor/);
     expect(Object.keys(JSON.parse(corpo)).sort()).toEqual(["session_id", "tipo"]);
+  });
+
+  it("manda a rua e o bairro, nunca o número nem a unidade", async () => {
+    render(
+      <MoraMetricaTracker
+        busca="/morametrica?cl=12345&numero=521&unidade=Apto+0801"
+        tipo="unidade"
+        local={{ cl: 12345, bairro: "Tijuca" }}
+      />,
+    );
+    const payload = JSON.parse(await (sendBeacon.mock.calls[0][1] as Blob).text());
+    expect(Object.keys(payload).sort()).toEqual(["bairro", "cl", "session_id", "tipo"]);
+    expect(payload).toMatchObject({ cl: 12345, bairro: "Tijuca" });
+  });
+
+  it("busca de bairro manda só o bairro", async () => {
+    render(<MoraMetricaTracker busca="/morametrica?bairro=ipanema" tipo="bairro" local={{ bairro: "Ipanema" }} />);
+    const payload = JSON.parse(await (sendBeacon.mock.calls[0][1] as Blob).text());
+    expect(payload.bairro).toBe("Ipanema");
+    expect(payload).not.toHaveProperty("cl");
   });
 
   it("re-render da mesma busca (filtro, ordem, página) não conta de novo", () => {

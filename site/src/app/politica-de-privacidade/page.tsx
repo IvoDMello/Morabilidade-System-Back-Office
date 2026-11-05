@@ -23,7 +23,7 @@ export const metadata: Metadata = {
  */
 
 /** Data da última revisão do texto. Atualizar junto com qualquer mudança. */
-const ATUALIZADO_EM = "9 de setembro de 2026";
+const ATUALIZADO_EM = "5 de novembro de 2026";
 
 /** CNPJ fica vazio até confirmação, igual a `empresa_cnpj` em api/app/config.py. */
 const CNPJ = "";
@@ -113,8 +113,9 @@ export default function PoliticaDePrivacidadePage() {
             <Item titulo="Ao navegar pelo site">
               Registramos um identificador aleatório de sessão (gerado no seu navegador, sem
               relação com sua identidade), as páginas visitadas, o código do imóvel consultado,
-              a página que trouxe você até aqui e o tipo de navegador. Serve para entendermos
-              quais imóveis despertam interesse.{" "}
+              a rua e o bairro pesquisados na MoraMétrica (sem o número nem o apartamento), a
+              página que trouxe você até aqui e o tipo de navegador. Serve para entendermos
+              quais imóveis e regiões despertam interesse.{" "}
               <strong>Não armazenamos o seu endereço IP nessa medição.</strong>
             </Item>
 

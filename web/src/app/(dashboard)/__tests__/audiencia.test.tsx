@@ -86,6 +86,20 @@ const DASHBOARD_OK = {
   heatmap: [{ dow: 0, hora: 12, total: 25 }],
   termos: [{ termo: "apartamento ipanema", total: 64 }],
   buscas_vazias: [{ termo: "cobertura barra da tijuca", pessoas: 8 }],
+  morametrica_bairros: [
+    {
+      bairro: "Leblon", buscas: 87, buscas_bairro: 21,
+      ruas: [
+        { cl: 3, rua: "Rua Dias Ferreira", buscas: 33 },
+        { cl: 5, rua: "Avenida Delfim Moreira", buscas: 19 },
+      ],
+    },
+    {
+      bairro: "Gávea", buscas: 41, buscas_bairro: 0,
+      ruas: [{ cl: 4, rua: "Rua Marquês de São Vicente", buscas: 29 }],
+    },
+    { bairro: "Urca", buscas: 9, buscas_bairro: 9, ruas: [] },
+  ],
 };
 
 describe("Página /audiencia", () => {
@@ -244,6 +258,40 @@ describe("Página /audiencia", () => {
     render(<AudienciaPage />);
     expect(await screen.findByText("Cobertura Ipanema")).toBeInTheDocument();
     expect(screen.getAllByText("Ipanema").length).toBeGreaterThan(0);
+  });
+
+  it("mostra os bairros mais buscados na MoraMétrica, com as ruas do primeiro", async () => {
+    render(<AudienciaPage />);
+    expect(await screen.findByText("Bairros mais buscados")).toBeInTheDocument();
+    expect(screen.getByText("MoraMétrica · últimos 30 dias")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Leblon/ })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByText("Ruas mais buscadas em Leblon")).toBeInTheDocument();
+    expect(screen.getByText("87 buscas no bairro, 21 pelo bairro inteiro.")).toBeInTheDocument();
+    expect(screen.getByText("Rua Dias Ferreira")).toBeInTheDocument();
+  });
+
+  it("clicar num bairro mostra as ruas dele", async () => {
+    render(<AudienciaPage />);
+    fireEvent.click(await screen.findByRole("button", { name: /Gávea/ }));
+    expect(screen.getByRole("button", { name: /Gávea/ })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByText("Ruas mais buscadas em Gávea")).toBeInTheDocument();
+    expect(screen.getByText("41 buscas no bairro.")).toBeInTheDocument();
+    expect(screen.getByText("Rua Marquês de São Vicente")).toBeInTheDocument();
+    expect(screen.queryByText("Rua Dias Ferreira")).not.toBeInTheDocument();
+  });
+
+  it("bairro só buscado inteiro avisa que não há rua", async () => {
+    render(<AudienciaPage />);
+    fireEvent.click(await screen.findByRole("button", { name: /Urca/ }));
+    expect(screen.getByText(/Ninguém buscou uma rua ou um prédio deste bairro/)).toBeInTheDocument();
+  });
+
+  it("funciona com a API anterior, que não manda o ranking de bairros", async () => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { morametrica_bairros, ...semRanking } = DASHBOARD_OK;
+    vi.mocked(api.get).mockResolvedValue({ data: semRanking } as never);
+    render(<AudienciaPage />);
+    expect(await screen.findByText("Nenhuma busca com bairro registrada no período.")).toBeInTheDocument();
   });
 
   it("exibe fallback amigável quando a API falha", async () => {

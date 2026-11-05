@@ -74,6 +74,17 @@ interface DashboardData {
   heatmap: { dow: number; hora: number; total: number }[];
   termos: { termo: string; total: number }[];
   buscas_vazias: { termo: string; pessoas: number }[];
+  /** Top bairros da MoraMétrica com as ruas de cada um. Ausente na API anterior. */
+  morametrica_bairros?: BairroMoraMetrica[];
+}
+
+interface BairroMoraMetrica {
+  bairro: string;
+  /** Todas as buscas que caíram no bairro (prédios, ruas e o bairro inteiro). */
+  buscas: number;
+  /** Dessas, as que foram pelo bairro inteiro, sem rua. */
+  buscas_bairro: number;
+  ruas: { cl: number; rua: string; buscas: number }[];
 }
 
 /** Uso da MoraMétrica num dia só (/analytics/morametrica/dia). */
@@ -700,6 +711,113 @@ function MoraMetricaSecao({ dados, serie, semanal, hoje, inicio, fim, atualizado
   );
 }
 
+function Barra({ valor, max, cor }: { valor: number; max: number; cor: string }) {
+  return (
+    <span className="block h-1.5 bg-slate-50 rounded-full overflow-hidden">
+      <span
+        className="block h-full rounded-full"
+        style={{ width: `${Math.max(2, (valor / max) * 100)}%`, backgroundColor: cor }}
+      />
+    </span>
+  );
+}
+
+function RuasDoBairro({ bairro }: { bairro: BairroMoraMetrica }) {
+  const max = Math.max(1, ...bairro.ruas.map((r) => r.buscas));
+  return (
+    <div aria-live="polite" className="lg:border-l lg:border-slate-100 lg:pl-6">
+      <h4 className="text-sm font-semibold text-slate-800">Ruas mais buscadas em {bairro.bairro}</h4>
+      <p className="text-xs text-slate-400 mt-0.5 mb-4">
+        {fmt(bairro.buscas)} {bairro.buscas === 1 ? "busca" : "buscas"} no bairro
+        {bairro.buscas_bairro > 0 && `, ${fmt(bairro.buscas_bairro)} pelo bairro inteiro`}.
+      </p>
+      {bairro.ruas.length === 0 ? (
+        <p className="text-sm text-slate-400 text-center py-8">
+          Ninguém buscou uma rua ou um prédio deste bairro no período.
+        </p>
+      ) : (
+        <ol className="space-y-3">
+          {bairro.ruas.map((r, i) => (
+            <li key={r.cl} className="flex items-center gap-3">
+              <span className="w-5 flex-shrink-0 text-right text-xs text-slate-400 tabular-nums">{i + 1}</span>
+              <span className="flex-1 min-w-0">
+                <span className="block text-sm text-slate-700 truncate mb-1">{r.rua}</span>
+                <Barra valor={r.buscas} max={max} cor={OLIVE} />
+              </span>
+              <span className="w-12 flex-shrink-0 text-right text-xs text-slate-500 tabular-nums">
+                {fmt(r.buscas)}
+              </span>
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
+  );
+}
+
+/** Top bairros da MoraMétrica; clicar num deles mostra as ruas mais buscadas ali. */
+function BairrosMoraMetrica({ bairros, dias }: { bairros: BairroMoraMetrica[]; dias: number }) {
+  const [escolhido, setEscolhido] = useState<string | null>(null);
+  // Trocar o período pode tirar o bairro escolhido do top: volta ao primeiro
+  const atual = bairros.find((b) => b.bairro === escolhido) ?? bairros[0];
+  const max = Math.max(1, ...bairros.map((b) => b.buscas));
+
+  return (
+    <section className="bg-white rounded-2xl border border-slate-200 p-5">
+      <div className="mb-4">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+          MoraMétrica · últimos {dias} dias
+        </p>
+        <h3 className="font-semibold text-slate-800 mt-0.5">Bairros mais buscados</h3>
+      </div>
+      {!atual ? (
+        <p className="text-sm text-slate-400 text-center py-10">
+          Nenhuma busca com bairro registrada no período.
+        </p>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div>
+            <p className="text-xs text-slate-400 mb-2">Clique num bairro para ver as ruas.</p>
+            <ol className="space-y-0.5">
+              {bairros.map((b, i) => {
+                const ativo = b.bairro === atual.bairro;
+                return (
+                  <li key={b.bairro}>
+                    <button
+                      type="button"
+                      aria-pressed={ativo}
+                      onClick={() => setEscolhido(b.bairro)}
+                      className={`w-full flex items-center gap-3 rounded-lg px-2 py-1.5 text-left transition ${
+                        ativo ? "bg-slate-100" : "hover:bg-slate-50"
+                      }`}
+                    >
+                      <span className="w-5 flex-shrink-0 text-right text-xs text-slate-400 tabular-nums">{i + 1}</span>
+                      <span
+                        className={`w-28 sm:w-36 flex-shrink-0 truncate text-sm ${
+                          ativo ? "font-semibold text-slate-900" : "font-medium text-slate-700"
+                        }`}
+                      >
+                        {b.bairro}
+                      </span>
+                      <span className="flex-1 min-w-0">
+                        <Barra valor={b.buscas} max={max} cor={ativo ? OLIVE : GOLD} />
+                      </span>
+                      <span className="w-12 flex-shrink-0 text-right text-xs text-slate-500 tabular-nums">
+                        {fmt(b.buscas)}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
+          <RuasDoBairro bairro={atual} />
+        </div>
+      )}
+    </section>
+  );
+}
+
 // ── Funil ────────────────────────────────────────────────────────────────────
 function FunilJornada({ funil }: { funil: DashboardData["funil"] }) {
   const etapas = [
@@ -1281,6 +1399,13 @@ export default function AudienciaPage() {
         />
       )}
 
+      {dadosFiltrados && (
+        <BairrosMoraMetrica
+          bairros={dadosFiltrados.morametrica_bairros ?? []}
+          dias={dadosFiltrados.detalhe_dias}
+        />
+      )}
+
       {/* Jornada + Origem */}
       {dadosFiltrados && (
         <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-3">
@@ -1331,6 +1456,10 @@ export default function AudienciaPage() {
           <p>
             Busca na MoraMétrica é cada endereço consultado, inclusive os abertos a partir de
             outro resultado (uma rua e depois um prédio dela).
+          </p>
+          <p>
+            Bairros da MoraMétrica: a busca de um prédio conta no bairro dele, e a de uma rua, no
+            bairro onde ela tem mais vendas. Buscas que não acharam nada ficam de fora.
           </p>
           <p>
             Jornada, anúncios, bairros, dispositivo, horários e buscas: últimos {dados.detalhe_dias} dias,

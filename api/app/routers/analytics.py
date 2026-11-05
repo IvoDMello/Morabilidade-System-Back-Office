@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 from app.auth.dependencies import get_current_user
 from app.database import supabase_admin
 from app.limiter import limiter
+from app.routers.radar import bairro_canonico
 
 router = APIRouter()
 
@@ -182,18 +183,38 @@ def track_video(request: Request, body: VideoPayload):
 class MoraMetricaPayload(BaseModel):
     session_id: str = Field(..., min_length=8, max_length=128)
     tipo: str = Field(..., pattern=r"^(predio|unidade|rua|bairro|ambiguo|nenhum|erro)$")
+    # Onde a busca caiu, para o ranking de bairros e ruas. Nunca número nem unidade.
+    cl: Optional[int] = Field(default=None, ge=1, le=9_999_999)
+    bairro: Optional[str] = Field(default=None, max_length=80)
+
+
+# Buscas que caem numa rua; a de bairro tem só o bairro.
+_TIPOS_COM_RUA = ("predio", "unidade", "rua")
 
 
 @router.post("/publico/morametrica", status_code=status.HTTP_204_NO_CONTENT, tags=["Analytics"])
 @limiter.limit("120/minute")
 def track_morametrica(request: Request, body: MoraMetricaPayload):
-    """Busca feita na MoraMétrica. Guarda só o tipo de resultado, nunca o endereço."""
+    """
+    Busca feita na MoraMétrica: o tipo de resultado e, quando a busca achou
+    algo, a rua (cl) e o bairro. Nunca o número do prédio nem a unidade.
+
+    O bairro só é gravado se existir na base, com a grafia dela: o endpoint é
+    público, e texto inventado não entra no ranking. Sem bairro válido, a rua
+    também fica de fora.
+    """
     user_agent = (request.headers.get("user-agent") or "")[:500] or None
-    supabase_admin.table("morametrica_buscas").insert({
+    linha = {
         "session_id": body.session_id,
         "tipo": body.tipo,
         "is_bot": _is_bot(user_agent),
-    }).execute()
+    }
+    bairro = bairro_canonico(body.bairro) if body.tipo in (*_TIPOS_COM_RUA, "bairro") else None
+    if bairro:
+        linha["bairro"] = bairro
+        if body.cl and body.tipo in _TIPOS_COM_RUA:
+            linha["cl"] = body.cl
+    supabase_admin.table("morametrica_buscas").insert(linha).execute()
 
 
 # ── Endpoints autenticados (dashboard interno) ────────────────────────────────
@@ -203,6 +224,10 @@ _TZ_BR = ZoneInfo("America/Sao_Paulo")
 # Os eventos brutos são apagados após 90 dias (purge_old_logs, migration 032):
 # os painéis de detalhe não enxergam além disso.
 _DIAS_DETALHE = 90
+
+# Ranking da MoraMétrica: bairros, e ruas de cada um deles.
+_TOP_BAIRROS_MORAMETRICA = 15
+_TOP_RUAS_MORAMETRICA = 15
 
 # Colunas de analytics_diario somadas nos cards.
 _KPIS_SITE = ("visitas", "acessos", "vistas_imovel", "buscas", "favoritos")
@@ -236,7 +261,8 @@ def analytics_dashboard(
     período anterior inteiro, o delta é None.
 
     Os painéis de detalhe (funil, imóveis, bairros, dispositivos, horários,
-    termos) leem os eventos brutos, limitados aos últimos 90 dias.
+    termos, bairros e ruas da MoraMétrica) leem os eventos brutos, limitados
+    aos últimos 90 dias.
 
     Os eventos entram na hora em que acontecem, e esta leitura é feita no
     momento da chamada: `atualizado_em` (hora de Brasília) é até quando o
@@ -321,6 +347,10 @@ def analytics_dashboard(
         ).execute().data or [],
         "buscas_vazias": supabase_admin.rpc(
             "analytics_buscas_vazias", {"dias": detalhe, "limite": 4}
+        ).execute().data or [],
+        "morametrica_bairros": supabase_admin.rpc(
+            "analytics_morametrica_bairros",
+            {"dias": detalhe, "limite": _TOP_BAIRROS_MORAMETRICA, "limite_ruas": _TOP_RUAS_MORAMETRICA},
         ).execute().data or [],
     }
 

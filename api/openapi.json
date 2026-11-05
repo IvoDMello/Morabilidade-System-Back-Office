@@ -5671,6 +5671,31 @@
       },
       "MoraMetricaPayload": {
         "properties": {
+          "bairro": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bairro"
+          },
+          "cl": {
+            "anyOf": [
+              {
+                "maximum": 9999999.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cl"
+          },
           "session_id": {
             "maxLength": 128,
             "minLength": 8,
@@ -8282,7 +8307,7 @@
     },
     "/analytics/dashboard": {
       "get": {
-        "description": "Resumo completo da aba /audiencia em uma única chamada.\n\nAs contagens (cards do site e da MoraMétrica, série, origem) vêm de\nanalytics_dias, o histórico diário que não é apagado (migration 060). O\nperíodo são dias fechados terminando ontem, comparados com o mesmo número\nde dias antes deles; o dia corrente vem à parte em `hoje`, para não\ncomparar um dia pela metade com dias inteiros. Se o histórico não cobre o\nperíodo anterior inteiro, o delta é None.\n\nOs painéis de detalhe (funil, imóveis, bairros, dispositivos, horários,\ntermos) leem os eventos brutos, limitados aos últimos 90 dias.\n\nOs eventos entram na hora em que acontecem, e esta leitura é feita no\nmomento da chamada: `atualizado_em` (hora de Brasília) é até quando o\ndia corrente está contado.",
+        "description": "Resumo completo da aba /audiencia em uma única chamada.\n\nAs contagens (cards do site e da MoraMétrica, série, origem) vêm de\nanalytics_dias, o histórico diário que não é apagado (migration 060). O\nperíodo são dias fechados terminando ontem, comparados com o mesmo número\nde dias antes deles; o dia corrente vem à parte em `hoje`, para não\ncomparar um dia pela metade com dias inteiros. Se o histórico não cobre o\nperíodo anterior inteiro, o delta é None.\n\nOs painéis de detalhe (funil, imóveis, bairros, dispositivos, horários,\ntermos, bairros e ruas da MoraMétrica) leem os eventos brutos, limitados\naos últimos 90 dias.\n\nOs eventos entram na hora em que acontecem, e esta leitura é feita no\nmomento da chamada: `atualizado_em` (hora de Brasília) é até quando o\ndia corrente está contado.",
         "operationId": "analytics_dashboard_analytics_dashboard_get",
         "parameters": [
           {
@@ -14323,7 +14348,7 @@
     },
     "/publico/morametrica": {
       "post": {
-        "description": "Busca feita na MoraMétrica. Guarda só o tipo de resultado, nunca o endereço.",
+        "description": "Busca feita na MoraMétrica: o tipo de resultado e, quando a busca achou\nalgo, a rua (cl) e o bairro. Nunca o número do prédio nem a unidade.\n\nO bairro só é gravado se existir na base, com a grafia dela: o endpoint é\npúblico, e texto inventado não entra no ranking. Sem bairro válido, a rua\ntambém fica de fora.",
         "operationId": "track_morametrica_publico_morametrica_post",
         "requestBody": {
           "content": {

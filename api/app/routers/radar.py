@@ -101,6 +101,13 @@ def _bairros() -> dict[str, dict]:
     return bairros
 
 
+def bairro_canonico(nome: Optional[str]) -> Optional[str]:
+    """Nome do bairro como está na base ("Jardim Botânico"), a partir de
+    qualquer grafia. None se o bairro não existe na MoraMétrica."""
+    item = _bairros().get(texto_busca(nome)) if nome else None
+    return item["nome"] if item else None
+
+
 def _dados_ate() -> Optional[date]:
     """Último mês publicado pela Prefeitura (da última importação ok)."""
     achou, valor = _base.obter("dados_ate")

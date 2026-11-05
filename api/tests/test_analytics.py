@@ -246,6 +246,61 @@ def test_morametrica_rejeita_tipo_desconhecido(anon_client):
     assert res.status_code == 422
 
 
+def _bairro_da_base(nome):
+    """Stand-in de radar.bairro_canonico: só Ipanema existe na base."""
+    return "Ipanema" if nome and nome.strip().lower() == "ipanema" else None
+
+
+def _grava_morametrica(anon_client, **payload) -> dict:
+    db = make_db_mock(MagicMock(data=[]))
+    with patch("app.routers.analytics.supabase_admin", db), \
+            patch("app.routers.analytics.bairro_canonico", side_effect=_bairro_da_base):
+        res = anon_client.post("/publico/morametrica", json={"session_id": "session1234", **payload})
+    assert res.status_code == 204
+    return db.insert.call_args.args[0]
+
+
+def test_morametrica_grava_rua_e_bairro_com_a_grafia_da_base(anon_client):
+    inserido = _grava_morametrica(anon_client, tipo="predio", cl=83360, bairro="IPANEMA")
+    assert inserido["cl"] == 83360
+    assert inserido["bairro"] == "Ipanema"
+
+
+def test_morametrica_nunca_grava_numero_nem_unidade(anon_client):
+    inserido = _grava_morametrica(
+        anon_client, tipo="unidade", cl=83360, bairro="Ipanema", numero=136, unidade="Apto 0801",
+    )
+    assert set(inserido) == {"session_id", "tipo", "is_bot", "cl", "bairro"}
+
+
+def test_morametrica_busca_de_bairro_fica_sem_rua(anon_client):
+    inserido = _grava_morametrica(anon_client, tipo="bairro", cl=83360, bairro="Ipanema")
+    assert inserido["bairro"] == "Ipanema"
+    assert "cl" not in inserido
+
+
+def test_morametrica_bairro_fora_da_base_nao_entra(anon_client):
+    # Endpoint público: texto inventado não chega ao ranking, nem a rua junto
+    inserido = _grava_morametrica(anon_client, tipo="rua", cl=83360, bairro="Anuncie aqui")
+    assert "bairro" not in inserido
+    assert "cl" not in inserido
+
+
+@pytest.mark.parametrize("tipo", ["ambiguo", "nenhum", "erro"])
+def test_morametrica_busca_sem_resultado_fica_sem_local(anon_client, tipo):
+    inserido = _grava_morametrica(anon_client, tipo=tipo, cl=83360, bairro="Ipanema")
+    assert "bairro" not in inserido
+    assert "cl" not in inserido
+
+
+def test_morametrica_rejeita_cl_invalido(anon_client):
+    res = anon_client.post(
+        "/publico/morametrica",
+        json={"session_id": "session1234", "tipo": "rua", "cl": 0, "bairro": "Ipanema"},
+    )
+    assert res.status_code == 422
+
+
 # ── /analytics/dashboard (autenticado) ───────────────────────────────────────
 
 HOJE = date(2026, 11, 2)
@@ -275,8 +330,8 @@ def _historico(desde: date, ate: date, **valores) -> list:
     return [_dia(desde + timedelta(days=i), **valores) for i in range((ate - desde).days + 1)]
 
 
-def _dashboard_db(dias: list):
-    """Mock: analytics_dias primeiro, depois as 7 RPCs de detalhe."""
+def _dashboard_db(dias: list, morametrica_bairros: list | None = None):
+    """Mock: analytics_dias primeiro, depois as 8 RPCs de detalhe."""
     return make_db_mock(
         MagicMock(data=dias),
         MagicMock(data=[{"visitaram": 100, "buscaram": 30, "abriram": 25, "favoritaram": 12}]),
@@ -286,6 +341,7 @@ def _dashboard_db(dias: list):
         MagicMock(data=[]),                         # heatmap
         MagicMock(data=[]),                         # termos
         MagicMock(data=[]),                         # buscas_vazias
+        MagicMock(data=morametrica_bairros or []),  # morametrica_bairros
     )
 
 
@@ -400,9 +456,24 @@ def test_dashboard_retorna_todas_secoes(client, hoje_fixo):
     for secao in (
         "kpis", "morametrica", "hoje", "serie", "funil", "origem",
         "top_imoveis", "bairros", "dispositivos",
-        "heatmap", "termos", "buscas_vazias",
+        "heatmap", "termos", "buscas_vazias", "morametrica_bairros",
     ):
         assert secao in body
+
+
+def test_dashboard_traz_bairros_e_ruas_da_morametrica(client, hoje_fixo):
+    ranking = [{
+        "bairro": "Ipanema", "buscas": 40, "buscas_bairro": 10,
+        "ruas": [{"cl": 83360, "rua": "Avenida Vieira Souto", "buscas": 25}],
+    }]
+    db = _dashboard_db([], morametrica_bairros=ranking)
+    with patch("app.routers.analytics.supabase_admin", db):
+        body = client.get("/analytics/dashboard?periodo=365").json()
+    # Top 15 bairros com até 15 ruas cada, na janela do detalhe (90 dias)
+    db.rpc.assert_any_call(
+        "analytics_morametrica_bairros", {"dias": 90, "limite": 15, "limite_ruas": 15},
+    )
+    assert body["morametrica_bairros"] == ranking
 
 
 def test_dashboard_informa_ate_quando_leu(client, hoje_fixo):
