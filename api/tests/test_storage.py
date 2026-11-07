@@ -231,6 +231,36 @@ def test_deletar_foto_url_malformada_nao_propaga():
         _run(storage.deletar_foto("url-sem-padrao-esperado"))  # não levanta
 
 
+# ── deletar_fotos (em lote) ───────────────────────────────────────────────────
+
+def test_deletar_fotos_uma_chamada_por_bucket():
+    db, bucket = _storage_mock()
+    with patch.object(storage, "supabase_admin", db):
+        _run(storage.deletar_fotos([
+            "https://x/object/public/media/imoveis/1/a.jpg",
+            "https://x/object/public/media/imoveis/1/b.jpg",
+        ]))
+    db.storage.from_.assert_called_once_with("media")
+    bucket.remove.assert_called_once_with(["imoveis/1/a.jpg", "imoveis/1/b.jpg"])
+
+
+def test_deletar_fotos_ignora_url_malformada_e_apaga_o_resto():
+    db, bucket = _storage_mock()
+    with patch.object(storage, "supabase_admin", db):
+        _run(storage.deletar_fotos([
+            "url-sem-padrao-esperado",
+            "https://x/object/public/media/imoveis/1/a.jpg",
+        ]))
+    bucket.remove.assert_called_once_with(["imoveis/1/a.jpg"])
+
+
+def test_deletar_fotos_erro_do_storage_nao_propaga():
+    db, bucket = _storage_mock()
+    bucket.remove.side_effect = RuntimeError("storage fora do ar")
+    with patch.object(storage, "supabase_admin", db):
+        _run(storage.deletar_fotos(["https://x/object/public/media/imoveis/1/a.jpg"]))  # não levanta
+
+
 # ── _bucket_e_path_da_url ─────────────────────────────────────────────────────
 
 def test_bucket_e_path_da_url():

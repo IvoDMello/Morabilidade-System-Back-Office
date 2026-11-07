@@ -42,6 +42,8 @@ function GaleriaFotos({ imovelId, fotos: fotosProp, onAtualizar }: {
   const [deletandoLoading, setDeletandoLoading] = useState(false);
   const [rotacionandoId, setRotacionandoId] = useState<string | null>(null);
   const [reordenando, setReordenando] = useState(false);
+  const [confirmApagarTodas, setConfirmApagarTodas] = useState(false);
+  const [apagandoTodas, setApagandoTodas] = useState(false);
 
   // Cópia local da lista para suportar reordenação otimista (rollback em erro).
   const [fotos, setFotos] = useState<Foto[]>(fotosProp);
@@ -93,6 +95,21 @@ function GaleriaFotos({ imovelId, fotos: fotosProp, onAtualizar }: {
       toast.error("Erro ao excluir foto.");
     } finally {
       setDeletandoLoading(false);
+    }
+  }
+
+  async function handleApagarTodas() {
+    const qtd = fotos.length;
+    setApagandoTodas(true);
+    try {
+      await api.delete(`/imoveis/${imovelId}/fotos`);
+      toast.success(qtd === 1 ? "Foto excluída." : `${qtd} fotos excluídas.`);
+      setConfirmApagarTodas(false);
+      onAtualizar();
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Erro ao excluir as fotos."));
+    } finally {
+      setApagandoTodas(false);
     }
   }
 
@@ -175,6 +192,17 @@ function GaleriaFotos({ imovelId, fotos: fotosProp, onAtualizar }: {
               </span>
             )}
             <span className="text-xs text-slate-400">{fotos.length}/{MAX_FOTOS}</span>
+            {fotos.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setConfirmApagarTodas(true)}
+                disabled={uploading || reordenando || apagandoTodas}
+                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-600 border border-red-200 rounded-md hover:bg-red-50 transition disabled:opacity-50"
+              >
+                <Trash2 className="w-3 h-3" />
+                Apagar todas
+              </button>
+            )}
           </div>
         </div>
         {fotos.length > 0 && (
@@ -313,6 +341,20 @@ function GaleriaFotos({ imovelId, fotos: fotosProp, onAtualizar }: {
         description="Tem certeza que deseja excluir esta foto? A ação não pode ser desfeita."
         loading={deletandoLoading}
         onConfirm={handleDeletarFoto}
+      />
+
+      <ConfirmDialog
+        open={confirmApagarTodas}
+        onOpenChange={(open) => { if (!open && !apagandoTodas) setConfirmApagarTodas(false); }}
+        title="Apagar todas as fotos"
+        description={
+          fotos.length === 1
+            ? "Tem certeza que deseja excluir a única foto deste imóvel? A ação não pode ser desfeita."
+            : `Tem certeza que deseja excluir as ${fotos.length} fotos deste imóvel? A ação não pode ser desfeita.`
+        }
+        confirmLabel="Apagar todas"
+        loading={apagandoTodas}
+        onConfirm={handleApagarTodas}
       />
     </div>
   );

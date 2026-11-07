@@ -838,6 +838,54 @@ def test_remover_foto_nao_encontrada(client):
     assert res.status_code == 404
 
 
+def _detalhe_com_fotos(fotos):
+    return MagicMock(data={
+        "id": "imovel-uuid-1", "codigo": "MB-00001",
+        "imovel_fotos": fotos, "imovel_tags": [],
+    })
+
+
+def test_remover_todas_fotos_sucesso(client):
+    detalhe = _detalhe_com_fotos([
+        {"id": "f2", "url": "https://x/object/public/media/imoveis/1/b.jpg", "ordem": 2},
+        {"id": "f1", "url": "https://x/object/public/media/imoveis/1/a.jpg", "ordem": 1},
+    ])
+    db = make_db_mock(detalhe, MagicMock(data=[]))
+    deletar = AsyncMock()
+    with patch("app.routers.imoveis.supabase_admin", db), \
+         patch("app.routers.imoveis.deletar_fotos", new=deletar), \
+         patch("app.routers.imoveis.revalidar_imovel") as revalidar:
+        res = client.delete("/imoveis/imovel-uuid-1/fotos")
+    assert res.status_code == 204
+    # Um único DELETE filtrado pelo imóvel, não um por foto.
+    db.delete.assert_called_once()
+    db.eq.assert_any_call("imovel_id", "imovel-uuid-1")
+    deletar.assert_awaited_once_with([
+        "https://x/object/public/media/imoveis/1/a.jpg",
+        "https://x/object/public/media/imoveis/1/b.jpg",
+    ])
+    revalidar.assert_called_once_with("MB-00001")
+
+
+def test_remover_todas_fotos_sem_fotos_nao_apaga_nada(client):
+    db = make_db_mock(_detalhe_com_fotos([]))
+    deletar = AsyncMock()
+    with patch("app.routers.imoveis.supabase_admin", db), \
+         patch("app.routers.imoveis.deletar_fotos", new=deletar):
+        res = client.delete("/imoveis/imovel-uuid-1/fotos")
+    assert res.status_code == 204
+    db.delete.assert_not_called()
+    deletar.assert_not_awaited()
+
+
+def test_remover_todas_fotos_imovel_inexistente(client):
+    db = make_db_mock(MagicMock(data=None))
+    with patch("app.routers.imoveis.supabase_admin", db), \
+         patch("app.routers.imoveis.deletar_fotos", new=AsyncMock()):
+        res = client.delete("/imoveis/imovel-uuid-1/fotos")
+    assert res.status_code == 404
+
+
 def test_reordenar_fotos_sucesso(client):
     existentes = MagicMock(data=[{"id": "a"}, {"id": "b"}])
     db = make_db_mock(existentes, MagicMock(data=[]), MagicMock(data=[]))

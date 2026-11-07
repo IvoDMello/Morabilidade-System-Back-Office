@@ -184,6 +184,28 @@ async def deletar_foto(url: str) -> None:
         logger.warning("Falha ao deletar foto do storage: url=%s erro=%s", url, e)
 
 
+async def deletar_fotos(urls: list[str]) -> None:
+    """Apaga várias fotos com uma chamada ao storage por bucket, em vez de uma
+    por foto. Best-effort como `deletar_foto`: falhas só vão para o log."""
+    por_bucket: dict[str, list[str]] = {}
+    for url in urls:
+        try:
+            bucket, path = _bucket_e_path_da_url(url)
+        except (IndexError, ValueError):
+            logger.warning("URL de foto fora do padrão, ignorada: url=%s", url)
+            continue
+        por_bucket.setdefault(bucket, []).append(path)
+
+    for bucket, paths in por_bucket.items():
+        try:
+            supabase_admin.storage.from_(bucket).remove(paths)
+        except Exception as e:
+            logger.warning(
+                "Falha ao deletar fotos do storage: bucket=%s qtd=%d erro=%s",
+                bucket, len(paths), e,
+            )
+
+
 def _para_jpeg(contents: bytes, qualidade: int = 85, aplicar_marca: bool = False) -> bytes:
     img = Image.open(io.BytesIO(contents))
     # Aplica a orientação registrada no EXIF antes de salvar. Sem isso, fotos

@@ -19,7 +19,7 @@ from app.schemas.imovel import (
 )
 from app.services.revalidacao import revalidar_imovel
 from app.services.storage import (
-    baixar_e_rotacionar, deletar_documento, deletar_foto, upload_bytes_jpeg,
+    baixar_e_rotacionar, deletar_documento, deletar_foto, deletar_fotos, upload_bytes_jpeg,
     upload_documento, upload_foto, url_publica_documento,
 )
 
@@ -962,6 +962,25 @@ async def remover_foto(
 
     await deletar_foto(foto.data["url"])
     supabase_admin.table("imovel_fotos").delete().eq("id", foto_id).execute()
+
+
+@router.delete("/{imovel_id}/fotos", status_code=status.HTTP_204_NO_CONTENT)
+async def remover_todas_fotos(
+    imovel_id: str,
+    current_user: dict = Depends(require_admin),
+):
+    """Apaga todas as fotos do imóvel de uma vez (registros e arquivos)."""
+    imovel = _buscar_imovel(imovel_id)
+    urls = [f["url"] for f in imovel.get("fotos") or []]
+    if not urls:
+        return
+
+    # Registros antes dos arquivos: se o storage falhar sobra arquivo órfão no
+    # bucket, mas o site nunca fica apontando para uma imagem que já não existe.
+    supabase_admin.table("imovel_fotos").delete().eq("imovel_id", imovel_id).execute()
+    await deletar_fotos(urls)
+    # Sem isso o site seguiria mostrando as fotos (quebradas) até o cache vencer.
+    revalidar_imovel(imovel.get("codigo"))
 
 
 class ReordenarFotosBody(BaseModel):

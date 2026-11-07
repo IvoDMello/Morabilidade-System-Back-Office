@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Upload, X, ImageOff, RotateCw, GripVertical } from "lucide-react";
+import { ArrowLeft, Upload, X, ImageOff, RotateCw, GripVertical, Trash2 } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 import { api, getErrorMessage } from "@/lib/api";
@@ -162,7 +162,20 @@ export default function NovoImovelPage() {
       <div className="mt-8 bg-white rounded-xl border border-slate-200 p-6">
         <div className="pb-2 mb-4 border-b border-slate-100 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Fotos</h3>
-          <span className="text-xs text-slate-400">{pendingFotos.length}/{MAX_FOTOS}</span>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-slate-400">{pendingFotos.length}/{MAX_FOTOS}</span>
+            {pendingFotos.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setPendingFotos([])}
+                disabled={isLoading || rotacionandoIdx !== null}
+                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-600 border border-red-200 rounded-md hover:bg-red-50 transition disabled:opacity-50"
+              >
+                <Trash2 className="w-3 h-3" />
+                Remover todas
+              </button>
+            )}
+          </div>
         </div>
         <p className="text-xs text-slate-400 mb-4">
           A primeira foto é a capa. Arraste para reordenar, gire usando o ícone <RotateCw className="inline w-3 h-3 align-text-bottom" /> se necessário.
