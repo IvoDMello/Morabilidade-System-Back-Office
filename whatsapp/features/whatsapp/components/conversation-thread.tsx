@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { isToday, isYesterday } from "date-fns";
 import { Download, FileText, MessageCircle, Reply } from "lucide-react";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -9,6 +8,7 @@ import { cn, formatDate, formatDateTime } from "@/lib/utils";
 import { mediaLabel, mediaSrc, messagePreview } from "@/lib/whatsapp-media";
 import { markConversationReadAction } from "@/app/conversas/actions";
 import { useReply } from "@/features/whatsapp/reply-context";
+import { useRefreshOnChanges } from "@/features/whatsapp/use-refresh-on-changes";
 import { MessageStatusIcon } from "./message-status-icon";
 import type { ID } from "@/types/common";
 import type { WhatsAppMessage } from "@/types/whatsapp";
@@ -77,8 +77,6 @@ function MessageBody({ message }: { message: WhatsAppMessage }) {
   );
 }
 
-const POLL_INTERVAL_MS = 4000;
-
 function dayLabel(iso: string): string {
   const date = new Date(iso);
   if (isToday(date)) return "Hoje";
@@ -114,12 +112,14 @@ export function ConversationThread({
   contactId,
   contactName,
   messages,
+  inboxVersion,
 }: {
   contactId: ID;
   contactName: string;
   messages: WhatsAppMessage[];
+  /** Maior `updatedAt` da lista de conversas (ver useRefreshOnChanges). */
+  inboxVersion: string | null;
 }) {
-  const router = useRouter();
   const { setReplyingTo } = useReply();
   const scrollRef = useRef<HTMLDivElement>(null);
   const days = useMemo(() => groupMessages(messages), [messages]);
@@ -133,12 +133,7 @@ export function ConversationThread({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contactId]);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (!document.hidden) router.refresh();
-    }, POLL_INTERVAL_MS);
-    return () => clearInterval(interval);
-  }, [router]);
+  useRefreshOnChanges({ inboxVersion, messages });
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });

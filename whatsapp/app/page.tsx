@@ -54,6 +54,13 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     : null;
   const [selectedContact, selectedMessages, templates] = selected ?? [null, [], []];
 
+  // Última mudança em qualquer conversa. A thread compara com o banco para só
+  // recarregar a página quando algo mudou (ver useRefreshOnChanges).
+  const inboxVersion = conversations.reduce<string | null>(
+    (max, c) => (max === null || c.updatedAt > max ? c.updatedAt : max),
+    null,
+  );
+
   // Captações do painel do copiloto — best-effort: uma indisponibilidade do
   // board não pode derrubar o inbox inteiro.
   let captacoesContato: CaptacaoResumo[] = [];
@@ -137,6 +144,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                   contactId={selectedContact.id}
                   contactName={selectedContact.name}
                   messages={selectedMessages}
+                  inboxVersion={inboxVersion}
                 />
                 <div className="border-t bg-card p-3">
                   {selectedContact.isBlocked ? (
