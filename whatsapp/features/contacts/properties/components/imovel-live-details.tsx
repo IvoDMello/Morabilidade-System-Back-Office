@@ -7,6 +7,10 @@ const DISPONIBILIDADE: Record<string, { label: string; className: string }> = {
     label: "Disponível",
     className: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
   },
+  em_cadastro: {
+    label: "Em cadastro",
+    className: "bg-sky-500/15 text-sky-700 dark:text-sky-400",
+  },
   reservado: {
     label: "Reservado",
     className: "bg-amber-500/15 text-amber-700 dark:text-amber-400",

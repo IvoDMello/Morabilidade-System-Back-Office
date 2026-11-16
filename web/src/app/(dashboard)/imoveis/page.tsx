@@ -58,16 +58,25 @@ interface Localidades {
   bairros_por_cidade: Record<string, string[]>;
 }
 
-// Disponibilidade: a lista abre só com o que está à venda/para alugar, porque
-// imóvel já fechado só interessa quando alguém pede. "Todos" continua a um
-// clique no select, e um link pode pedir a lista inteira com
-// `?disponibilidade=todos`.
-const DISP_PADRAO = "disponivel";
+// Disponibilidade: a lista abre com o que está à venda/para alugar, contando o
+// que ainda está em cadastro: o imóvel novo já é uma opção para o corretor
+// oferecer, mesmo antes de ir para o site. Imóvel já fechado só interessa
+// quando alguém pede. "Todos" continua a um clique no select, e um link pode
+// pedir a lista inteira com `?disponibilidade=todos`.
+//
+// O filtro guarda uma string só (o select é de escolha única), e a opção que
+// junta duas disponibilidades as separa por vírgula. Na hora de chamar a API
+// a string vira lista, que o axios manda como parâmetro repetido.
+const DISP_PADRAO = "disponivel,em_cadastro";
 const DISP_TODOS = "";
 
 function disponibilidadeDaUrl(valor: string | null): string {
   if (valor === null) return DISP_PADRAO;
   return valor === "todos" ? DISP_TODOS : valor;
+}
+
+function paramsDeDisponibilidade(valor: string): string[] {
+  return valor.split(",").filter(Boolean);
 }
 
 // Estado inicial da gaveta e destino do botão "Limpar" — "limpo" aqui é o
@@ -94,12 +103,20 @@ const FILTROS_PADRAO: Filtros = {
 
 const DISP_BAR: Record<string, string> = {
   disponivel: "bg-emerald-500",
+  em_cadastro: "bg-sky-500",
   reservado: "bg-amber-500",
   vendido_locado: "bg-slate-300",
 };
 
-const DISP_BADGE: Record<string, { label: string; class: string }> = {
+// `dica` vira o title da etiqueta: na lista que abre misturando disponível e
+// em cadastro, é ela que explica por que um imóvel da lista não está no site.
+const DISP_BADGE: Record<string, { label: string; class: string; dica?: string }> = {
   disponivel: { label: "Disponível", class: "bg-emerald-50 text-emerald-700 ring-emerald-200" },
+  em_cadastro: {
+    label: "Em cadastro",
+    class: "bg-sky-50 text-sky-700 ring-sky-200",
+    dica: "Disponível para os corretores, mas ainda fora do site",
+  },
   reservado: { label: "Reservado", class: "bg-amber-50 text-amber-700 ring-amber-200" },
   vendido_locado: { label: "Vendido/Locado", class: "bg-slate-100 text-slate-500 ring-slate-200" },
 };
@@ -196,7 +213,7 @@ function ImoveisPageInner() {
       if (filtros.codigo) params.codigo = filtros.codigo;
       if (filtros.descricao) params.descricao = filtros.descricao;
       if (filtros.tipo_negocio) params.tipo_negocio = filtros.tipo_negocio;
-      if (filtros.disponibilidade) params.disponibilidade = filtros.disponibilidade;
+      if (filtros.disponibilidade) params.disponibilidade = paramsDeDisponibilidade(filtros.disponibilidade);
       if (filtros.cidade) params.cidade = filtros.cidade;
       if (filtros.bairros.length) params.bairro = filtros.bairros;
       if (filtros.tipo_imovel) params.tipo_imovel = filtros.tipo_imovel;
@@ -245,7 +262,7 @@ setLoading(true);
       if (f.codigo) params.codigo = f.codigo;
       if (f.descricao) params.descricao = f.descricao;
       if (f.tipo_negocio) params.tipo_negocio = f.tipo_negocio;
-      if (f.disponibilidade) params.disponibilidade = f.disponibilidade;
+      if (f.disponibilidade) params.disponibilidade = paramsDeDisponibilidade(f.disponibilidade);
       if (f.cidade) params.cidade = f.cidade;
       if (f.bairros.length) params.bairro = f.bairros;
       if (f.tipo_imovel) params.tipo_imovel = f.tipo_imovel;
@@ -481,7 +498,9 @@ setLoading(true);
                 ariaLabel="Disponibilidade"
                 todosLabel="Todos"
                 options={[
+                  { value: DISP_PADRAO, label: "Disponível e em cadastro" },
                   { value: "disponivel", label: "Disponível" },
+                  { value: "em_cadastro", label: "Em cadastro" },
                   { value: "reservado", label: "Reservado" },
                   { value: "vendido_locado", label: "Vendido / Locado" },
                 ]}
@@ -1022,6 +1041,7 @@ setLoading(true);
                         </p>
                         {DISP_BADGE[imovel.disponibilidade] && (
                           <span
+                            title={DISP_BADGE[imovel.disponibilidade].dica}
                             className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ring-1 ${DISP_BADGE[imovel.disponibilidade].class}`}
                           >
                             {DISP_BADGE[imovel.disponibilidade].label}

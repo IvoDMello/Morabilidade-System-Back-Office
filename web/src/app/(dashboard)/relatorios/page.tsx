@@ -64,6 +64,7 @@ const TIPO_NEGOCIO_LABEL: Record<string, string> = {
 
 const DISPONIBILIDADE_LABEL: Record<string, string> = {
   disponivel: "Disponível",
+  em_cadastro: "Em cadastro",
   reservado: "Reservado",
   vendido_locado: "Vendido/Locado",
   indefinido: "Indefinido",

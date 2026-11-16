@@ -18,7 +18,7 @@ export interface User {
 // ── Imóveis ───────────────────────────────────────────────────────────────────
 
 export type TipoNegocio = "venda" | "locacao" | "ambos";
-export type Disponibilidade = "disponivel" | "reservado" | "vendido_locado";
+export type Disponibilidade = "disponivel" | "em_cadastro" | "reservado" | "vendido_locado";
 export type TipoImovel =
   | "apartamento" | "casa" | "casa_vila"
   | "casa_condominio" | "cobertura";

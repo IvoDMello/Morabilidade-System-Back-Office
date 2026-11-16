@@ -1065,6 +1065,79 @@ def test_exportar_imoveis_respeita_ordenacao(client):
     assert ("dormitorios", False) in ordens
 
 
+# ── Disponibilidade: "em cadastro" junto com disponível ──────────────────────
+
+def test_listar_imoveis_aceita_varias_disponibilidades(client):
+    """O painel abre com "disponível e em cadastro": as duas chegam numa query
+    só, com IN, e não como dois `eq` (que não trariam nada)."""
+    count_res = MagicMock(count=1, data=[])
+    data_res = MagicMock(count=1, data=[IMOVEL_DB])
+    db = make_db_mock(count_res, data_res)
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get(
+            "/imoveis/",
+            params=[("disponibilidade", "disponivel"), ("disponibilidade", "em_cadastro")],
+        )
+
+    assert res.status_code == 200
+    db.in_.assert_any_call("disponibilidade", ["disponivel", "em_cadastro"])
+    assert not any(c.args and c.args[0] == "disponibilidade" for c in db.eq.call_args_list)
+
+
+def test_listar_imoveis_uma_disponibilidade_continua_eq(client):
+    count_res = MagicMock(count=1, data=[])
+    data_res = MagicMock(count=1, data=[IMOVEL_DB])
+    db = make_db_mock(count_res, data_res)
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/", params={"disponibilidade": "em_cadastro"})
+
+    assert res.status_code == 200
+    db.eq.assert_any_call("disponibilidade", "em_cadastro")
+    assert not any(c.args and c.args[0] == "disponibilidade" for c in db.in_.call_args_list)
+
+
+def test_exportar_imoveis_aceita_varias_disponibilidades(client):
+    """O CSV exporta o mesmo recorte que a tela mostra."""
+    db = make_db_mock(MagicMock(data=[IMOVEL_DB]), MagicMock(data=[]))
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get(
+            "/imoveis/exportar",
+            params=[("disponibilidade", "disponivel"), ("disponibilidade", "em_cadastro")],
+        )
+
+    assert res.status_code == 200
+    db.in_.assert_any_call("disponibilidade", ["disponivel", "em_cadastro"])
+
+
+def test_criar_imovel_aceita_em_cadastro(client):
+    em_cadastro = {**IMOVEL_DB, "disponibilidade": "em_cadastro"}
+    # 3 execute(): rpc (codigo) + insert + _buscar_imovel
+    db = make_db_mock(MagicMock(data=1), MagicMock(data=[em_cadastro]), MagicMock(data=em_cadastro))
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.post("/imoveis/", json={**IMOVEL_PAYLOAD, "disponibilidade": "em_cadastro"})
+
+    assert res.status_code == 201
+    assert db.insert.call_args.args[0]["disponibilidade"] == "em_cadastro"
+    assert res.json()["disponibilidade"] == "em_cadastro"
+
+
+def test_publico_disponiveis_nao_traz_em_cadastro(client):
+    """O site só pede `disponivel`: um imóvel em cadastro nunca entra na vitrine."""
+    db = make_db_mock(MagicMock(count=0, data=[]), MagicMock(count=0, data=[]))
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/publico/disponiveis")
+
+    assert res.status_code == 200
+    filtros_disp = [c.args for c in db.eq.call_args_list if c.args and c.args[0] == "disponibilidade"]
+    assert filtros_disp and all(a == ("disponibilidade", "disponivel") for a in filtros_disp)
+    assert not any(c.args and c.args[0] == "disponibilidade" for c in db.in_.call_args_list)
+
+
 # ── Filtro multi-bairro ───────────────────────────────────────────────────────
 
 def test_listar_imoveis_aceita_varios_bairros(client):

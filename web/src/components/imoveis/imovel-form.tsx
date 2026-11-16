@@ -27,7 +27,7 @@ const schema = z.object({
   codigo: z.string().optional(),
   titulo: z.string().max(120, "Máximo de 120 caracteres").optional(),
   tipo_negocio: z.enum(["venda", "locacao", "ambos"]),
-  disponibilidade: z.enum(["disponivel", "reservado", "vendido_locado"]),
+  disponibilidade: z.enum(["disponivel", "em_cadastro", "reservado", "vendido_locado"]),
   condicao: z.enum(["em_construcao", "na_planta", "novo", "usado"]),
   cep: z.string().optional(),
   logradouro: z.string().min(1, "Logradouro obrigatório"),
@@ -258,6 +258,7 @@ export function ImovelForm({
     useFormAutosave<ImovelFormData>({ key: draftKey, watch, reset });
 
   const tipoNegocio = watch("tipo_negocio");
+  const disponibilidade = watch("disponibilidade");
   const selectedTagIds = watch("tag_ids") ?? [];
   const descricaoValue = watch("descricao");
   const proprietarioId = watch("proprietario_id");
@@ -488,9 +489,17 @@ export function ImovelForm({
             <Label required>Disponibilidade</Label>
             <select {...register("disponibilidade")} className={selectClass}>
               <option value="disponivel">Disponível</option>
+              <option value="em_cadastro">Em cadastro</option>
               <option value="reservado">Reservado</option>
               <option value="vendido_locado">Vendido / Locado</option>
             </select>
+            {/* Sem o aviso, "Em cadastro" parece só mais um jeito de dizer
+                disponível, e alguém poderia esperar o imóvel no site. */}
+            {disponibilidade === "em_cadastro" && (
+              <p className="mt-1 text-xs text-slate-400">
+                Aparece só no painel. Vai para o site quando mudar para Disponível.
+              </p>
+            )}
             <FieldError message={errors.disponibilidade?.message} />
           </div>
 

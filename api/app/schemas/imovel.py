@@ -12,6 +12,10 @@ class TipoNegocio(str, Enum):
 
 class Disponibilidade(str, Enum):
     disponivel = "disponivel"
+    # Imóvel que já está na carteira mas ainda não foi anunciado: os corretores
+    # o encontram no painel, o site não. Fica fora do site sem nenhum filtro a
+    # mais porque todo endpoint público pede `disponivel` explicitamente.
+    em_cadastro = "em_cadastro"
     reservado = "reservado"
     vendido_locado = "vendido_locado"
 

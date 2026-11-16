@@ -136,7 +136,17 @@ def _aplicar_filtros(query, *, tipo_negocio, disponibilidade, cidade, bairro,
     if tipo_negocio:
         query = query.eq("tipo_negocio", _ev(tipo_negocio))
     if disponibilidade:
-        query = query.eq("disponibilidade", _ev(disponibilidade))
+        # Uma só (o site pede `disponivel`) ou várias (o painel abre com
+        # "disponível e em cadastro"). Com uma, segue o `eq` de sempre.
+        valores = (
+            [_ev(d) for d in disponibilidade]
+            if isinstance(disponibilidade, (list, tuple))
+            else [_ev(disponibilidade)]
+        )
+        if len(valores) == 1:
+            query = query.eq("disponibilidade", valores[0])
+        else:
+            query = query.in_("disponibilidade", valores)
     if cidade:
         query = query.ilike("cidade_norm", f"%{_norm(cidade)}%")
     if bairro:
@@ -512,7 +522,7 @@ def detalhe_imovel_interno(
     WhatsApp) autenticadas pelo X-Internal-Token.
 
     Diferente de /publico/{codigo}, retorna o imóvel em QUALQUER status
-    (disponível, reservado, vendido) e com os dados internos/proprietário — o
+    (disponível, em cadastro, reservado, vendido) e com os dados internos/proprietário — o
     corretor comenta imóveis fora do catálogo público durante o atendimento.
     """
     result = (
@@ -587,7 +597,10 @@ def listar_localidades(current_user: dict = Depends(get_current_user)):
 @router.get("/exportar")
 def exportar_imoveis_csv(
     tipo_negocio: Optional[TipoNegocio] = None,
-    disponibilidade: Optional[Disponibilidade] = None,
+    disponibilidade: Optional[List[Disponibilidade]] = Query(
+        default=None,
+        description="Aceita várias: ?disponibilidade=disponivel&disponibilidade=em_cadastro (OR entre elas)",
+    ),
     cidade: Optional[str] = None,
     bairro: Optional[List[str]] = Query(
         default=None,
@@ -692,7 +705,10 @@ def exportar_imoveis_csv(
 def listar_imoveis(
     http_response: Response,
     tipo_negocio: Optional[TipoNegocio] = None,
-    disponibilidade: Optional[Disponibilidade] = None,
+    disponibilidade: Optional[List[Disponibilidade]] = Query(
+        default=None,
+        description="Aceita várias: ?disponibilidade=disponivel&disponibilidade=em_cadastro (OR entre elas)",
+    ),
     cidade: Optional[str] = None,
     bairro: Optional[List[str]] = Query(
         default=None,

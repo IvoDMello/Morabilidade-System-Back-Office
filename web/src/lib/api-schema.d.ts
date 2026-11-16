@@ -818,7 +818,7 @@ export interface paths {
          *     WhatsApp) autenticadas pelo X-Internal-Token.
          *
          *     Diferente de /publico/{codigo}, retorna o imóvel em QUALQUER status
-         *     (disponível, reservado, vendido) e com os dados internos/proprietário — o
+         *     (disponível, em cadastro, reservado, vendido) e com os dados internos/proprietário — o
          *     corretor comenta imóveis fora do catálogo público durante o atendimento.
          */
         get: operations["detalhe_imovel_interno_imoveis_interno__codigo__get"];
@@ -1001,7 +1001,11 @@ export interface paths {
         put?: never;
         /** Upload Fotos */
         post: operations["upload_fotos_imoveis__imovel_id__fotos_post"];
-        delete?: never;
+        /**
+         * Remover Todas Fotos
+         * @description Apaga todas as fotos do imóvel de uma vez (registros e arquivos).
+         */
+        delete: operations["remover_todas_fotos_imoveis__imovel_id__fotos_delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2877,7 +2881,7 @@ export interface components {
          * Disponibilidade
          * @enum {string}
          */
-        Disponibilidade: "disponivel" | "reservado" | "vendido_locado";
+        Disponibilidade: "disponivel" | "em_cadastro" | "reservado" | "vendido_locado";
         /** DocumentoDoImovel */
         DocumentoDoImovel: {
             /** Created At */
@@ -5863,7 +5867,8 @@ export interface operations {
         parameters: {
             query?: {
                 tipo_negocio?: components["schemas"]["TipoNegocio"] | null;
-                disponibilidade?: components["schemas"]["Disponibilidade"] | null;
+                /** @description Aceita várias: ?disponibilidade=disponivel&disponibilidade=em_cadastro (OR entre elas) */
+                disponibilidade?: components["schemas"]["Disponibilidade"][] | null;
                 cidade?: string | null;
                 /** @description Aceita múltiplos: ?bairro=Ipanema&bairro=Leblon (OR entre eles) */
                 bairro?: string[] | null;
@@ -5972,7 +5977,8 @@ export interface operations {
         parameters: {
             query?: {
                 tipo_negocio?: components["schemas"]["TipoNegocio"] | null;
-                disponibilidade?: components["schemas"]["Disponibilidade"] | null;
+                /** @description Aceita várias: ?disponibilidade=disponivel&disponibilidade=em_cadastro (OR entre elas) */
+                disponibilidade?: components["schemas"]["Disponibilidade"][] | null;
                 cidade?: string | null;
                 /** @description Aceita múltiplos: ?bairro=Ipanema&bairro=Leblon (OR entre eles) */
                 bairro?: string[] | null;
@@ -6439,6 +6445,35 @@ export interface operations {
                 content: {
                     "application/json": unknown;
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remover_todas_fotos_imoveis__imovel_id__fotos_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                imovel_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
