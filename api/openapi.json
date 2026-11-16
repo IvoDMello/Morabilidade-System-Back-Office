@@ -3154,6 +3154,19 @@
         "title": "DocumentoImovelOut",
         "type": "object"
       },
+      "DocumentoImovelUpdate": {
+        "description": "Troca a flag (tipo) de um documento já enviado.",
+        "properties": {
+          "tipo": {
+            "$ref": "#/components/schemas/TipoDocumentoImovel"
+          }
+        },
+        "required": [
+          "tipo"
+        ],
+        "title": "DocumentoImovelUpdate",
+        "type": "object"
+      },
       "DossieCliente": {
         "description": "Retrato do cliente para quem está no meio de uma conversa: por onde ele\njá passou (visitas), o que é dele (imóveis) e o que falta assinar/anexar.",
         "properties": {
@@ -4470,6 +4483,20 @@
           "tipo_negocio": {
             "$ref": "#/components/schemas/TipoNegocio"
           },
+          "tipos_documentos": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/TipoDocumentoImovel"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tipos Documentos"
+          },
           "titulo": {
             "anyOf": [
               {
@@ -4480,6 +4507,17 @@
               }
             ],
             "title": "Titulo"
+          },
+          "total_documentos": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Documentos"
           },
           "vagas_garagem": {
             "anyOf": [
@@ -4518,6 +4556,17 @@
               }
             ],
             "title": "Valor Venda"
+          },
+          "youtube_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Youtube Url"
           }
         },
         "required": [
@@ -7704,6 +7753,7 @@
         "type": "string"
       },
       "TipoDocumentoImovel": {
+        "description": "Flag do documento interno. `matricula` é o que o painel chama de RGI\n(certidão de matrícula do Registro Geral de Imóveis); o valor ficou com o\nnome antigo para não mexer no banco nem no CRM do WhatsApp.",
         "enum": [
           "contrato",
           "matricula",
@@ -12219,6 +12269,71 @@
           }
         ],
         "summary": "Deletar Documento Imovel",
+        "tags": [
+          "Imóveis"
+        ]
+      },
+      "patch": {
+        "description": "Troca a flag (IPTU, RGI, Condomínio...) de um documento já enviado,\npara o corretor corrigir o que subiu com o tipo errado sem reenviar.",
+        "operationId": "atualizar_documento_imovel_imoveis__imovel_id__documentos__documento_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "imovel_id",
+            "required": true,
+            "schema": {
+              "title": "Imovel Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "documento_id",
+            "required": true,
+            "schema": {
+              "title": "Documento Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentoImovelUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentoImovelOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Atualizar Documento Imovel",
         "tags": [
           "Imóveis"
         ]

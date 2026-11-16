@@ -247,6 +247,42 @@ def test_upload_documento_rollback_quando_insert_falha(client):
     deletar.assert_called_once()  # reverte o arquivo órfão
 
 
+def test_trocar_flag_do_documento(client):
+    """O corretor corrige a flag de um documento já enviado (ex.: subiu como
+    Contrato, mas é o IPTU)."""
+    atualizado = MagicMock(data=[{**DOC_DB, "tipo": "iptu"}])
+    db = make_db_mock(atualizado)
+    with patch("app.routers.imoveis.supabase_admin", db), \
+         patch("app.routers.imoveis.url_publica_documento", return_value="https://signed/doc"):
+        res = client.patch("/imoveis/imovel-uuid-1/documentos/doc-1", json={"tipo": "iptu"})
+    assert res.status_code == 200
+    assert res.json()["tipo"] == "iptu"
+    db.update.assert_called_once_with({"tipo": "iptu"})
+    # Restringe ao imóvel da URL: não troca documento de outro imóvel.
+    eqs = [c.args for c in db.eq.call_args_list]
+    assert ("id", "doc-1") in eqs and ("imovel_id", "imovel-uuid-1") in eqs
+
+
+def test_trocar_flag_documento_inexistente(client):
+    db = make_db_mock(MagicMock(data=[]))
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.patch("/imoveis/imovel-uuid-1/documentos/nao-existe", json={"tipo": "iptu"})
+    assert res.status_code == 404
+
+
+def test_trocar_flag_documento_tipo_invalido(client):
+    db = make_db_mock()
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.patch("/imoveis/imovel-uuid-1/documentos/doc-1", json={"tipo": "rgi"})
+    assert res.status_code == 422
+    db.update.assert_not_called()
+
+
+def test_trocar_flag_documento_exige_autenticacao(anon_client):
+    res = anon_client.patch("/imoveis/imovel-uuid-1/documentos/doc-1", json={"tipo": "iptu"})
+    assert res.status_code in (401, 403)
+
+
 def test_deletar_documento_sucesso(client):
     existente = MagicMock(data=[DOC_DB])
     db = make_db_mock(existente, MagicMock(data=[]))

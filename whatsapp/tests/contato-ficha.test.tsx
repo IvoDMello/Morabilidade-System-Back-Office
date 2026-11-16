@@ -315,7 +315,7 @@ describe("Ficha do contato — dossiê do sistema", () => {
     expect(screen.getByText("Proprietário de")).toBeInTheDocument();
     expect(screen.getByText(/MB-00042/)).toBeInTheDocument();
     expect(screen.getByText(/Autorização assinada em/)).toBeInTheDocument();
-    expect(screen.getByText("Matrícula")).toBeInTheDocument();
+    expect(screen.getByText("RGI")).toBeInTheDocument();
   });
 
   it("aponta o que falta: sem autorização e sem documento anexado", async () => {

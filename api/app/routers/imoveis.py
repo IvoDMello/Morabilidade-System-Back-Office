@@ -14,7 +14,8 @@ from app.auth.dependencies import get_current_user, require_admin, require_admin
 from app.database import supabase_admin
 from app.limiter import limiter
 from app.schemas.imovel import (
-    CondicaoImovel, Disponibilidade, DocumentoImovelOut, ImovelCreate, ImovelListOut,
+    CondicaoImovel, Disponibilidade, DocumentoImovelOut, DocumentoImovelUpdate,
+    ImovelCreate, ImovelListOut,
     ImovelOut, ImovelUpdate, Mobiliado, TipoDocumentoImovel, TipoImovel, TipoNegocio,
 )
 from app.services.revalidacao import revalidar_imovel
@@ -70,10 +71,17 @@ _LIST_FIELDS = (
     "id, codigo, titulo, tipo_negocio, disponibilidade, cidade, bairro, "
     "logradouro, numero, tipo_imovel, dormitorios, suites, banheiros, lavabos, "
     "vagas_garagem, area_total, area_util, valor_venda, valor_locacao, valor_sob_consulta, "
-    "condominio_mensal, iptu_mensal, destaque_ordem, proprietario_id, instagram_url, created_at, "
-    "imovel_fotos(url, ordem), imovel_tags(tags(id, nome, cor)), "
+    "condominio_mensal, iptu_mensal, destaque_ordem, proprietario_id, instagram_url, youtube_url, "
+    "created_at, imovel_fotos(url, ordem), imovel_tags(tags(id, nome, cor)), "
     "proprietario:clientes!proprietario_id(id, nome_completo, telefone, email)"
 )
+
+# Listagem do painel: a mesma da pública mais o tipo de cada documento interno
+# (ícone de anexo com a contagem e ícones das flags no card). Fica fora de
+# _LIST_FIELDS porque os documentos são internos (migration 042) e o site
+# público não deve nem saber quantos existem. São poucos por imóvel, então
+# trazer uma linha por documento custa o mesmo que um count.
+_LIST_FIELDS_PAINEL = _LIST_FIELDS + ", imovel_documentos(tipo)"
 
 _DETAIL_FIELDS = (
     "*, imovel_fotos(id, url, ordem), imovel_tags(tags(id, nome, cor)), "
@@ -298,6 +306,13 @@ def _transformar_lista(raw: dict) -> dict:
     tags_raw = raw.pop("imovel_tags", None) or []
     tags = [t["tags"] for t in tags_raw if t.get("tags")]
     proprietario = _normalizar_proprietario(raw)
+    # `imovel_documentos(tipo)` só vem na listagem do painel. Nas públicas a
+    # chave nem existe e os dois campos ficam None.
+    docs_raw = raw.pop("imovel_documentos", None)
+    total_documentos = tipos_documentos = None
+    if docs_raw is not None:
+        total_documentos = len(docs_raw)
+        tipos_documentos = sorted({d["tipo"] for d in docs_raw if d.get("tipo")})
     return {
         **raw,
         "foto_capa": foto_capa,
@@ -305,6 +320,8 @@ def _transformar_lista(raw: dict) -> dict:
         "total_fotos": len(fotos),
         "tags": tags,
         "proprietario": proprietario,
+        "total_documentos": total_documentos,
+        "tipos_documentos": tipos_documentos,
     }
 
 
@@ -325,7 +342,8 @@ def _ocultar_internas(imovel: dict, current_user: Optional[dict]) -> dict:
     """
     if not current_user:
         for campo in ("observacoes_internas", "inscricao_municipal", "rgi",
-                      "numero_matricula", "proprietario", "proprietario_id"):
+                      "numero_matricula", "proprietario", "proprietario_id",
+                      "total_documentos", "tipos_documentos"):
             imovel.pop(campo, None)
         # "Sob consulta": os valores reais nunca trafegam no público; o site
         # usa a flag valor_sob_consulta para exibir "Sob consulta" no lugar.
@@ -774,7 +792,7 @@ def listar_imoveis(
 
     offset = (page - 1) * page_size
     data_q = _aplicar_filtros(
-        supabase_admin.table("imoveis").select(_LIST_FIELDS), **filtros
+        supabase_admin.table("imoveis").select(_LIST_FIELDS_PAINEL), **filtros
     )
     if ids_sem_foto is not None:
         data_q = data_q.in_("id", ids_sem_foto)
@@ -1161,6 +1179,27 @@ async def upload_documento_imovel(
         deletar_documento(storage_path)
         raise HTTPException(status_code=500, detail=f"Erro ao registrar documento: {e}")
 
+    return _hidratar_documento(result.data[0])
+
+
+@router.patch("/{imovel_id}/documentos/{documento_id}", response_model=DocumentoImovelOut)
+def atualizar_documento_imovel(
+    imovel_id: str,
+    documento_id: str,
+    body: DocumentoImovelUpdate,
+    current_user: dict = Depends(require_admin),
+):
+    """Troca a flag (IPTU, RGI, Condomínio...) de um documento já enviado,
+    para o corretor corrigir o que subiu com o tipo errado sem reenviar."""
+    result = (
+        supabase_admin.table("imovel_documentos")
+        .update({"tipo": body.tipo.value})
+        .eq("id", documento_id)
+        .eq("imovel_id", imovel_id)
+        .execute()
+    )
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Documento não encontrado.")
     return _hidratar_documento(result.data[0])
 
 

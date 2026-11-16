@@ -117,6 +117,19 @@ class ImovelOut(ImovelCreate):
         return float(v) if v is not None else None
 
 
+class TipoDocumentoImovel(str, Enum):
+    """Flag do documento interno. `matricula` é o que o painel chama de RGI
+    (certidão de matrícula do Registro Geral de Imóveis); o valor ficou com o
+    nome antigo para não mexer no banco nem no CRM do WhatsApp."""
+    contrato = "contrato"
+    matricula = "matricula"
+    iptu = "iptu"
+    escritura = "escritura"
+    planta = "planta"
+    condominio = "condominio"
+    outro = "outro"
+
+
 class ImovelListOut(BaseModel):
     id: str
     codigo: str
@@ -147,6 +160,12 @@ class ImovelListOut(BaseModel):
     proprietario_id: Optional[str] = None
     proprietario: Optional[dict] = None  # {id, nome_completo, telefone} se houver
     instagram_url: Optional[str] = None  # link do anúncio no Instagram; indicador na listagem
+    youtube_url: Optional[str] = None  # link do vídeo no YouTube; indicador na listagem
+    # Quantos documentos internos o imóvel tem e de quais tipos (ícone de anexo
+    # e ícones das flags no card do painel). Só a listagem autenticada
+    # preenche; nas públicas vêm sempre null.
+    total_documentos: Optional[int] = None
+    tipos_documentos: Optional[List[TipoDocumentoImovel]] = None
     created_at: str
 
     @field_serializer(
@@ -158,15 +177,11 @@ class ImovelListOut(BaseModel):
 
 
 # ── Documentos internos do imóvel ────────────────────────────────────────────
+# (TipoDocumentoImovel fica lá em cima, antes de ImovelListOut, que o usa.)
 
-class TipoDocumentoImovel(str, Enum):
-    contrato = "contrato"
-    matricula = "matricula"
-    iptu = "iptu"
-    escritura = "escritura"
-    planta = "planta"
-    condominio = "condominio"
-    outro = "outro"
+class DocumentoImovelUpdate(BaseModel):
+    """Troca a flag (tipo) de um documento já enviado."""
+    tipo: TipoDocumentoImovel
 
 
 class DocumentoImovelOut(BaseModel):

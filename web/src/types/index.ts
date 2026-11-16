@@ -118,6 +118,9 @@ export interface ImovelListOut {
   proprietario_id?: string | null;
   proprietario?: { id?: string; nome_completo: string; telefone?: string; email?: string } | null;
   instagram_url?: string | null;
+  youtube_url?: string | null;
+  total_documentos?: number | null;
+  tipos_documentos?: TipoDocumentoImovel[] | null;
   created_at: string;
 }
 

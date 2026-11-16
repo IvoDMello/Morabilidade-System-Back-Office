@@ -6,8 +6,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   Search, ChevronLeft, ChevronRight, BedDouble, Bath,
   Car, Maximize2, Pencil, Info as InfoIcon,
-  LayoutList, Map, Building2, Trash2, Download, Filter, X, Instagram,
-  ArrowUpNarrowWide, ArrowDownWideNarrow,
+  LayoutList, Map, Building2, Trash2, Download, Filter, X, Instagram, Youtube,
+  Paperclip, ArrowUpNarrowWide, ArrowDownWideNarrow,
 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
@@ -16,6 +16,7 @@ import { formatarMoeda } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { FiltroSelect } from "@/components/ui/FiltroSelect";
 import { FiltroMultiSelect } from "@/components/ui/FiltroMultiSelect";
+import { FLAGS_DOCUMENTO } from "@/lib/documentos-imovel";
 import { OPCOES_QUARTOS, QUARTOS_ABERTO, paramsDeQuartos } from "@/lib/filtro-quartos";
 import {
   ajudaDaOrdem,
@@ -165,6 +166,20 @@ function instagramLinkValido(url: string): boolean {
     const u = new URL(url.trim());
     if (!/(^|\.)instagram\.com$/i.test(u.hostname)) return false;
     return /^\/(p|reel|reels|tv)\/[\w-]+/i.test(u.pathname);
+  } catch {
+    return false;
+  }
+}
+
+// Mesma ideia para o YouTube: link de vídeo (watch?v=, shorts, live, embed ou
+// youtu.be/ID), não de canal ou playlist.
+function youtubeLinkValido(url: string): boolean {
+  try {
+    const u = new URL(url.trim());
+    if (/^youtu\.be$/i.test(u.hostname)) return /^\/[\w-]+/.test(u.pathname);
+    if (!/(^|\.)youtube\.com$/i.test(u.hostname)) return false;
+    if (u.pathname === "/watch") return !!u.searchParams.get("v");
+    return /^\/(shorts|live|embed)\/[\w-]+/i.test(u.pathname);
   } catch {
     return false;
   }
@@ -937,29 +952,91 @@ setLoading(true);
                 >
                   {/* Linha de ações */}
                   <div className="flex items-center justify-end gap-1 px-4 pt-3 pb-2 border-b border-slate-50">
-                    {imovel.instagram_url && (() => {
-                      const valido = instagramLinkValido(imovel.instagram_url);
-                      return (
-                        <a
-                          href={imovel.instagram_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className={`mr-auto p-1.5 rounded-md transition ${
-                            valido
-                              ? "text-pink-500 hover:bg-pink-50"
-                              : "text-amber-500 hover:bg-amber-50"
-                          }`}
+                    {/* Indicadores à esquerda: redes com vídeo/anúncio e documentos anexados */}
+                    <div className="mr-auto flex items-center gap-1">
+                      {imovel.instagram_url && (() => {
+                        const valido = instagramLinkValido(imovel.instagram_url);
+                        return (
+                          <a
+                            href={imovel.instagram_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className={`p-1.5 rounded-md transition ${
+                              valido
+                                ? "text-pink-500 hover:bg-pink-50"
+                                : "text-amber-500 hover:bg-amber-50"
+                            }`}
+                            title={
+                              valido
+                                ? "Anúncio no Instagram, abrir post"
+                                : "Link do Instagram preenchido, mas não parece um post válido, verifique"
+                            }
+                          >
+                            <Instagram className="w-3.5 h-3.5" />
+                          </a>
+                        );
+                      })()}
+                      {imovel.youtube_url && (() => {
+                        const valido = youtubeLinkValido(imovel.youtube_url);
+                        return (
+                          <a
+                            href={imovel.youtube_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className={`p-1.5 rounded-md transition ${
+                              valido
+                                ? "text-red-600 hover:bg-red-50"
+                                : "text-amber-500 hover:bg-amber-50"
+                            }`}
+                            title={
+                              valido
+                                ? "Vídeo no YouTube, abrir vídeo"
+                                : "Link do YouTube preenchido, mas não parece um vídeo válido, verifique"
+                            }
+                          >
+                            <Youtube className="w-3.5 h-3.5" />
+                          </a>
+                        );
+                      })()}
+                      {!!imovel.total_documentos && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/imoveis/${imovel.id}?aba=documentos`);
+                          }}
+                          className="flex items-center gap-1 px-1.5 py-1 rounded-md text-xs font-medium text-slate-500 hover:text-[#585a4f] hover:bg-slate-50 transition"
                           title={
-                            valido
-                              ? "Anúncio no Instagram, abrir post"
-                              : "Link do Instagram preenchido, mas não parece um post válido, verifique"
+                            imovel.total_documentos === 1
+                              ? "1 documento anexado, abrir documentos"
+                              : `${imovel.total_documentos} documentos anexados, abrir documentos`
                           }
                         >
-                          <Instagram className="w-3.5 h-3.5" />
-                        </a>
-                      );
-                    })()}
+                          <Paperclip className="w-3.5 h-3.5" />
+                          {imovel.total_documentos}
+                        </button>
+                      )}
+                      {/* Uma flag por tipo que tem documento (IPTU, RGI...), na ordem da aba Documentos */}
+                      {FLAGS_DOCUMENTO.filter((f) => imovel.tipos_documentos?.includes(f.tipo)).map(
+                        ({ tipo, label, Icone }) => (
+                          <button
+                            key={tipo}
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              router.push(`/imoveis/${imovel.id}?aba=documentos`);
+                            }}
+                            className="p-1.5 rounded-md text-[#585a4f] hover:bg-slate-50 transition"
+                            title={`${label} anexado`}
+                            aria-label={`${label} anexado`}
+                          >
+                            <Icone className="w-3.5 h-3.5" />
+                          </button>
+                        ),
+                      )}
+                    </div>
                     <button
                       onClick={(e) => { e.stopPropagation(); router.push(`/imoveis/${imovel.id}`); }}
                       className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-slate-500 hover:text-[#585a4f] hover:bg-slate-50 rounded-md transition"

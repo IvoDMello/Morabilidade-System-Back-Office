@@ -16,8 +16,10 @@ vi.mock("next/link", () => ({
 }));
 
 const pushMock = vi.fn();
+let searchParams = new URLSearchParams();
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: pushMock }),
+  useSearchParams: () => searchParams,
 }));
 
 vi.mock("sonner", () => ({
@@ -83,6 +85,10 @@ vi.mock("@/components/ConfirmDialog", () => ({
   ConfirmDialog: () => null,
 }));
 
+vi.mock("@/components/imoveis/documentos-imovel", () => ({
+  DocumentosImovel: () => <div data-testid="documentos-imovel" />,
+}));
+
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
 function imovelFixture(overrides = {}) {
@@ -125,6 +131,7 @@ import EditarImovelPage from "@/app/(dashboard)/imoveis/[id]/page";
 
 beforeEach(() => {
   vi.clearAllMocks();
+  searchParams = new URLSearchParams();
 });
 
 // ── Carregamento ──────────────────────────────────────────────────────────────
@@ -242,6 +249,29 @@ describe("EditarImovelPage, interessados", () => {
     await waitFor(() => {
       expect(screen.getByTestId("interessados-imovel")).toBeInTheDocument();
     });
+  });
+});
+
+// ── Aba inicial pela URL ──────────────────────────────────────────────────────
+
+describe("EditarImovelPage, aba pela URL", () => {
+  it("abre na aba de documentos com ?aba=documentos", async () => {
+    searchParams = new URLSearchParams("aba=documentos");
+    apiGetMock.mockResolvedValue({ data: imovelFixture() });
+    render(<EditarImovelPage params={Promise.resolve({ id: "imovel-abc" })} />);
+    await waitFor(() => {
+      expect(screen.getByTestId("documentos-imovel")).toBeInTheDocument();
+    });
+    expect(screen.queryByTestId("submit-btn")).not.toBeInTheDocument();
+  });
+
+  it("sem parâmetro abre nos dados do imóvel", async () => {
+    apiGetMock.mockResolvedValue({ data: imovelFixture() });
+    render(<EditarImovelPage params={Promise.resolve({ id: "imovel-abc" })} />);
+    await waitFor(() => {
+      expect(screen.getByTestId("submit-btn")).toBeInTheDocument();
+    });
+    expect(screen.queryByTestId("documentos-imovel")).not.toBeInTheDocument();
   });
 });
 

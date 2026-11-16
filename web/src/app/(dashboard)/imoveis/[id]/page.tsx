@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Upload, Trash2, Star, Loader2, ImageOff, RotateCw, GripVertical } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
@@ -369,11 +369,15 @@ export default function EditarImovelPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [imovel, setImovel] = useState<Imovel | null>(null);
   const [loadingDados, setLoadingDados] = useState(true);
   const [salvando, setSalvando] = useState(false);
-  const [abaAtiva, setAbaAtiva] = useState<"dados" | "documentos" | "acompanhamento" | "fichas" | "autorizacao">("dados");
+  // ?aba=documentos: o ícone de anexo do card da listagem abre direto nos documentos.
+  const [abaAtiva, setAbaAtiva] = useState<"dados" | "documentos" | "acompanhamento" | "fichas" | "autorizacao">(
+    () => (searchParams.get("aba") === "documentos" ? "documentos" : "dados"),
+  );
 
   const carregarImovel = useCallback(async () => {
     try {

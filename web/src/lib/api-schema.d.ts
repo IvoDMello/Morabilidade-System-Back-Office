@@ -987,7 +987,12 @@ export interface paths {
         delete: operations["deletar_documento_imovel_imoveis__imovel_id__documentos__documento_id__delete"];
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Atualizar Documento Imovel
+         * @description Troca a flag (IPTU, RGI, Condomínio...) de um documento já enviado,
+         *     para o corretor corrigir o que subiu com o tipo errado sem reenviar.
+         */
+        patch: operations["atualizar_documento_imovel_imoveis__imovel_id__documentos__documento_id__patch"];
         trace?: never;
     };
     "/imoveis/{imovel_id}/fotos": {
@@ -2914,6 +2919,13 @@ export interface components {
             url?: string | null;
         };
         /**
+         * DocumentoImovelUpdate
+         * @description Troca a flag (tipo) de um documento já enviado.
+         */
+        DocumentoImovelUpdate: {
+            tipo: components["schemas"]["TipoDocumentoImovel"];
+        };
+        /**
          * DossieCliente
          * @description Retrato do cliente para quem está no meio de uma conversa: por onde ele
          *     já passou (visitas), o que é dele (imóveis) e o que falta assinar/anexar.
@@ -3255,8 +3267,12 @@ export interface components {
             tags: Record<string, never>[];
             tipo_imovel: components["schemas"]["TipoImovel"];
             tipo_negocio: components["schemas"]["TipoNegocio"];
+            /** Tipos Documentos */
+            tipos_documentos?: components["schemas"]["TipoDocumentoImovel"][] | null;
             /** Titulo */
             titulo?: string | null;
+            /** Total Documentos */
+            total_documentos?: number | null;
             /** Vagas Garagem */
             vagas_garagem?: number | null;
             /** Valor Locacao */
@@ -3268,6 +3284,8 @@ export interface components {
             valor_sob_consulta: boolean;
             /** Valor Venda */
             valor_venda?: number | null;
+            /** Youtube Url */
+            youtube_url?: string | null;
         };
         /** ImovelOut */
         ImovelOut: {
@@ -4254,6 +4272,9 @@ export interface components {
         TipoCliente: "comprador" | "locatario" | "proprietario" | "investidor";
         /**
          * TipoDocumentoImovel
+         * @description Flag do documento interno. `matricula` é o que o painel chama de RGI
+         *     (certidão de matrícula do Registro Geral de Imóveis); o valor ficou com o
+         *     nome antigo para não mexer no banco nem no CRM do WhatsApp.
          * @enum {string}
          */
         TipoDocumentoImovel: "contrato" | "matricula" | "iptu" | "escritura" | "planta" | "condominio" | "outro";
@@ -6410,6 +6431,42 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    atualizar_documento_imovel_imoveis__imovel_id__documentos__documento_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                imovel_id: string;
+                documento_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocumentoImovelUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentoImovelOut"];
+                };
             };
             /** @description Validation Error */
             422: {

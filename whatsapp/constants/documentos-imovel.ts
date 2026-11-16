@@ -2,7 +2,7 @@
  * (migration 042_imovel_documentos.sql da API). */
 export const DOCUMENTO_IMOVEL_LABELS: Record<string, string> = {
   contrato: "Contrato",
-  matricula: "Matrícula",
+  matricula: "RGI", // certidão de matrícula do RGI; o painel também chama assim
   iptu: "IPTU",
   escritura: "Escritura",
   planta: "Planta",

@@ -14,25 +14,21 @@ import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import {
+  FLAGS_DOCUMENTO,
+  TIPOS_DOCUMENTO,
+  TIPO_DOCUMENTO_LABEL,
+  tipoPeloNomeDoArquivo,
+} from "@/lib/documentos-imovel";
 import type { DocumentoImovel, TipoDocumentoImovel } from "@/types";
 
 interface Props {
   imovelId: string;
 }
 
-const TIPOS: { value: TipoDocumentoImovel; label: string }[] = [
-  { value: "contrato", label: "Contrato" },
-  { value: "matricula", label: "Matrícula" },
-  { value: "escritura", label: "Escritura" },
-  { value: "iptu", label: "IPTU" },
-  { value: "condominio", label: "Condomínio" },
-  { value: "planta", label: "Planta" },
-  { value: "outro", label: "Outro" },
-];
-
-const TIPO_LABEL: Record<TipoDocumentoImovel, string> = Object.fromEntries(
-  TIPOS.map((t) => [t.value, t.label])
-) as Record<TipoDocumentoImovel, string>;
+// "auto": cada arquivo pega o tipo pelo próprio nome ("IPTU Sambaíba.jpg" vira
+// IPTU), e o que o nome não disser entra como Outro. Corrige-se depois na linha.
+type TipoEnvio = TipoDocumentoImovel | "auto";
 
 export function DocumentosImovel({ imovelId }: Props) {
   const isAdmin = useAuthStore((s) => (s.user?.perfil === "admin" || s.user?.perfil === "corretor"));
@@ -40,7 +36,7 @@ export function DocumentosImovel({ imovelId }: Props) {
   const [loading, setLoading] = useState(true);
   const [enviando, setEnviando] = useState(false);
   const [progressoEnvio, setProgressoEnvio] = useState<{ atual: number; total: number } | null>(null);
-  const [tipoSelecionado, setTipoSelecionado] = useState<TipoDocumentoImovel>("contrato");
+  const [tipoSelecionado, setTipoSelecionado] = useState<TipoEnvio>("auto");
   const inputFileRef = useRef<HTMLInputElement>(null);
   const [deletando, setDeletando] = useState<DocumentoImovel | null>(null);
   const [deletandoLoading, setDeletandoLoading] = useState(false);
@@ -89,9 +85,13 @@ export function DocumentosImovel({ imovelId }: Props) {
           continue;
         }
         try {
+          const tipo =
+            tipoSelecionado === "auto"
+              ? tipoPeloNomeDoArquivo(arquivo.name) ?? "outro"
+              : tipoSelecionado;
           const form = new FormData();
           form.append("file", arquivo);
-          form.append("tipo", tipoSelecionado);
+          form.append("tipo", tipo);
           await api.post(`/imoveis/${imovelId}/documentos`, form, {
             headers: { "Content-Type": "multipart/form-data" },
           });
@@ -131,6 +131,18 @@ export function DocumentosImovel({ imovelId }: Props) {
     if (arquivos.length > 0) enviarArquivos(arquivos);
   }
 
+  async function trocarTipo(doc: DocumentoImovel, tipo: TipoDocumentoImovel) {
+    if (tipo === doc.tipo) return;
+    // Otimista: a flag muda na hora e volta se a API recusar.
+    setDocumentos((ds) => ds.map((d) => (d.id === doc.id ? { ...d, tipo } : d)));
+    try {
+      await api.patch(`/imoveis/${imovelId}/documentos/${doc.id}`, { tipo });
+    } catch {
+      setDocumentos((ds) => ds.map((d) => (d.id === doc.id ? { ...d, tipo: doc.tipo } : d)));
+      toast.error("Erro ao trocar a flag do documento.");
+    }
+  }
+
   async function handleDeletar() {
     if (!deletando) return;
     setDeletandoLoading(true);
@@ -159,10 +171,12 @@ export function DocumentosImovel({ imovelId }: Props) {
           <div className="flex items-center gap-2">
             <select
               value={tipoSelecionado}
-              onChange={(e) => setTipoSelecionado(e.target.value as TipoDocumentoImovel)}
+              onChange={(e) => setTipoSelecionado(e.target.value as TipoEnvio)}
+              aria-label="Flag dos arquivos enviados"
               className="px-2.5 py-2 text-xs border border-slate-200 rounded-lg bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#585a4f]/30"
             >
-              {TIPOS.map((t) => (
+              <option value="auto">Flag pelo nome do arquivo</option>
+              {TIPOS_DOCUMENTO.map((t) => (
                 <option key={t.value} value={t.value}>
                   {t.label}
                 </option>
@@ -195,6 +209,8 @@ export function DocumentosImovel({ imovelId }: Props) {
           </div>
         )}
       </div>
+
+      {!loading && <FlagsDocumentos documentos={documentos} />}
 
       {isAdmin && (
         <div
@@ -231,9 +247,26 @@ export function DocumentosImovel({ imovelId }: Props) {
               <IconePorMime mime={d.mime_type} />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-slate-800 truncate">{d.nome_arquivo}</p>
-                <p className="text-xs text-slate-400">
-                  {TIPO_LABEL[d.tipo]} · {formatarTamanho(d.tamanho_bytes)} · {formatarData(d.created_at)}
-                </p>
+                <div className="flex items-center gap-1.5 mt-0.5 text-xs text-slate-400">
+                  <IconeDaFlag tipo={d.tipo} />
+                  {isAdmin ? (
+                    <select
+                      value={d.tipo}
+                      onChange={(e) => trocarTipo(d, e.target.value as TipoDocumentoImovel)}
+                      aria-label={`Flag de ${d.nome_arquivo}`}
+                      className="py-0.5 pl-1.5 pr-1 text-xs border border-slate-200 rounded-md bg-white text-slate-600 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#585a4f]/30"
+                    >
+                      {TIPOS_DOCUMENTO.map((t) => (
+                        <option key={t.value} value={t.value}>
+                          {t.label}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <span>{TIPO_DOCUMENTO_LABEL[d.tipo]}</span>
+                  )}
+                  <span>· {formatarTamanho(d.tamanho_bytes)} · {formatarData(d.created_at)}</span>
+                </div>
               </div>
               {d.url && (
                 <a
@@ -272,6 +305,44 @@ export function DocumentosImovel({ imovelId }: Props) {
       />
     </div>
   );
+}
+
+// Faixa com as 5 flags: acesa quando há documento ligado a ela, apagada
+// (tracejada) quando falta, para o corretor ver de cara o que ainda não juntou.
+function FlagsDocumentos({ documentos }: { documentos: DocumentoImovel[] }) {
+  return (
+    <div className="flex flex-wrap gap-2 px-5 pt-4" aria-label="Documentos por flag">
+      {FLAGS_DOCUMENTO.map(({ tipo, label, Icone }) => {
+        const qtd = documentos.filter((d) => d.tipo === tipo).length;
+        const tem = qtd > 0;
+        return (
+          <span
+            key={tipo}
+            title={
+              tem
+                ? `${label}: ${qtd === 1 ? "1 documento anexado" : `${qtd} documentos anexados`}`
+                : `${label}: nenhum documento anexado`
+            }
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${
+              tem
+                ? "border-[#585a4f]/30 bg-[#585a4f]/10 text-[#585a4f]"
+                : "border-dashed border-slate-200 text-slate-400"
+            }`}
+          >
+            <Icone className="w-3.5 h-3.5" />
+            {label}
+            {qtd > 1 && <span className="opacity-70">({qtd})</span>}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
+function IconeDaFlag({ tipo }: { tipo: TipoDocumentoImovel }) {
+  const flag = FLAGS_DOCUMENTO.find((f) => f.tipo === tipo);
+  if (!flag) return null;
+  return <flag.Icone className="w-3.5 h-3.5 text-[#585a4f] flex-shrink-0" aria-hidden />;
 }
 
 function IconePorMime({ mime }: { mime?: string }) {

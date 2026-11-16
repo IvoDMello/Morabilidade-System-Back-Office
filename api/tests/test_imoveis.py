@@ -70,6 +70,41 @@ def test_listar_imoveis_retorna_lista(client):
     assert res.headers["x-total-count"] == "1"
 
 
+def test_listar_imoveis_traz_youtube_e_documentos(client):
+    """O card do painel mostra o YouTube, o anexo com a contagem e um ícone
+    por flag que tem documento, sem repetir flag com dois arquivos."""
+    imovel = {
+        **IMOVEL_DB,
+        "youtube_url": "https://www.youtube.com/watch?v=abc123",
+        "imovel_documentos": [{"tipo": "iptu"}, {"tipo": "escritura"}, {"tipo": "iptu"}],
+    }
+    db = make_db_mock(MagicMock(count=1, data=[]), MagicMock(count=1, data=[imovel]))
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/")
+
+    assert res.status_code == 200
+    item = res.json()[0]
+    assert item["youtube_url"] == "https://www.youtube.com/watch?v=abc123"
+    assert item["total_documentos"] == 3
+    assert item["tipos_documentos"] == ["escritura", "iptu"]
+    assert "imovel_documentos" not in item
+    selects = [c.args[0] for c in db.select.call_args_list if c.args]
+    assert any("imovel_documentos(tipo)" in s for s in selects)
+
+
+def test_listar_imoveis_sem_documentos_total_zero(client):
+    imovel = {**IMOVEL_DB, "imovel_documentos": []}
+    db = make_db_mock(MagicMock(count=1, data=[]), MagicMock(count=1, data=[imovel]))
+
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = client.get("/imoveis/")
+
+    item = res.json()[0]
+    assert item["total_documentos"] == 0
+    assert item["tipos_documentos"] == []
+
+
 def test_listar_imoveis_vazio(client):
     count_res = MagicMock(count=0, data=[])
     data_res = MagicMock(count=0, data=[])
@@ -751,6 +786,20 @@ def test_disponiveis_publico_nao_vaza_proprietario(anon_client):
     assert item.get("proprietario") is None
     assert item.get("proprietario_id") is None
     assert "fulano@example.com" not in res.text
+
+
+def test_disponiveis_publico_nao_conta_documentos_internos(anon_client):
+    """Documentos do imóvel são internos: o site público não pede a contagem
+    ao banco e, mesmo que ela venha, não a devolve."""
+    imovel = {**IMOVEL_DB, "imovel_documentos": [{"tipo": "iptu"}, {"tipo": "escritura"}]}
+    db = make_db_mock(MagicMock(count=1, data=[]), MagicMock(count=1, data=[imovel]))
+    with patch("app.routers.imoveis.supabase_admin", db):
+        res = anon_client.get("/imoveis/publico/disponiveis")
+    assert res.status_code == 200
+    assert res.json()[0].get("total_documentos") is None
+    assert res.json()[0].get("tipos_documentos") is None
+    selects = [c.args[0] for c in db.select.call_args_list if c.args]
+    assert not any("imovel_documentos" in s for s in selects)
 
 
 def test_destaques_publico_nao_vaza_proprietario(anon_client):
